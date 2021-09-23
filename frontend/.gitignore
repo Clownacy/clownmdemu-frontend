@@ -1,0 +1,6 @@
+# CMake build directory
+/build
+
+# Test ROM
+/s1built.bin
+
