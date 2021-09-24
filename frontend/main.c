@@ -160,6 +160,15 @@ int main(int argc, char **argv)
 							}
 
 							ClownMDEmu_Iterate(clownmdemu_state, VideoCallback);
+
+							// Framerate manager - run at roughly 60FPS
+							static Uint32 next_time;
+							const Uint32 current_time = SDL_GetTicks();
+
+							if (current_time < next_time)
+								SDL_Delay(next_time - current_time);
+
+							next_time = SDL_GetTicks() + 1000 / 60;
 						}
 					}
 
