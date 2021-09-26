@@ -9,7 +9,6 @@
 #include "clownmdemu.h"
 
 static SDL_Window *window;
-static size_t current_scanline;
 
 static struct
 {
@@ -57,7 +56,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 }
 
-static void ScanlineRenderedCallback(void *pixels, size_t screen_width, size_t screen_height)
+static void ScanlineRenderedCallback(size_t scanline, void *pixels, size_t screen_width, size_t screen_height)
 {
 	SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormatFrom(pixels, screen_width, 1, 0, screen_width * 2, SDL_PIXELFORMAT_RGB565);
 
@@ -67,14 +66,12 @@ static void ScanlineRenderedCallback(void *pixels, size_t screen_width, size_t s
 
 		if (window_surface != NULL)
 		{
-			SDL_Rect destination_rect = {.x = 0, .y = current_scanline, .w = window_surface->w, .h = window_surface->h * current_scanline / screen_height};
+			SDL_Rect destination_rect = {.x = 0, .y = scanline, .w = window_surface->w, .h = window_surface->h * scanline / screen_height};
 			SDL_BlitScaled(surface, NULL, window_surface, &destination_rect);
 		}
 
 		SDL_FreeSurface(surface);
 	}
-
-	++current_scanline;
 }
 
 int main(int argc, char **argv)
@@ -162,7 +159,6 @@ int main(int argc, char **argv)
 								}
 							}
 
-							current_scanline = 0;
 							ClownMDEmu_Iterate(clownmdemu_state, ScanlineRenderedCallback);
 
 							SDL_UpdateWindowSurface(window);
