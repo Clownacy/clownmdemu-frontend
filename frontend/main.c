@@ -66,7 +66,7 @@ static void ScanlineRenderedCallback(size_t scanline, void *pixels, size_t scree
 
 		if (window_surface != NULL)
 		{
-			SDL_Rect destination_rect = {.x = 0, .y = scanline, .w = window_surface->w, .h = window_surface->h * scanline / screen_height};
+			SDL_Rect destination_rect = {.x = 0, .y = scanline * window_surface->h / screen_height, .w = window_surface->w, .h = window_surface->h / screen_height};
 			SDL_BlitScaled(surface, NULL, window_surface, &destination_rect);
 		}
 
