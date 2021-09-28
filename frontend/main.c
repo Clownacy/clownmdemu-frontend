@@ -174,6 +174,15 @@ int main(int argc, char **argv)
 						}
 					}
 
+					FILE *state_file = fopen("state.bin", "wb");
+
+					if (state_file != NULL)
+					{
+						fwrite(clownmdemu_state, 1, ClownMDEmu_GetStateSize(), state_file);
+
+						fclose(state_file);
+					}
+
 					ClownMDEmu_Deinit(clownmdemu_state);
 
 					free(clownmdemu_state);
