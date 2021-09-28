@@ -56,7 +56,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 }
 
-static void ScanlineRenderedCallback(size_t scanline, void *pixels, size_t screen_width, size_t screen_height)
+static void ScanlineRenderedCallback(unsigned short scanline, void *pixels, unsigned short screen_width, unsigned short screen_height)
 {
 	SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormatFrom(pixels, screen_width, 1, 0, screen_width * 3, SDL_PIXELFORMAT_RGB24);
 
