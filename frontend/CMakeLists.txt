@@ -19,5 +19,4 @@ add_subdirectory("../" EXCLUDE_FROM_ALL "clownmdemu")
 target_link_libraries(clownmdemufrontend clownmdemu)
 
 find_package(SDL2 REQUIRED)
-target_link_libraries(clownmdemufrontend SDL2::SDL2 SDL2::SDL2main)
-
+target_link_libraries(clownmdemufrontend SDL2::SDL2main SDL2::SDL2)
