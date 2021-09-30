@@ -74,6 +74,39 @@ static void ScanlineRenderedCallback(unsigned short scanline, void *pixels, unsi
 	}
 }
 
+static unsigned char ReadInputCallback(unsigned char button_id)
+{
+	switch (button_id)
+	{
+		case CLOWNMDEMU_BUTTON_UP:
+			return input.up;
+
+		case CLOWNMDEMU_BUTTON_DOWN:
+			return input.down;
+
+		case CLOWNMDEMU_BUTTON_LEFT:
+			return input.left;
+
+		case CLOWNMDEMU_BUTTON_RIGHT:
+			return input.right;
+
+		case CLOWNMDEMU_BUTTON_A:
+			return input.a;
+
+		case CLOWNMDEMU_BUTTON_B:
+			return input.b;
+
+		case CLOWNMDEMU_BUTTON_C:
+			return input.c;
+
+		case CLOWNMDEMU_BUTTON_START:
+			return input.start;
+
+		default:
+			return false;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	if (argc < 2)
@@ -159,7 +192,7 @@ int main(int argc, char **argv)
 								}
 							}
 
-							ClownMDEmu_Iterate(clownmdemu_state, ScanlineRenderedCallback);
+							ClownMDEmu_Iterate(clownmdemu_state, ScanlineRenderedCallback, ReadInputCallback);
 
 							SDL_UpdateWindowSurface(window);
 
