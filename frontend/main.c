@@ -30,6 +30,8 @@ static void PrintError(const char *fmt, ...)
 
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
+	*file_buffer = NULL;
+
 	FILE *file = fopen(filename, "rb");
 
 	if (file == NULL)
