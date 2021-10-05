@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 240);
+					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 480);
 
 					if (framebuffer_texture == NULL)
 					{
