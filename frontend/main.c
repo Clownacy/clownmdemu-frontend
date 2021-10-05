@@ -139,7 +139,13 @@ int main(int argc, char **argv)
 			}
 			else
 			{
-				renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
+				bool use_vsync = false;
+
+				SDL_DisplayMode display_mode;
+				if (SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &display_mode) == 0)
+					use_vsync = display_mode.refresh_rate >= 60;
+
+				renderer = SDL_CreateRenderer(window, -1, use_vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
 
 				if (renderer == NULL)
 				{
