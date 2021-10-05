@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -22,7 +23,7 @@ static struct
 	bool up,down,left,right;
 	bool a,b,c;
 	bool start;
-} input;
+} inputs[2];
 
 static void PrintError(const char *fmt, ...)
 {
@@ -73,33 +74,35 @@ static void ScanlineRenderedCallback(unsigned short scanline, void *pixels, unsi
 	current_screen_height = screen_height;
 }
 
-static unsigned char ReadInputCallback(unsigned char button_id)
+static unsigned char ReadInputCallback(unsigned char player_id, unsigned char button_id)
 {
+	assert(player_id < 2);
+
 	switch (button_id)
 	{
 		case CLOWNMDEMU_BUTTON_UP:
-			return input.up;
+			return inputs[player_id].up;
 
 		case CLOWNMDEMU_BUTTON_DOWN:
-			return input.down;
+			return inputs[player_id].down;
 
 		case CLOWNMDEMU_BUTTON_LEFT:
-			return input.left;
+			return inputs[player_id].left;
 
 		case CLOWNMDEMU_BUTTON_RIGHT:
-			return input.right;
+			return inputs[player_id].right;
 
 		case CLOWNMDEMU_BUTTON_A:
-			return input.a;
+			return inputs[player_id].a;
 
 		case CLOWNMDEMU_BUTTON_B:
-			return input.b;
+			return inputs[player_id].b;
 
 		case CLOWNMDEMU_BUTTON_C:
-			return input.c;
+			return inputs[player_id].c;
 
 		case CLOWNMDEMU_BUTTON_START:
-			return input.start;
+			return inputs[player_id].start;
 
 		default:
 			return false;
@@ -196,14 +199,22 @@ int main(int argc, char **argv)
 											switch (event.key.keysym.scancode)
 											{
 												#define DO_KEY(state, code) case code: state = pressed; break;
-												DO_KEY(input.up,    SDL_SCANCODE_W)
-												DO_KEY(input.down,  SDL_SCANCODE_S)
-												DO_KEY(input.left,  SDL_SCANCODE_A)
-												DO_KEY(input.right, SDL_SCANCODE_D)
-												DO_KEY(input.a,     SDL_SCANCODE_O)
-												DO_KEY(input.b,     SDL_SCANCODE_P)
-												DO_KEY(input.c,     SDL_SCANCODE_LEFTBRACKET)
-												DO_KEY(input.start, SDL_SCANCODE_RETURN)
+												DO_KEY(inputs[0].up,    SDL_SCANCODE_W)
+												DO_KEY(inputs[0].down,  SDL_SCANCODE_S)
+												DO_KEY(inputs[0].left,  SDL_SCANCODE_A)
+												DO_KEY(inputs[0].right, SDL_SCANCODE_D)
+												DO_KEY(inputs[0].a,     SDL_SCANCODE_O)
+												DO_KEY(inputs[0].b,     SDL_SCANCODE_P)
+												DO_KEY(inputs[0].c,     SDL_SCANCODE_LEFTBRACKET)
+												DO_KEY(inputs[0].start, SDL_SCANCODE_RETURN)
+												DO_KEY(inputs[1].up,    SDL_SCANCODE_UP)
+												DO_KEY(inputs[1].down,  SDL_SCANCODE_DOWN)
+												DO_KEY(inputs[1].left,  SDL_SCANCODE_LEFT)
+												DO_KEY(inputs[1].right, SDL_SCANCODE_RIGHT)
+												DO_KEY(inputs[1].a,     SDL_SCANCODE_Z)
+												DO_KEY(inputs[1].b,     SDL_SCANCODE_X)
+												DO_KEY(inputs[1].c,     SDL_SCANCODE_C)
+												DO_KEY(inputs[1].start, SDL_SCANCODE_V)
 												#undef DO_KEY
 
 											default:
