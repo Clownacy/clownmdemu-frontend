@@ -12,6 +12,8 @@ static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
 
+static unsigned char framebuffer[480][320][3];
+
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
 
@@ -65,20 +67,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 
 static void ScanlineRenderedCallback(unsigned short scanline, void *pixels, unsigned short screen_width, unsigned short screen_height)
 {
-	// Upload scanline to texture
-	void *texture_pixels;
-	int texture_pitch;
-
-	if (SDL_LockTexture(framebuffer_texture, &(SDL_Rect){.x = 0, .y = scanline, .w = screen_width, .h = 1}, &texture_pixels, &texture_pitch) < 0)
-	{
-		PrintError("SDL_LockTexture failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		memcpy(texture_pixels, pixels, screen_width * 3);
-
-		SDL_UnlockTexture(framebuffer_texture);
-	}
+	memcpy(framebuffer[scanline], pixels, screen_width * 3);
 
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
@@ -248,6 +237,22 @@ int main(int argc, char **argv)
 
 									destination_rect.x = (renderer_width - destination_rect.w) / 2;
 									destination_rect.y = (renderer_height - destination_rect.h) / 2;
+
+									// Upload framebuffer to texture
+									void *texture_pixels;
+									int texture_pitch;
+
+									if (SDL_LockTexture(framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &texture_pixels, &texture_pitch) < 0)
+									{
+										PrintError("SDL_LockTexture failed with the following message - '%s'", SDL_GetError());
+									}
+									else
+									{
+										for (unsigned int i = 0; i < current_screen_height; ++i)
+											memcpy((unsigned char*)texture_pixels + i * texture_pitch, framebuffer[i], current_screen_width * 3);
+
+										SDL_UnlockTexture(framebuffer_texture);
+									}
 
 									// Draw the rendered frame to the screen
 									SDL_RenderClear(renderer);
