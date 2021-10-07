@@ -153,7 +153,8 @@ int main(int argc, char **argv)
 					}
 					else
 					{
-						void *clownmdemu_state = malloc(ClownMDEmu_GetStateSize());
+						const size_t clownmdemu_state_size = ClownMDEmu_GetStateSize();
+						unsigned char *clownmdemu_state = malloc(clownmdemu_state_size * 2); // *2 because we're allocating room for a save state
 
 						if (clownmdemu_state == NULL)
 						{
@@ -177,6 +178,9 @@ int main(int argc, char **argv)
 								free(file_buffer);
 
 								ClownMDEmu_Reset(clownmdemu_state);
+
+								// Initialise save state
+								memcpy(clownmdemu_state + clownmdemu_state_size, clownmdemu_state, clownmdemu_state_size);
 
 								bool quit = false;
 
@@ -229,6 +233,20 @@ int main(int argc, char **argv)
 												// Soft-reset console
 												if (pressed)
 													ClownMDEmu_Reset(clownmdemu_state);
+
+												break;
+
+											case SDL_SCANCODE_F5:
+												// Save save state
+												if (pressed)
+													memcpy(clownmdemu_state + clownmdemu_state_size, clownmdemu_state, clownmdemu_state_size);
+
+												break;
+
+											case SDL_SCANCODE_F9:
+												// Load save state
+												if (pressed)
+													memcpy(clownmdemu_state, clownmdemu_state + clownmdemu_state_size, clownmdemu_state_size);
 
 												break;
 
@@ -306,7 +324,7 @@ int main(int argc, char **argv)
 
 							if (state_file != NULL)
 							{
-								fwrite(clownmdemu_state, 1, ClownMDEmu_GetStateSize(), state_file);
+								fwrite(clownmdemu_state, 1, clownmdemu_state_size, state_file);
 
 								fclose(state_file);
 							}

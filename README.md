@@ -53,6 +53,8 @@ Joypad 2:
 Hotkeys:
 - Space = Fastforward
 - Tab   = Soft reset
+- F5    = Create save state
+- F9    = Load save state
 
 
 # Compiling
