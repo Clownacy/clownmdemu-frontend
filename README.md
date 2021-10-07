@@ -52,6 +52,7 @@ Joypad 2:
 
 Hotkeys:
 - Space = Fastforward
+- Tab   = Soft reset
 
 
 # Compiling
