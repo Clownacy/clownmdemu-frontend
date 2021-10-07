@@ -180,6 +180,9 @@ int main(int argc, char **argv)
 
 								bool quit = false;
 
+								bool fast_forward = false;
+								unsigned int frameskip_counter = 0;
+
 								while (!quit)
 								{
 									// Process events
@@ -215,6 +218,7 @@ int main(int argc, char **argv)
 												DO_KEY(inputs[1].b,     SDL_SCANCODE_X)
 												DO_KEY(inputs[1].c,     SDL_SCANCODE_C)
 												DO_KEY(inputs[1].start, SDL_SCANCODE_V)
+												DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
 												#undef DO_KEY
 
 											default:
@@ -228,58 +232,62 @@ int main(int argc, char **argv)
 									// Run the emulator for a frame
 									ClownMDEmu_Iterate(clownmdemu_state, ScanlineRenderedCallback, ReadInputCallback);
 
-									// Correct the aspect ratio of the rendered frame
-									// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
-									int renderer_width, renderer_height;
-									SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
-
-									SDL_Rect destination_rect;
-
-									if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
+									// Don't bother rendering if we're frame-skipping
+									if (!fast_forward || (++frameskip_counter & 3) == 0)
 									{
-										destination_rect.w = renderer_height * 320 / current_screen_height;
-										destination_rect.h = renderer_height;
+										// Correct the aspect ratio of the rendered frame
+										// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+										int renderer_width, renderer_height;
+										SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
+
+										SDL_Rect destination_rect;
+
+										if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
+										{
+											destination_rect.w = renderer_height * 320 / current_screen_height;
+											destination_rect.h = renderer_height;
+										}
+										else
+										{
+											destination_rect.w = renderer_width;
+											destination_rect.h = renderer_width * current_screen_height / 320;
+										}
+
+										destination_rect.x = (renderer_width - destination_rect.w) / 2;
+										destination_rect.y = (renderer_height - destination_rect.h) / 2;
+
+										// Upload framebuffer to texture
+										void *texture_pixels;
+										int texture_pitch;
+
+										if (SDL_LockTexture(framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &texture_pixels, &texture_pitch) < 0)
+										{
+											PrintError("SDL_LockTexture failed with the following message - '%s'", SDL_GetError());
+										}
+										else
+										{
+											for (unsigned int i = 0; i < current_screen_height; ++i)
+												memcpy((unsigned char*)texture_pixels + i * texture_pitch, framebuffer[i], current_screen_width * 3);
+
+											SDL_UnlockTexture(framebuffer_texture);
+										}
+
+										// Draw the rendered frame to the screen
+										SDL_RenderClear(renderer);
+										SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
+										SDL_RenderPresent(renderer);
+
+										// Framerate manager - run at roughly 60FPS
+										static Uint32 next_time;
+										const Uint32 current_time = SDL_GetTicks();
+
+										if (!SDL_TICKS_PASSED(current_time, next_time))
+											SDL_Delay(next_time - current_time);
+										else if (SDL_TICKS_PASSED(current_time, next_time + 100)) // If we're way past our deadline, then resync to the current tick instead of a fast-forwarding
+											next_time = current_time;
+
+										next_time += 1000 / 60;
 									}
-									else
-									{
-										destination_rect.w = renderer_width;
-										destination_rect.h = renderer_width * current_screen_height / 320;
-									}
-
-									destination_rect.x = (renderer_width - destination_rect.w) / 2;
-									destination_rect.y = (renderer_height - destination_rect.h) / 2;
-
-									// Upload framebuffer to texture
-									void *texture_pixels;
-									int texture_pitch;
-
-									if (SDL_LockTexture(framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &texture_pixels, &texture_pitch) < 0)
-									{
-										PrintError("SDL_LockTexture failed with the following message - '%s'", SDL_GetError());
-									}
-									else
-									{
-										for (unsigned int i = 0; i < current_screen_height; ++i)
-											memcpy((unsigned char*)texture_pixels + i * texture_pitch, framebuffer[i], current_screen_width * 3);
-
-										SDL_UnlockTexture(framebuffer_texture);
-									}
-
-									// Draw the rendered frame to the screen
-									SDL_RenderClear(renderer);
-									SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
-									SDL_RenderPresent(renderer);
-
-									// Framerate manager - run at roughly 60FPS
-									static Uint32 next_time;
-									const Uint32 current_time = SDL_GetTicks();
-
-									if (!SDL_TICKS_PASSED(current_time, next_time))
-										SDL_Delay(next_time - current_time);
-									else if (SDL_TICKS_PASSED(current_time, next_time + 100)) // If we're way past our deadline, then resync to the current tick instead of a fast-forwarding
-										next_time = current_time;
-
-									next_time += 1000 / 60;
 								}
 							}
 

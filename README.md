@@ -50,6 +50,9 @@ Joypad 2:
 - C = C
 - V = Start
 
+Hotkeys:
+- Space = Fastforward
+
 
 # Compiling
 
