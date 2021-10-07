@@ -274,10 +274,12 @@ int main(int argc, char **argv)
 									static Uint32 next_time;
 									const Uint32 current_time = SDL_GetTicks();
 
-									if (current_time < next_time)
+									if (!SDL_TICKS_PASSED(current_time, next_time))
 										SDL_Delay(next_time - current_time);
+									else if (SDL_TICKS_PASSED(current_time, next_time + 100)) // If we're way past our deadline, then resync to the current tick instead of a fast-forwarding
+										next_time = current_time;
 
-									next_time = SDL_GetTicks() + 1000 / 60;
+									next_time += 1000 / 60;
 								}
 							}
 
