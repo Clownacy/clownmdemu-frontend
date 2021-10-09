@@ -195,66 +195,66 @@ int main(int argc, char **argv)
 									{
 										switch (event.type)
 										{
-										case SDL_QUIT:
-											quit = true;
-											break;
-
-										case SDL_KEYDOWN:
-										case SDL_KEYUP:
-											bool pressed = event.type == SDL_KEYDOWN;
-
-											switch (event.key.keysym.scancode)
-											{
-												#define DO_KEY(state, code) case code: state = pressed; break;
-
-												DO_KEY(inputs[0].up,    SDL_SCANCODE_W)
-												DO_KEY(inputs[0].down,  SDL_SCANCODE_S)
-												DO_KEY(inputs[0].left,  SDL_SCANCODE_A)
-												DO_KEY(inputs[0].right, SDL_SCANCODE_D)
-												DO_KEY(inputs[0].a,     SDL_SCANCODE_O)
-												DO_KEY(inputs[0].b,     SDL_SCANCODE_P)
-												DO_KEY(inputs[0].c,     SDL_SCANCODE_LEFTBRACKET)
-												DO_KEY(inputs[0].start, SDL_SCANCODE_RETURN)
-
-												DO_KEY(inputs[1].up,    SDL_SCANCODE_UP)
-												DO_KEY(inputs[1].down,  SDL_SCANCODE_DOWN)
-												DO_KEY(inputs[1].left,  SDL_SCANCODE_LEFT)
-												DO_KEY(inputs[1].right, SDL_SCANCODE_RIGHT)
-												DO_KEY(inputs[1].a,     SDL_SCANCODE_Z)
-												DO_KEY(inputs[1].b,     SDL_SCANCODE_X)
-												DO_KEY(inputs[1].c,     SDL_SCANCODE_C)
-												DO_KEY(inputs[1].start, SDL_SCANCODE_V)
-
-												DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
-
-												#undef DO_KEY
-
-											case SDL_SCANCODE_TAB:
-												// Soft-reset console
-												if (pressed)
-													ClownMDEmu_Reset(clownmdemu_state);
-
+											case SDL_QUIT:
+												quit = true;
 												break;
 
-											case SDL_SCANCODE_F5:
-												// Save save state
-												if (pressed)
-													memcpy(clownmdemu_state + clownmdemu_state_size, clownmdemu_state, clownmdemu_state_size);
+											case SDL_KEYDOWN:
+											case SDL_KEYUP:
+												bool pressed = event.type == SDL_KEYDOWN;
+
+												switch (event.key.keysym.scancode)
+												{
+													#define DO_KEY(state, code) case code: state = pressed; break;
+
+													DO_KEY(inputs[0].up,    SDL_SCANCODE_W)
+													DO_KEY(inputs[0].down,  SDL_SCANCODE_S)
+													DO_KEY(inputs[0].left,  SDL_SCANCODE_A)
+													DO_KEY(inputs[0].right, SDL_SCANCODE_D)
+													DO_KEY(inputs[0].a,     SDL_SCANCODE_O)
+													DO_KEY(inputs[0].b,     SDL_SCANCODE_P)
+													DO_KEY(inputs[0].c,     SDL_SCANCODE_LEFTBRACKET)
+													DO_KEY(inputs[0].start, SDL_SCANCODE_RETURN)
+
+													DO_KEY(inputs[1].up,    SDL_SCANCODE_UP)
+													DO_KEY(inputs[1].down,  SDL_SCANCODE_DOWN)
+													DO_KEY(inputs[1].left,  SDL_SCANCODE_LEFT)
+													DO_KEY(inputs[1].right, SDL_SCANCODE_RIGHT)
+													DO_KEY(inputs[1].a,     SDL_SCANCODE_Z)
+													DO_KEY(inputs[1].b,     SDL_SCANCODE_X)
+													DO_KEY(inputs[1].c,     SDL_SCANCODE_C)
+													DO_KEY(inputs[1].start, SDL_SCANCODE_V)
+
+													DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
+
+													#undef DO_KEY
+
+													case SDL_SCANCODE_TAB:
+														// Soft-reset console
+														if (pressed)
+															ClownMDEmu_Reset(clownmdemu_state);
+
+														break;
+
+													case SDL_SCANCODE_F5:
+														// Save save state
+														if (pressed)
+															memcpy(clownmdemu_state + clownmdemu_state_size, clownmdemu_state, clownmdemu_state_size);
+
+														break;
+
+													case SDL_SCANCODE_F9:
+														// Load save state
+														if (pressed)
+															memcpy(clownmdemu_state, clownmdemu_state + clownmdemu_state_size, clownmdemu_state_size);
+
+														break;
+
+													default:
+														break;
+												}
 
 												break;
-
-											case SDL_SCANCODE_F9:
-												// Load save state
-												if (pressed)
-													memcpy(clownmdemu_state, clownmdemu_state + clownmdemu_state_size, clownmdemu_state_size);
-
-												break;
-
-											default:
-												break;
-											}
-
-											break;
 										}
 									}
 
