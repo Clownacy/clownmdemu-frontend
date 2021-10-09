@@ -10,8 +10,8 @@ but many standard features of the Mega Drive are currently unemulated (see
 # Design
 
 clownmdemu's design emphasises minimalism and portability: it is written in C89,
-and aims to have no dependencies on non-portable elements such as integer type
-sizes, undefined behaviour, language extensions, or signed number
+integer-only, and aims to have no dependencies on non-portable elements such as
+integer type sizes, undefined behaviour, language extensions, or signed number
 representation. Additionally, clownmdemu itself is implemented as a library,
 with all platform-specific logic being relgated to a separate frontend program.
 
