@@ -201,6 +201,7 @@ int main(int argc, char **argv)
 
 											case SDL_KEYDOWN:
 											case SDL_KEYUP:
+											{
 												bool pressed = event.type == SDL_KEYDOWN;
 
 												switch (event.key.keysym.scancode)
@@ -255,6 +256,7 @@ int main(int argc, char **argv)
 												}
 
 												break;
+											}
 										}
 									}
 
