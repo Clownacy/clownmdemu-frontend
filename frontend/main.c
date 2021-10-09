@@ -66,7 +66,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 }
 
-static void ScanlineRenderedCallback(unsigned short scanline, void *pixels, unsigned short screen_width, unsigned short screen_height)
+static void ScanlineRenderedCallback(unsigned int scanline, void *pixels, unsigned int screen_width, unsigned int screen_height)
 {
 	memcpy(framebuffer[scanline], pixels, screen_width * 3);
 
@@ -74,7 +74,7 @@ static void ScanlineRenderedCallback(unsigned short scanline, void *pixels, unsi
 	current_screen_height = screen_height;
 }
 
-static unsigned char ReadInputCallback(unsigned char player_id, unsigned char button_id)
+static unsigned char ReadInputCallback(unsigned int player_id, unsigned int button_id)
 {
 	assert(player_id < 2);
 
