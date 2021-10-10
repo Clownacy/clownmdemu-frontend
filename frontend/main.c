@@ -164,6 +164,10 @@ int main(int argc, char **argv)
 						{
 							ClownMDEmu_Init(clownmdemu_state);
 
+							// For now, let's emulate a North American console
+							ClownMDEmu_SetJapanese(clownmdemu_state, false);
+							ClownMDEmu_SetPAL(clownmdemu_state, false);
+
 							unsigned char *file_buffer;
 							size_t file_size;
 							LoadFileToBuffer(argv[1], &file_buffer, &file_size);
