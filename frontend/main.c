@@ -13,7 +13,7 @@ static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
 
-static unsigned char framebuffer[480][320][3];
+static unsigned char framebuffer[480][320][2];
 
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
@@ -66,9 +66,9 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 }
 
-static void ScanlineRenderedCallback(unsigned int scanline, void *pixels, unsigned int screen_width, unsigned int screen_height)
+static void ScanlineRenderedCallback(unsigned int scanline, const unsigned short *pixels, unsigned int screen_width, unsigned int screen_height)
 {
-	memcpy(framebuffer[scanline], pixels, screen_width * 3);
+	memcpy(framebuffer[scanline], pixels, screen_width * sizeof(pixels[0]));
 
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, 320, 480);
+					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR4444, SDL_TEXTUREACCESS_STREAMING, 320, 480);
 
 					if (framebuffer_texture == NULL)
 					{
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
 										else
 										{
 											for (unsigned int i = 0; i < current_screen_height; ++i)
-												memcpy((unsigned char*)texture_pixels + i * texture_pitch, framebuffer[i], current_screen_width * 3);
+												memcpy((unsigned char*)texture_pixels + i * texture_pitch, framebuffer[i], current_screen_width * 2);
 
 											SDL_UnlockTexture(framebuffer_texture);
 										}
