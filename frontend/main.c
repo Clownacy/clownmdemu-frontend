@@ -81,8 +81,9 @@ static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 
 static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
 {
-	for (unsigned int i = 0; i < screen_width; ++i)
-		framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
+	if (framebuffer_texture_pixels != NULL)
+		for (unsigned int i = 0; i < screen_width; ++i)
+			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
 
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
