@@ -12,10 +12,10 @@
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
-static unsigned short *framebuffer_texture_pixels;
+static Uint16 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
 
-static unsigned short colours[3 * 4 * 16];
+static Uint16 colours[3 * 4 * 16];
 
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
