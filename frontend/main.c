@@ -132,12 +132,14 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+		// Initialise SDL2
+		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0)
 		{
 			PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
+			// Create window
 			window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE);
 
 			if (window == NULL)
@@ -146,12 +148,14 @@ int main(int argc, char **argv)
 			}
 			else
 			{
+				// Figure out if we should use V-sync or not
 				bool use_vsync = false;
 
 				SDL_DisplayMode display_mode;
 				if (SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &display_mode) == 0)
 					use_vsync = display_mode.refresh_rate >= 60;
 
+				// Create renderer
 				renderer = SDL_CreateRenderer(window, -1, use_vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
 
 				if (renderer == NULL)
@@ -160,6 +164,8 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					// Create framebuffer texture
+					// We're using XBGR8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
 					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
 
 					if (framebuffer_texture == NULL)
@@ -174,6 +180,7 @@ int main(int argc, char **argv)
 
 						framebuffer_texture_pitch /= sizeof(Uint32);
 
+						// Allocate ClownMDEmu state
 						const size_t clownmdemu_state_size = ClownMDEmu_GetStateSize();
 						unsigned char *clownmdemu_state = malloc(clownmdemu_state_size * 2); // *2 because we're allocating room for a save state
 
@@ -189,6 +196,7 @@ int main(int argc, char **argv)
 							ClownMDEmu_SetJapanese(clownmdemu_state, false);
 							ClownMDEmu_SetPAL(clownmdemu_state, false);
 
+							// Load ROM to memory
 							unsigned char *file_buffer;
 							size_t file_size;
 							LoadFileToBuffer(argv[1], &file_buffer, &file_size);
