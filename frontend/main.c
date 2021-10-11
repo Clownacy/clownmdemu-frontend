@@ -13,7 +13,8 @@ static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
 
-static unsigned char framebuffer[480][320][2];
+static unsigned short colours[0x100];
+static unsigned short framebuffer[480][320];
 
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
@@ -66,9 +67,15 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 }
 
-static void ScanlineRenderedCallback(unsigned int scanline, const unsigned short *pixels, unsigned int screen_width, unsigned int screen_height)
+static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 {
-	memcpy(framebuffer[scanline], pixels, screen_width * sizeof(pixels[0]));
+	colours[index] = colour;
+}
+
+static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
+{
+	for (unsigned int i = 0; i < screen_width; ++i)
+		framebuffer[scanline][i] = colours[pixels[i]];
 
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
@@ -265,7 +272,7 @@ int main(int argc, char **argv)
 									}
 
 									// Run the emulator for a frame
-									ClownMDEmu_Iterate(clownmdemu_state, ScanlineRenderedCallback, ReadInputCallback);
+									ClownMDEmu_Iterate(clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback);
 
 									// Don't bother rendering if we're frame-skipping
 									if (!fast_forward || (++frameskip_counter & 3) == 0)
