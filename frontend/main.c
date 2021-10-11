@@ -12,10 +12,10 @@
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
-static Uint16 *framebuffer_texture_pixels;
+static Uint32 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
 
-static Uint16 colours[3 * 4 * 16];
+static Uint32 colours[3 * 4 * 16];
 
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
@@ -70,7 +70,13 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 
 static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 {
-	colours[index] = colour;
+	// Decompose XBGR4444 into individual colour channels
+	const Uint32 red = (colour >> 4 * 0) & 0xF;
+	const Uint32 green = (colour >> 4 * 1) & 0xF;
+	const Uint32 blue = (colour >> 4 * 2) & 0xF;
+
+	// Reassemble into XBGR8888
+	colours[index] = (red << 4 * 0) | (red << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (blue << 4 * 4) | (blue << 4 * 5);
 }
 
 static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
@@ -153,7 +159,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR4444, SDL_TEXTUREACCESS_STREAMING, 320, 480);
+					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
 
 					if (framebuffer_texture == NULL)
 					{
@@ -165,7 +171,7 @@ int main(int argc, char **argv)
 						if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
 							framebuffer_texture_pixels = NULL;
 
-						framebuffer_texture_pitch /= sizeof(Uint16);
+						framebuffer_texture_pitch /= sizeof(Uint32);
 
 						const size_t clownmdemu_state_size = ClownMDEmu_GetStateSize();
 						unsigned char *clownmdemu_state = malloc(clownmdemu_state_size * 2); // *2 because we're allocating room for a save state
@@ -317,7 +323,7 @@ int main(int argc, char **argv)
 										if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
 											framebuffer_texture_pixels = NULL;
 
-										framebuffer_texture_pitch /= sizeof(Uint16);
+										framebuffer_texture_pitch /= sizeof(Uint32);
 
 										// Framerate manager - run at roughly 60FPS
 										static Uint32 next_time;
