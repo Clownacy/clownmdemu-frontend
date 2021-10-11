@@ -12,9 +12,10 @@
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
+static unsigned short *framebuffer_texture_pixels;
+static int framebuffer_texture_pitch;
 
 static unsigned short colours[0x100];
-static unsigned short framebuffer[480][320];
 
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
@@ -75,7 +76,7 @@ static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
 {
 	for (unsigned int i = 0; i < screen_width; ++i)
-		framebuffer[scanline][i] = colours[pixels[i]];
+		framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
 
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
@@ -160,6 +161,12 @@ int main(int argc, char **argv)
 					}
 					else
 					{
+						// Lock the texture so that we can write to its pixels later
+						if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+							framebuffer_texture_pixels = NULL;
+
+						framebuffer_texture_pitch /= sizeof(Uint16);
+
 						const size_t clownmdemu_state_size = ClownMDEmu_GetStateSize();
 						unsigned char *clownmdemu_state = malloc(clownmdemu_state_size * 2); // *2 because we're allocating room for a save state
 
@@ -298,26 +305,19 @@ int main(int argc, char **argv)
 										destination_rect.x = (renderer_width - destination_rect.w) / 2;
 										destination_rect.y = (renderer_height - destination_rect.h) / 2;
 
-										// Upload framebuffer to texture
-										void *texture_pixels;
-										int texture_pitch;
-
-										if (SDL_LockTexture(framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &texture_pixels, &texture_pitch) < 0)
-										{
-											PrintError("SDL_LockTexture failed with the following message - '%s'", SDL_GetError());
-										}
-										else
-										{
-											for (unsigned int i = 0; i < current_screen_height; ++i)
-												memcpy((unsigned char*)texture_pixels + i * texture_pitch, framebuffer[i], current_screen_width * 2);
-
-											SDL_UnlockTexture(framebuffer_texture);
-										}
+										// Unlock the texture so that we can draw it
+										SDL_UnlockTexture(framebuffer_texture);
 
 										// Draw the rendered frame to the screen
 										SDL_RenderClear(renderer);
 										SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
 										SDL_RenderPresent(renderer);
+
+										// Lock the texture so that we can write to its pixels later
+										if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+											framebuffer_texture_pixels = NULL;
+
+										framebuffer_texture_pitch /= sizeof(Uint16);
 
 										// Framerate manager - run at roughly 60FPS
 										static Uint32 next_time;
