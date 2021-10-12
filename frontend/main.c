@@ -7,7 +7,7 @@
 
 #include "SDL.h"
 
-#include "clownmdemu.h"
+#include "../clownmdemu.h"
 
 static SDL_Window *window;
 static SDL_Renderer *renderer;
@@ -181,8 +181,8 @@ int main(int argc, char **argv)
 						framebuffer_texture_pitch /= sizeof(Uint32);
 
 						// Allocate ClownMDEmu state
-						const size_t clownmdemu_state_size = ClownMDEmu_GetStateSize();
-						unsigned char *clownmdemu_state = malloc(clownmdemu_state_size * 2); // *2 because we're allocating room for a save state
+						const size_t clownmdemu_state_size = sizeof(ClownMDEmu_State);
+						ClownMDEmu_State *clownmdemu_state = malloc(clownmdemu_state_size * 2); // *2 because we're allocating room for a save state
 
 						if (clownmdemu_state == NULL)
 						{
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
 								ClownMDEmu_Reset(clownmdemu_state);
 
 								// Initialise save state
-								memcpy(clownmdemu_state + clownmdemu_state_size, clownmdemu_state, clownmdemu_state_size);
+								clownmdemu_state[1] = clownmdemu_state[0];
 
 								bool quit = false;
 
@@ -273,14 +273,14 @@ int main(int argc, char **argv)
 													case SDL_SCANCODE_F5:
 														// Save save state
 														if (pressed)
-															memcpy(clownmdemu_state + clownmdemu_state_size, clownmdemu_state, clownmdemu_state_size);
+															clownmdemu_state[1] = clownmdemu_state[0];
 
 														break;
 
 													case SDL_SCANCODE_F9:
 														// Load save state
 														if (pressed)
-															memcpy(clownmdemu_state, clownmdemu_state + clownmdemu_state_size, clownmdemu_state_size);
+															clownmdemu_state[0] = clownmdemu_state[1];
 
 														break;
 
