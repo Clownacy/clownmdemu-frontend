@@ -333,7 +333,7 @@ int main(int argc, char **argv)
 
 									if (!SDL_TICKS_PASSED(current_time, next_time))
 										SDL_Delay(next_time - current_time);
-									else if (SDL_TICKS_PASSED(current_time, next_time + 100)) // If we're way past our deadline, then resync to the current tick instead of a fast-forwarding
+									else if (SDL_TICKS_PASSED(current_time, next_time + 100)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
 										next_time = current_time;
 
 									next_time += 1000 / 60;
