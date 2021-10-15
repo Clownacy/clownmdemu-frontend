@@ -228,6 +228,10 @@ int main(int argc, char **argv)
 										case SDL_KEYDOWN:
 										case SDL_KEYUP:
 										{
+											// Ignore repeated key inputs caused by holding the key down
+											if (event.key.repeat)
+												break;
+
 											bool pressed = event.type == SDL_KEYDOWN;
 
 											switch (event.key.keysym.scancode)
