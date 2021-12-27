@@ -20,12 +20,7 @@ static Uint32 colours[3 * 4 * 16];
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
 
-static struct
-{
-	bool up,down,left,right;
-	bool a,b,c;
-	bool start;
-} inputs[2];
+static bool inputs[2][CLOWNMDEMU_BUTTON_MAX];
 
 static ClownMDEmu_State clownmdemu_state;
 static ClownMDEmu_State clownmdemu_save_state;
@@ -96,35 +91,7 @@ static unsigned char ReadInputCallback(unsigned int player_id, unsigned int butt
 {
 	assert(player_id < 2);
 
-	switch (button_id)
-	{
-		case CLOWNMDEMU_BUTTON_UP:
-			return inputs[player_id].up;
-
-		case CLOWNMDEMU_BUTTON_DOWN:
-			return inputs[player_id].down;
-
-		case CLOWNMDEMU_BUTTON_LEFT:
-			return inputs[player_id].left;
-
-		case CLOWNMDEMU_BUTTON_RIGHT:
-			return inputs[player_id].right;
-
-		case CLOWNMDEMU_BUTTON_A:
-			return inputs[player_id].a;
-
-		case CLOWNMDEMU_BUTTON_B:
-			return inputs[player_id].b;
-
-		case CLOWNMDEMU_BUTTON_C:
-			return inputs[player_id].c;
-
-		case CLOWNMDEMU_BUTTON_START:
-			return inputs[player_id].start;
-
-		default:
-			return false;
-	}
+	return inputs[player_id][button_id];
 }
 
 int main(int argc, char **argv)
@@ -238,23 +205,23 @@ int main(int argc, char **argv)
 											{
 												#define DO_KEY(state, code) case code: state = pressed; break;
 
-												DO_KEY(inputs[0].up,    SDL_SCANCODE_W)
-												DO_KEY(inputs[0].down,  SDL_SCANCODE_S)
-												DO_KEY(inputs[0].left,  SDL_SCANCODE_A)
-												DO_KEY(inputs[0].right, SDL_SCANCODE_D)
-												DO_KEY(inputs[0].a,     SDL_SCANCODE_O)
-												DO_KEY(inputs[0].b,     SDL_SCANCODE_P)
-												DO_KEY(inputs[0].c,     SDL_SCANCODE_LEFTBRACKET)
-												DO_KEY(inputs[0].start, SDL_SCANCODE_RETURN)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_W)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_S)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_A)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_D)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_O)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_P)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_LEFTBRACKET)
+												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_RETURN)
 
-												DO_KEY(inputs[1].up,    SDL_SCANCODE_UP)
-												DO_KEY(inputs[1].down,  SDL_SCANCODE_DOWN)
-												DO_KEY(inputs[1].left,  SDL_SCANCODE_LEFT)
-												DO_KEY(inputs[1].right, SDL_SCANCODE_RIGHT)
-												DO_KEY(inputs[1].a,     SDL_SCANCODE_Z)
-												DO_KEY(inputs[1].b,     SDL_SCANCODE_X)
-												DO_KEY(inputs[1].c,     SDL_SCANCODE_C)
-												DO_KEY(inputs[1].start, SDL_SCANCODE_V)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_UP)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_DOWN)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_LEFT)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_RIGHT)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_Z)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_X)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_C)
+												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_V)
 
 												DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
 
