@@ -72,6 +72,78 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 }
 
+static bool InitVideo(void)
+{
+	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
+	{
+		PrintError("SDL_InitSubSystem(SDL_INIT_VIDEO) failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		// Create window
+		window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+
+		if (window == NULL)
+		{
+			PrintError("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			// Figure out if we should use V-sync or not
+			bool use_vsync = false;
+
+			SDL_DisplayMode display_mode;
+			if (SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &display_mode) == 0)
+				use_vsync = display_mode.refresh_rate >= 60;
+
+			// Create renderer
+			renderer = SDL_CreateRenderer(window, -1, use_vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
+
+			if (renderer == NULL)
+			{
+				PrintError("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				// Create framebuffer texture
+				// We're using XBGR8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
+				framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
+
+				if (framebuffer_texture == NULL)
+				{
+					PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				}
+				else
+				{
+					// Lock the texture so that we can write to its pixels later
+					if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+						framebuffer_texture_pixels = NULL;
+
+					framebuffer_texture_pitch /= sizeof(Uint32);
+
+					return true;
+				}
+
+				SDL_DestroyRenderer(renderer);
+			}
+
+			SDL_DestroyWindow(window);
+		}
+
+		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
+
+	return false;
+}
+
+static void DeinitVideo(void)
+{
+	SDL_DestroyTexture(framebuffer_texture);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
 static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 {
 	// Decompose XBGR4444 into individual colour channels
@@ -109,234 +181,193 @@ int main(int argc, char **argv)
 	else
 	{
 		// Initialise SDL2
-		if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0)
+		if (SDL_Init(SDL_INIT_EVENTS) < 0)
 		{
 			PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
-			// Create window
-			window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-
-			if (window == NULL)
+			if (!InitVideo())
 			{
-				PrintError("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
+				PrintError("InitVideo failed");
 			}
 			else
 			{
-				// Figure out if we should use V-sync or not
-				bool use_vsync = false;
+				ClownMDEmu_Init(&clownmdemu_state);
 
-				SDL_DisplayMode display_mode;
-				if (SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &display_mode) == 0)
-					use_vsync = display_mode.refresh_rate >= 60;
+				// For now, let's emulate a North American console
+				ClownMDEmu_SetJapanese(&clownmdemu_state, false);
+				ClownMDEmu_SetPAL(&clownmdemu_state, false);
 
-				// Create renderer
-				renderer = SDL_CreateRenderer(window, -1, use_vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
+				// Load ROM to memory
+				unsigned char *file_buffer;
+				size_t file_size;
+				LoadFileToBuffer(argv[1], &file_buffer, &file_size);
 
-				if (renderer == NULL)
+				if (file_buffer == NULL)
 				{
-					PrintError("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
+					PrintError("Could not load the ROM");
 				}
 				else
 				{
-					// Create framebuffer texture
-					// We're using XBGR8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-					framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
+					ClownMDEmu_UpdateROM(&clownmdemu_state, file_buffer, file_size);
+					free(file_buffer);
 
-					if (framebuffer_texture == NULL)
+					ClownMDEmu_Reset(&clownmdemu_state);
+
+					// Initialise save state
+					clownmdemu_save_state = clownmdemu_state;
+
+					bool quit = false;
+
+					bool fast_forward = false;
+					unsigned int frameskip_counter = 0;
+
+					while (!quit)
 					{
-						PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-					}
-					else
-					{
-						// Lock the texture so that we can write to its pixels later
-						if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
-							framebuffer_texture_pixels = NULL;
-
-						framebuffer_texture_pitch /= sizeof(Uint32);
-
-						ClownMDEmu_Init(&clownmdemu_state);
-
-						// For now, let's emulate a North American console
-						ClownMDEmu_SetJapanese(&clownmdemu_state, false);
-						ClownMDEmu_SetPAL(&clownmdemu_state, false);
-
-						// Load ROM to memory
-						unsigned char *file_buffer;
-						size_t file_size;
-						LoadFileToBuffer(argv[1], &file_buffer, &file_size);
-
-						if (file_buffer == NULL)
+						// Process events
+						SDL_Event event;
+						while (SDL_PollEvent(&event))
 						{
-							PrintError("Could not load the ROM");
-						}
-						else
-						{
-							ClownMDEmu_UpdateROM(&clownmdemu_state, file_buffer, file_size);
-							free(file_buffer);
-
-							ClownMDEmu_Reset(&clownmdemu_state);
-
-							// Initialise save state
-							clownmdemu_save_state = clownmdemu_state;
-
-							bool quit = false;
-
-							bool fast_forward = false;
-							unsigned int frameskip_counter = 0;
-
-							while (!quit)
+							switch (event.type)
 							{
-								// Process events
-								SDL_Event event;
-								while (SDL_PollEvent(&event))
+								case SDL_QUIT:
+									quit = true;
+									break;
+
+								case SDL_KEYDOWN:
+								case SDL_KEYUP:
 								{
-									switch (event.type)
+									// Ignore repeated key inputs caused by holding the key down
+									if (event.key.repeat)
+										break;
+
+									bool pressed = event.type == SDL_KEYDOWN;
+
+									switch (event.key.keysym.scancode)
 									{
-										case SDL_QUIT:
-											quit = true;
+										#define DO_KEY(state, code) case code: state = pressed; break;
+
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_W)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_S)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_A)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_D)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_O)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_P)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_LEFTBRACKET)
+										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_RETURN)
+
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_UP)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_DOWN)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_LEFT)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_RIGHT)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_Z)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_X)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_C)
+										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_V)
+
+										DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
+
+										#undef DO_KEY
+
+										case SDL_SCANCODE_TAB:
+											// Soft-reset console
+											if (pressed)
+												ClownMDEmu_Reset(&clownmdemu_state);
+
 											break;
 
-										case SDL_KEYDOWN:
-										case SDL_KEYUP:
-										{
-											// Ignore repeated key inputs caused by holding the key down
-											if (event.key.repeat)
-												break;
-
-											bool pressed = event.type == SDL_KEYDOWN;
-
-											switch (event.key.keysym.scancode)
-											{
-												#define DO_KEY(state, code) case code: state = pressed; break;
-
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_W)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_S)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_A)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_D)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_O)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_P)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_LEFTBRACKET)
-												DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_RETURN)
-
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_UP)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_DOWN)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_LEFT)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_RIGHT)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_Z)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_X)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_C)
-												DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_V)
-
-												DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
-
-												#undef DO_KEY
-
-												case SDL_SCANCODE_TAB:
-													// Soft-reset console
-													if (pressed)
-														ClownMDEmu_Reset(&clownmdemu_state);
-
-													break;
-
-												case SDL_SCANCODE_F5:
-													// Save save state
-													if (pressed)
-														clownmdemu_save_state = clownmdemu_state;
-
-													break;
-
-												case SDL_SCANCODE_F9:
-													// Load save state
-													if (pressed)
-														clownmdemu_state = clownmdemu_save_state;
-
-													break;
-
-												default:
-													break;
-											}
+										case SDL_SCANCODE_F5:
+											// Save save state
+											if (pressed)
+												clownmdemu_save_state = clownmdemu_state;
 
 											break;
-										}
-									}
-								}
 
-								// Run the emulator for a frame
-								ClownMDEmu_Iterate(&clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback);
+										case SDL_SCANCODE_F9:
+											// Load save state
+											if (pressed)
+												clownmdemu_state = clownmdemu_save_state;
 
-								// Don't bother rendering if we're frame-skipping
-								if (!fast_forward || (++frameskip_counter & 3) == 0)
-								{
-									// Correct the aspect ratio of the rendered frame
-									// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
-									int renderer_width, renderer_height;
-									SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
+											break;
 
-									SDL_Rect destination_rect;
-
-									if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
-									{
-										destination_rect.w = renderer_height * 320 / current_screen_height;
-										destination_rect.h = renderer_height;
-									}
-									else
-									{
-										destination_rect.w = renderer_width;
-										destination_rect.h = renderer_width * current_screen_height / 320;
+										default:
+											break;
 									}
 
-									destination_rect.x = (renderer_width - destination_rect.w) / 2;
-									destination_rect.y = (renderer_height - destination_rect.h) / 2;
-
-									// Unlock the texture so that we can draw it
-									SDL_UnlockTexture(framebuffer_texture);
-
-									// Draw the rendered frame to the screen
-									SDL_RenderClear(renderer);
-									SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
-									SDL_RenderPresent(renderer);
-
-									// Lock the texture so that we can write to its pixels later
-									if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
-										framebuffer_texture_pixels = NULL;
-
-									framebuffer_texture_pitch /= sizeof(Uint32);
-
-									// Framerate manager - run at roughly 59.94FPS (60 divided by 1.001)
-									static Uint32 next_time;
-									const Uint32 current_time = SDL_GetTicks() * 300;
-
-									if (!SDL_TICKS_PASSED(current_time, next_time))
-										SDL_Delay((next_time - current_time) / 300);
-									else if (SDL_TICKS_PASSED(current_time, next_time + 100 * 300)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
-										next_time = current_time;
-
-									// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-									next_time += DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul);
+									break;
 								}
 							}
 						}
 
-						FILE *state_file = fopen("state.bin", "wb");
+						// Run the emulator for a frame
+						ClownMDEmu_Iterate(&clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback);
 
-						if (state_file != NULL)
+						// Don't bother rendering if we're frame-skipping
+						if (!fast_forward || (++frameskip_counter & 3) == 0)
 						{
-							fwrite(&clownmdemu_state, 1, sizeof(clownmdemu_state), state_file);
+							// Correct the aspect ratio of the rendered frame
+							// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+							int renderer_width, renderer_height;
+							SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
 
-							fclose(state_file);
+							SDL_Rect destination_rect;
+
+							if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
+							{
+								destination_rect.w = renderer_height * 320 / current_screen_height;
+								destination_rect.h = renderer_height;
+							}
+							else
+							{
+								destination_rect.w = renderer_width;
+								destination_rect.h = renderer_width * current_screen_height / 320;
+							}
+
+							destination_rect.x = (renderer_width - destination_rect.w) / 2;
+							destination_rect.y = (renderer_height - destination_rect.h) / 2;
+
+							// Unlock the texture so that we can draw it
+							SDL_UnlockTexture(framebuffer_texture);
+
+							// Draw the rendered frame to the screen
+							SDL_RenderClear(renderer);
+							SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
+							SDL_RenderPresent(renderer);
+
+							// Lock the texture so that we can write to its pixels later
+							if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+								framebuffer_texture_pixels = NULL;
+
+							framebuffer_texture_pitch /= sizeof(Uint32);
+
+							// Framerate manager - run at roughly 59.94FPS (60 divided by 1.001)
+							static Uint32 next_time;
+							const Uint32 current_time = SDL_GetTicks() * 300;
+
+							if (!SDL_TICKS_PASSED(current_time, next_time))
+								SDL_Delay((next_time - current_time) / 300);
+							else if (SDL_TICKS_PASSED(current_time, next_time + 100 * 300)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+								next_time = current_time;
+
+							// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
+							next_time += DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul);
 						}
-
-						ClownMDEmu_Deinit(&clownmdemu_state);
-
-						SDL_DestroyTexture(framebuffer_texture);
 					}
-
-					SDL_DestroyRenderer(renderer);
 				}
 
-				SDL_DestroyWindow(window);
+				FILE *state_file = fopen("state.bin", "wb");
+
+				if (state_file != NULL)
+				{
+					fwrite(&clownmdemu_state, 1, sizeof(clownmdemu_state), state_file);
+
+					fclose(state_file);
+				}
+
+				ClownMDEmu_Deinit(&clownmdemu_state);
+
+				DeinitVideo();
 			}
 
 			SDL_Quit();
