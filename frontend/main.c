@@ -149,6 +149,7 @@ static void DeinitVideo(void)
 ///////////
 
 static SDL_AudioDeviceID audio_device;
+static size_t audio_buffer_size;
 
 static bool InitAudio(void)
 {
@@ -179,6 +180,8 @@ static bool InitAudio(void)
 		}
 		else
 		{
+			audio_buffer_size = have.size;
+
 			SDL_PauseAudioDevice(audio_device, 0);
 
 			return true;
@@ -222,6 +225,14 @@ static unsigned char ReadInputCallback(unsigned int player_id, unsigned int butt
 	assert(player_id < 2);
 
 	return inputs[player_id][button_id];
+}
+
+static void PSGAudioCallback(short *samples, size_t total_samples)
+{
+	if (SDL_GetQueuedAudioSize(audio_device) > audio_buffer_size * 2)
+		SDL_ClearQueuedAudio(audio_device);
+
+	SDL_QueueAudio(audio_device, samples, sizeof(short) * total_samples);
 }
 
 int main(int argc, char **argv)
@@ -358,7 +369,7 @@ int main(int argc, char **argv)
 						}
 
 						// Run the emulator for a frame
-						ClownMDEmu_Iterate(&clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback);
+						ClownMDEmu_Iterate(&clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback);
 
 						// Don't bother rendering if we're frame-skipping
 						if (!fast_forward || (++frameskip_counter & 3) == 0)
