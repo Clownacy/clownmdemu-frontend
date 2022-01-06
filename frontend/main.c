@@ -9,17 +9,6 @@
 
 #include "../clownmdemu.h"
 
-static SDL_Window *window;
-static SDL_Renderer *renderer;
-static SDL_Texture *framebuffer_texture;
-static Uint32 *framebuffer_texture_pixels;
-static int framebuffer_texture_pitch;
-
-static Uint32 colours[3 * 4 * 16];
-
-static unsigned int current_screen_width;
-static unsigned int current_screen_height;
-
 static bool inputs[2][CLOWNMDEMU_BUTTON_MAX];
 
 static ClownMDEmu_State clownmdemu_state;
@@ -65,6 +54,22 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 		fclose(file);
 	}
 }
+
+
+///////////
+// Video //
+///////////
+
+static SDL_Window *window;
+static SDL_Renderer *renderer;
+static SDL_Texture *framebuffer_texture;
+static Uint32 *framebuffer_texture_pixels;
+static int framebuffer_texture_pitch;
+
+static Uint32 colours[3 * 4 * 16];
+
+static unsigned int current_screen_width;
+static unsigned int current_screen_height;
 
 static bool InitVideo(void)
 {
@@ -138,6 +143,59 @@ static void DeinitVideo(void)
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
+
+///////////
+// Audio //
+///////////
+
+static SDL_AudioDeviceID audio_device;
+
+static bool InitAudio(void)
+{
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
+	{
+		PrintError("SDL_InitSubSystem(SDL_INIT_AUDIO) failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		// Initialise audio backend
+		SDL_AudioSpec want, have;
+
+		SDL_zero(want);
+		want.freq = CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16; /* TODO - PAL */
+		want.format = AUDIO_S16;
+		want.channels = 1;
+		// We want a 25ms buffer (this value must be a power of two)
+		want.samples = 1;
+		while (want.samples < (want.freq * want.channels) / 40) // 25ms
+			want.samples <<= 1;
+		want.callback = NULL;
+
+		audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0/*SDL_AUDIO_ALLOW_FREQUENCY_CHANGE*/);
+
+		if (audio_device == 0)
+		{
+			PrintError("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			SDL_PauseAudioDevice(audio_device, 0);
+
+			return true;
+		}
+
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+	}
+
+	return false;
+}
+
+static void DeinitAudio(void)
+{
+	SDL_CloseAudioDevice(audio_device);
+	SDL_QuitSubSystem(SDL_INIT_AUDIO);
+}
+
 static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 {
 	// Decompose XBGR4444 into individual colour channels
@@ -187,6 +245,11 @@ int main(int argc, char **argv)
 			}
 			else
 			{
+				const bool initialised_audio = InitAudio();
+
+				if (!initialised_audio)
+					PrintError("InitAudio failed"); // Allow program to continue if audio fails
+
 				ClownMDEmu_Init(&clownmdemu_state);
 
 				// For now, let's emulate a North American console
@@ -360,6 +423,9 @@ int main(int argc, char **argv)
 				}
 
 				ClownMDEmu_Deinit(&clownmdemu_state);
+
+				if (initialised_audio)
+					DeinitAudio();
 
 				DeinitVideo();
 			}
