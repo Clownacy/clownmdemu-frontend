@@ -105,8 +105,8 @@ static bool InitVideo(void)
 			else
 			{
 				// Create framebuffer texture
-				// We're using XBGR8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-				framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
+				// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
+				framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
 
 				if (framebuffer_texture == NULL)
 				{
@@ -114,6 +114,10 @@ static bool InitVideo(void)
 				}
 				else
 				{
+					// Disable blending, since we don't need it
+					if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
+						PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
 					// Lock the texture so that we can write to its pixels later
 					if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
 						framebuffer_texture_pixels = NULL;
@@ -206,8 +210,8 @@ static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 	const Uint32 green = (colour >> 4 * 1) & 0xF;
 	const Uint32 blue = (colour >> 4 * 2) & 0xF;
 
-	// Reassemble into XBGR8888
-	colours[index] = (red << 4 * 0) | (red << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (blue << 4 * 4) | (blue << 4 * 5);
+	// Reassemble into ARGB8888
+	colours[index] = (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5);
 }
 
 static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
