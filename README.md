@@ -18,6 +18,11 @@ with all platform-specific logic being relgated to a separate frontend program.
 clownmdemu attempts to balance correctness with performance, acting as a more
 high-level emulator than accuracy-focussed alternatives may.
 
+Another design goal of clownmdemu is to use no global state: all state is kept
+in a struct that functions access through a pointer, allowing for such things
+as simple fast save-state support, as well as the possibility of running
+multiple instances of the emulator at once.
+
 
 # Frontend
 
