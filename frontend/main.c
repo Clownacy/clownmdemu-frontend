@@ -10,7 +10,7 @@
 #include "../clownmdemu.h"
 
 // The NTSC framerate is 59.94FPS (60 divided by 1.001)
-#define DIVIDE_BY_NTSC_FRAMERATE(x) ((x) * 1001ul / ((60ul * 1001ul * 1000ul) / 1001ul)) // 1001 being 1.001 multiplied by 1000
+#define DIVIDE_BY_NTSC_FRAMERATE(x) (((x) / 60) + ((x) / (60 * 1000)))
 
 // The PAL framerate is 50FPS
 #define DIVIDE_BY_PAL_FRAMERATE(x) ((x) / 50)
