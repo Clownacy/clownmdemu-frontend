@@ -9,12 +9,6 @@
 
 #include "../clownmdemu.h"
 
-// The NTSC framerate is 59.94FPS (60 divided by 1.001)
-#define DIVIDE_BY_NTSC_FRAMERATE(x) (((x) / 60) + ((x) / (60 * 1000)))
-
-// The PAL framerate is 50FPS
-#define DIVIDE_BY_PAL_FRAMERATE(x) ((x) / 50)
-
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
@@ -351,7 +345,7 @@ int main(int argc, char **argv)
 								next_time = current_time;
 
 							// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-							next_time += DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul);
+							next_time += CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul);
 						}
 					}
 				}
