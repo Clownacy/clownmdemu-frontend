@@ -9,6 +9,12 @@
 
 #include "../clownmdemu.h"
 
+// The NTSC framerate is 59.94FPS (60 divided by 1.001)
+#define DIVIDE_BY_NTSC_FRAMERATE(x) ((x) * 1001ul / ((60ul * 1001ul * 1000ul) / 1001ul)) // 1001 being 1.001 multiplied by 1000
+
+// The PAL framerate is 50FPS
+#define DIVIDE_BY_PAL_FRAMERATE(x) ((x) / 50)
+
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
@@ -298,16 +304,17 @@ int main(int argc, char **argv)
 
 									framebuffer_texture_pitch /= sizeof(Uint32);
 
-									// Framerate manager - run at roughly 60FPS
+									// Framerate manager - run at roughly 59.94FPS (60 divided by 1.001)
 									static Uint32 next_time;
-									const Uint32 current_time = SDL_GetTicks();
+									const Uint32 current_time = SDL_GetTicks() * 300;
 
 									if (!SDL_TICKS_PASSED(current_time, next_time))
-										SDL_Delay(next_time - current_time);
-									else if (SDL_TICKS_PASSED(current_time, next_time + 100)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+										SDL_Delay((next_time - current_time) / 300);
+									else if (SDL_TICKS_PASSED(current_time, next_time + 100 * 300)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
 										next_time = current_time;
 
-									next_time += 1000 / 60;
+									// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
+									next_time += DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul);
 								}
 							}
 						}
