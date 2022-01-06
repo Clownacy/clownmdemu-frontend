@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(clownmdemufrontend LANGUAGES C)
 
-add_executable(clownmdemufrontend
+add_executable(clownmdemufrontend WIN32
 	"main.c"
 )
 
