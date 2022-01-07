@@ -71,6 +71,8 @@ static Uint32 colours[3 * 4 * 16];
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
 
+static bool use_vsync;
+
 static bool InitVideo(void)
 {
 	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
@@ -89,7 +91,7 @@ static bool InitVideo(void)
 		else
 		{
 			// Figure out if we should use V-sync or not
-			bool use_vsync = false;
+			use_vsync = false;
 
 			SDL_DisplayMode display_mode;
 			if (SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &display_mode) == 0)
@@ -293,7 +295,6 @@ int main(int argc, char **argv)
 					bool quit = false;
 
 					bool fast_forward = false;
-					unsigned int frameskip_counter = 0;
 
 					while (!quit)
 					{
@@ -373,9 +374,16 @@ int main(int argc, char **argv)
 										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_C)
 										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_V)
 
-										DO_KEY(fast_forward, SDL_SCANCODE_SPACE)
-
 										#undef DO_KEY
+
+										case SDL_SCANCODE_SPACE:
+											fast_forward = pressed;
+
+											// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
+											if (use_vsync)
+												SDL_RenderSetVSync(renderer, !pressed);
+
+											break;
 
 										default:
 											break;
@@ -389,56 +397,52 @@ int main(int argc, char **argv)
 						// Run the emulator for a frame
 						ClownMDEmu_Iterate(&clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback);
 
-						// Don't bother rendering if we're frame-skipping
-						if (!fast_forward || (++frameskip_counter & 3) == 0)
+						// Correct the aspect ratio of the rendered frame
+						// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+						int renderer_width, renderer_height;
+						SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
+
+						SDL_Rect destination_rect;
+
+						if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
 						{
-							// Correct the aspect ratio of the rendered frame
-							// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
-							int renderer_width, renderer_height;
-							SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
-
-							SDL_Rect destination_rect;
-
-							if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
-							{
-								destination_rect.w = renderer_height * 320 / current_screen_height;
-								destination_rect.h = renderer_height;
-							}
-							else
-							{
-								destination_rect.w = renderer_width;
-								destination_rect.h = renderer_width * current_screen_height / 320;
-							}
-
-							destination_rect.x = (renderer_width - destination_rect.w) / 2;
-							destination_rect.y = (renderer_height - destination_rect.h) / 2;
-
-							// Unlock the texture so that we can draw it
-							SDL_UnlockTexture(framebuffer_texture);
-
-							// Draw the rendered frame to the screen
-							SDL_RenderClear(renderer);
-							SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
-							SDL_RenderPresent(renderer);
-
-							// Lock the texture so that we can write to its pixels later
-							if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
-								framebuffer_texture_pixels = NULL;
-
-							framebuffer_texture_pitch /= sizeof(Uint32);
-
-							// Framerate manager - run at roughly 59.94FPS (60 divided by 1.001)
-							static Uint32 next_time;
-							const Uint32 current_time = SDL_GetTicks() * 300;
-
-							if (!SDL_TICKS_PASSED(current_time, next_time))
-								SDL_Delay((next_time - current_time) / 300);
-							else if (SDL_TICKS_PASSED(current_time, next_time + 100 * 300)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
-								next_time = current_time;
-
-							// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-							next_time += CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul);
+							destination_rect.w = renderer_height * 320 / current_screen_height;
+							destination_rect.h = renderer_height;
 						}
+						else
+						{
+							destination_rect.w = renderer_width;
+							destination_rect.h = renderer_width * current_screen_height / 320;
+						}
+
+						destination_rect.x = (renderer_width - destination_rect.w) / 2;
+						destination_rect.y = (renderer_height - destination_rect.h) / 2;
+
+						// Unlock the texture so that we can draw it
+						SDL_UnlockTexture(framebuffer_texture);
+
+						// Draw the rendered frame to the screen
+						SDL_RenderClear(renderer);
+						SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
+						SDL_RenderPresent(renderer);
+
+						// Lock the texture so that we can write to its pixels later
+						if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+							framebuffer_texture_pixels = NULL;
+
+						framebuffer_texture_pitch /= sizeof(Uint32);
+
+						// Framerate manager - run at roughly 59.94FPS (60 divided by 1.001)
+						static Uint32 next_time;
+						const Uint32 current_time = SDL_GetTicks() * 300;
+
+						if (!SDL_TICKS_PASSED(current_time, next_time))
+							SDL_Delay((next_time - current_time) / 300);
+						else if (SDL_TICKS_PASSED(current_time, next_time + 100 * 300)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+							next_time = current_time;
+
+						// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
+						next_time += CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul) >> (fast_forward ? 2 : 0);
 					}
 				}
 
