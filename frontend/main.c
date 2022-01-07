@@ -308,13 +308,48 @@ int main(int argc, char **argv)
 									break;
 
 								case SDL_KEYDOWN:
-								case SDL_KEYUP:
-								{
 									// Ignore repeated key inputs caused by holding the key down
 									if (event.key.repeat)
 										break;
 
-									bool pressed = event.type == SDL_KEYDOWN;
+									switch (event.key.keysym.sym)
+									{
+										case SDLK_TAB:
+											// Soft-reset console
+											ClownMDEmu_Reset(&clownmdemu_state);
+											break;
+
+										case SDLK_F1:
+										{
+											// Toggle fullscreen
+											static bool fullscreen;
+
+											fullscreen = !fullscreen;
+
+											SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+											SDL_ShowCursor(fullscreen ? SDL_DISABLE : SDL_ENABLE);
+
+											break;
+										}
+
+										case SDLK_F5:
+											// Save save state
+											clownmdemu_save_state = clownmdemu_state;
+											break;
+
+										case SDLK_F9:
+											// Load save state
+											clownmdemu_state = clownmdemu_save_state;
+											break;
+
+										default:
+											break;
+
+									}
+									// Fallthrough
+								case SDL_KEYUP:
+								{
+									const bool pressed = event.type == SDL_KEYDOWN;
 
 									switch (event.key.keysym.scancode)
 									{
@@ -338,44 +373,9 @@ int main(int argc, char **argv)
 										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_C)
 										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_V)
 
-										DO_KEY(fast_forward,    SDL_SCANCODE_SPACE)
+										DO_KEY(fast_forward, SDL_SCANCODE_SPACE)
 
 										#undef DO_KEY
-
-										case SDL_SCANCODE_TAB:
-											// Soft-reset console
-											if (pressed)
-												ClownMDEmu_Reset(&clownmdemu_state);
-
-											break;
-
-										case SDL_SCANCODE_F1:
-											// Toggle fullscreen
-											if (pressed)
-											{
-												static bool fullscreen;
-
-												fullscreen = !fullscreen;
-
-												SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-												SDL_ShowCursor(fullscreen ? SDL_DISABLE : SDL_ENABLE);
-											}
-
-											break;
-
-										case SDL_SCANCODE_F5:
-											// Save save state
-											if (pressed)
-												clownmdemu_save_state = clownmdemu_state;
-
-											break;
-
-										case SDL_SCANCODE_F9:
-											// Load save state
-											if (pressed)
-												clownmdemu_state = clownmdemu_save_state;
-
-											break;
 
 										default:
 											break;
