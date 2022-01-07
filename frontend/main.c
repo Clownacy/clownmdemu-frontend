@@ -9,7 +9,17 @@
 
 #include "../clownmdemu.h"
 
-static bool inputs[2][CLOWNMDEMU_BUTTON_MAX];
+typedef struct Input
+{
+	unsigned int bound_joypad;
+	bool buttons[CLOWNMDEMU_BUTTON_MAX];
+
+	struct Input *next;
+} Input;
+
+static Input keyboard_input;
+
+static Input *input_list_head = &keyboard_input;
 
 static ClownMDEmu_State clownmdemu_state;
 static ClownMDEmu_State clownmdemu_save_state;
@@ -226,11 +236,18 @@ static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char 
 	current_screen_height = screen_height;
 }
 
+// TODO - Shouldn't this `unsigned char` be a `cc_bool` or something?
 static unsigned char ReadInputCallback(unsigned int player_id, unsigned int button_id)
 {
 	assert(player_id < 2);
 
-	return inputs[player_id][button_id];
+	unsigned char value = false;
+
+	for (Input *input = input_list_head; input != NULL; input = input->next)
+		if (input->bound_joypad == player_id)
+			value |= input->buttons[button_id];
+
+	return value;
 }
 
 static void PSGAudioCallback(short *samples, size_t total_samples)
@@ -333,6 +350,11 @@ int main(int argc, char **argv)
 											break;
 										}
 
+										case SDLK_F2:
+											// Toggle which joypad the keyboard controls
+											keyboard_input.bound_joypad ^= 1;
+											break;
+
 										case SDLK_F5:
 											// Save save state
 											clownmdemu_save_state = clownmdemu_state;
@@ -354,25 +376,16 @@ int main(int argc, char **argv)
 
 									switch (event.key.keysym.scancode)
 									{
-										#define DO_KEY(state, code) case code: state = pressed; break;
+										#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break;
 
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_W)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_S)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_A)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_D)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_O)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_P)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_LEFTBRACKET)
-										DO_KEY(inputs[0][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_RETURN)
-
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_UP],    SDL_SCANCODE_UP)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_DOWN],  SDL_SCANCODE_DOWN)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_LEFT],  SDL_SCANCODE_LEFT)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_RIGHT], SDL_SCANCODE_RIGHT)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_A],     SDL_SCANCODE_Z)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_B],     SDL_SCANCODE_X)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_C],     SDL_SCANCODE_C)
-										DO_KEY(inputs[1][CLOWNMDEMU_BUTTON_START], SDL_SCANCODE_V)
+										DO_KEY(CLOWNMDEMU_BUTTON_UP,    SDL_SCANCODE_W)
+										DO_KEY(CLOWNMDEMU_BUTTON_DOWN,  SDL_SCANCODE_S)
+										DO_KEY(CLOWNMDEMU_BUTTON_LEFT,  SDL_SCANCODE_A)
+										DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D)
+										DO_KEY(CLOWNMDEMU_BUTTON_A,     SDL_SCANCODE_O)
+										DO_KEY(CLOWNMDEMU_BUTTON_B,     SDL_SCANCODE_P)
+										DO_KEY(CLOWNMDEMU_BUTTON_C,     SDL_SCANCODE_LEFTBRACKET)
+										DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN)
 
 										#undef DO_KEY
 
