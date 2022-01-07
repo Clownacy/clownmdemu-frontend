@@ -13,13 +13,19 @@ typedef struct Input
 {
 	unsigned int bound_joypad;
 	bool buttons[CLOWNMDEMU_BUTTON_MAX];
-
-	struct Input *next;
 } Input;
+
+typedef struct ControllerInput
+{
+	SDL_JoystickID joystick_instance_id;
+	Input input;
+
+	struct ControllerInput *next;
+} ControllerInput;
 
 static Input keyboard_input;
 
-static Input *input_list_head = &keyboard_input;
+static ControllerInput *controller_input_list_head;
 
 static ClownMDEmu_State clownmdemu_state;
 static ClownMDEmu_State clownmdemu_save_state;
@@ -243,9 +249,12 @@ static unsigned char ReadInputCallback(unsigned int player_id, unsigned int butt
 
 	unsigned char value = false;
 
-	for (Input *input = input_list_head; input != NULL; input = input->next)
-		if (input->bound_joypad == player_id)
-			value |= input->buttons[button_id];
+	if (keyboard_input.bound_joypad == player_id)
+		value |= keyboard_input.buttons[button_id];
+
+	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+		if (controller_input->input.bound_joypad == player_id)
+			value |= controller_input->input.buttons[button_id];
 
 	return value;
 }
@@ -267,7 +276,7 @@ int main(int argc, char **argv)
 	else
 	{
 		// Initialise SDL2
-		if (SDL_Init(SDL_INIT_EVENTS) < 0)
+		if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 		{
 			PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		}
@@ -372,7 +381,7 @@ int main(int argc, char **argv)
 									// Fallthrough
 								case SDL_KEYUP:
 								{
-									const bool pressed = event.type == SDL_KEYDOWN;
+									const bool pressed = event.key.state == SDL_PRESSED;
 
 									switch (event.key.keysym.scancode)
 									{
@@ -390,6 +399,7 @@ int main(int argc, char **argv)
 										#undef DO_KEY
 
 										case SDL_SCANCODE_SPACE:
+											// Toggle fast-forward
 											fast_forward = pressed;
 
 											// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
@@ -400,6 +410,129 @@ int main(int argc, char **argv)
 
 										default:
 											break;
+									}
+
+									break;
+								}
+
+								case SDL_CONTROLLERDEVICEADDED:
+								{
+									SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
+
+									if (controller == NULL)
+									{
+										PrintError("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
+									}
+									else
+									{
+										const SDL_JoystickID joystick_instance_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+
+										if (joystick_instance_id < 0)
+										{
+											PrintError("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
+										}
+										else
+										{
+											ControllerInput *controller_input = calloc(sizeof(ControllerInput), 1);
+
+											if (controller_input == NULL)
+											{
+												PrintError("Could not allocate memory for the new ControllerInput struct");
+											}
+											else
+											{
+												controller_input->joystick_instance_id = joystick_instance_id;
+
+												controller_input->next = controller_input_list_head;
+												controller_input_list_head = controller_input;
+
+												break;
+											}
+										}
+
+										SDL_GameControllerClose(controller);
+									}
+
+									break;
+								}
+
+								case SDL_CONTROLLERDEVICEREMOVED:
+								{
+									SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
+
+									if (controller == NULL)
+									{
+										PrintError("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
+									}
+									else
+									{
+										SDL_GameControllerClose(controller);
+									}
+
+									for (ControllerInput **controller_input_pointer = &controller_input_list_head; ; controller_input_pointer = &(*controller_input_pointer)->next)
+									{
+										if ((*controller_input_pointer) == NULL)
+										{
+											PrintError("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
+											break;
+										}
+
+										ControllerInput *controller_input = *controller_input_pointer;
+
+										if (controller_input->joystick_instance_id == event.cdevice.which)
+										{
+											*controller_input_pointer = controller_input->next;
+											free(controller_input);
+											break;
+										}
+									}
+
+									break;
+								}
+
+								case SDL_CONTROLLERBUTTONDOWN:
+								case SDL_CONTROLLERBUTTONUP:
+								{
+									const bool pressed = event.cbutton.state == SDL_PRESSED;
+
+									for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
+									{
+										if (controller_input == NULL)
+										{
+											PrintError("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
+											break;
+										}
+
+										if (controller_input->joystick_instance_id == event.cbutton.which)
+										{
+											switch (event.cbutton.button)
+											{
+												#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break;
+
+												DO_BUTTON(CLOWNMDEMU_BUTTON_UP,    SDL_CONTROLLER_BUTTON_DPAD_UP)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_DOWN,  SDL_CONTROLLER_BUTTON_DPAD_DOWN)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_LEFT,  SDL_CONTROLLER_BUTTON_DPAD_LEFT)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_RIGHT, SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_A,     SDL_CONTROLLER_BUTTON_X)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_B,     SDL_CONTROLLER_BUTTON_Y)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_C,     SDL_CONTROLLER_BUTTON_B)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_B,     SDL_CONTROLLER_BUTTON_A)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START)
+
+												#undef DO_BUTTON
+
+												case SDL_CONTROLLER_BUTTON_BACK:
+													if (pressed)
+														controller_input->input.bound_joypad ^= 1;
+
+													break;
+
+												default:
+													break;
+											}
+
+											break;
+										}
 									}
 
 									break;

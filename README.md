@@ -35,25 +35,27 @@ executable).
 
 The control scheme is currently hardcoded to the following layout:
 
-Joypad 1:
-- W = Up
-- S = Down
-- A = Left
-- D = Right
-- O = A
-- P = B
-- [ = C
+Keyboard:
+- W  = Up
+- S  = Down
+- A  = Left
+- D  = Right
+- O  = A
+- P  = B
+- \[ = C
 - Enter = Start
 
-Joypad 2:
+Controller:
 - Up    = Up
 - Down  = Down
 - Left  = Left
 - Right = Right
-- Z = A
-- X = B
-- C = C
-- V = Start
+- X     = A
+- Y     = B
+- B     = C
+- A     = B
+- Start = Start
+- Back  = Toggle which joypad the controller controls
 
 Hotkeys:
 - Space = Fast-forward
