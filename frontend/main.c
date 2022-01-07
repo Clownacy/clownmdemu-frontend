@@ -349,6 +349,20 @@ int main(int argc, char **argv)
 
 											break;
 
+										case SDL_SCANCODE_F1:
+											// Toggle fullscreen
+											if (pressed)
+											{
+												static bool fullscreen;
+
+												fullscreen = !fullscreen;
+
+												SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+												SDL_ShowCursor(fullscreen ? SDL_DISABLE : SDL_ENABLE);
+											}
+
+											break;
+
 										case SDL_SCANCODE_F5:
 											// Save save state
 											if (pressed)
