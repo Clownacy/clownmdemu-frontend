@@ -18,6 +18,10 @@ typedef struct Input
 typedef struct ControllerInput
 {
 	SDL_JoystickID joystick_instance_id;
+	Sint16 left_stick_x;
+	Sint16 left_stick_y;
+	bool left_stick[4];
+	bool dpad[4];
 	Input input;
 
 	struct ControllerInput *next;
@@ -509,10 +513,6 @@ int main(int argc, char **argv)
 											{
 												#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break;
 
-												DO_BUTTON(CLOWNMDEMU_BUTTON_UP,    SDL_CONTROLLER_BUTTON_DPAD_UP)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_DOWN,  SDL_CONTROLLER_BUTTON_DPAD_DOWN)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_LEFT,  SDL_CONTROLLER_BUTTON_DPAD_LEFT)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_RIGHT, SDL_CONTROLLER_BUTTON_DPAD_RIGHT)
 												DO_BUTTON(CLOWNMDEMU_BUTTON_A,     SDL_CONTROLLER_BUTTON_X)
 												DO_BUTTON(CLOWNMDEMU_BUTTON_B,     SDL_CONTROLLER_BUTTON_Y)
 												DO_BUTTON(CLOWNMDEMU_BUTTON_C,     SDL_CONTROLLER_BUTTON_B)
@@ -520,6 +520,45 @@ int main(int argc, char **argv)
 												DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START)
 
 												#undef DO_BUTTON
+
+												case SDL_CONTROLLER_BUTTON_DPAD_UP:
+												case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+												case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+												case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+												{
+													unsigned int direction;
+
+													switch (event.cbutton.button)
+													{
+														case SDL_CONTROLLER_BUTTON_DPAD_UP:
+															direction = 0;
+															break;
+
+														case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+															direction = 1;
+															break;
+
+														case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+															direction = 2;
+															break;
+
+														case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+															direction = 3;
+															break;
+													}
+
+													const unsigned int buttons[4] = {
+														CLOWNMDEMU_BUTTON_UP,
+														CLOWNMDEMU_BUTTON_DOWN,
+														CLOWNMDEMU_BUTTON_LEFT,
+														CLOWNMDEMU_BUTTON_RIGHT
+													};
+
+													controller_input->dpad[direction] = pressed;
+													controller_input->input.buttons[buttons[direction]] = controller_input->left_stick[direction] || controller_input->dpad[direction];
+
+													break;
+												}
 
 												case SDL_CONTROLLER_BUTTON_BACK:
 													if (pressed)
@@ -537,6 +576,80 @@ int main(int argc, char **argv)
 
 									break;
 								}
+
+								case SDL_CONTROLLERAXISMOTION:
+									for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
+									{
+										if (controller_input == NULL)
+										{
+											PrintError("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
+											break;
+										}
+
+										if (controller_input->joystick_instance_id == event.caxis.which)
+										{
+											#define DEGREES_TO_RADIANS(x) ((x) * (3.142f / 180.0f))
+
+											switch (event.caxis.axis)
+											{
+												case SDL_CONTROLLER_AXIS_LEFTX:
+												case SDL_CONTROLLER_AXIS_LEFTY:
+													if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+														controller_input->left_stick_x = event.caxis.value;
+													else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+														controller_input->left_stick_y = event.caxis.value;
+
+													const float magnitude = SDL_sqrtf(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y);
+
+													const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
+													const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
+
+													for (unsigned int i = 0; i < 4; ++i)
+													{
+														if (magnitude < 32768.0f / 4.0f)
+														{
+															controller_input->left_stick[i] = false;
+														}
+														else
+														{
+															const float directions[4][2] = {
+																{ 0.0f, -1.0f},
+																{ 0.0f,  1.0f},
+																{-1.0f,  0.0f},
+																{ 1.0f,  0.0f}
+															};
+
+															const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
+
+															controller_input->left_stick[i] = (delta_angle < DEGREES_TO_RADIANS(360.0f * 3.0f / 8.0f / 2.0f));
+														}
+
+														const unsigned int buttons[4] = {
+															CLOWNMDEMU_BUTTON_UP,
+															CLOWNMDEMU_BUTTON_DOWN,
+															CLOWNMDEMU_BUTTON_LEFT,
+															CLOWNMDEMU_BUTTON_RIGHT
+														};
+
+														controller_input->input.buttons[buttons[i]] = controller_input->left_stick[i] || controller_input->dpad[i];
+													}
+
+													break;
+
+												default:
+													break;
+											}
+
+											#undef DEGREES_TO_RADIANS
+
+											break;
+										}
+									}
+
+									break;
+
+								default:
+									break;
 							}
 						}
 
