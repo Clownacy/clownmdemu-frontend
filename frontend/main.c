@@ -653,7 +653,7 @@ int main(int argc, char **argv)
 						}
 
 						// Run the emulator for a frame
-						ClownMDEmu_Iterate(&clownmdemu_state, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback);
+						ClownMDEmu_Iterate(&clownmdemu_state, &(ClownMDEmu_Callbacks){ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback});
 
 						// Correct the aspect ratio of the rendered frame
 						// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
