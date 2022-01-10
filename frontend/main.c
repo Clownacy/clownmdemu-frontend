@@ -9,6 +9,8 @@
 
 #include "../clownmdemu.h"
 
+//#define PAL
+
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -188,7 +190,11 @@ static bool InitAudio(void)
 		SDL_AudioSpec want, have;
 
 		SDL_zero(want);
-		want.freq = CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16; /* TODO - PAL */
+	#ifdef PAL
+		want.freq = CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16;
+	#else
+		want.freq = CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16;
+	#endif
 		want.format = AUDIO_S16;
 		want.channels = 1;
 		// We want a 25ms buffer (this value must be a power of two)
@@ -298,7 +304,11 @@ int main(int argc, char **argv)
 
 				// For now, let's emulate a North American console
 				ClownMDEmu_SetJapanese(&clownmdemu_state, false);
+			#ifdef PAL
+				ClownMDEmu_SetPAL(&clownmdemu_state, true);
+			#else
 				ClownMDEmu_SetPAL(&clownmdemu_state, false);
+			#endif
 
 				// Load ROM to memory
 				unsigned char *file_buffer;
@@ -688,17 +698,31 @@ int main(int argc, char **argv)
 
 						framebuffer_texture_pitch /= sizeof(Uint32);
 
-						// Framerate manager - run at roughly 59.94FPS (60 divided by 1.001)
+						// Framerate manager
+					#ifdef PAL
+						#define MULTIPLIER 1
+					#else
+						// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
+						#define MULTIPLIER 300
+					#endif
 						static Uint32 next_time;
-						const Uint32 current_time = SDL_GetTicks() * 300;
+						const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
 
 						if (!SDL_TICKS_PASSED(current_time, next_time))
-							SDL_Delay((next_time - current_time) / 300);
-						else if (SDL_TICKS_PASSED(current_time, next_time + 100 * 300)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+							SDL_Delay((next_time - current_time) / MULTIPLIER);
+						else if (SDL_TICKS_PASSED(current_time, next_time + 100 * MULTIPLIER)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
 							next_time = current_time;
 
-						// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-						next_time += CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * 300ul) >> (fast_forward ? 2 : 0);
+						Uint32 delta;
+					#ifdef PAL
+						// Run at 50FPS
+						delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
+					#else
+						// Run at roughly 59.94FPS (60 divided by 1.001)
+						delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+					#endif
+
+						next_time += delta >> (fast_forward ? 2 : 0);
 					}
 				}
 
