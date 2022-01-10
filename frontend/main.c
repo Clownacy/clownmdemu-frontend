@@ -251,8 +251,7 @@ static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char 
 	current_screen_height = screen_height;
 }
 
-// TODO - Shouldn't this `unsigned char` be a `cc_bool` or something?
-static unsigned char ReadInputCallback(unsigned int player_id, unsigned int button_id)
+static cc_bool ReadInputCallback(unsigned int player_id, unsigned int button_id)
 {
 	assert(player_id < 2);
 
