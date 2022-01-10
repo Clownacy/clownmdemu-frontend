@@ -264,10 +264,8 @@ static unsigned char ReadInputCallback(unsigned int player_id, unsigned int butt
 
 static void PSGAudioCallback(short *samples, size_t total_samples)
 {
-	if (SDL_GetQueuedAudioSize(audio_device) > audio_buffer_size * 2)
-		SDL_ClearQueuedAudio(audio_device);
-
-	SDL_QueueAudio(audio_device, samples, sizeof(short) * total_samples);
+	if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
+		SDL_QueueAudio(audio_device, samples, sizeof(short) * total_samples);
 }
 
 int main(int argc, char **argv)
