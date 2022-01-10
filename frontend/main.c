@@ -302,11 +302,11 @@ int main(int argc, char **argv)
 				ClownMDEmu_Init(&clownmdemu_state);
 
 				// For now, let's emulate a North American console
-				ClownMDEmu_SetJapanese(&clownmdemu_state, false);
+				ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
 			#ifdef PAL
-				ClownMDEmu_SetPAL(&clownmdemu_state, true);
+				ClownMDEmu_SetPAL(&clownmdemu_state, cc_true);
 			#else
-				ClownMDEmu_SetPAL(&clownmdemu_state, false);
+				ClownMDEmu_SetPAL(&clownmdemu_state, cc_false);
 			#endif
 
 				// Load ROM to memory
