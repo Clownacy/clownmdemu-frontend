@@ -255,14 +255,14 @@ static cc_bool ReadInputCallback(unsigned int player_id, unsigned int button_id)
 {
 	assert(player_id < 2);
 
-	unsigned char value = false;
+	cc_bool value = cc_false;
 
 	if (keyboard_input.bound_joypad == player_id)
-		value |= keyboard_input.buttons[button_id];
+		value |= keyboard_input.buttons[button_id] ? cc_true : cc_false;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
 		if (controller_input->input.bound_joypad == player_id)
-			value |= controller_input->input.buttons[button_id];
+			value |= controller_input->input.buttons[button_id] ? cc_true : cc_false;
 
 	return value;
 }
