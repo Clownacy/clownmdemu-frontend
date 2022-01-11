@@ -69,19 +69,13 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 			*file_buffer = SDL_malloc(*file_size);
 
 			if (*file_buffer == NULL)
-			{
 				PrintError("Could not allocate memory for file");
-			}
 			else
-			{
 				SDL_RWread(file, *file_buffer, 1, *file_size);
-			}
 		}
 
 		if (SDL_RWclose(file) < 0)
-		{
 			PrintError("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
-		}
 	}
 }
 
