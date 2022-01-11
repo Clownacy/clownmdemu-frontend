@@ -1,9 +1,6 @@
-#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "SDL.h"
 
@@ -51,29 +48,40 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 {
 	*file_buffer = NULL;
 
-	FILE *file = fopen(filename, "rb");
+	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
 
 	if (file == NULL)
 	{
-		PrintError("Could not open file");
+		PrintError("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
-		fseek(file, 0, SEEK_END);
-		*file_size = ftell(file);
-		rewind(file);
-		*file_buffer = malloc(*file_size);
+		const Sint64 size = SDL_RWsize(file);
 
-		if (*file_buffer == NULL)
+		if (size < 0)
 		{
-			PrintError("Could not allocate memory for file");
+			PrintError("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
-			fread(*file_buffer, 1, *file_size, file);
+			*file_size = (size_t)size;
+
+			*file_buffer = SDL_malloc(*file_size);
+
+			if (*file_buffer == NULL)
+			{
+				PrintError("Could not allocate memory for file");
+			}
+			else
+			{
+				SDL_RWread(file, *file_buffer, 1, *file_size);
+			}
 		}
 
-		fclose(file);
+		if (SDL_RWclose(file) < 0)
+		{
+			PrintError("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
+		}
 	}
 }
 
@@ -278,7 +286,7 @@ static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char 
 
 static cc_bool ReadInputCallback(unsigned int player_id, unsigned int button_id)
 {
-	assert(player_id < 2);
+	SDL_assert(player_id < 2);
 
 	cc_bool value = cc_false;
 
@@ -503,7 +511,7 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											ControllerInput *controller_input = calloc(sizeof(ControllerInput), 1);
+											ControllerInput *controller_input = SDL_calloc(sizeof(ControllerInput), 1);
 
 											if (controller_input == NULL)
 											{
@@ -552,7 +560,7 @@ int main(int argc, char **argv)
 										if (controller_input->joystick_instance_id == event.cdevice.which)
 										{
 											*controller_input_pointer = controller_input->next;
-											free(controller_input);
+											SDL_free(controller_input);
 											break;
 										}
 									}
@@ -773,16 +781,16 @@ int main(int argc, char **argv)
 						framebuffer_texture_pitch /= sizeof(Uint32);
 					}
 
-					free(rom_buffer);
+					SDL_free(rom_buffer);
 				}
 
-				FILE *state_file = fopen("state.bin", "wb");
+				SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
 
 				if (state_file != NULL)
 				{
-					fwrite(&clownmdemu_state, 1, sizeof(clownmdemu_state), state_file);
+					SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
 
-					fclose(state_file);
+					SDL_RWclose(state_file);
 				}
 
 				ClownMDEmu_Deinit(&clownmdemu_state);
@@ -797,5 +805,5 @@ int main(int argc, char **argv)
 		}
 	}
 
-	return EXIT_SUCCESS;
+	return 0;
 }
