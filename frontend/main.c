@@ -356,10 +356,48 @@ int main(int argc, char **argv)
 
 					while (!quit)
 					{
-						// Process events
-						SDL_Event event;
-						while (SDL_PollEvent(&event))
+						// This loop processes events and manages the framerate
+						for (;;)
 						{
+						#ifdef PAL
+						#define MULTIPLIER 1
+						#else
+							// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
+						#define MULTIPLIER 300
+						#endif
+
+							static Uint32 next_time;
+							const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
+
+							int timeout = 0;
+
+							if (!SDL_TICKS_PASSED(current_time, next_time))
+								timeout = (next_time - current_time) / MULTIPLIER;
+							else if (SDL_TICKS_PASSED(current_time, next_time + 100 * MULTIPLIER)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+								next_time = current_time;
+
+							// Obtain an event
+							SDL_Event event;
+							if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
+							{
+								// Calculate when the next frame will be
+								Uint32 delta;
+							#ifdef PAL
+								// Run at 50FPS
+								delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
+							#else
+								// Run at roughly 59.94FPS (60 divided by 1.001)
+								delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+							#endif
+
+								next_time += delta >> (fast_forward ? 2 : 0);
+
+								break;
+							}
+
+						#undef MULTIPLIER
+
+							// Process the event
 							switch (event.type)
 							{
 								case SDL_QUIT:
@@ -417,16 +455,16 @@ int main(int argc, char **argv)
 
 									switch (event.key.keysym.scancode)
 									{
-										#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break;
+									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break;
 
-										DO_KEY(CLOWNMDEMU_BUTTON_UP,    SDL_SCANCODE_W)
-										DO_KEY(CLOWNMDEMU_BUTTON_DOWN,  SDL_SCANCODE_S)
-										DO_KEY(CLOWNMDEMU_BUTTON_LEFT,  SDL_SCANCODE_A)
-										DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D)
-										DO_KEY(CLOWNMDEMU_BUTTON_A,     SDL_SCANCODE_O)
-										DO_KEY(CLOWNMDEMU_BUTTON_B,     SDL_SCANCODE_P)
-										DO_KEY(CLOWNMDEMU_BUTTON_C,     SDL_SCANCODE_LEFTBRACKET)
-										DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN)
+										DO_KEY(CLOWNMDEMU_BUTTON_UP, SDL_SCANCODE_W)
+											DO_KEY(CLOWNMDEMU_BUTTON_DOWN, SDL_SCANCODE_S)
+											DO_KEY(CLOWNMDEMU_BUTTON_LEFT, SDL_SCANCODE_A)
+											DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D)
+											DO_KEY(CLOWNMDEMU_BUTTON_A, SDL_SCANCODE_O)
+											DO_KEY(CLOWNMDEMU_BUTTON_B, SDL_SCANCODE_P)
+											DO_KEY(CLOWNMDEMU_BUTTON_C, SDL_SCANCODE_LEFTBRACKET)
+											DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN)
 
 										#undef DO_KEY
 
@@ -542,13 +580,13 @@ int main(int argc, char **argv)
 										{
 											switch (event.cbutton.button)
 											{
-												#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break;
+											#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break;
 
-												DO_BUTTON(CLOWNMDEMU_BUTTON_A,     SDL_CONTROLLER_BUTTON_X)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_B,     SDL_CONTROLLER_BUTTON_Y)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_C,     SDL_CONTROLLER_BUTTON_B)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_B,     SDL_CONTROLLER_BUTTON_A)
-												DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X)
+													DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y)
+													DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B)
+													DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A)
+													DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START)
 
 												#undef DO_BUTTON
 
@@ -733,32 +771,6 @@ int main(int argc, char **argv)
 							framebuffer_texture_pixels = NULL;
 
 						framebuffer_texture_pitch /= sizeof(Uint32);
-
-						// Framerate manager
-					#ifdef PAL
-						#define MULTIPLIER 1
-					#else
-						// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-						#define MULTIPLIER 300
-					#endif
-						static Uint32 next_time;
-						const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
-
-						if (!SDL_TICKS_PASSED(current_time, next_time))
-							SDL_Delay((next_time - current_time) / MULTIPLIER);
-						else if (SDL_TICKS_PASSED(current_time, next_time + 100 * MULTIPLIER)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
-							next_time = current_time;
-
-						Uint32 delta;
-					#ifdef PAL
-						// Run at 50FPS
-						delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
-					#else
-						// Run at roughly 59.94FPS (60 divided by 1.001)
-						delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
-					#endif
-
-						next_time += delta >> (fast_forward ? 2 : 0);
 					}
 
 					free(rom_buffer);
