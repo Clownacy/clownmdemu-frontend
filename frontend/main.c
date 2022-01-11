@@ -594,8 +594,6 @@ int main(int argc, char **argv)
 
 										if (controller_input->joystick_instance_id == event.caxis.which)
 										{
-											#define DEGREES_TO_RADIANS(x) ((x) * (3.142f / 180.0f))
-
 											switch (event.caxis.axis)
 											{
 												case SDL_CONTROLLER_AXIS_LEFTX:
@@ -627,7 +625,7 @@ int main(int argc, char **argv)
 
 															const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
 
-															controller_input->left_stick[i] = (delta_angle < DEGREES_TO_RADIANS(360.0f * 3.0f / 8.0f / 2.0f));
+															controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (3.14159265358979323846f / 180.0f));
 														}
 
 														const unsigned int buttons[4] = {
@@ -645,8 +643,6 @@ int main(int argc, char **argv)
 												default:
 													break;
 											}
-
-											#undef DEGREES_TO_RADIANS
 
 											break;
 										}
