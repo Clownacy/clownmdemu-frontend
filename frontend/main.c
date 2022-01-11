@@ -505,14 +505,17 @@ int main(int argc, char **argv)
 								{
 									const bool pressed = event.cbutton.state == SDL_PRESSED;
 
+									// Look for the controller that this event belongs to.
 									for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
 									{
+										// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
 										if (controller_input == NULL)
 										{
 											PrintError("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
 											break;
 										}
 
+										// Check if the current controller is the one that matches this event.
 										if (controller_input->joystick_instance_id == event.cbutton.which)
 										{
 											switch (event.cbutton.button)
@@ -561,12 +564,15 @@ int main(int argc, char **argv)
 													};
 
 													controller_input->dpad[direction] = pressed;
+
+													// Combine D-pad and left stick values into final joypad D-pad inputs.
 													controller_input->input.buttons[buttons[direction]] = controller_input->left_stick[direction] || controller_input->dpad[direction];
 
 													break;
 												}
 
 												case SDL_CONTROLLER_BUTTON_BACK:
+													// Toggle which joypad the controller is bound to.
 													if (pressed)
 														controller_input->input.bound_joypad ^= 1;
 
@@ -584,14 +590,17 @@ int main(int argc, char **argv)
 								}
 
 								case SDL_CONTROLLERAXISMOTION:
+									// Look for the controller that this event belongs to.
 									for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
 									{
+										// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
 										if (controller_input == NULL)
 										{
 											PrintError("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
 											break;
 										}
 
+										// Check if the current controller is the one that matches this event.
 										if (controller_input->joystick_instance_id == event.caxis.which)
 										{
 											switch (event.caxis.axis)
@@ -603,29 +612,39 @@ int main(int argc, char **argv)
 													else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
 														controller_input->left_stick_y = event.caxis.value;
 
+													// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
+
+													// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
 													const float magnitude = SDL_sqrtf(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y);
 
 													const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
 													const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
 
+													// Now that we have the stick's direction in the form of a unit vector,
+													// we can create a dot product of it with another directional unit vector
+													// to determine the angle between them.
 													for (unsigned int i = 0; i < 4; ++i)
 													{
+														// Apply a deadzone.
 														if (magnitude < 32768.0f / 4.0f)
 														{
 															controller_input->left_stick[i] = false;
 														}
 														else
 														{
+															// This is a list of directions expressed as unit vectors.
 															const float directions[4][2] = {
-																{ 0.0f, -1.0f},
-																{ 0.0f,  1.0f},
-																{-1.0f,  0.0f},
-																{ 1.0f,  0.0f}
+																{ 0.0f, -1.0f}, // Up
+																{ 0.0f,  1.0f}, // Down
+																{-1.0f,  0.0f}, // Left
+																{ 1.0f,  0.0f}  // Right
 															};
 
+															// Perform dot product of stick's direction vector with other direction vector.
 															const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
 
-															controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (3.14159265358979323846f / 180.0f));
+															// If the stick is within 67.5 degrees of the specified direction, then this will be true.
+															controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (3.14159265358979323846f / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
 														}
 
 														const unsigned int buttons[4] = {
@@ -635,6 +654,7 @@ int main(int argc, char **argv)
 															CLOWNMDEMU_BUTTON_RIGHT
 														};
 
+														// Combine D-pad and left stick values into final joypad D-pad inputs.
 														controller_input->input.buttons[buttons[i]] = controller_input->left_stick[i] || controller_input->dpad[i];
 													}
 
