@@ -235,16 +235,20 @@ static void DeinitAudio(void)
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
-static unsigned int CartridgeReadCallback(unsigned long address)
+static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)
 {
+	(void)user_data;
+
 	if (address >= rom_buffer_size)
 		return 0;
 
 	return rom_buffer[address];
 }
 
-static void CartridgeWrittenCallback(unsigned long address, unsigned int value)
+static void CartridgeWrittenCallback(void *user_data, unsigned long address, unsigned int value)
 {
+	(void)user_data;
+
 	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
 	(void)address;
 	(void)value;
@@ -257,8 +261,10 @@ static void CartridgeWrittenCallback(unsigned long address, unsigned int value)
 	*/
 }
 
-static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
+static void ColourUpdatedCallback(void *user_data, unsigned int index, unsigned int colour)
 {
+	(void)user_data;
+
 	// Decompose XBGR4444 into individual colour channels
 	const Uint32 red = (colour >> 4 * 0) & 0xF;
 	const Uint32 green = (colour >> 4 * 1) & 0xF;
@@ -268,8 +274,10 @@ static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 	colours[index] = (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5);
 }
 
-static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
+static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
 {
+	(void)user_data;
+
 	if (framebuffer_texture_pixels != NULL)
 		for (unsigned int i = 0; i < screen_width; ++i)
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
@@ -278,8 +286,10 @@ static void ScanlineRenderedCallback(unsigned int scanline, const unsigned char 
 	current_screen_height = screen_height;
 }
 
-static cc_bool ReadInputCallback(unsigned int player_id, unsigned int button_id)
+static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, unsigned int button_id)
 {
+	(void)user_data;
+
 	SDL_assert(player_id < 2);
 
 	cc_bool value = cc_false;
@@ -294,8 +304,10 @@ static cc_bool ReadInputCallback(unsigned int player_id, unsigned int button_id)
 	return value;
 }
 
-static void PSGAudioCallback(short *samples, size_t total_samples)
+static void PSGAudioCallback(void *user_data, short *samples, size_t total_samples)
 {
+	(void)user_data;
+
 	if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
 		SDL_QueueAudio(audio_device, samples, sizeof(*samples) * total_samples);
 }
@@ -345,7 +357,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					ClownMDEmu_Callbacks callbacks = { CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback };
+					ClownMDEmu_Callbacks callbacks = { NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback };
 
 					ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 
