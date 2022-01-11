@@ -357,7 +357,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					ClownMDEmu_Callbacks callbacks = { NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback };
+					ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
 					ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 
