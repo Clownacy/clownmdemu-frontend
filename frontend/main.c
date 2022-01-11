@@ -558,37 +558,35 @@ int main(int argc, char **argv)
 												case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
 												{
 													unsigned int direction;
+													unsigned int button;
 
 													switch (event.cbutton.button)
 													{
 														case SDL_CONTROLLER_BUTTON_DPAD_UP:
 															direction = 0;
+															button = CLOWNMDEMU_BUTTON_UP;
 															break;
 
 														case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
 															direction = 1;
+															button = CLOWNMDEMU_BUTTON_DOWN;
 															break;
 
 														case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
 															direction = 2;
+															button = CLOWNMDEMU_BUTTON_LEFT;
 															break;
 
 														case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
 															direction = 3;
+															button = CLOWNMDEMU_BUTTON_RIGHT;
 															break;
 													}
-
-													const unsigned int buttons[4] = {
-														CLOWNMDEMU_BUTTON_UP,
-														CLOWNMDEMU_BUTTON_DOWN,
-														CLOWNMDEMU_BUTTON_LEFT,
-														CLOWNMDEMU_BUTTON_RIGHT
-													};
 
 													controller_input->dpad[direction] = pressed;
 
 													// Combine D-pad and left stick values into final joypad D-pad inputs.
-													controller_input->input.buttons[buttons[direction]] = controller_input->left_stick[direction] || controller_input->dpad[direction];
+													controller_input->input.buttons[button] = controller_input->left_stick[direction] || controller_input->dpad[direction];
 
 													break;
 												}
