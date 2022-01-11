@@ -562,6 +562,7 @@ int main(int argc, char **argv)
 
 													switch (event.cbutton.button)
 													{
+														default:
 														case SDL_CONTROLLER_BUTTON_DPAD_UP:
 															direction = 0;
 															button = CLOWNMDEMU_BUTTON_UP;
@@ -635,7 +636,7 @@ int main(int argc, char **argv)
 													// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
 
 													// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
-													const float magnitude = SDL_sqrtf(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y);
+													const float magnitude = SDL_sqrtf((float)(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y));
 
 													const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
 													const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
