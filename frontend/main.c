@@ -36,6 +36,9 @@ static ControllerInput *controller_input_list_head;
 static ClownMDEmu_State clownmdemu_state;
 static ClownMDEmu_State clownmdemu_save_state;
 
+static unsigned char *rom_buffer;
+static size_t rom_buffer_size;
+
 static void PrintError(const char *fmt, ...)
 {
 	va_list args;
@@ -230,6 +233,28 @@ static void DeinitAudio(void)
 	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
+static unsigned int CartridgeReadCallback(unsigned long address)
+{
+	if (address >= rom_buffer_size)
+		return 0;
+
+	return rom_buffer[address];
+}
+
+static void CartridgeWrittenCallback(unsigned long address, unsigned int value)
+{
+	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
+	(void)address;
+	(void)value;
+
+	/*
+	if (address >= rom_buffer_size)
+		return;
+
+	rom_buffer[address] = value;
+	*/
+}
+
 static void ColourUpdatedCallback(unsigned int index, unsigned int colour)
 {
 	// Decompose XBGR4444 into individual colour channels
@@ -310,20 +335,17 @@ int main(int argc, char **argv)
 			#endif
 
 				// Load ROM to memory
-				unsigned char *file_buffer;
-				size_t file_size;
-				LoadFileToBuffer(argv[1], &file_buffer, &file_size);
+				LoadFileToBuffer(argv[1], &rom_buffer, &rom_buffer_size);
 
-				if (file_buffer == NULL)
+				if (rom_buffer == NULL)
 				{
 					PrintError("Could not load the ROM");
 				}
 				else
 				{
-					ClownMDEmu_UpdateROM(&clownmdemu_state, file_buffer, file_size);
-					free(file_buffer);
+					ClownMDEmu_Callbacks callbacks = { CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback };
 
-					ClownMDEmu_Reset(&clownmdemu_state);
+					ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 
 					// Initialise save state
 					clownmdemu_save_state = clownmdemu_state;
@@ -353,7 +375,7 @@ int main(int argc, char **argv)
 									{
 										case SDLK_TAB:
 											// Soft-reset console
-											ClownMDEmu_Reset(&clownmdemu_state);
+											ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 											break;
 
 										case SDLK_F1:
@@ -676,7 +698,7 @@ int main(int argc, char **argv)
 						}
 
 						// Run the emulator for a frame
-						ClownMDEmu_Iterate(&clownmdemu_state, &(ClownMDEmu_Callbacks){ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback});
+						ClownMDEmu_Iterate(&clownmdemu_state, &callbacks);
 
 						// Correct the aspect ratio of the rendered frame
 						// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
@@ -739,6 +761,8 @@ int main(int argc, char **argv)
 
 						next_time += delta >> (fast_forward ? 2 : 0);
 					}
+
+					free(rom_buffer);
 				}
 
 				FILE *state_file = fopen("state.bin", "wb");
