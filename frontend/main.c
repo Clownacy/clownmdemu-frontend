@@ -304,12 +304,20 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, unsign
 	return value;
 }
 
-static void PSGAudioCallback(void *user_data, short *samples, size_t total_samples)
+static void PSGAudioCallback(void *user_data, size_t total_samples)
 {
-	(void)user_data;
+	ClownMDEmu_State *state = user_data;
+
+	short buffer[CC_MAX(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL), CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC)) / 15 / 16];
+
+	SDL_assert(total_samples <= CC_COUNT_OF(buffer));
+
+	SDL_zero(buffer);
+
+	ClownMDEmu_GeneratePSGAudio(state, buffer, total_samples);
 
 	if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
-		SDL_QueueAudio(audio_device, samples, sizeof(*samples) * total_samples);
+		SDL_QueueAudio(audio_device, buffer, sizeof(*buffer) * total_samples);
 }
 
 int main(int argc, char **argv)
@@ -357,7 +365,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+					ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
 					ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 
