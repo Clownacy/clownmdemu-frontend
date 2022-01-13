@@ -477,18 +477,18 @@ int main(int argc, char **argv)
 
 									switch (event.key.keysym.scancode)
 									{
-									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break;
+									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break
 
-										DO_KEY(CLOWNMDEMU_BUTTON_UP, SDL_SCANCODE_W)
-											DO_KEY(CLOWNMDEMU_BUTTON_DOWN, SDL_SCANCODE_S)
-											DO_KEY(CLOWNMDEMU_BUTTON_LEFT, SDL_SCANCODE_A)
-											DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D)
-											DO_KEY(CLOWNMDEMU_BUTTON_A, SDL_SCANCODE_O)
-											DO_KEY(CLOWNMDEMU_BUTTON_B, SDL_SCANCODE_P)
-											DO_KEY(CLOWNMDEMU_BUTTON_C, SDL_SCANCODE_LEFTBRACKET)
-											DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN)
+										DO_KEY(CLOWNMDEMU_BUTTON_UP, SDL_SCANCODE_W);
+										DO_KEY(CLOWNMDEMU_BUTTON_DOWN, SDL_SCANCODE_S);
+										DO_KEY(CLOWNMDEMU_BUTTON_LEFT, SDL_SCANCODE_A);
+										DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D);
+										DO_KEY(CLOWNMDEMU_BUTTON_A, SDL_SCANCODE_O);
+										DO_KEY(CLOWNMDEMU_BUTTON_B, SDL_SCANCODE_P);
+										DO_KEY(CLOWNMDEMU_BUTTON_C, SDL_SCANCODE_LEFTBRACKET);
+										DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN);
 
-										#undef DO_KEY
+									#undef DO_KEY
 
 										case SDL_SCANCODE_SPACE:
 											// Toggle fast-forward
@@ -602,15 +602,15 @@ int main(int argc, char **argv)
 										{
 											switch (event.cbutton.button)
 											{
-											#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break;
+											#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break
 
-												DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X)
-													DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y)
-													DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B)
-													DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A)
-													DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START)
+												DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
+												DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
+												DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B);
+												DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A);
+												DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START);
 
-												#undef DO_BUTTON
+											#undef DO_BUTTON
 
 												case SDL_CONTROLLER_BUTTON_DPAD_UP:
 												case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
