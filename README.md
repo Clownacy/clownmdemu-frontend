@@ -60,6 +60,7 @@ Controller:
 Hotkeys:
 - Space = Fast-forward
 - Tab   = Soft reset
+- F1    = Toggle between NTSC and PAL
 - F2    = Toggle which joypad the keyboard controls
 - F5    = Create save state
 - F9    = Load save state
