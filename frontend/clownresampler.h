@@ -1,10 +1,12 @@
+/* Public-domain single-header library for resampling audio. Made by Clownacy. */
+
 #ifndef CLOWNRESAMPLER_H
 #define CLOWNRESAMPLER_H
 
 
 /* Configuration */
 
-/* Set this to static to limit the visibility of functions. */
+/* Define this as 'static' to limit the visibility of functions. */
 #ifndef CLOWNRESAMPLER_API 
 #define CLOWNRESAMPLER_API
 #endif
@@ -165,25 +167,34 @@ static float ClownResampler_LanczosKernel(float x)
 CLOWNRESAMPLER_API void ClownResampler_LowLevel_Init(ClownResampler_LowLevel_State *resampler)
 {
 	resampler->position = 0.0f;
+	resampler->integer_stretched_kernel_radius = 0; /* This is needed for the position bias logic in the following function */
 	ClownResampler_LowLevel_SetResamplingRatio(resampler, 1.0f); /* A nice sane default */
 }
 
 CLOWNRESAMPLER_API void ClownResampler_LowLevel_SetResamplingRatio(ClownResampler_LowLevel_State *resampler, float ratio)
 {
 	/* TODO - Freak-out if the ratio is so high that the kernel radius would exceed the size of the input buffer */
-
 	const float kernel_scale = CLOWNRESAMPLER_MAX(ratio, 1.0f);
 
 	assert(ratio != 0.0f); /* I would check if the ratio is NAN or INF, but I can't do that in C89 */
+
+	/* Undo the position bias. */
+	resampler->position -= (float)resampler->integer_stretched_kernel_radius;
 
 	resampler->increment = ratio;
 	resampler->stretched_kernel_radius = (float)CLOWNRESAMPLER_KERNEL_RADIUS * kernel_scale;
 	resampler->integer_stretched_kernel_radius = (size_t)ceilf(resampler->stretched_kernel_radius);
 	resampler->inverse_kernel_scale = 1.0f / kernel_scale;
+
+	/* Reapply the position bias. */
+	resampler->position += (float)resampler->integer_stretched_kernel_radius;
 }
 
 CLOWNRESAMPLER_API void ClownResampler_LowLevel_Resample(ClownResampler_LowLevel_State *resampler, const short *input_buffer, size_t *total_input_samples, short *output_buffer, size_t *total_output_samples)
 {
+	/* Account for the position bias. */
+	const size_t max_resampler_position = *total_input_samples + resampler->integer_stretched_kernel_radius;
+
 	short *output_buffer_pointer = output_buffer;
 	short *output_buffer_end = output_buffer + *total_output_samples;
 
@@ -193,7 +204,7 @@ CLOWNRESAMPLER_API void ClownResampler_LowLevel_Resample(ClownResampler_LowLevel
 		const float audio_resampler_position_fractional = resampler->position - (float)audio_resampler_position_integer;
 
 		/* Check if we've reached the end of the input buffer. */
-		if (audio_resampler_position_integer >= *total_input_samples)
+		if (audio_resampler_position_integer >= max_resampler_position)
 		{
 			resampler->position -= *total_input_samples;
 			*total_input_samples = 0;
@@ -210,30 +221,28 @@ CLOWNRESAMPLER_API void ClownResampler_LowLevel_Resample(ClownResampler_LowLevel
 		/* This avoids the need for ClownResampler_LanczosKernel to return 1.0f if its parameter is 0.0f. */
 		if (audio_resampler_position_fractional == 0.0f)
 		{
-			assert(audio_resampler_position_integer < *total_input_samples);
+			assert(audio_resampler_position_integer < max_resampler_position);
 
-			*output_buffer_pointer = input_buffer[resampler->integer_stretched_kernel_radius + audio_resampler_position_integer];
+			*output_buffer_pointer = input_buffer[audio_resampler_position_integer];
 		}
 		else
 		{
-			int i;
+			size_t i;
 
 			float sample = 0.0f;
 			float level = 0.0f;
 
-			/* TODO - size_t */
-			const int min = (int)(resampler->position - resampler->stretched_kernel_radius + 1.0f); /* Essentially rounding up (with an acceptable slight margin of error) */
-			const int max = (int)(resampler->position + resampler->stretched_kernel_radius);        /* Will round down on its own */
+			const size_t min = (size_t)(resampler->position - resampler->stretched_kernel_radius + 1.0f); /* Essentially rounding up (with an acceptable slight margin of error) */
+			const size_t max = (size_t)(resampler->position + resampler->stretched_kernel_radius);        /* Will round down on its own */
 
-			assert(min > -(int)resampler->integer_stretched_kernel_radius);
-			assert(max < *total_input_samples + resampler->integer_stretched_kernel_radius);
+			assert(max < *total_input_samples + resampler->integer_stretched_kernel_radius * 2);
 
 			for (i = min; i <= max; ++i)
 			{
 				const float kernel_value = ClownResampler_LanczosKernel(((float)i - resampler->position) * resampler->inverse_kernel_scale);
 				level += kernel_value;
 
-				sample += (float)input_buffer[resampler->integer_stretched_kernel_radius + i] * kernel_value;
+				sample += (float)input_buffer[i] * kernel_value;
 			}
 
 			*output_buffer_pointer = (short)(sample / level); /* Normalise */
