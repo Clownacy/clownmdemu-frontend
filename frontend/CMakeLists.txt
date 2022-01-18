@@ -4,6 +4,7 @@ project(clownmdemufrontend LANGUAGES C)
 
 add_executable(clownmdemufrontend WIN32
 	"main.c"
+	"clownresampler.h"
 )
 
 set_target_properties(clownmdemufrontend PROPERTIES

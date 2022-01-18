@@ -6,6 +6,10 @@
 
 #include "../clownmdemu.h"
 
+#define CLOWNRESAMPLER_IMPLEMENTATION
+#define CLOWNRESAMPLER_API static
+#include "clownresampler.h"
+
 //#define PAL
 
 typedef struct Input
@@ -180,6 +184,7 @@ static void DeinitVideo(void)
 
 static SDL_AudioDeviceID audio_device;
 static size_t audio_buffer_size;
+static ClownResampler_HighLevel_State resampler;
 
 static bool InitAudio(void)
 {
@@ -195,20 +200,16 @@ static bool InitAudio(void)
 		SDL_AudioSpec want, have;
 
 		SDL_zero(want);
-	#ifdef PAL
-		want.freq = CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16;
-	#else
-		want.freq = CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16;
-	#endif
+		want.freq = 48000;
 		want.format = AUDIO_S16;
 		want.channels = 1;
 		// We want a 25ms buffer (this value must be a power of two)
 		want.samples = 1;
-		while (want.samples < (want.freq * want.channels) / 40) // 25ms
+		while (want.samples < (want.freq * want.channels) / (1000 / 25))
 			want.samples <<= 1;
 		want.callback = NULL;
 
-		audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0/*SDL_AUDIO_ALLOW_FREQUENCY_CHANGE*/);
+		audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 
 		if (audio_device == 0)
 		{
@@ -217,6 +218,14 @@ static bool InitAudio(void)
 		else
 		{
 			audio_buffer_size = have.size;
+
+			ClownResampler_HighLevel_Init(&resampler);
+
+		#ifdef PAL
+			ClownResampler_HighLevel_SetResamplingRatio(&resampler, (float)(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16) / (float)have.freq);
+		#else
+			ClownResampler_HighLevel_SetResamplingRatio(&resampler, (float)(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16) / (float)have.freq);
+		#endif
 
 			SDL_PauseAudioDevice(audio_device, 0);
 
@@ -304,20 +313,39 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, unsign
 	return value;
 }
 
+typedef struct ResamplerCallbackUserData
+{
+	ClownMDEmu_State *state;
+	size_t samples_remaining;
+} ResamplerCallbackUserData;
+
+static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
+{
+	ResamplerCallbackUserData *resampler_callback_user_data = user_data;
+
+	const size_t samples_to_do = CC_MIN(resampler_callback_user_data->samples_remaining, buffer_size);
+
+	SDL_memset(buffer, 0, samples_to_do * sizeof(*buffer));
+
+	ClownMDEmu_GeneratePSGAudio(resampler_callback_user_data->state, buffer, samples_to_do);
+
+	resampler_callback_user_data->samples_remaining -= samples_to_do;
+
+	return samples_to_do;
+}
+
 static void PSGAudioCallback(void *user_data, size_t total_samples)
 {
-	ClownMDEmu_State *state = user_data;
+	short audio_buffer[0x400];
 
-	short buffer[CC_MAX(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL), CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC)) / 15 / 16];
+	ResamplerCallbackUserData resampler_callback_user_data;
+	resampler_callback_user_data.state = user_data;
+	resampler_callback_user_data.samples_remaining = total_samples;
 
-	SDL_assert(total_samples <= CC_COUNT_OF(buffer));
-
-	SDL_zero(buffer);
-
-	ClownMDEmu_GeneratePSGAudio(state, buffer, total_samples);
-
-	if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
-		SDL_QueueAudio(audio_device, buffer, sizeof(*buffer) * total_samples);
+	size_t total_resampled_samples;
+	while ((total_resampled_samples = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer), ResamplerCallback, &resampler_callback_user_data)) != 0)
+		if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
+			SDL_QueueAudio(audio_device, audio_buffer, total_resampled_samples * sizeof(*audio_buffer));
 }
 
 int main(int argc, char **argv)
