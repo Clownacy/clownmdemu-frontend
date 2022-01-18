@@ -466,19 +466,6 @@ int main(int argc, char **argv)
 											ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 											break;
 
-										case SDLK_F1:
-										{
-											// Toggle fullscreen
-											static bool fullscreen;
-
-											fullscreen = !fullscreen;
-
-											SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-											SDL_ShowCursor(fullscreen ? SDL_DISABLE : SDL_ENABLE);
-
-											break;
-										}
-
 										case SDLK_F2:
 											// Toggle which joypad the keyboard controls
 											keyboard_input.bound_joypad ^= 1;
@@ -493,6 +480,19 @@ int main(int argc, char **argv)
 											// Load save state
 											clownmdemu_state = clownmdemu_save_state;
 											break;
+
+										case SDLK_F11:
+										{
+											// Toggle fullscreen
+											static bool fullscreen;
+
+											fullscreen = !fullscreen;
+
+											SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+											SDL_ShowCursor(fullscreen ? SDL_DISABLE : SDL_ENABLE);
+
+											break;
+										}
 
 										default:
 											break;
