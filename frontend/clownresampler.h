@@ -193,18 +193,19 @@ CLOWNRESAMPLER_API void ClownResampler_LowLevel_SetResamplingRatio(ClownResample
 CLOWNRESAMPLER_API void ClownResampler_LowLevel_Resample(ClownResampler_LowLevel_State *resampler, const short *input_buffer, size_t *total_input_samples, short *output_buffer, size_t *total_output_samples)
 {
 	/* Account for the position bias. */
-	const size_t max_resampler_position = *total_input_samples + resampler->integer_stretched_kernel_radius;
+	const size_t max_position = *total_input_samples + resampler->integer_stretched_kernel_radius;
 
 	short *output_buffer_pointer = output_buffer;
 	short *output_buffer_end = output_buffer + *total_output_samples;
 
 	for (;;)
 	{
-		const size_t audio_resampler_position_integer = (size_t)resampler->position;
-		const float audio_resampler_position_fractional = resampler->position - (float)audio_resampler_position_integer;
+		/* To my knowledge, this is the fastest way to obtain the integral and fractional components of a float. */
+		const size_t position_integer = (size_t)resampler->position;
+		const float position_fractional = resampler->position - (float)position_integer;
 
 		/* Check if we've reached the end of the input buffer. */
-		if (audio_resampler_position_integer >= max_resampler_position)
+		if (position_integer >= max_position)
 		{
 			resampler->position -= *total_input_samples;
 			*total_input_samples = 0;
@@ -213,46 +214,56 @@ CLOWNRESAMPLER_API void ClownResampler_LowLevel_Resample(ClownResampler_LowLevel
 		/* Check if we've reached the end of the output buffer. */
 		else if (output_buffer_pointer >= output_buffer_end)
 		{
-			resampler->position -= audio_resampler_position_integer;
-			*total_input_samples -= audio_resampler_position_integer;
+			resampler->position -= position_integer;
+			*total_input_samples -= position_integer;
 			break;
 		}
 
-		/* This avoids the need for ClownResampler_LanczosKernel to return 1.0f if its parameter is 0.0f. */
-		if (audio_resampler_position_fractional == 0.0f)
+		/* This avoids the need for the kernel to return 1.0f if its parameter is 0.0f. */
+		if (position_fractional == 0.0f)
 		{
-			assert(audio_resampler_position_integer < max_resampler_position);
+			assert(position_integer < max_position);
 
-			*output_buffer_pointer = input_buffer[audio_resampler_position_integer];
+			*output_buffer_pointer = input_buffer[position_integer];
 		}
 		else
 		{
 			size_t i;
 
-			float sample = 0.0f;
-			float level = 0.0f;
+			float sample = 0.0f; /* Sample accumulator */
+			float level = 0.0f;  /* Used for normalisation */
 
+			/* Calculate the bounds of the kernel convolution. */
 			const size_t min = (size_t)(resampler->position - resampler->stretched_kernel_radius + 1.0f); /* Essentially rounding up (with an acceptable slight margin of error) */
 			const size_t max = (size_t)(resampler->position + resampler->stretched_kernel_radius);        /* Will round down on its own */
 
+			assert(min < *total_input_samples + resampler->integer_stretched_kernel_radius * 2);
 			assert(max < *total_input_samples + resampler->integer_stretched_kernel_radius * 2);
 
 			for (i = min; i <= max; ++i)
 			{
+				/* The distance between the sample being output and the sample being read are the parameter to the Lanczos kernel. */
 				const float kernel_value = ClownResampler_LanczosKernel(((float)i - resampler->position) * resampler->inverse_kernel_scale);
+
+				/* Accumulate the kernel values so we can determine how much to normalise the sample later on. */
 				level += kernel_value;
 
+				/* Modulate the sample with the kernel and add it to the accumulator. */
 				sample += (float)input_buffer[i] * kernel_value;
 			}
 
-			*output_buffer_pointer = (short)(sample / level); /* Normalise */
+			/* Perform normalisation. */
+			*output_buffer_pointer = (short)(sample / level);
 		}
 
+		/* Increment output buffer position. */
 		++output_buffer_pointer;
 
+		/* Increment input buffer position. */
 		resampler->position += resampler->increment;
 	}
 
+	/* Make 'total_output_samples' reflect how much space there is left in the output buffer. */
 	*total_output_samples -= output_buffer_pointer - output_buffer;
 }
 
