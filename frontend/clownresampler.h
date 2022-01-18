@@ -286,7 +286,6 @@ CLOWNRESAMPLER_API size_t ClownResampler_HighLevel_Resample(ClownResampler_HighL
 			/* Obtain input samples (note that the new samples start after the samples we just copied). */
 			resampler->input_buffer_start = resampler->input_buffer + resampler->low_level.integer_stretched_kernel_radius;
 			resampler->input_buffer_end = resampler->input_buffer_start + pull_callback(user_data, resampler->input_buffer + double_radius, CLOWNRESAMPLER_COUNT_OF(resampler->input_buffer) - double_radius);
-			input_samples = pull_callback(user_data, resampler->input_buffer + double_radius, CLOWNRESAMPLER_COUNT_OF(resampler->input_buffer) - double_radius);
 
 			/* If the callback returns 0, then we must have reached the end of the input data, so quit. */
 			if (resampler->input_buffer_start == resampler->input_buffer_end)
