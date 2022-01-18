@@ -10,8 +10,6 @@
 #define CLOWNRESAMPLER_API static
 #include "clownresampler.h"
 
-//#define PAL
-
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -39,6 +37,8 @@ static ClownMDEmu_State clownmdemu_save_state;
 
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
+
+static bool is_pal_console = false;
 
 static void PrintError(const char *fmt, ...)
 {
@@ -185,6 +185,17 @@ static void DeinitVideo(void)
 static SDL_AudioDeviceID audio_device;
 static size_t audio_buffer_size;
 static ClownResampler_HighLevel_State resampler;
+static int native_audio_sample_rate;
+
+static void SetAudioPALMode(bool enabled)
+{
+	const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16));
+	const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16));
+
+	SDL_LockAudioDevice(audio_device);
+	ClownResampler_HighLevel_Init(&resampler, (float)(enabled ? pal_sample_rate : ntsc_sample_rate) / (float)native_audio_sample_rate);
+	SDL_UnlockAudioDevice(audio_device);
+}
 
 static bool InitAudio(void)
 {
@@ -218,14 +229,9 @@ static bool InitAudio(void)
 		else
 		{
 			audio_buffer_size = have.size;
+			native_audio_sample_rate = have.freq;
 
-			ClownResampler_HighLevel_Init(&resampler);
-
-		#ifdef PAL
-			ClownResampler_HighLevel_SetResamplingRatio(&resampler, (float)(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16) / (float)have.freq);
-		#else
-			ClownResampler_HighLevel_SetResamplingRatio(&resampler, (float)(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16) / (float)have.freq);
-		#endif
+			SetAudioPALMode(is_pal_console);
 
 			SDL_PauseAudioDevice(audio_device, 0);
 
@@ -378,11 +384,7 @@ int main(int argc, char **argv)
 
 				// For now, let's emulate a North American console
 				ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
-			#ifdef PAL
-				ClownMDEmu_SetPAL(&clownmdemu_state, cc_true);
-			#else
-				ClownMDEmu_SetPAL(&clownmdemu_state, cc_false);
-			#endif
+				ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
 
 				// Load ROM to memory
 				LoadFileToBuffer(argv[1], &rom_buffer, &rom_buffer_size);
@@ -409,12 +411,9 @@ int main(int argc, char **argv)
 						// This loop processes events and manages the framerate
 						for (;;)
 						{
-						#ifdef PAL
-						#define MULTIPLIER 1
-						#else
 							// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-						#define MULTIPLIER 300
-						#endif
+							// (technically it's only required the NTSC framerate: PAL doesn't need it).
+							#define MULTIPLIER 300
 
 							static Uint32 next_time;
 							const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
@@ -432,13 +431,17 @@ int main(int argc, char **argv)
 							{
 								// Calculate when the next frame will be
 								Uint32 delta;
-							#ifdef PAL
-								// Run at 50FPS
-								delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
-							#else
-								// Run at roughly 59.94FPS (60 divided by 1.001)
-								delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
-							#endif
+
+								if (is_pal_console)
+								{
+									// Run at 50FPS
+									delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
+								}
+								else
+								{
+									// Run at roughly 59.94FPS (60 divided by 1.001)
+									delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+								}
 
 								next_time += delta >> (fast_forward ? 2 : 0);
 
@@ -464,6 +467,13 @@ int main(int argc, char **argv)
 										case SDLK_TAB:
 											// Soft-reset console
 											ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+											break;
+
+										case SDLK_F1:
+											// Toggle PAL mode
+											is_pal_console = !is_pal_console;
+											ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
+											SetAudioPALMode(is_pal_console);
 											break;
 
 										case SDLK_F2:

@@ -42,9 +42,7 @@ CLOWNRESAMPLER_API void ClownResampler_LowLevel_Init(ClownResampler_LowLevel_Sta
 
 /* Sets the ratio of the resampler. For example, if the input sample rate is
    48000Hz, then a ratio of 0.5 will cause the output sample rate to be
-   24000Hz. It is not recommended to call this function in the middle of
-   resampling multiple chunks of one piece of audio, as it resets various parts
-   of the resampler's internal state, potentially causing distortion. */
+   24000Hz. */
 CLOWNRESAMPLER_API void ClownResampler_LowLevel_SetResamplingRatio(ClownResampler_LowLevel_State *resampler, float ratio);
 
 /* Resamples (pre-processed) audio. The 'total_input_samples' and
@@ -82,17 +80,10 @@ typedef struct ClownResampler_HighLevel_State
 } ClownResampler_HighLevel_State;
 
 /* Initialises a high-level resampler. This function must be called before the
-   state is passed to any other functions. By default, it will have a
-   resampling ratio of 1.0 (that is, the output sample rate will be the same as
-   the input). */
-CLOWNRESAMPLER_API void ClownResampler_HighLevel_Init(ClownResampler_HighLevel_State *resampler);
-
-/* Sets the ratio of the resampler. For example, if the input sample rate is
-   48000Hz, then a ratio of 0.5 will cause the output sample rate to be
-   24000Hz. It is not recommended to call this function in the middle of
-   resampling multiple chunks of one piece of audio, as it resets various parts
-   of the resampler's internal state, potentially causing distortion. */
-CLOWNRESAMPLER_API void ClownResampler_HighLevel_SetResamplingRatio(ClownResampler_HighLevel_State *resampler, float ratio);
+   state is passed to any other functions. This function also sets the ratio of
+   the resampler. For example, if the input sample rate is 48000Hz, then a
+   ratio of 0.5 will cause the output sample rate to be 24000Hz. */
+CLOWNRESAMPLER_API void ClownResampler_HighLevel_Init(ClownResampler_HighLevel_State *resampler, float ratio);
 
 /* Resamples audio. This function returns when either the output buffer is
    full, or the input callback stops providing samples.
@@ -259,20 +250,13 @@ CLOWNRESAMPLER_API void ClownResampler_LowLevel_Resample(ClownResampler_LowLevel
 
 /* High-level API */
 
-CLOWNRESAMPLER_API void ClownResampler_HighLevel_Init(ClownResampler_HighLevel_State *resampler)
+CLOWNRESAMPLER_API void ClownResampler_HighLevel_Init(ClownResampler_HighLevel_State *resampler, float ratio)
 {
 	ClownResampler_LowLevel_Init(&resampler->low_level);
-	ClownResampler_HighLevel_SetResamplingRatio(resampler, 1.0f);
-
-	resampler->input_buffer_start = resampler->input_buffer;
-	resampler->input_buffer_end = resampler->input_buffer;
-}
-
-CLOWNRESAMPLER_API void ClownResampler_HighLevel_SetResamplingRatio(ClownResampler_HighLevel_State *resampler, float ratio)
-{
 	ClownResampler_LowLevel_SetResamplingRatio(&resampler->low_level, ratio);
 
 	memset(resampler->input_buffer, 0, resampler->low_level.integer_stretched_kernel_radius * 2 * sizeof(*resampler->input_buffer));
+	resampler->input_buffer_start = resampler->input_buffer_end = resampler->input_buffer + resampler->low_level.integer_stretched_kernel_radius;
 }
 
 CLOWNRESAMPLER_API size_t ClownResampler_HighLevel_Resample(ClownResampler_HighLevel_State *resampler, short *output_buffer, size_t total_output_samples, size_t(*pull_callback)(void *user_data, short *buffer, size_t buffer_size), void *user_data)
