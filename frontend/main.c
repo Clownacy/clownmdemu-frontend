@@ -118,15 +118,8 @@ static bool InitVideo(void)
 		}
 		else
 		{
-			// Figure out if we should use V-sync or not
-			use_vsync = false;
-
-			SDL_DisplayMode display_mode;
-			if (SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(window), &display_mode) == 0)
-				use_vsync = display_mode.refresh_rate >= 60;
-
 			// Create renderer
-			renderer = SDL_CreateRenderer(window, -1, use_vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
+			renderer = SDL_CreateRenderer(window, -1, 0);
 
 			if (renderer == NULL)
 			{
@@ -479,6 +472,15 @@ int main(int argc, char **argv)
 										case SDLK_F2:
 											// Toggle which joypad the keyboard controls
 											keyboard_input.bound_joypad ^= 1;
+											break;
+
+										case SDLK_F3:
+											// Toggle V-sync
+											use_vsync = !use_vsync;
+
+											if (!fast_forward)
+												SDL_RenderSetVSync(renderer, use_vsync);
+
 											break;
 
 										case SDLK_F5:
