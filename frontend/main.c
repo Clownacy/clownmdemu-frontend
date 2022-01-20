@@ -42,11 +42,16 @@ static size_t rom_buffer_size;
 
 static bool is_pal_console = false;
 
+static void PrintErrorInternal(const char *format, va_list args)
+{
+	SDL_LogMessageV(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, format, args);
+}
+
 static void PrintError(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
-	SDL_LogMessageV(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, fmt, args);
+	PrintErrorInternal(fmt, args);
 	va_end(args);
 }
 
@@ -386,6 +391,8 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					ClownMDEmu_SetErrorCallback(PrintErrorInternal);
+
 					ClownMDEmu_Init(&clownmdemu_state);
 
 					// TODO - "Domestic" (Japanese) mode support
