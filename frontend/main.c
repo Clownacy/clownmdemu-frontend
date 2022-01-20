@@ -372,12 +372,6 @@ int main(int argc, char **argv)
 			if (!initialised_audio)
 				PrintError("InitAudio failed"); // Allow program to continue if audio fails
 
-			ClownMDEmu_Init(&clownmdemu_state);
-
-			// TODO - "Domestic" (Japanese) mode support
-			ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
-			ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
-
 			const char *rom_path = tinyfd_openFileDialog("Select a cartridge file", NULL, 0, NULL, NULL, 0);
 
 			if (rom_path == NULL)
@@ -395,7 +389,13 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+					ClownMDEmu_Init(&clownmdemu_state);
+
+					// TODO - "Domestic" (Japanese) mode support
+					ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
+					ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
+
+					const ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
 					ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 
@@ -842,20 +842,20 @@ int main(int argc, char **argv)
 						framebuffer_texture_pitch /= sizeof(Uint32);
 					}
 
+					SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
+
+					if (state_file != NULL)
+					{
+						SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
+
+						SDL_RWclose(state_file);
+					}
+
+					ClownMDEmu_Deinit(&clownmdemu_state);
+
 					SDL_free(rom_buffer);
 				}
 			}
-
-			SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
-
-			if (state_file != NULL)
-			{
-				SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
-
-				SDL_RWclose(state_file);
-			}
-
-			ClownMDEmu_Deinit(&clownmdemu_state);
 
 			if (initialised_audio)
 				DeinitAudio();
