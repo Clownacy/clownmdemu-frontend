@@ -10,6 +10,8 @@
 #define CLOWNRESAMPLER_API static
 #include "clownresampler.h"
 
+#include "tinyfiledialogs.h"
+
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -349,38 +351,43 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 
 int main(int argc, char **argv)
 {
-	if (argc < 2)
+	(void)argc;
+	(void)argv;
+
+	// Initialise SDL2
+	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
-		PrintError("Must provide path to input ROM as a parameter");
+		PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
-		// Initialise SDL2
-		if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+		if (!InitVideo())
 		{
-			PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
+			PrintError("InitVideo failed");
 		}
 		else
 		{
-			if (!InitVideo())
+			const bool initialised_audio = InitAudio();
+
+			if (!initialised_audio)
+				PrintError("InitAudio failed"); // Allow program to continue if audio fails
+
+			ClownMDEmu_Init(&clownmdemu_state);
+
+			// TODO - "Domestic" (Japanese) mode support
+			ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
+			ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
+
+			const char *rom_path = tinyfd_openFileDialog("Select a cartridge file", NULL, 0, NULL, NULL, 0);
+
+			if (rom_path == NULL)
 			{
-				PrintError("InitVideo failed");
+				// Let's just assume that the user doesn't want to run the emulator
 			}
 			else
 			{
-				const bool initialised_audio = InitAudio();
-
-				if (!initialised_audio)
-					PrintError("InitAudio failed"); // Allow program to continue if audio fails
-
-				ClownMDEmu_Init(&clownmdemu_state);
-
-				// For now, let's emulate a North American console
-				ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
-				ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
-
 				// Load ROM to memory
-				LoadFileToBuffer(argv[1], &rom_buffer, &rom_buffer_size);
+				LoadFileToBuffer(rom_path, &rom_buffer, &rom_buffer_size);
 
 				if (rom_buffer == NULL)
 				{
@@ -441,7 +448,7 @@ int main(int argc, char **argv)
 								break;
 							}
 
-						#undef MULTIPLIER
+							#undef MULTIPLIER
 
 							// Process the event
 							switch (event.type)
@@ -837,26 +844,26 @@ int main(int argc, char **argv)
 
 					SDL_free(rom_buffer);
 				}
-
-				SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
-
-				if (state_file != NULL)
-				{
-					SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
-
-					SDL_RWclose(state_file);
-				}
-
-				ClownMDEmu_Deinit(&clownmdemu_state);
-
-				if (initialised_audio)
-					DeinitAudio();
-
-				DeinitVideo();
 			}
 
-			SDL_Quit();
+			SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
+
+			if (state_file != NULL)
+			{
+				SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
+
+				SDL_RWclose(state_file);
+			}
+
+			ClownMDEmu_Deinit(&clownmdemu_state);
+
+			if (initialised_audio)
+				DeinitAudio();
+
+			DeinitVideo();
 		}
+
+		SDL_Quit();
 	}
 
 	return 0;
