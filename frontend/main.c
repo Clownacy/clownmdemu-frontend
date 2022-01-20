@@ -351,9 +351,6 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 
 int main(int argc, char **argv)
 {
-	(void)argc;
-	(void)argv;
-
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
@@ -372,7 +369,7 @@ int main(int argc, char **argv)
 			if (!initialised_audio)
 				PrintError("InitAudio failed"); // Allow program to continue if audio fails
 
-			const char *rom_path = tinyfd_openFileDialog("Select a cartridge file", NULL, 0, NULL, NULL, 0);
+			const char *rom_path = argc > 1 ? argv[1] : tinyfd_openFileDialog("Select a cartridge file", NULL, 0, NULL, NULL, 0);
 
 			if (rom_path == NULL)
 			{
