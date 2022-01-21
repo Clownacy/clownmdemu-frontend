@@ -1,5 +1,4 @@
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stddef.h>
 
 #include "SDL.h"
@@ -77,7 +76,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 		{
 			*file_size = (size_t)size;
 
-			*file_buffer = SDL_malloc(*file_size);
+			*file_buffer = (unsigned char*)SDL_malloc(*file_size);
 
 			if (*file_buffer == NULL)
 				PrintError("Could not allocate memory for file");
@@ -149,7 +148,7 @@ static bool InitVideo(void)
 						PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
 					// Lock the texture so that we can write to its pixels later
-					if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
 						framebuffer_texture_pixels = NULL;
 
 					framebuffer_texture_pitch /= sizeof(Uint32);
@@ -327,7 +326,7 @@ typedef struct ResamplerCallbackUserData
 
 static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
 {
-	ResamplerCallbackUserData *resampler_callback_user_data = user_data;
+	ResamplerCallbackUserData *resampler_callback_user_data = (ResamplerCallbackUserData*)user_data;
 
 	const size_t samples_to_do = CC_MIN(resampler_callback_user_data->samples_remaining, buffer_size);
 
@@ -345,7 +344,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 	short audio_buffer[0x400];
 
 	ResamplerCallbackUserData resampler_callback_user_data;
-	resampler_callback_user_data.state = user_data;
+	resampler_callback_user_data.state = (ClownMDEmu_State*)user_data;
 	resampler_callback_user_data.samples_remaining = total_samples;
 
 	size_t total_resampled_samples;
@@ -576,7 +575,7 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											ControllerInput *controller_input = SDL_calloc(sizeof(ControllerInput), 1);
+											ControllerInput *controller_input = (ControllerInput*)SDL_calloc(sizeof(ControllerInput), 1);
 
 											if (controller_input == NULL)
 											{
@@ -739,6 +738,7 @@ int main(int argc, char **argv)
 											{
 												case SDL_CONTROLLER_AXIS_LEFTX:
 												case SDL_CONTROLLER_AXIS_LEFTY:
+												{
 													if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
 														controller_input->left_stick_x = event.caxis.value;
 													else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
@@ -791,6 +791,7 @@ int main(int argc, char **argv)
 													}
 
 													break;
+												}
 
 												default:
 													break;
@@ -836,11 +837,12 @@ int main(int argc, char **argv)
 
 						// Draw the rendered frame to the screen
 						SDL_RenderClear(renderer);
-						SDL_RenderCopy(renderer, framebuffer_texture, &(SDL_Rect){.x = 0, .y = 0, .w = current_screen_width, .h = current_screen_height}, &destination_rect);
+						const SDL_Rect rect = {0, 0, (int)current_screen_width, (int)current_screen_height};
+						SDL_RenderCopy(renderer, framebuffer_texture, &rect, &destination_rect);
 						SDL_RenderPresent(renderer);
 
 						// Lock the texture so that we can write to its pixels later
-						if (SDL_LockTexture(framebuffer_texture, NULL, (void*)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+						if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
 							framebuffer_texture_pixels = NULL;
 
 						framebuffer_texture_pitch /= sizeof(Uint32);

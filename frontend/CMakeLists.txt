@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(clownmdemufrontend LANGUAGES C)
+project(clownmdemufrontend LANGUAGES C CXX)
 
 add_executable(clownmdemufrontend WIN32
-	"main.c"
+	"main.cpp"
 	"clownresampler.h"
 	"tinyfiledialogs.c"
 	"tinyfiledialogs.h"
