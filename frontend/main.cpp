@@ -11,6 +11,16 @@
 
 #include "tinyfiledialogs.h"
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_sdlrenderer.h"
+
+#if !SDL_VERSION_ATLEAST(2,0,17)
+#error SDL 2.0.17+ is required because of SDL_RenderGeometry() function!
+#endif
+
+#include "imgui/karla_regular.h"
+
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -34,12 +44,15 @@ static Input keyboard_input;
 static ControllerInput *controller_input_list_head;
 
 static ClownMDEmu_State clownmdemu_state;
-static ClownMDEmu_State clownmdemu_save_state;
+
+static bool quick_save_exists = false;
+static ClownMDEmu_State quick_save_state;
 
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
 
 static bool is_pal_console = false;
+static bool is_overseas_console = true;
 
 static void PrintErrorInternal(const char *format, va_list args)
 {
@@ -57,6 +70,7 @@ static void PrintError(const char *format, ...)
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
 	*file_buffer = NULL;
+	*file_size = 0;
 
 	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
 
@@ -66,22 +80,28 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 	}
 	else
 	{
-		const Sint64 size = SDL_RWsize(file);
+		const Sint64 size_s64 = SDL_RWsize(file);
 
-		if (size < 0)
+		if (size_s64 < 0)
 		{
 			PrintError("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
-			*file_size = (size_t)size;
+			const size_t size = (size_t)size_s64;
 
-			*file_buffer = (unsigned char*)SDL_malloc(*file_size);
+			*file_buffer = (unsigned char*)SDL_malloc(size);
 
 			if (*file_buffer == NULL)
+			{
 				PrintError("Could not allocate memory for file");
+			}
 			else
-				SDL_RWread(file, *file_buffer, 1, *file_size);
+			{
+				*file_size = size;
+
+				SDL_RWread(file, *file_buffer, 1, size);
+			}
 		}
 
 		if (SDL_RWclose(file) < 0)
@@ -102,10 +122,11 @@ static int framebuffer_texture_pitch;
 
 static Uint32 colours[3 * 4 * 16];
 
-static unsigned int current_screen_width;
-static unsigned int current_screen_height;
+static int current_screen_width;
+static int current_screen_height;
 
 static bool use_vsync;
+static bool fullscreen;
 
 static bool InitVideo(void)
 {
@@ -116,7 +137,7 @@ static bool InitVideo(void)
 	else
 	{
 		// Create window
-		window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+		window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
 
 		if (window == NULL)
 		{
@@ -174,6 +195,14 @@ static void DeinitVideo(void)
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+static void ToggleFullscreen(void)
+{
+	// Toggle fullscreen
+	fullscreen = !fullscreen;
+
+	SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
 
@@ -296,8 +325,8 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 		for (unsigned int i = 0; i < screen_width; ++i)
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
 
-	current_screen_width = screen_width;
-	current_screen_height = screen_height;
+	current_screen_width = (int)screen_width;
+	current_screen_height = (int)screen_height;
 }
 
 static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, unsigned int button_id)
@@ -353,8 +382,18 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 			SDL_QueueAudio(audio_device, audio_buffer, total_resampled_samples * sizeof(*audio_buffer));
 }
 
+static void ApplyState(ClownMDEmu_State *state)
+{
+	clownmdemu_state = *state;
+	ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console);
+	ClownMDEmu_SetJapanese(&clownmdemu_state, !is_overseas_console);
+}
+
 int main(int argc, char **argv)
 {
+	(void)argc;
+	(void)argv;
+
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
@@ -368,503 +407,714 @@ int main(int argc, char **argv)
 		}
 		else
 		{
+			// Get DPI scale
+			float dpi_scale = 1.0f;
+
+			float ddpi;
+			if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
+				dpi_scale = ddpi / 96.0f; // 96 DPI appears to be the "normal" DPI
+
+			// Setup Dear ImGui context
+			IMGUI_CHECKVERSION();
+			ImGui::CreateContext();
+			ImGuiIO &io = ImGui::GetIO();
+			ImGuiStyle &style = ImGui::GetStyle();
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+			// Setup Dear ImGui style
+			ImGui::StyleColorsDark();
+			//ImGui::StyleColorsClassic();
+
+			// Apply DPI scale
+			style.ScaleAllSizes(dpi_scale);
+			const float font_size = SDL_floorf(15.0f * dpi_scale);
+			const float menu_bar_size = font_size + style.FramePadding.y * 2; // An inlined ImGui::GetFrameHeight that actually works
+			SDL_SetWindowSize(window, (int)(320 * 2 * dpi_scale), (int)(224 * 2 * dpi_scale + menu_bar_size));
+
+			// We are now ready to show the window
+			SDL_ShowWindow(window);
+
+			// Setup Platform/Renderer backends
+			ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
+			ImGui_ImplSDLRenderer_Init(renderer);
+
+			// Load Font
+			io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size);
+
 			const bool initialised_audio = InitAudio();
 
 			if (!initialised_audio)
 				PrintError("InitAudio failed"); // Allow program to continue if audio fails
 
-			const char *rom_path = argc > 1 ? argv[1] : tinyfd_openFileDialog("Select a cartridge file", NULL, 0, NULL, NULL, 0);
+			ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
-			if (rom_path == NULL)
+			const ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+
+			bool quit = false;
+
+			bool fast_forward = false;
+
+			while (!quit)
 			{
-				// Let's just assume that the user doesn't want to run the emulator
-			}
-			else
-			{
-				// Load ROM to memory
-				LoadFileToBuffer(rom_path, &rom_buffer, &rom_buffer_size);
-
-				if (rom_buffer == NULL)
+				// This loop processes events and manages the framerate
+				for (;;)
 				{
-					PrintError("Could not load the ROM");
-				}
-				else
-				{
-					ClownMDEmu_SetErrorCallback(PrintErrorInternal);
+					// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
+					// (technically it's only required the NTSC framerate: PAL doesn't need it).
+					#define MULTIPLIER 300
 
-					ClownMDEmu_Init(&clownmdemu_state);
+					static Uint32 next_time;
+					const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
 
-					// TODO - "Domestic" (Japanese) mode support
-					ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
-					ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
+					int timeout = 0;
 
-					const ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+					if (!SDL_TICKS_PASSED(current_time, next_time))
+						timeout = (next_time - current_time) / MULTIPLIER;
+					else if (SDL_TICKS_PASSED(current_time, next_time + 100 * MULTIPLIER)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+						next_time = current_time;
 
-					ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
-
-					// Initialise save state
-					clownmdemu_save_state = clownmdemu_state;
-
-					bool quit = false;
-
-					bool fast_forward = false;
-
-					while (!quit)
+					// Obtain an event
+					SDL_Event event;
+					if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
 					{
-						// This loop processes events and manages the framerate
-						for (;;)
+						// Calculate when the next frame will be
+						Uint32 delta;
+
+						if (is_pal_console)
 						{
-							// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-							// (technically it's only required the NTSC framerate: PAL doesn't need it).
-							#define MULTIPLIER 300
+							// Run at 50FPS
+							delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
+						}
+						else
+						{
+							// Run at roughly 59.94FPS (60 divided by 1.001)
+							delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+						}
 
-							static Uint32 next_time;
-							const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
+						next_time += delta >> (fast_forward ? 2 : 0);
 
-							int timeout = 0;
+						break;
+					}
 
-							if (!SDL_TICKS_PASSED(current_time, next_time))
-								timeout = (next_time - current_time) / MULTIPLIER;
-							else if (SDL_TICKS_PASSED(current_time, next_time + 100 * MULTIPLIER)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
-								next_time = current_time;
+					#undef MULTIPLIER
 
-							// Obtain an event
-							SDL_Event event;
-							if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
-							{
-								// Calculate when the next frame will be
-								Uint32 delta;
+					ImGui_ImplSDL2_ProcessEvent(&event);
 
-								if (is_pal_console)
-								{
-									// Run at 50FPS
-									delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
-								}
-								else
-								{
-									// Run at roughly 59.94FPS (60 divided by 1.001)
-									delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
-								}
+					// Process the event
+					switch (event.type)
+					{
+						case SDL_QUIT:
+							quit = true;
+							break;
 
-								next_time += delta >> (fast_forward ? 2 : 0);
-
+						case SDL_KEYDOWN:
+							// Don't use inputs that Dear ImGui wants
+							if (io.WantCaptureKeyboard)
 								break;
-							}
 
-							#undef MULTIPLIER
+							// Ignore repeated key inputs caused by holding the key down
+							if (event.key.repeat)
+								break;
 
-							// Process the event
-							switch (event.type)
+							switch (event.key.keysym.sym)
 							{
-								case SDL_QUIT:
-									quit = true;
+								case SDLK_TAB:
+									// Soft-reset console
+									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 									break;
 
-								case SDL_KEYDOWN:
-									// Ignore repeated key inputs caused by holding the key down
-									if (event.key.repeat)
-										break;
+								case SDLK_F1:
+									// Toggle which joypad the keyboard controls
+									keyboard_input.bound_joypad ^= 1;
+									break;
 
-									switch (event.key.keysym.sym)
-									{
-										case SDLK_TAB:
-											// Soft-reset console
-											ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
-											break;
+								case SDLK_F5:
+									// Save save state
+									quick_save_exists = true;
+									quick_save_state = clownmdemu_state;
+									break;
 
-										case SDLK_F1:
-											// Toggle PAL mode
-											is_pal_console = !is_pal_console;
-											ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
-											SetAudioPALMode(is_pal_console);
-											break;
-
-										case SDLK_F2:
-											// Toggle which joypad the keyboard controls
-											keyboard_input.bound_joypad ^= 1;
-											break;
-
-										case SDLK_F3:
-											// Toggle V-sync
-											use_vsync = !use_vsync;
-
-											if (!fast_forward)
-												SDL_RenderSetVSync(renderer, use_vsync);
-
-											break;
-
-										case SDLK_F5:
-											// Save save state
-											clownmdemu_save_state = clownmdemu_state;
-											break;
-
-										case SDLK_F9:
-											// Load save state
-											clownmdemu_state = clownmdemu_save_state;
-											break;
-
-										case SDLK_F11:
-										{
-											// Toggle fullscreen
-											static bool fullscreen;
-
-											fullscreen = !fullscreen;
-
-											SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-											SDL_ShowCursor(fullscreen ? SDL_DISABLE : SDL_ENABLE);
-
-											break;
-										}
-
-										default:
-											break;
-
-									}
-									// Fallthrough
-								case SDL_KEYUP:
-								{
-									const bool pressed = event.key.state == SDL_PRESSED;
-
-									switch (event.key.keysym.scancode)
-									{
-										#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break
-
-										DO_KEY(CLOWNMDEMU_BUTTON_UP, SDL_SCANCODE_W);
-										DO_KEY(CLOWNMDEMU_BUTTON_DOWN, SDL_SCANCODE_S);
-										DO_KEY(CLOWNMDEMU_BUTTON_LEFT, SDL_SCANCODE_A);
-										DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D);
-										DO_KEY(CLOWNMDEMU_BUTTON_A, SDL_SCANCODE_O);
-										DO_KEY(CLOWNMDEMU_BUTTON_B, SDL_SCANCODE_P);
-										DO_KEY(CLOWNMDEMU_BUTTON_C, SDL_SCANCODE_LEFTBRACKET);
-										DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN);
-
-										#undef DO_KEY
-
-										case SDL_SCANCODE_SPACE:
-											// Toggle fast-forward
-											fast_forward = pressed;
-
-											// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
-											if (use_vsync)
-												SDL_RenderSetVSync(renderer, !pressed);
-
-											break;
-
-										default:
-											break;
-									}
+								case SDLK_F9:
+									// Load save state
+									if (quick_save_exists)
+										ApplyState(&quick_save_state);
 
 									break;
-								}
 
-								case SDL_CONTROLLERDEVICEADDED:
-								{
-									SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
-
-									if (controller == NULL)
-									{
-										PrintError("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
-									}
-									else
-									{
-										const SDL_JoystickID joystick_instance_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
-
-										if (joystick_instance_id < 0)
-										{
-											PrintError("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
-										}
-										else
-										{
-											ControllerInput *controller_input = (ControllerInput*)SDL_calloc(sizeof(ControllerInput), 1);
-
-											if (controller_input == NULL)
-											{
-												PrintError("Could not allocate memory for the new ControllerInput struct");
-											}
-											else
-											{
-												controller_input->joystick_instance_id = joystick_instance_id;
-
-												controller_input->next = controller_input_list_head;
-												controller_input_list_head = controller_input;
-
-												break;
-											}
-										}
-
-										SDL_GameControllerClose(controller);
-									}
-
+								case SDLK_F11:
+									ToggleFullscreen();
 									break;
-								}
 
-								case SDL_CONTROLLERDEVICEREMOVED:
-								{
-									SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
-
-									if (controller == NULL)
-									{
-										PrintError("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
-									}
-									else
-									{
-										SDL_GameControllerClose(controller);
-									}
-
-									for (ControllerInput **controller_input_pointer = &controller_input_list_head; ; controller_input_pointer = &(*controller_input_pointer)->next)
-									{
-										if ((*controller_input_pointer) == NULL)
-										{
-											PrintError("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
-											break;
-										}
-
-										ControllerInput *controller_input = *controller_input_pointer;
-
-										if (controller_input->joystick_instance_id == event.cdevice.which)
-										{
-											*controller_input_pointer = controller_input->next;
-											SDL_free(controller_input);
-											break;
-										}
-									}
-
+								default:
 									break;
-								}
 
-								case SDL_CONTROLLERBUTTONDOWN:
-								case SDL_CONTROLLERBUTTONUP:
-								{
-									const bool pressed = event.cbutton.state == SDL_PRESSED;
+							}
+							// Fallthrough
+						case SDL_KEYUP:
+						{
+							// Don't use inputs that Dear ImGui wants
+							if (io.WantCaptureKeyboard)
+								break;
 
-									// Look for the controller that this event belongs to.
-									for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
-									{
-										// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
-										if (controller_input == NULL)
-										{
-											PrintError("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
-											break;
-										}
+							const bool pressed = event.key.state == SDL_PRESSED;
 
-										// Check if the current controller is the one that matches this event.
-										if (controller_input->joystick_instance_id == event.cbutton.which)
-										{
-											switch (event.cbutton.button)
-											{
-												#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break
+							switch (event.key.keysym.scancode)
+							{
+								#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break
 
-												DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
-												DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
-												DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B);
-												DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A);
-												DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START);
+								DO_KEY(CLOWNMDEMU_BUTTON_UP, SDL_SCANCODE_W);
+								DO_KEY(CLOWNMDEMU_BUTTON_DOWN, SDL_SCANCODE_S);
+								DO_KEY(CLOWNMDEMU_BUTTON_LEFT, SDL_SCANCODE_A);
+								DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D);
+								DO_KEY(CLOWNMDEMU_BUTTON_A, SDL_SCANCODE_O);
+								DO_KEY(CLOWNMDEMU_BUTTON_B, SDL_SCANCODE_P);
+								DO_KEY(CLOWNMDEMU_BUTTON_C, SDL_SCANCODE_LEFTBRACKET);
+								DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN);
 
-												#undef DO_BUTTON
+								#undef DO_KEY
 
-												case SDL_CONTROLLER_BUTTON_DPAD_UP:
-												case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-												case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-												case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-												{
-													unsigned int direction;
-													unsigned int button;
+								case SDL_SCANCODE_SPACE:
+									// Toggle fast-forward
+									fast_forward = pressed;
 
-													switch (event.cbutton.button)
-													{
-														default:
-														case SDL_CONTROLLER_BUTTON_DPAD_UP:
-															direction = 0;
-															button = CLOWNMDEMU_BUTTON_UP;
-															break;
-
-														case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-															direction = 1;
-															button = CLOWNMDEMU_BUTTON_DOWN;
-															break;
-
-														case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-															direction = 2;
-															button = CLOWNMDEMU_BUTTON_LEFT;
-															break;
-
-														case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
-															direction = 3;
-															button = CLOWNMDEMU_BUTTON_RIGHT;
-															break;
-													}
-
-													controller_input->dpad[direction] = pressed;
-
-													// Combine D-pad and left stick values into final joypad D-pad inputs.
-													controller_input->input.buttons[button] = controller_input->left_stick[direction] || controller_input->dpad[direction];
-
-													break;
-												}
-
-												case SDL_CONTROLLER_BUTTON_BACK:
-													// Toggle which joypad the controller is bound to.
-													if (pressed)
-														controller_input->input.bound_joypad ^= 1;
-
-													break;
-
-												default:
-													break;
-											}
-
-											break;
-										}
-									}
-
-									break;
-								}
-
-								case SDL_CONTROLLERAXISMOTION:
-									// Look for the controller that this event belongs to.
-									for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
-									{
-										// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
-										if (controller_input == NULL)
-										{
-											PrintError("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
-											break;
-										}
-
-										// Check if the current controller is the one that matches this event.
-										if (controller_input->joystick_instance_id == event.caxis.which)
-										{
-											switch (event.caxis.axis)
-											{
-												case SDL_CONTROLLER_AXIS_LEFTX:
-												case SDL_CONTROLLER_AXIS_LEFTY:
-												{
-													if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-														controller_input->left_stick_x = event.caxis.value;
-													else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-														controller_input->left_stick_y = event.caxis.value;
-
-													// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
-
-													// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
-													const float magnitude = SDL_sqrtf((float)(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y));
-
-													const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
-													const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
-
-													// Now that we have the stick's direction in the form of a unit vector,
-													// we can create a dot product of it with another directional unit vector
-													// to determine the angle between them.
-													for (unsigned int i = 0; i < 4; ++i)
-													{
-														// Apply a deadzone.
-														if (magnitude < 32768.0f / 4.0f)
-														{
-															controller_input->left_stick[i] = false;
-														}
-														else
-														{
-															// This is a list of directions expressed as unit vectors.
-															const float directions[4][2] = {
-																{ 0.0f, -1.0f}, // Up
-																{ 0.0f,  1.0f}, // Down
-																{-1.0f,  0.0f}, // Left
-																{ 1.0f,  0.0f}  // Right
-															};
-
-															// Perform dot product of stick's direction vector with other direction vector.
-															const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
-
-															// If the stick is within 67.5 degrees of the specified direction, then this will be true.
-															controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * ((float)M_PI / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
-														}
-
-														const unsigned int buttons[4] = {
-															CLOWNMDEMU_BUTTON_UP,
-															CLOWNMDEMU_BUTTON_DOWN,
-															CLOWNMDEMU_BUTTON_LEFT,
-															CLOWNMDEMU_BUTTON_RIGHT
-														};
-
-														// Combine D-pad and left stick values into final joypad D-pad inputs.
-														controller_input->input.buttons[buttons[i]] = controller_input->left_stick[i] || controller_input->dpad[i];
-													}
-
-													break;
-												}
-
-												default:
-													break;
-											}
-
-											break;
-										}
-									}
+									// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
+									if (use_vsync)
+										SDL_RenderSetVSync(renderer, !pressed);
 
 									break;
 
 								default:
 									break;
 							}
+
+							break;
 						}
 
-						// Run the emulator for a frame
-						ClownMDEmu_Iterate(&clownmdemu_state, &callbacks);
-
-						// Correct the aspect ratio of the rendered frame
-						// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
-						int renderer_width, renderer_height;
-						SDL_GetRendererOutputSize(renderer, &renderer_width, &renderer_height);
-
-						SDL_Rect destination_rect;
-
-						if ((unsigned int)renderer_width > renderer_height * 320 / current_screen_height)
+						case SDL_CONTROLLERDEVICEADDED:
 						{
-							destination_rect.w = renderer_height * 320 / current_screen_height;
-							destination_rect.h = renderer_height;
+							SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
+
+							if (controller == NULL)
+							{
+								PrintError("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
+							}
+							else
+							{
+								const SDL_JoystickID joystick_instance_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+
+								if (joystick_instance_id < 0)
+								{
+									PrintError("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
+								}
+								else
+								{
+									ControllerInput *controller_input = (ControllerInput*)SDL_calloc(sizeof(ControllerInput), 1);
+
+									if (controller_input == NULL)
+									{
+										PrintError("Could not allocate memory for the new ControllerInput struct");
+									}
+									else
+									{
+										controller_input->joystick_instance_id = joystick_instance_id;
+
+										controller_input->next = controller_input_list_head;
+										controller_input_list_head = controller_input;
+
+										break;
+									}
+								}
+
+								SDL_GameControllerClose(controller);
+							}
+
+							break;
 						}
-						else
+
+						case SDL_CONTROLLERDEVICEREMOVED:
 						{
-							destination_rect.w = renderer_width;
-							destination_rect.h = renderer_width * current_screen_height / 320;
+							SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
+
+							if (controller == NULL)
+							{
+								PrintError("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
+							}
+							else
+							{
+								SDL_GameControllerClose(controller);
+							}
+
+							for (ControllerInput **controller_input_pointer = &controller_input_list_head; ; controller_input_pointer = &(*controller_input_pointer)->next)
+							{
+								if ((*controller_input_pointer) == NULL)
+								{
+									PrintError("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
+									break;
+								}
+
+								ControllerInput *controller_input = *controller_input_pointer;
+
+								if (controller_input->joystick_instance_id == event.cdevice.which)
+								{
+									*controller_input_pointer = controller_input->next;
+									SDL_free(controller_input);
+									break;
+								}
+							}
+
+							break;
 						}
 
-						destination_rect.x = (renderer_width - destination_rect.w) / 2;
-						destination_rect.y = (renderer_height - destination_rect.h) / 2;
+						case SDL_CONTROLLERBUTTONDOWN:
+						case SDL_CONTROLLERBUTTONUP:
+						{
+							const bool pressed = event.cbutton.state == SDL_PRESSED;
 
-						// Unlock the texture so that we can draw it
-						SDL_UnlockTexture(framebuffer_texture);
+							// Look for the controller that this event belongs to.
+							for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
+							{
+								// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
+								if (controller_input == NULL)
+								{
+									PrintError("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
+									break;
+								}
 
-						// Draw the rendered frame to the screen
-						SDL_RenderClear(renderer);
-						const SDL_Rect rect = {0, 0, (int)current_screen_width, (int)current_screen_height};
-						SDL_RenderCopy(renderer, framebuffer_texture, &rect, &destination_rect);
-						SDL_RenderPresent(renderer);
+								// Check if the current controller is the one that matches this event.
+								if (controller_input->joystick_instance_id == event.cbutton.which)
+								{
+									switch (event.cbutton.button)
+									{
+										#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break
 
-						// Lock the texture so that we can write to its pixels later
-						if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
-							framebuffer_texture_pixels = NULL;
+										DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
+										DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
+										DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B);
+										DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A);
+										DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START);
 
-						framebuffer_texture_pitch /= sizeof(Uint32);
+										#undef DO_BUTTON
+
+										case SDL_CONTROLLER_BUTTON_DPAD_UP:
+										case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+										case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+										case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+										{
+											unsigned int direction;
+											unsigned int button;
+
+											switch (event.cbutton.button)
+											{
+												default:
+												case SDL_CONTROLLER_BUTTON_DPAD_UP:
+													direction = 0;
+													button = CLOWNMDEMU_BUTTON_UP;
+													break;
+
+												case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+													direction = 1;
+													button = CLOWNMDEMU_BUTTON_DOWN;
+													break;
+
+												case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+													direction = 2;
+													button = CLOWNMDEMU_BUTTON_LEFT;
+													break;
+
+												case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+													direction = 3;
+													button = CLOWNMDEMU_BUTTON_RIGHT;
+													break;
+											}
+
+											controller_input->dpad[direction] = pressed;
+
+											// Combine D-pad and left stick values into final joypad D-pad inputs.
+											controller_input->input.buttons[button] = controller_input->left_stick[direction] || controller_input->dpad[direction];
+
+											break;
+										}
+
+										case SDL_CONTROLLER_BUTTON_BACK:
+											// Toggle which joypad the controller is bound to.
+											if (pressed)
+												controller_input->input.bound_joypad ^= 1;
+
+											break;
+
+										default:
+											break;
+									}
+
+									break;
+								}
+							}
+
+							break;
+						}
+
+						case SDL_CONTROLLERAXISMOTION:
+							// Look for the controller that this event belongs to.
+							for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
+							{
+								// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
+								if (controller_input == NULL)
+								{
+									PrintError("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
+									break;
+								}
+
+								// Check if the current controller is the one that matches this event.
+								if (controller_input->joystick_instance_id == event.caxis.which)
+								{
+									switch (event.caxis.axis)
+									{
+										case SDL_CONTROLLER_AXIS_LEFTX:
+										case SDL_CONTROLLER_AXIS_LEFTY:
+										{
+											if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+												controller_input->left_stick_x = event.caxis.value;
+											else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+												controller_input->left_stick_y = event.caxis.value;
+
+											// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
+
+											// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
+											const float magnitude = SDL_sqrtf((float)(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y));
+
+											const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
+											const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
+
+											// Now that we have the stick's direction in the form of a unit vector,
+											// we can create a dot product of it with another directional unit vector
+											// to determine the angle between them.
+											for (unsigned int i = 0; i < 4; ++i)
+											{
+												// Apply a deadzone.
+												if (magnitude < 32768.0f / 4.0f)
+												{
+													controller_input->left_stick[i] = false;
+												}
+												else
+												{
+													// This is a list of directions expressed as unit vectors.
+													const float directions[4][2] = {
+														{ 0.0f, -1.0f}, // Up
+														{ 0.0f,  1.0f}, // Down
+														{-1.0f,  0.0f}, // Left
+														{ 1.0f,  0.0f}  // Right
+													};
+
+													// Perform dot product of stick's direction vector with other direction vector.
+													const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
+
+													// If the stick is within 67.5 degrees of the specified direction, then this will be true.
+													controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * ((float)M_PI / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
+												}
+
+												const unsigned int buttons[4] = {
+													CLOWNMDEMU_BUTTON_UP,
+													CLOWNMDEMU_BUTTON_DOWN,
+													CLOWNMDEMU_BUTTON_LEFT,
+													CLOWNMDEMU_BUTTON_RIGHT
+												};
+
+												// Combine D-pad and left stick values into final joypad D-pad inputs.
+												controller_input->input.buttons[buttons[i]] = controller_input->left_stick[i] || controller_input->dpad[i];
+											}
+
+											break;
+										}
+
+										default:
+											break;
+									}
+
+									break;
+								}
+							}
+
+							break;
+
+						default:
+							break;
 					}
-
-					SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
-
-					if (state_file != NULL)
-					{
-						SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
-
-						SDL_RWclose(state_file);
-					}
-
-					ClownMDEmu_Deinit(&clownmdemu_state);
-
-					SDL_free(rom_buffer);
 				}
+
+				// Start the Dear ImGui frame
+				ImGui_ImplSDLRenderer_NewFrame();
+				ImGui_ImplSDL2_NewFrame();
+				ImGui::NewFrame();
+
+				// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+				ImGui::ShowDemoWindow();
+						
+				if (ImGui::BeginMainMenuBar())
+				{
+					if (ImGui::BeginMenu("Console"))
+					{
+						if (ImGui::MenuItem("Open Software"))
+						{
+							const char *rom_path = tinyfd_openFileDialog("Select Mega Drive software", NULL, 0, NULL, NULL, 0);
+
+							if (rom_path != NULL)
+							{
+								unsigned char *temp_rom_buffer;
+								size_t temp_rom_buffer_size;
+
+								// Load ROM to memory
+								LoadFileToBuffer(rom_path, &temp_rom_buffer, &temp_rom_buffer_size);
+
+								if (temp_rom_buffer == NULL)
+								{
+									PrintError("Could not load the software");
+								}
+								else
+								{
+									SDL_free(rom_buffer);
+
+									quick_save_exists = false;
+
+									rom_buffer = temp_rom_buffer;
+									rom_buffer_size = temp_rom_buffer_size;
+
+									ClownMDEmu_Init(&clownmdemu_state);
+									ClownMDEmu_SetJapanese(&clownmdemu_state, !is_overseas_console ? cc_true : cc_false);
+									ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
+
+									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+								}
+							}
+						}
+
+						if (ImGui::MenuItem("Close Software", NULL, false, rom_buffer != NULL))
+						{
+							SDL_free(rom_buffer);
+							rom_buffer = NULL;
+							rom_buffer_size = 0;
+						}
+
+						ImGui::Separator();
+
+						if (ImGui::MenuItem("Reset", "Tab"))
+						{
+							// Soft-reset console
+							ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+						}
+
+						ImGui::Separator();
+
+						if (ImGui::BeginMenu("Settings"))
+						{
+							ImGui::MenuItem("TV Standard", NULL, false, false);
+
+							if (ImGui::MenuItem("NTSC (60Hz)", NULL, !is_pal_console))
+							{
+								if (is_pal_console)
+								{
+									is_pal_console = false;
+									ClownMDEmu_SetPAL(&clownmdemu_state, cc_false);
+									SetAudioPALMode(false);
+								}
+							}
+
+							if (ImGui::MenuItem("PAL (50Hz)", NULL, is_pal_console))
+							{
+								if (!is_pal_console)
+								{
+									is_pal_console = true;
+									ClownMDEmu_SetPAL(&clownmdemu_state, cc_true);
+									SetAudioPALMode(true);
+								}
+							}
+
+							ImGui::Separator();
+
+							ImGui::MenuItem("Region", NULL, false, false);
+
+							if (ImGui::MenuItem("Domestic (Japan)", NULL, !is_overseas_console))
+							{
+								if (is_overseas_console)
+								{
+									is_overseas_console = false;
+									ClownMDEmu_SetJapanese(&clownmdemu_state, cc_true);
+								}
+							}
+
+							if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, is_overseas_console))
+							{
+								if (!is_overseas_console)
+								{
+									is_overseas_console = true;
+									ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
+								}
+							}
+
+							ImGui::EndMenu();
+						}
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::BeginMenu("Save States"))
+					{
+						if (ImGui::MenuItem("Quick Save", "F5", false, rom_buffer != NULL))
+						{
+							quick_save_exists = true;
+							quick_save_state = clownmdemu_state;
+						}
+
+						if (ImGui::MenuItem("Quick Load", "F9", false, rom_buffer != NULL && quick_save_exists))
+							ApplyState(&quick_save_state);
+
+						ImGui::Separator();
+
+						if (ImGui::MenuItem("Save To File", NULL, false, rom_buffer != NULL))
+						{
+							const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
+
+							if (save_state_path != NULL)
+							{
+								SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
+
+								if (file == NULL)
+								{
+									PrintError("Could not open save state file for writing");
+								}
+								else
+								{
+									if (SDL_RWwrite(file, &clownmdemu_state, sizeof(clownmdemu_state), 1) != 1)
+										PrintError("Could not write save state file");
+
+									SDL_RWclose(file);
+								}
+							}
+						}
+
+						if (ImGui::MenuItem("Load From File", NULL, false, rom_buffer != NULL))
+						{
+							const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
+
+							if (save_state_path != NULL)
+							{
+								SDL_RWops *file = SDL_RWFromFile(save_state_path, "rb");
+
+								if (file == NULL)
+								{
+									PrintError("Could not open save state file for reading");
+								}
+								else
+								{
+									ClownMDEmu_State temp_state_buffer;
+									if (SDL_RWread(file, &temp_state_buffer, sizeof(temp_state_buffer), 1) != 1)
+										PrintError("Could not read save state file");
+									else
+										ApplyState(&temp_state_buffer);
+
+									SDL_RWclose(file);
+								}
+							}
+						}
+
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::BeginMenu("Misc."))
+					{
+						if (ImGui::MenuItem("V-Sync", NULL, use_vsync))
+						{
+							use_vsync = !use_vsync;
+
+							if (!fast_forward)
+								SDL_RenderSetVSync(renderer, use_vsync);
+						}
+
+						if (ImGui::MenuItem("Fullscreen", "F11", fullscreen))
+							ToggleFullscreen();
+
+						ImGui::Separator();
+
+						if (ImGui::MenuItem("Exit"))
+							quit = true;
+
+						ImGui::EndMenu();
+					}
+
+					ImGui::EndMainMenuBar();
+				}
+
+				if (rom_buffer != NULL)
+				{
+					// Lock the texture so that we can write to its pixels later
+					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+						framebuffer_texture_pixels = NULL;
+
+					framebuffer_texture_pitch /= sizeof(Uint32);
+
+					// Run the emulator for a frame
+					ClownMDEmu_Iterate(&clownmdemu_state, &callbacks);
+
+					// Unlock the texture so that we can draw it
+					SDL_UnlockTexture(framebuffer_texture);
+				}
+
+				// Draw the rendered frame to the screen
+				SDL_RenderClear(renderer);
+
+				if (rom_buffer != NULL)
+				{
+					// Correct the aspect ratio of the rendered frame
+					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+					const ImGuiViewport* viewport = ImGui::GetMainViewport();
+					const int work_width = (int)viewport->WorkSize.x;
+					const int work_height = (int)viewport->WorkSize.y;
+
+					SDL_Rect destination_rect;
+
+					if (work_width > work_height * 320 / current_screen_height)
+					{
+						destination_rect.w = work_height * 320 / current_screen_height;
+						destination_rect.h = work_height;
+					}
+					else
+					{
+						destination_rect.w = work_width;
+						destination_rect.h = work_width * current_screen_height / 320;
+					}
+
+					destination_rect.x = viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
+					destination_rect.y = viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
+
+					const SDL_Rect rect = {0, 0, current_screen_width, current_screen_height};
+					SDL_RenderCopy(renderer, framebuffer_texture, &rect, &destination_rect);
+				}
+
+				ImGui::Render();
+				ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+				SDL_RenderPresent(renderer);
 			}
+
+			SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
+
+			if (state_file != NULL)
+			{
+				SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
+
+				SDL_RWclose(state_file);
+			}
+
+			ClownMDEmu_Deinit(&clownmdemu_state);
+
+			SDL_free(rom_buffer);
 
 			if (initialised_audio)
 				DeinitAudio();
+
+			// Cleanup
+			ImGui_ImplSDLRenderer_Shutdown();
+			ImGui_ImplSDL2_Shutdown();
+
+			ImGui::DestroyContext();
 
 			DeinitVideo();
 		}
