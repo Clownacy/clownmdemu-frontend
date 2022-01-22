@@ -329,7 +329,7 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 	current_screen_height = (int)screen_height;
 }
 
-static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, unsigned int button_id)
+static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownMDEmu_Button button_id)
 {
 	(void)user_data;
 
