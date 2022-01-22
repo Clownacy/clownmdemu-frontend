@@ -881,6 +881,11 @@ int main(int argc, char **argv)
 
 							break;
 
+						case SDL_DROPFILE:
+							OpenSoftware(event.drop.file, &callbacks);
+							SDL_free(event.drop.file);
+							break;
+
 						default:
 							break;
 					}
