@@ -385,6 +385,8 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 static void ApplyState(ClownMDEmu_State *state)
 {
 	clownmdemu_state = *state;
+
+	// We don't want the save state to override the user's configurations, so reapply them now.
 	ClownMDEmu_SetRegion(&clownmdemu_state, region);
 	ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
 }
@@ -428,7 +430,7 @@ int main(int argc, char **argv)
 			ImGui::StyleColorsDark();
 			//ImGui::StyleColorsClassic();
 
-			// Apply DPI scale
+			// Apply DPI scale (also resize the window so that there's room for the menu bar).
 			style.ScaleAllSizes(dpi_scale);
 			const float font_size = SDL_floorf(15.0f * dpi_scale);
 			const float menu_bar_size = font_size + style.FramePadding.y * 2; // An inlined ImGui::GetFrameHeight that actually works
@@ -444,6 +446,7 @@ int main(int argc, char **argv)
 			// Load Font
 			io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size);
 
+			// Intiialise audio if we can (but it's okay if it fails).
 			const bool initialised_audio = InitAudio();
 
 			if (!initialised_audio)
@@ -452,21 +455,25 @@ int main(int argc, char **argv)
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
 			}
 
+			// This should be called before any other clownmdemu functions are called!
 			ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
+			// Construct our big list of callbacks for clownmdemu.
 			const ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
+			// Manages whether the program exits or not.
 			bool quit = false;
 
+			// Manages whether the emulator runs at a higher speed or not.
 			bool fast_forward = false;
 
 			while (!quit)
 			{
-				// This loop processes events and manages the framerate
+				// This loop processes events and manages the framerate.
 				for (;;)
 				{
 					// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-					// (technically it's only required the NTSC framerate: PAL doesn't need it).
+					// (technically it's only required by the NTSC framerate: PAL doesn't need it).
 					#define MULTIPLIER 300
 
 					static Uint32 next_time;
@@ -600,6 +607,7 @@ int main(int argc, char **argv)
 
 						case SDL_CONTROLLERDEVICEADDED:
 						{
+							// Open the controller, and create an entry for it in the controller list.
 							SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
 
 							if (controller == NULL)
@@ -641,6 +649,7 @@ int main(int argc, char **argv)
 
 						case SDL_CONTROLLERDEVICEREMOVED:
 						{
+							// Close the controller, and remove it from the controller list.
 							SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
 
 							if (controller == NULL)
@@ -857,6 +866,7 @@ int main(int argc, char **argv)
 				// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 				//ImGui::ShowDemoWindow();
 						
+				// Handle the Dear ImGui-powered menu bar.
 				if (ImGui::BeginMainMenuBar())
 				{
 					if (ImGui::BeginMenu("Console"))
@@ -976,10 +986,12 @@ int main(int argc, char **argv)
 
 						if (ImGui::MenuItem("Save To File", NULL, false, rom_buffer != NULL))
 						{
+							// Obtain a filename and path from the user.
 							const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
 
 							if (save_state_path != NULL)
 							{
+								// Save the current state to the specified file.
 								SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
 
 								if (file == NULL)
@@ -1002,10 +1014,12 @@ int main(int argc, char **argv)
 
 						if (ImGui::MenuItem("Load From File", NULL, false, rom_buffer != NULL))
 						{
+							// Obtain a filename and path from the user.
 							const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
 
 							if (save_state_path != NULL)
 							{
+								// Load the state from the specified file.
 								SDL_RWops *file = SDL_RWFromFile(save_state_path, "rb");
 
 								if (file == NULL)
@@ -1073,11 +1087,12 @@ int main(int argc, char **argv)
 					SDL_UnlockTexture(framebuffer_texture);
 				}
 
-				// Draw the rendered frame to the screen
 				SDL_RenderClear(renderer);
 
 				if (rom_buffer != NULL)
 				{
+					// Draw the rendered frame to the screen
+						
 					// Correct the aspect ratio of the rendered frame
 					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
 					const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -1104,11 +1119,15 @@ int main(int argc, char **argv)
 					SDL_RenderCopy(renderer, framebuffer_texture, &rect, &destination_rect);
 				}
 
+				// Render Dear ImGui.
 				ImGui::Render();
 				ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+
+				// Finally display the rendered frame to the user.
 				SDL_RenderPresent(renderer);
 			}
 
+			// Dump the state to a file (this is a debug feature).
 			SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
 
 			if (state_file != NULL)
@@ -1125,10 +1144,8 @@ int main(int argc, char **argv)
 			if (initialised_audio)
 				DeinitAudio();
 
-			// Cleanup
 			ImGui_ImplSDLRenderer_Shutdown();
 			ImGui_ImplSDL2_Shutdown();
-
 			ImGui::DestroyContext();
 
 			DeinitVideo();
