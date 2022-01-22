@@ -51,8 +51,8 @@ static ClownMDEmu_State quick_save_state;
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
 
-static bool is_pal_console = false;
-static bool is_overseas_console = true;
+static ClownMDEmu_Region region = CLOWNMDEMU_REGION_OVERSEAS;
+static ClownMDEmu_TVStandard tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 
 static void PrintErrorInternal(const char *format, va_list args)
 {
@@ -259,7 +259,7 @@ static bool InitAudio(void)
 			audio_buffer_size = have.size;
 			native_audio_sample_rate = have.freq;
 
-			SetAudioPALMode(is_pal_console);
+			SetAudioPALMode(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 
 			SDL_PauseAudioDevice(audio_device, 0);
 
@@ -385,8 +385,8 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 static void ApplyState(ClownMDEmu_State *state)
 {
 	clownmdemu_state = *state;
-	ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console);
-	ClownMDEmu_SetJapanese(&clownmdemu_state, !is_overseas_console);
+	ClownMDEmu_SetRegion(&clownmdemu_state, region);
+	ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
 }
 
 int main(int argc, char **argv)
@@ -481,15 +481,17 @@ int main(int argc, char **argv)
 						// Calculate when the next frame will be
 						Uint32 delta;
 
-						if (is_pal_console)
+						switch (tv_standard)
 						{
-							// Run at 50FPS
-							delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
-						}
-						else
-						{
-							// Run at roughly 59.94FPS (60 divided by 1.001)
-							delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+							case CLOWNMDEMU_TV_STANDARD_PAL:
+								// Run at 50FPS
+								delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
+								break;
+
+							case CLOWNMDEMU_TV_STANDARD_NTSC:
+								// Run at roughly 59.94FPS (60 divided by 1.001)
+								delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+								break;
 						}
 
 						next_time += delta >> (fast_forward ? 2 : 0);
@@ -879,10 +881,7 @@ int main(int argc, char **argv)
 									rom_buffer = temp_rom_buffer;
 									rom_buffer_size = temp_rom_buffer_size;
 
-									ClownMDEmu_Init(&clownmdemu_state);
-									ClownMDEmu_SetJapanese(&clownmdemu_state, !is_overseas_console ? cc_true : cc_false);
-									ClownMDEmu_SetPAL(&clownmdemu_state, is_pal_console ? cc_true : cc_false);
-
+									ClownMDEmu_Init(&clownmdemu_state, region, tv_standard);
 									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 								}
 							}
@@ -909,22 +908,22 @@ int main(int argc, char **argv)
 						{
 							ImGui::MenuItem("TV Standard", NULL, false, false);
 
-							if (ImGui::MenuItem("NTSC (60Hz)", NULL, !is_pal_console))
+							if (ImGui::MenuItem("NTSC (60Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 							{
-								if (is_pal_console)
+								if (tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 								{
-									is_pal_console = false;
-									ClownMDEmu_SetPAL(&clownmdemu_state, cc_false);
+									tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+									ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
 									SetAudioPALMode(false);
 								}
 							}
 
-							if (ImGui::MenuItem("PAL (50Hz)", NULL, is_pal_console))
+							if (ImGui::MenuItem("PAL (50Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
 							{
-								if (!is_pal_console)
+								if (tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 								{
-									is_pal_console = true;
-									ClownMDEmu_SetPAL(&clownmdemu_state, cc_true);
+									tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+									ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
 									SetAudioPALMode(true);
 								}
 							}
@@ -933,21 +932,21 @@ int main(int argc, char **argv)
 
 							ImGui::MenuItem("Region", NULL, false, false);
 
-							if (ImGui::MenuItem("Domestic (Japan)", NULL, !is_overseas_console))
+							if (ImGui::MenuItem("Domestic (Japan)", NULL, region == CLOWNMDEMU_REGION_DOMESTIC))
 							{
-								if (is_overseas_console)
+								if (region != CLOWNMDEMU_REGION_DOMESTIC)
 								{
-									is_overseas_console = false;
-									ClownMDEmu_SetJapanese(&clownmdemu_state, cc_true);
+									region = CLOWNMDEMU_REGION_DOMESTIC;
+									ClownMDEmu_SetRegion(&clownmdemu_state, region);
 								}
 							}
 
-							if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, is_overseas_console))
+							if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, region == CLOWNMDEMU_REGION_OVERSEAS))
 							{
-								if (!is_overseas_console)
+								if (region != CLOWNMDEMU_REGION_OVERSEAS)
 								{
-									is_overseas_console = true;
-									ClownMDEmu_SetJapanese(&clownmdemu_state, cc_false);
+									region = CLOWNMDEMU_REGION_OVERSEAS;
+									ClownMDEmu_SetRegion(&clownmdemu_state, region);
 								}
 							}
 
