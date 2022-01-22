@@ -379,7 +379,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 	size_t total_resampled_samples;
 	while ((total_resampled_samples = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer), ResamplerCallback, &resampler_callback_user_data)) != 0)
 		if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
-			SDL_QueueAudio(audio_device, audio_buffer, total_resampled_samples * sizeof(*audio_buffer));
+			SDL_QueueAudio(audio_device, audio_buffer, (Uint32)total_resampled_samples * sizeof(*audio_buffer));
 }
 
 static void ApplyState(ClownMDEmu_State *state)
@@ -523,14 +523,15 @@ int main(int argc, char **argv)
 
 						switch (tv_standard)
 						{
-							case CLOWNMDEMU_TV_STANDARD_PAL:
-								// Run at 50FPS
-								delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
-								break;
-
+							default:
 							case CLOWNMDEMU_TV_STANDARD_NTSC:
 								// Run at roughly 59.94FPS (60 divided by 1.001)
 								delta = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(1000ul * MULTIPLIER);
+								break;
+
+							case CLOWNMDEMU_TV_STANDARD_PAL:
+								// Run at 50FPS
+								delta = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(1000ul * MULTIPLIER);
 								break;
 						}
 
@@ -1121,8 +1122,8 @@ int main(int argc, char **argv)
 						destination_rect.h = work_width * current_screen_height / 320;
 					}
 
-					destination_rect.x = viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
-					destination_rect.y = viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
+					destination_rect.x = (int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
+					destination_rect.y = (int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
 
 					const SDL_Rect rect = {0, 0, current_screen_width, current_screen_height};
 					SDL_RenderCopy(renderer, framebuffer_texture, &rect, &destination_rect);

@@ -674,7 +674,7 @@ char * tinyfd_mbcsTo8(char const * aMbcsString)
 void tinyfd_beep(void)
 {
     if (windowsVersion() > 5) Beep(440, 300);
-    else MessageBeep(-1);
+    else MessageBeep((UINT)-1);
 }
 
 
