@@ -391,11 +391,35 @@ static void ApplyState(ClownMDEmu_State *state)
 	ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
 }
 
+static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks)
+{
+	unsigned char *temp_rom_buffer;
+	size_t temp_rom_buffer_size;
+
+	// Load ROM to memory
+	LoadFileToBuffer(path, &temp_rom_buffer, &temp_rom_buffer_size);
+
+	if (temp_rom_buffer == NULL)
+	{
+		PrintError("Could not load the software");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the software.", window);
+	}
+	else
+	{
+		SDL_free(rom_buffer);
+
+		quick_save_exists = false;
+
+		rom_buffer = temp_rom_buffer;
+		rom_buffer_size = temp_rom_buffer_size;
+
+		ClownMDEmu_Init(&clownmdemu_state, region, tv_standard);
+		ClownMDEmu_Reset(&clownmdemu_state, callbacks);
+	}
+}
+
 int main(int argc, char **argv)
 {
-	(void)argc;
-	(void)argv;
-
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
@@ -460,6 +484,10 @@ int main(int argc, char **argv)
 
 			// Construct our big list of callbacks for clownmdemu.
 			const ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+
+			// If the user passed the path to the software on the command line, then load it here, automatically.
+			if (argc > 1)
+				OpenSoftware(argv[1], &callbacks);
 
 			// Manages whether the program exits or not.
 			bool quit = false;
@@ -876,31 +904,7 @@ int main(int argc, char **argv)
 							const char *rom_path = tinyfd_openFileDialog("Select Mega Drive software", NULL, 0, NULL, NULL, 0);
 
 							if (rom_path != NULL)
-							{
-								unsigned char *temp_rom_buffer;
-								size_t temp_rom_buffer_size;
-
-								// Load ROM to memory
-								LoadFileToBuffer(rom_path, &temp_rom_buffer, &temp_rom_buffer_size);
-
-								if (temp_rom_buffer == NULL)
-								{
-									PrintError("Could not load the software");
-									SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the software.", window);
-								}
-								else
-								{
-									SDL_free(rom_buffer);
-
-									quick_save_exists = false;
-
-									rom_buffer = temp_rom_buffer;
-									rom_buffer_size = temp_rom_buffer_size;
-
-									ClownMDEmu_Init(&clownmdemu_state, region, tv_standard);
-									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
-								}
-							}
+								OpenSoftware(rom_path, &callbacks);
 						}
 
 						if (ImGui::MenuItem("Close Software", NULL, false, rom_buffer != NULL))
@@ -1092,7 +1096,7 @@ int main(int argc, char **argv)
 				if (rom_buffer != NULL)
 				{
 					// Draw the rendered frame to the screen
-						
+
 					// Correct the aspect ratio of the rendered frame
 					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
 					const ImGuiViewport* viewport = ImGui::GetMainViewport();
