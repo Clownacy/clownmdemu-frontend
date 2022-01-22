@@ -398,12 +398,14 @@ int main(int argc, char **argv)
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", NULL);
 	}
 	else
 	{
 		if (!InitVideo())
 		{
 			PrintError("InitVideo failed");
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", NULL);
 		}
 		else
 		{
@@ -445,7 +447,10 @@ int main(int argc, char **argv)
 			const bool initialised_audio = InitAudio();
 
 			if (!initialised_audio)
+			{
 				PrintError("InitAudio failed"); // Allow program to continue if audio fails
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
+			}
 
 			ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
@@ -871,6 +876,7 @@ int main(int argc, char **argv)
 								if (temp_rom_buffer == NULL)
 								{
 									PrintError("Could not load the software");
+									SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the software.", window);
 								}
 								else
 								{
@@ -979,11 +985,15 @@ int main(int argc, char **argv)
 								if (file == NULL)
 								{
 									PrintError("Could not open save state file for writing");
+									SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
 								}
 								else
 								{
 									if (SDL_RWwrite(file, &clownmdemu_state, sizeof(clownmdemu_state), 1) != 1)
+									{
 										PrintError("Could not write save state file");
+										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+									}
 
 									SDL_RWclose(file);
 								}
@@ -1001,14 +1011,20 @@ int main(int argc, char **argv)
 								if (file == NULL)
 								{
 									PrintError("Could not open save state file for reading");
+									SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
 								}
 								else
 								{
 									ClownMDEmu_State temp_state_buffer;
 									if (SDL_RWread(file, &temp_state_buffer, sizeof(temp_state_buffer), 1) != 1)
+									{
 										PrintError("Could not read save state file");
+										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+									}
 									else
+									{
 										ApplyState(&temp_state_buffer);
+									}
 
 									SDL_RWclose(file);
 								}
