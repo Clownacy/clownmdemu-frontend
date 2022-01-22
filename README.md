@@ -61,12 +61,7 @@ high-level emulator than accuracy-focussed alternatives may.
 # Frontend
 
 An example frontend is provided in the `frontend` directory; it is written in
-C99 and leverages the SDL2 library.
-
-The frontend will open a file picker to select the game file with, but the user
-can also pass the path to the game file to the executable as a parameter (note
-that this can be achieved by dragging and dropping the game file onto the
-executable file).
+C++98 and leverages the SDL2, Dear ImGui, and tinyfiledialogs libraries.
 
 The control scheme is currently hardcoded to the following layout:
 
