@@ -337,9 +337,11 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 
 	cc_bool value = cc_false;
 
+	// First, try to obtain the input from the keyboard.
 	if (keyboard_input.bound_joypad == player_id)
 		value |= keyboard_input.buttons[button_id] ? cc_true : cc_false;
 
+	// Then, try to obtain the input from the controllers.
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
 		if (controller_input->input.bound_joypad == player_id)
 			value |= controller_input->input.buttons[button_id] ? cc_true : cc_false;
@@ -396,7 +398,7 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 	unsigned char *temp_rom_buffer;
 	size_t temp_rom_buffer_size;
 
-	// Load ROM to memory
+	// Load ROM to memory.
 	LoadFileToBuffer(path, &temp_rom_buffer, &temp_rom_buffer_size);
 
 	if (temp_rom_buffer == NULL)
@@ -406,6 +408,7 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 	}
 	else
 	{
+		// Unload the previous ROM in memory.
 		SDL_free(rom_buffer);
 
 		quick_save_exists = false;
@@ -452,6 +455,7 @@ int main(int argc, char **argv)
 
 			// Setup Dear ImGui style
 			ImGui::StyleColorsDark();
+			//ImGui::StyleColorsLight();
 			//ImGui::StyleColorsClassic();
 
 			// Apply DPI scale (also resize the window so that there's room for the menu bar).
@@ -899,7 +903,7 @@ int main(int argc, char **argv)
 
 				// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
 				//ImGui::ShowDemoWindow();
-						
+
 				// Handle the Dear ImGui-powered menu bar.
 				if (ImGui::BeginMainMenuBar())
 				{
