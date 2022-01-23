@@ -1182,7 +1182,10 @@ int main(int argc, char **argv)
 					destination_rect.x = (int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
 					destination_rect.y = (int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
 
-					if (framebuffer_texture_upscaled == NULL)
+					// Avoid blurring if...
+					// 1. The upscale texture failed to be created
+					// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple
+					if (framebuffer_texture_upscaled == NULL || (destination_rect.w % current_screen_width == 0 && destination_rect.h % current_screen_height == 0))
 					{
 						// Render the framebuffer to the screen
 						SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &destination_rect);
