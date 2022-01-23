@@ -222,19 +222,26 @@ void RecreateUpscaledFramebuffer(void)
 	// Round to the nearest multiples of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
 	framebuffer_upscale_factor = CC_MAX(1, CC_MIN((destination_width + source_width / 2) / source_width, (destination_height + source_height / 2) / source_height));
 
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-	SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass NULL to this
-	framebuffer_texture_upscaled = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, FRAMEBUFFER_WIDTH * framebuffer_upscale_factor, FRAMEBUFFER_HEIGHT * framebuffer_upscale_factor);
+	static size_t previous_framebuffer_upscale_factor = 0;
 
-	if (framebuffer_texture_upscaled == NULL)
+	if (framebuffer_upscale_factor != previous_framebuffer_upscale_factor)
 	{
-		PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		// Disable blending, since we don't need it
-		if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
-			PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+		previous_framebuffer_upscale_factor = framebuffer_upscale_factor;
+
+		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass NULL to this
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+		framebuffer_texture_upscaled = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, FRAMEBUFFER_WIDTH * framebuffer_upscale_factor, FRAMEBUFFER_HEIGHT * framebuffer_upscale_factor);
+
+		if (framebuffer_texture_upscaled == NULL)
+		{
+			PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			// Disable blending, since we don't need it
+			if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
+				PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+		}
 	}
 }
 
