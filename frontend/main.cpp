@@ -1244,6 +1244,7 @@ int main(int argc, char **argv)
 			ImGui_ImplSDL2_Shutdown();
 			ImGui::DestroyContext();
 
+			SDL_DestroyTexture(framebuffer_texture_upscaled);
 			DeinitVideo();
 		}
 
