@@ -123,12 +123,12 @@ static SDL_Texture *framebuffer_texture;
 static Uint32 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
 static SDL_Texture *framebuffer_texture_upscaled;
-static size_t framebuffer_upscale_factor;
+static unsigned int framebuffer_upscale_factor;
 
 static Uint32 colours[3 * 4 * 16];
 
-static int current_screen_width;
-static int current_screen_height;
+static unsigned int current_screen_width;
+static unsigned int current_screen_height;
 
 static bool use_vsync;
 static bool fullscreen;
@@ -213,13 +213,13 @@ static void ToggleFullscreen(void)
 
 void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
 {
-	const int source_width = current_screen_width;
-	const int source_height = current_screen_height;
+	const unsigned int source_width = current_screen_width;
+	const unsigned int source_height = current_screen_height;
 
 	// Round to the nearest multiples of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
 	framebuffer_upscale_factor = CC_MAX(1, CC_MIN((destination_width + source_width / 2) / source_width, (destination_height + source_height / 2) / source_height));
 
-	static size_t previous_framebuffer_upscale_factor = 0;
+	static unsigned int previous_framebuffer_upscale_factor = 0;
 
 	if (framebuffer_upscale_factor != previous_framebuffer_upscale_factor)
 	{
@@ -358,8 +358,8 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 {
 	(void)user_data;
 
-	current_screen_width = (int)screen_width;
-	current_screen_height = (int)screen_height;
+	current_screen_width = screen_width;
+	current_screen_height = screen_height;
 
 	if (framebuffer_texture_pixels != NULL)
 		for (unsigned int i = 0; i < screen_width; ++i)
@@ -1152,8 +1152,8 @@ int main(int argc, char **argv)
 					// Correct the aspect ratio of the rendered frame
 					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
 					const ImGuiViewport* viewport = ImGui::GetMainViewport();
-					const int work_width = (int)viewport->WorkSize.x;
-					const int work_height = (int)viewport->WorkSize.y;
+					const unsigned int work_width = (unsigned int)viewport->WorkSize.x;
+					const unsigned int work_height = (unsigned int)viewport->WorkSize.y;
 
 					RecreateUpscaledFramebuffer(work_width, work_height);
 
@@ -1170,8 +1170,8 @@ int main(int argc, char **argv)
 						destination_rect.h = work_width * current_screen_height / 320;
 					}
 
-					destination_rect.x = (int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
-					destination_rect.y = (int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
+					destination_rect.x = (unsigned int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
+					destination_rect.y = (unsigned int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
 
 					// Avoid blurring if...
 					// 1. The upscale texture failed to be created
