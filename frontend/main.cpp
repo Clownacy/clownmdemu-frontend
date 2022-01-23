@@ -114,16 +114,21 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 // Video //
 ///////////
 
+#define FRAMEBUFFER_WIDTH 320
+#define FRAMEBUFFER_HEIGHT (240*2)
+
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *framebuffer_texture;
 static Uint32 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
+static SDL_Texture *framebuffer_texture_upscaled;
+static size_t framebuffer_upscale_factor;
 
 static Uint32 colours[3 * 4 * 16];
 
-static int current_screen_width;
-static int current_screen_height;
+static int current_screen_width = 320;
+static int current_screen_height = 224;
 
 static bool use_vsync;
 static bool fullscreen;
@@ -156,7 +161,8 @@ static bool InitVideo(void)
 			{
 				// Create framebuffer texture
 				// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-				framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 480);
+				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+				framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
 
 				if (framebuffer_texture == NULL)
 				{
@@ -203,6 +209,33 @@ static void ToggleFullscreen(void)
 	fullscreen = !fullscreen;
 
 	SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+}
+
+void RecreateUpscaledFramebuffer(void)
+{
+	const int source_width = current_screen_width;
+	const int source_height = current_screen_height;
+
+	int destination_width, destination_height;
+	SDL_GetRendererOutputSize(renderer, &destination_width, &destination_height);
+
+	// Round to the nearest multiples of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
+	framebuffer_upscale_factor = CC_MAX(1, CC_MIN((destination_width + source_width / 2) / source_width, (destination_height + source_height / 2) / source_height));
+
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+	SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass NULL to this
+	framebuffer_texture_upscaled = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, FRAMEBUFFER_WIDTH * framebuffer_upscale_factor, FRAMEBUFFER_HEIGHT * framebuffer_upscale_factor);
+
+	if (framebuffer_texture_upscaled == NULL)
+	{
+		PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		// Disable blending, since we don't need it
+		if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
+			PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+	}
 }
 
 
@@ -321,12 +354,17 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 {
 	(void)user_data;
 
+	if (current_screen_width != (int)screen_width || current_screen_height != (int)screen_height)
+	{
+		current_screen_width = (int)screen_width;
+		current_screen_height = (int)screen_height;
+
+		RecreateUpscaledFramebuffer();
+	}
+
 	if (framebuffer_texture_pixels != NULL)
 		for (unsigned int i = 0; i < screen_width; ++i)
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
-
-	current_screen_width = (int)screen_width;
-	current_screen_height = (int)screen_height;
 }
 
 static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownMDEmu_Button button_id)
@@ -891,6 +929,16 @@ int main(int argc, char **argv)
 							SDL_free(event.drop.file);
 							break;
 
+						case SDL_WINDOWEVENT:
+							switch (event.window.event)
+							{
+								case SDL_WINDOWEVENT_SIZE_CHANGED:
+									RecreateUpscaledFramebuffer();
+									break;
+							}
+
+							break;
+
 						default:
 							break;
 					}
@@ -1106,6 +1154,11 @@ int main(int argc, char **argv)
 				if (rom_buffer != NULL)
 				{
 					// Draw the rendered frame to the screen
+					SDL_Rect framebuffer_rect;
+					framebuffer_rect.x = 0;
+					framebuffer_rect.y = 0;
+					framebuffer_rect.w = current_screen_width;
+					framebuffer_rect.h = current_screen_height;
 
 					// Correct the aspect ratio of the rendered frame
 					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
@@ -1129,8 +1182,27 @@ int main(int argc, char **argv)
 					destination_rect.x = (int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
 					destination_rect.y = (int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
 
-					const SDL_Rect rect = {0, 0, current_screen_width, current_screen_height};
-					SDL_RenderCopy(renderer, framebuffer_texture, &rect, &destination_rect);
+					if (framebuffer_texture_upscaled == NULL)
+					{
+						// Render the framebuffer to the screen
+						SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &destination_rect);
+					}
+					else
+					{
+						// Upscale the framebuffer
+						SDL_Rect upscaled_framebuffer_rect;
+						upscaled_framebuffer_rect.x = 0;
+						upscaled_framebuffer_rect.y = 0;
+						upscaled_framebuffer_rect.w = current_screen_width * framebuffer_upscale_factor;
+						upscaled_framebuffer_rect.h = current_screen_height * framebuffer_upscale_factor;
+
+						SDL_SetRenderTarget(renderer, framebuffer_texture_upscaled);
+						SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+
+						// Render the upscaled framebuffer to the screen
+						SDL_SetRenderTarget(renderer, NULL);
+						SDL_RenderCopy(renderer, framebuffer_texture_upscaled, &upscaled_framebuffer_rect, &destination_rect);
+					}
 				}
 
 				// Render Dear ImGui.
