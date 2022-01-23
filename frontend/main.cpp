@@ -127,8 +127,8 @@ static size_t framebuffer_upscale_factor;
 
 static Uint32 colours[3 * 4 * 16];
 
-static int current_screen_width = 320;
-static int current_screen_height = 224;
+static int current_screen_width;
+static int current_screen_height;
 
 static bool use_vsync;
 static bool fullscreen;
@@ -211,13 +211,10 @@ static void ToggleFullscreen(void)
 	SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
-void RecreateUpscaledFramebuffer(void)
+void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
 {
 	const int source_width = current_screen_width;
 	const int source_height = current_screen_height;
-
-	int destination_width, destination_height;
-	SDL_GetRendererOutputSize(renderer, &destination_width, &destination_height);
 
 	// Round to the nearest multiples of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
 	framebuffer_upscale_factor = CC_MAX(1, CC_MIN((destination_width + source_width / 2) / source_width, (destination_height + source_height / 2) / source_height));
@@ -361,13 +358,8 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 {
 	(void)user_data;
 
-	if (current_screen_width != (int)screen_width || current_screen_height != (int)screen_height)
-	{
-		current_screen_width = (int)screen_width;
-		current_screen_height = (int)screen_height;
-
-		RecreateUpscaledFramebuffer();
-	}
+	current_screen_width = (int)screen_width;
+	current_screen_height = (int)screen_height;
 
 	if (framebuffer_texture_pixels != NULL)
 		for (unsigned int i = 0; i < screen_width; ++i)
@@ -936,16 +928,6 @@ int main(int argc, char **argv)
 							SDL_free(event.drop.file);
 							break;
 
-						case SDL_WINDOWEVENT:
-							switch (event.window.event)
-							{
-								case SDL_WINDOWEVENT_SIZE_CHANGED:
-									RecreateUpscaledFramebuffer();
-									break;
-							}
-
-							break;
-
 						default:
 							break;
 					}
@@ -1172,6 +1154,8 @@ int main(int argc, char **argv)
 					const ImGuiViewport* viewport = ImGui::GetMainViewport();
 					const int work_width = (int)viewport->WorkSize.x;
 					const int work_height = (int)viewport->WorkSize.y;
+
+					RecreateUpscaledFramebuffer(work_width, work_height);
 
 					SDL_Rect destination_rect;
 
