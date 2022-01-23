@@ -755,6 +755,10 @@ int main(int argc, char **argv)
 						case SDL_CONTROLLERBUTTONDOWN:
 						case SDL_CONTROLLERBUTTONUP:
 						{
+							// Don't use inputs that Dear ImGui wants
+							if (io.WantCaptureKeyboard) // Yes, I know that it says 'keyboard', but really it means both keyboard and controller.
+								break;
+
 							const bool pressed = event.cbutton.state == SDL_PRESSED;
 
 							// Look for the controller that this event belongs to.
@@ -841,6 +845,10 @@ int main(int argc, char **argv)
 						}
 
 						case SDL_CONTROLLERAXISMOTION:
+							// Don't use inputs that Dear ImGui wants
+							if (io.WantCaptureKeyboard) // Yes, I know that it says 'keyboard', but really it means both keyboard and controller.
+								break;
+
 							// Look for the controller that this event belongs to.
 							for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
 							{
