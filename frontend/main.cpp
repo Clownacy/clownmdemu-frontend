@@ -206,6 +206,8 @@ static void DeinitVideo(void)
 static void SetFullscreen(bool enabled)
 {
 	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+
+	// Prevent Dear ImGui from making the cursor visible if needed
 	ImGuiIO &io = ImGui::GetIO();
 
 	if (enabled)
