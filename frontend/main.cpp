@@ -203,12 +203,9 @@ static void DeinitVideo(void)
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-static void ToggleFullscreen(void)
+static void SetFullscreen(bool enabled)
 {
-	// Toggle fullscreen
-	fullscreen = !fullscreen;
-
-	SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
 void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
@@ -608,6 +605,16 @@ int main(int argc, char **argv)
 									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 									break;
 
+								case SDLK_ESCAPE:
+									// Exit fullscreen
+									if (fullscreen)
+									{
+										fullscreen = false;
+										SetFullscreen(fullscreen);
+									}
+
+									break;
+
 								case SDLK_F1:
 									// Toggle which joypad the keyboard controls
 									keyboard_input.bound_joypad ^= 1;
@@ -627,7 +634,9 @@ int main(int argc, char **argv)
 									break;
 
 								case SDLK_F11:
-									ToggleFullscreen();
+									// Toggle fullscreen
+									fullscreen = !fullscreen;
+									SetFullscreen(fullscreen);
 									break;
 
 								default:
@@ -1110,7 +1119,10 @@ int main(int argc, char **argv)
 						}
 
 						if (ImGui::MenuItem("Fullscreen", "F11", fullscreen))
-							ToggleFullscreen();
+						{
+							fullscreen = !fullscreen;
+							SetFullscreen(fullscreen);
+						}
 
 						ImGui::Separator();
 
