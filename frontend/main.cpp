@@ -206,6 +206,14 @@ static void DeinitVideo(void)
 static void SetFullscreen(bool enabled)
 {
 	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	ImGuiIO &io = ImGui::GetIO();
+
+	if (enabled)
+		io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+	else
+		io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+
+	SDL_ShowCursor(enabled ? SDL_DISABLE : SDL_ENABLE);
 }
 
 void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
@@ -951,7 +959,7 @@ int main(int argc, char **argv)
 				//ImGui::ShowDemoWindow();
 
 				// Handle the Dear ImGui-powered menu bar.
-				if (ImGui::BeginMainMenuBar())
+				if (!fullscreen && ImGui::BeginMainMenuBar())
 				{
 					if (ImGui::BeginMenu("Console"))
 					{
