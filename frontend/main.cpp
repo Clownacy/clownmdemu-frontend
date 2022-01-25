@@ -965,7 +965,7 @@ int main(int argc, char **argv)
 				{
 					if (ImGui::BeginMenu("Console"))
 					{
-						if (ImGui::MenuItem("Open Software"))
+						if (ImGui::MenuItem("Open Software..."))
 						{
 							const char *rom_path = tinyfd_openFileDialog("Select Mega Drive software", NULL, 0, NULL, NULL, 0);
 
@@ -1054,7 +1054,7 @@ int main(int argc, char **argv)
 
 						ImGui::Separator();
 
-						if (ImGui::MenuItem("Save To File", NULL, false, rom_buffer != NULL))
+						if (ImGui::MenuItem("Save To File...", NULL, false, rom_buffer != NULL))
 						{
 							// Obtain a filename and path from the user.
 							const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
@@ -1082,7 +1082,7 @@ int main(int argc, char **argv)
 							}
 						}
 
-						if (ImGui::MenuItem("Load From File", NULL, false, rom_buffer != NULL))
+						if (ImGui::MenuItem("Load From File...", NULL, false, rom_buffer != NULL))
 						{
 							// Obtain a filename and path from the user.
 							const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
