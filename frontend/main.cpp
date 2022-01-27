@@ -7,6 +7,11 @@
 
 #define CLOWNRESAMPLER_IMPLEMENTATION
 #define CLOWNRESAMPLER_API static
+#define CLOWNRESAMPLER_ASSERT SDL_assert
+#define CLOWNRESAMPLER_FABS SDL_fabs
+#define CLOWNRESAMPLER_SIN SDL_sin
+#define CLOWNRESAMPLER_MEMSET SDL_memset
+#define CLOWNRESAMPLER_MEMMOVE SDL_memmove
 #include "clownresampler/clownresampler.h"
 
 #include "tinyfiledialogs.h"
