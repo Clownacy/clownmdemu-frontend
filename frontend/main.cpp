@@ -521,7 +521,9 @@ int main(int argc, char **argv)
 			ImGui_ImplSDLRenderer_Init(renderer);
 
 			// Load Font
-			io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size);
+			ImFontConfig font_cfg = ImFontConfig();
+			SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %dpx", (int)font_size);
+			io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size, &font_cfg);
 
 			// Intiialise audio if we can (but it's okay if it fails).
 			const bool initialised_audio = InitAudio();
