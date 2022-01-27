@@ -1,3 +1,6 @@
 [submodule "frontend/SDL"]
 	path = frontend/SDL
 	url = https://github.com/libsdl-org/SDL
+[submodule "frontend/clownresampler"]
+	path = frontend/clownresampler
+	url = https://github.com/Clownacy/clownresampler

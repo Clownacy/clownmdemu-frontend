@@ -4,7 +4,7 @@ project(clownmdemufrontend LANGUAGES C CXX)
 
 add_executable(clownmdemufrontend WIN32
 	"main.cpp"
-	"clownresampler.h"
+	"clownresampler/clownresampler.h"
 	"tinyfiledialogs.c"
 	"tinyfiledialogs.h"
 	"imgui/imconfig.h"
