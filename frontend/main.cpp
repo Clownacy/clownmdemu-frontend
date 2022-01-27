@@ -213,16 +213,6 @@ static void DeinitVideo(void)
 static void SetFullscreen(bool enabled)
 {
 	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-
-	// Prevent Dear ImGui from making the cursor visible if needed
-	ImGuiIO &io = ImGui::GetIO();
-
-	if (enabled)
-		io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-	else
-		io.ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
-
-	SDL_ShowCursor(enabled ? SDL_DISABLE : SDL_ENABLE);
 }
 
 void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
@@ -559,8 +549,16 @@ int main(int argc, char **argv)
 			// Manages whether the emulator runs at a higher speed or not.
 			bool fast_forward = false;
 
+			// Used for deciding when to pass inputs to the emulator.
+			bool emulator_has_focus = false;
+
+			// Used for tracking when to pop the emulation display out into its own little window.
+			bool pop_out = false;
+
 			while (!quit)
 			{
+				const bool emulator_running = rom_buffer != NULL;
+
 				// This loop processes events and manages the framerate.
 				for (;;)
 				{
@@ -616,12 +614,36 @@ int main(int argc, char **argv)
 							break;
 
 						case SDL_KEYDOWN:
-							// Don't use inputs that Dear ImGui wants
-							if (io.WantCaptureKeyboard)
-								break;
-
 							// Ignore repeated key inputs caused by holding the key down
 							if (event.key.repeat)
+								break;
+
+							// Special hotkeys that can be used even when not focussed on the emulation window.
+							switch (event.key.keysym.sym)
+							{
+								case SDLK_ESCAPE:
+									// Exit fullscreen
+									if (fullscreen)
+									{
+										fullscreen = false;
+										SetFullscreen(fullscreen);
+									}
+
+									break;
+
+								case SDLK_F11:
+									// Toggle fullscreen
+									fullscreen = !fullscreen;
+									SetFullscreen(fullscreen);
+									break;
+
+								default:
+									break;
+
+							}
+
+							// Don't use inputs that are for Dear ImGui
+							if (!emulator_has_focus)
 								break;
 
 							switch (event.key.keysym.sym)
@@ -633,16 +655,6 @@ int main(int argc, char **argv)
 
 									// Soft-reset console
 									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
-
-									break;
-
-								case SDLK_ESCAPE:
-									// Exit fullscreen
-									if (fullscreen)
-									{
-										fullscreen = false;
-										SetFullscreen(fullscreen);
-									}
 
 									break;
 
@@ -664,12 +676,6 @@ int main(int argc, char **argv)
 
 									break;
 
-								case SDLK_F11:
-									// Toggle fullscreen
-									fullscreen = !fullscreen;
-									SetFullscreen(fullscreen);
-									break;
-
 								default:
 									break;
 
@@ -677,8 +683,8 @@ int main(int argc, char **argv)
 							// Fallthrough
 						case SDL_KEYUP:
 						{
-							// Don't use inputs that Dear ImGui wants
-							if (io.WantCaptureKeyboard)
+							// Don't use inputs that are for Dear ImGui
+							if (!emulator_has_focus)
 								break;
 
 							const bool pressed = event.key.state == SDL_PRESSED;
@@ -973,204 +979,7 @@ int main(int argc, char **argv)
 					}
 				}
 
-				// Start the Dear ImGui frame
-				ImGui_ImplSDLRenderer_NewFrame();
-				ImGui_ImplSDL2_NewFrame();
-				ImGui::NewFrame();
-
-				// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-				//ImGui::ShowDemoWindow();
-
-				// Handle the Dear ImGui-powered menu bar.
-				if (!fullscreen && ImGui::BeginMainMenuBar())
-				{
-					if (ImGui::BeginMenu("Console"))
-					{
-						if (ImGui::MenuItem("Open Software..."))
-						{
-							const char *rom_path = tinyfd_openFileDialog("Select Mega Drive software", NULL, 0, NULL, NULL, 0);
-
-							if (rom_path != NULL)
-								OpenSoftware(rom_path, &callbacks);
-						}
-
-						if (ImGui::MenuItem("Close Software", NULL, false, rom_buffer != NULL))
-						{
-							SDL_free(rom_buffer);
-							rom_buffer = NULL;
-							rom_buffer_size = 0;
-						}
-
-						ImGui::Separator();
-
-						if (ImGui::MenuItem("Reset", "Tab"))
-						{
-							// Soft-reset console
-							ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
-						}
-
-						ImGui::Separator();
-
-						if (ImGui::BeginMenu("Settings"))
-						{
-							ImGui::MenuItem("TV Standard", NULL, false, false);
-
-							if (ImGui::MenuItem("NTSC (60Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
-							{
-								if (tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
-								{
-									tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-									ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
-									SetAudioPALMode(false);
-								}
-							}
-
-							if (ImGui::MenuItem("PAL (50Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
-							{
-								if (tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
-								{
-									tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-									ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
-									SetAudioPALMode(true);
-								}
-							}
-
-							ImGui::Separator();
-
-							ImGui::MenuItem("Region", NULL, false, false);
-
-							if (ImGui::MenuItem("Domestic (Japan)", NULL, region == CLOWNMDEMU_REGION_DOMESTIC))
-							{
-								if (region != CLOWNMDEMU_REGION_DOMESTIC)
-								{
-									region = CLOWNMDEMU_REGION_DOMESTIC;
-									ClownMDEmu_SetRegion(&clownmdemu_state, region);
-								}
-							}
-
-							if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, region == CLOWNMDEMU_REGION_OVERSEAS))
-							{
-								if (region != CLOWNMDEMU_REGION_OVERSEAS)
-								{
-									region = CLOWNMDEMU_REGION_OVERSEAS;
-									ClownMDEmu_SetRegion(&clownmdemu_state, region);
-								}
-							}
-
-							ImGui::EndMenu();
-						}
-						ImGui::EndMenu();
-					}
-
-					if (ImGui::BeginMenu("Save States"))
-					{
-						if (ImGui::MenuItem("Quick Save", "F5", false, rom_buffer != NULL))
-						{
-							quick_save_exists = true;
-							CreateSaveState(&quick_save_state);
-						}
-
-						if (ImGui::MenuItem("Quick Load", "F9", false, rom_buffer != NULL && quick_save_exists))
-							ApplySaveState(&quick_save_state);
-
-						ImGui::Separator();
-
-						if (ImGui::MenuItem("Save To File...", NULL, false, rom_buffer != NULL))
-						{
-							// Obtain a filename and path from the user.
-							const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
-
-							if (save_state_path != NULL)
-							{
-								// Save the current state to the specified file.
-								SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
-
-								if (file == NULL)
-								{
-									PrintError("Could not open save state file for writing");
-									SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
-								}
-								else
-								{
-									SaveState save_state;
-									CreateSaveState(&save_state);
-
-									if (SDL_RWwrite(file, &save_state, sizeof(save_state), 1) != 1)
-									{
-										PrintError("Could not write save state file");
-										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
-									}
-
-									SDL_RWclose(file);
-								}
-							}
-						}
-
-						if (ImGui::MenuItem("Load From File...", NULL, false, rom_buffer != NULL))
-						{
-							// Obtain a filename and path from the user.
-							const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
-
-							if (save_state_path != NULL)
-							{
-								// Load the state from the specified file.
-								SDL_RWops *file = SDL_RWFromFile(save_state_path, "rb");
-
-								if (file == NULL)
-								{
-									PrintError("Could not open save state file for reading");
-									SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
-								}
-								else
-								{
-									SaveState save_state;
-
-									if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
-									{
-										PrintError("Could not read save state file");
-										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
-									}
-									else
-									{
-										ApplySaveState(&save_state);
-									}
-
-									SDL_RWclose(file);
-								}
-							}
-						}
-
-						ImGui::EndMenu();
-					}
-
-					if (ImGui::BeginMenu("Misc."))
-					{
-						if (ImGui::MenuItem("V-Sync", NULL, use_vsync))
-						{
-							use_vsync = !use_vsync;
-
-							if (!fast_forward)
-								SDL_RenderSetVSync(renderer, use_vsync);
-						}
-
-						if (ImGui::MenuItem("Fullscreen", "F11", fullscreen))
-						{
-							fullscreen = !fullscreen;
-							SetFullscreen(fullscreen);
-						}
-
-						ImGui::Separator();
-
-						if (ImGui::MenuItem("Exit"))
-							quit = true;
-
-						ImGui::EndMenu();
-					}
-
-					ImGui::EndMainMenuBar();
-				}
-
-				if (rom_buffer != NULL)
+				if (emulator_running)
 				{
 					// Lock the texture so that we can write to its pixels later
 					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
@@ -1185,66 +994,321 @@ int main(int argc, char **argv)
 					SDL_UnlockTexture(framebuffer_texture);
 				}
 
-				SDL_RenderClear(renderer);
+				// Start the Dear ImGui frame
+				ImGui_ImplSDLRenderer_NewFrame();
+				ImGui_ImplSDL2_NewFrame();
+				ImGui::NewFrame();
 
-				if (rom_buffer != NULL)
+				// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+				//ImGui::ShowDemoWindow();
+
+				// Hide mouse when the user just wants a fullscreen display window
+				if (fullscreen && !pop_out)
+					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+
+				const ImGuiViewport *viewport = ImGui::GetMainViewport();
+
+				if (!pop_out)
 				{
-					// Draw the rendered frame to the screen
-					SDL_Rect framebuffer_rect;
-					framebuffer_rect.x = 0;
-					framebuffer_rect.y = 0;
-					framebuffer_rect.w = current_screen_width;
-					framebuffer_rect.h = current_screen_height;
+					ImGui::SetNextWindowPos(viewport->WorkPos);
+					ImGui::SetNextWindowSize(viewport->WorkSize);
+				}
 
-					// Correct the aspect ratio of the rendered frame
-					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
-					const ImGuiViewport* viewport = ImGui::GetMainViewport();
-					const unsigned int work_width = (unsigned int)viewport->WorkSize.x;
-					const unsigned int work_height = (unsigned int)viewport->WorkSize.y;
+				ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-					RecreateUpscaledFramebuffer(work_width, work_height);
+				if (!pop_out)
+					window_flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
 
-					SDL_Rect destination_rect;
+				if (!fullscreen || pop_out)
+					window_flags |= ImGuiWindowFlags_MenuBar;
 
-					if (work_width > work_height * 320 / current_screen_height)
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+				const bool not_collapsed = ImGui::Begin("Display", NULL, window_flags);
+				ImGui::PopStyleVar();
+
+				if (not_collapsed)
+				{
+					if ((!fullscreen || pop_out) && ImGui::BeginMenuBar())
 					{
-						destination_rect.w = work_height * 320 / current_screen_height;
-						destination_rect.h = work_height;
+						if (ImGui::BeginMenu("Console"))
+						{
+							if (ImGui::MenuItem("Open Software..."))
+							{
+								const char *rom_path = tinyfd_openFileDialog("Select Mega Drive software", NULL, 0, NULL, NULL, 0);
+
+								if (rom_path != NULL)
+									OpenSoftware(rom_path, &callbacks);
+							}
+
+							if (ImGui::MenuItem("Close Software", NULL, false, emulator_running))
+							{
+								SDL_free(rom_buffer);
+								rom_buffer = NULL;
+								rom_buffer_size = 0;
+							}
+
+							ImGui::Separator();
+
+							if (ImGui::MenuItem("Reset", "Tab"))
+							{
+								// Soft-reset console
+								ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+							}
+
+							ImGui::Separator();
+
+							if (ImGui::BeginMenu("Settings"))
+							{
+								ImGui::MenuItem("TV Standard", NULL, false, false);
+
+								if (ImGui::MenuItem("NTSC (60Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+								{
+									if (tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
+									{
+										tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+										ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
+										SetAudioPALMode(false);
+									}
+								}
+
+								if (ImGui::MenuItem("PAL (50Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
+								{
+									if (tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
+									{
+										tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+										ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
+										SetAudioPALMode(true);
+									}
+								}
+
+								ImGui::Separator();
+
+								ImGui::MenuItem("Region", NULL, false, false);
+
+								if (ImGui::MenuItem("Domestic (Japan)", NULL, region == CLOWNMDEMU_REGION_DOMESTIC))
+								{
+									if (region != CLOWNMDEMU_REGION_DOMESTIC)
+									{
+										region = CLOWNMDEMU_REGION_DOMESTIC;
+										ClownMDEmu_SetRegion(&clownmdemu_state, region);
+									}
+								}
+
+								if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, region == CLOWNMDEMU_REGION_OVERSEAS))
+								{
+									if (region != CLOWNMDEMU_REGION_OVERSEAS)
+									{
+										region = CLOWNMDEMU_REGION_OVERSEAS;
+										ClownMDEmu_SetRegion(&clownmdemu_state, region);
+									}
+								}
+
+								ImGui::EndMenu();
+							}
+							ImGui::EndMenu();
+						}
+
+						if (ImGui::BeginMenu("Save States"))
+						{
+							if (ImGui::MenuItem("Quick Save", "F5", false, emulator_running))
+							{
+								quick_save_exists = true;
+								CreateSaveState(&quick_save_state);
+							}
+
+							if (ImGui::MenuItem("Quick Load", "F9", false, emulator_running && quick_save_exists))
+								ApplySaveState(&quick_save_state);
+
+							ImGui::Separator();
+
+							if (ImGui::MenuItem("Save To File...", NULL, false, emulator_running))
+							{
+								// Obtain a filename and path from the user.
+								const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
+
+								if (save_state_path != NULL)
+								{
+									// Save the current state to the specified file.
+									SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
+
+									if (file == NULL)
+									{
+										PrintError("Could not open save state file for writing");
+										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+									}
+									else
+									{
+										SaveState save_state;
+										CreateSaveState(&save_state);
+
+										if (SDL_RWwrite(file, &save_state, sizeof(save_state), 1) != 1)
+										{
+											PrintError("Could not write save state file");
+											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+										}
+
+										SDL_RWclose(file);
+									}
+								}
+							}
+
+							if (ImGui::MenuItem("Load From File...", NULL, false, emulator_running))
+							{
+								// Obtain a filename and path from the user.
+								const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
+
+								if (save_state_path != NULL)
+								{
+									// Load the state from the specified file.
+									SDL_RWops *file = SDL_RWFromFile(save_state_path, "rb");
+
+									if (file == NULL)
+									{
+										PrintError("Could not open save state file for reading");
+										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+									}
+									else
+									{
+										SaveState save_state;
+
+										if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
+										{
+											PrintError("Could not read save state file");
+											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+										}
+										else
+										{
+											ApplySaveState(&save_state);
+										}
+
+										SDL_RWclose(file);
+									}
+								}
+							}
+
+							ImGui::EndMenu();
+						}
+
+						if (ImGui::BeginMenu("Misc."))
+						{
+							if (ImGui::MenuItem("V-Sync", NULL, use_vsync))
+							{
+								use_vsync = !use_vsync;
+
+								if (!fast_forward)
+									SDL_RenderSetVSync(renderer, use_vsync);
+							}
+
+							if (ImGui::MenuItem("Fullscreen", "F11", fullscreen))
+							{
+								fullscreen = !fullscreen;
+								SetFullscreen(fullscreen);
+							}
+
+							//if (ImGui::MenuItem("Pop Out", NULL, pop_out))
+								//pop_out = !pop_out;
+
+							ImGui::Separator();
+
+							if (ImGui::MenuItem("Exit"))
+								quit = true;
+
+							ImGui::EndMenu();
+						}
+
+						ImGui::EndMenuBar();
 					}
-					else
+
+					if (emulator_running)
 					{
-						destination_rect.w = work_width;
-						destination_rect.h = work_width * current_screen_height / 320;
-					}
+						ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
 
-					destination_rect.x = (unsigned int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
-					destination_rect.y = (unsigned int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
+						// Avoid divisions by zero and random asserts
+						if (size_of_display_region.x == 0.0f)
+							size_of_display_region.x = 1.0f;
 
-					// Avoid blurring if...
-					// 1. The upscale texture failed to be created
-					// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple
-					if (framebuffer_texture_upscaled == NULL || (destination_rect.w % current_screen_width == 0 && destination_rect.h % current_screen_height == 0))
-					{
-						// Render the framebuffer to the screen
-						SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &destination_rect);
-					}
-					else
-					{
-						// Upscale the framebuffer
-						SDL_Rect upscaled_framebuffer_rect;
-						upscaled_framebuffer_rect.x = 0;
-						upscaled_framebuffer_rect.y = 0;
-						upscaled_framebuffer_rect.w = current_screen_width * framebuffer_upscale_factor;
-						upscaled_framebuffer_rect.h = current_screen_height * framebuffer_upscale_factor;
+						if (size_of_display_region.y == 0.0f)
+							size_of_display_region.y = 1.0f;
 
-						SDL_SetRenderTarget(renderer, framebuffer_texture_upscaled);
-						SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+						// Create an invisible button which detects when input is intended for the emulator.
+						// We do this cursor stuff so that the framebuffer is drawn over the button.
+						const ImVec2 cursor = ImGui::GetCursorPos();
+						ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
+						emulator_has_focus = ImGui::IsItemFocused();
+						ImGui::SetCursorPos(cursor);
 
-						// Render the upscaled framebuffer to the screen
-						SDL_SetRenderTarget(renderer, NULL);
-						SDL_RenderCopy(renderer, framebuffer_texture_upscaled, &upscaled_framebuffer_rect, &destination_rect);
+						// Correct the aspect ratio of the rendered frame
+						// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+						const unsigned int work_width = (unsigned int)size_of_display_region.x;
+						const unsigned int work_height = (unsigned int)size_of_display_region.y;
+
+						RecreateUpscaledFramebuffer(work_width, work_height);
+
+						SDL_Rect destination_rect;
+
+						if (work_width > work_height * 320 / current_screen_height)
+						{
+							destination_rect.w = work_height * 320 / current_screen_height;
+							destination_rect.h = work_height;
+						}
+						else
+						{
+							destination_rect.w = work_width;
+							destination_rect.h = work_width * current_screen_height / 320;
+						}
+
+						destination_rect.x = (int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
+						destination_rect.y = (int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
+
+						SDL_Texture *selected_framebuffer_texture;
+
+						// Avoid blurring if...
+						// 1. The upscale texture failed to be created
+						// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple
+						if (framebuffer_texture_upscaled == NULL || (destination_rect.w % current_screen_width == 0 && destination_rect.h % current_screen_height == 0))
+						{
+							// Render the framebuffer to the screen
+							selected_framebuffer_texture = framebuffer_texture;
+						}
+						else
+						{
+							// Render the upscaled framebuffer to the screen.
+							selected_framebuffer_texture = framebuffer_texture_upscaled;
+
+							// Before we can do that though, we have to actually render the upscaled framebuffer.
+							SDL_Rect framebuffer_rect;
+							framebuffer_rect.x = 0;
+							framebuffer_rect.y = 0;
+							framebuffer_rect.w = current_screen_width;
+							framebuffer_rect.h = current_screen_height;
+
+							SDL_Rect upscaled_framebuffer_rect;
+							upscaled_framebuffer_rect.x = 0;
+							upscaled_framebuffer_rect.y = 0;
+							upscaled_framebuffer_rect.w = current_screen_width * framebuffer_upscale_factor;
+							upscaled_framebuffer_rect.h = current_screen_height * framebuffer_upscale_factor;
+
+							// Render to the upscaled framebuffer.
+							SDL_SetRenderTarget(renderer, framebuffer_texture_upscaled);
+
+							// Render.
+							SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+
+							// Switch back to actually rendering to the screen.
+							SDL_SetRenderTarget(renderer, NULL);
+						}
+
+						ImGui::SetCursorPosX((float)((int)ImGui::GetCursorPosX() + ((int)size_of_display_region.x - destination_rect.w) / 2));
+						ImGui::SetCursorPosY((float)((int)ImGui::GetCursorPosY() + ((int)size_of_display_region.y - destination_rect.h) / 2));
+
+						// Draw the upscaled framebuffer in the window.
+						ImGui::Image(selected_framebuffer_texture, ImVec2((float)destination_rect.w, (float)destination_rect.h), ImVec2(0, 0), ImVec2((float)current_screen_width / (float)FRAMEBUFFER_WIDTH, (float)current_screen_height / (float)FRAMEBUFFER_HEIGHT));
 					}
 				}
+
+				ImGui::End();
+
+				SDL_RenderClear(renderer);
 
 				// Render Dear ImGui.
 				ImGui::Render();
