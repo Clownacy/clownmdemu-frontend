@@ -4,3 +4,6 @@
 [submodule "frontend/clownresampler"]
 	path = frontend/clownresampler
 	url = https://github.com/Clownacy/clownresampler
+[submodule "frontend/freetype"]
+	path = frontend/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype

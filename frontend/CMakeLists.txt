@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
+option(CLOWNMDEMUFRONTEND_FREETYPE "Use FreeType font rasteriser instead of stb_truetype for Dear ImGui" ON)
+
 project(clownmdemufrontend LANGUAGES C CXX)
 
 add_executable(clownmdemufrontend WIN32
@@ -21,9 +23,21 @@ add_executable(clownmdemufrontend WIN32
 	"imgui/imgui_widgets.cpp"
 	"imgui/imstb_rectpack.h"
 	"imgui/imstb_textedit.h"
-	"imgui/imstb_truetype.h"
 	"frontend.manifest"
 )
+
+if(CLOWNMDEMUFRONTEND_FREETYPE)
+	target_sources(clownmdemufrontend PRIVATE
+		"imgui/imgui_freetype.cpp"
+		"imgui/imgui_freetype.h"
+	)
+
+	target_compile_definitions(clownmdemufrontend PRIVATE IMGUI_ENABLE_FREETYPE)
+else()
+	target_sources(clownmdemufrontend PRIVATE
+		"imgui/imstb_truetype.h"
+	)
+endif()
 
 set_target_properties(clownmdemufrontend PROPERTIES
 	C_STANDARD 99
@@ -45,6 +59,17 @@ if(SDL2_FOUND)
 else()
 	add_subdirectory("SDL" EXCLUDE_FROM_ALL)
 	target_link_libraries(clownmdemufrontend SDL2::SDL2main SDL2::SDL2-static)
+endif()
+
+if(CLOWNMDEMUFRONTEND_FREETYPE)
+	# Link FreeType
+	find_package(Freetype)
+	if(FREETYPE_FOUND)
+		target_link_libraries(clownmdemufrontend Freetype::Freetype)
+	else()
+		add_subdirectory("freetype" EXCLUDE_FROM_ALL)
+		target_link_libraries(clownmdemufrontend freetype)
+	endif()
 endif()
 
 # Link some Win32 stuff for tinyfiledialogs
