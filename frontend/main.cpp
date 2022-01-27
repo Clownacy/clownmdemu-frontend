@@ -1318,16 +1318,6 @@ int main(int argc, char **argv)
 				SDL_RenderPresent(renderer);
 			}
 
-			// Dump the state to a file (this is a debug feature).
-			SDL_RWops *state_file = SDL_RWFromFile("state.bin", "wb");
-
-			if (state_file != NULL)
-			{
-				SDL_RWwrite(state_file, &clownmdemu_state, 1, sizeof(clownmdemu_state));
-
-				SDL_RWclose(state_file);
-			}
-
 			ClownMDEmu_Deinit(&clownmdemu_state);
 
 			SDL_free(rom_buffer);
