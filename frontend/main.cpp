@@ -1034,7 +1034,7 @@ int main(int argc, char **argv)
 						{
 							if (ImGui::MenuItem("Open Software..."))
 							{
-								const char *rom_path = tinyfd_openFileDialog("Select Mega Drive software", NULL, 0, NULL, NULL, 0);
+								const char *rom_path = tinyfd_openFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
 
 								if (rom_path != NULL)
 									OpenSoftware(rom_path, &callbacks);
