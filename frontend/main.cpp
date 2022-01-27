@@ -44,6 +44,12 @@ typedef struct ControllerInput
 	struct ControllerInput *next;
 } ControllerInput;
 
+typedef struct SaveState
+{
+	ClownMDEmu_State state;
+	Uint32 colours[3 * 4 * 16];
+} SaveState;
+
 static Input keyboard_input;
 
 static ControllerInput *controller_input_list_head;
@@ -51,7 +57,7 @@ static ControllerInput *controller_input_list_head;
 static ClownMDEmu_State clownmdemu_state;
 
 static bool quick_save_exists = false;
-static ClownMDEmu_State quick_save_state;
+static SaveState quick_save_state;
 
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
@@ -433,9 +439,16 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 			SDL_QueueAudio(audio_device, audio_buffer, (Uint32)total_resampled_samples * sizeof(*audio_buffer));
 }
 
-static void ApplyState(ClownMDEmu_State *state)
+static void CreateSaveState(SaveState *save_state)
 {
-	clownmdemu_state = *state;
+	save_state->state = clownmdemu_state;
+	SDL_memcpy(save_state->colours, colours, sizeof(colours));
+}
+
+static void ApplySaveState(SaveState *save_state)
+{
+	clownmdemu_state = save_state->state;
+	SDL_memcpy(colours, save_state->colours, sizeof(colours));
 
 	// We don't want the save state to override the user's configurations, so reapply them now.
 	ClownMDEmu_SetRegion(&clownmdemu_state, region);
@@ -645,13 +658,13 @@ int main(int argc, char **argv)
 								case SDLK_F5:
 									// Save save state
 									quick_save_exists = true;
-									quick_save_state = clownmdemu_state;
+									CreateSaveState(&quick_save_state);
 									break;
 
 								case SDLK_F9:
 									// Load save state
 									if (quick_save_exists)
-										ApplyState(&quick_save_state);
+										ApplySaveState(&quick_save_state);
 
 									break;
 
@@ -1058,11 +1071,11 @@ int main(int argc, char **argv)
 						if (ImGui::MenuItem("Quick Save", "F5", false, rom_buffer != NULL))
 						{
 							quick_save_exists = true;
-							quick_save_state = clownmdemu_state;
+							CreateSaveState(&quick_save_state);
 						}
 
 						if (ImGui::MenuItem("Quick Load", "F9", false, rom_buffer != NULL && quick_save_exists))
-							ApplyState(&quick_save_state);
+							ApplySaveState(&quick_save_state);
 
 						ImGui::Separator();
 
@@ -1083,7 +1096,10 @@ int main(int argc, char **argv)
 								}
 								else
 								{
-									if (SDL_RWwrite(file, &clownmdemu_state, sizeof(clownmdemu_state), 1) != 1)
+									SaveState save_state;
+									CreateSaveState(&save_state);
+
+									if (SDL_RWwrite(file, &save_state, sizeof(save_state), 1) != 1)
 									{
 										PrintError("Could not write save state file");
 										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
@@ -1111,15 +1127,16 @@ int main(int argc, char **argv)
 								}
 								else
 								{
-									ClownMDEmu_State temp_state_buffer;
-									if (SDL_RWread(file, &temp_state_buffer, sizeof(temp_state_buffer), 1) != 1)
+									SaveState save_state;
+
+									if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
 									{
 										PrintError("Could not read save state file");
 										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
 									}
 									else
 									{
-										ApplyState(&temp_state_buffer);
+										ApplySaveState(&save_state);
 									}
 
 									SDL_RWclose(file);
