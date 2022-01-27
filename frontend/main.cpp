@@ -20,10 +20,6 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_sdlrenderer.h"
 
-#if !SDL_VERSION_ATLEAST(2,0,17)
-#error SDL 2.0.17+ is required because of SDL_RenderGeometry() function!
-#endif
-
 #include "imgui/karla_regular.h"
 
 typedef struct Input
