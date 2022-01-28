@@ -1245,10 +1245,12 @@ int main(int argc, char **argv)
 							if (ImGui::MenuItem("Pop Out", NULL, pop_out))
 								pop_out = !pop_out;
 
+						#ifndef NDEBUG
 							ImGui::Separator();
 
 							if (ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, dear_imgui_demo_window))
 								dear_imgui_demo_window = !dear_imgui_demo_window;
+						#endif
 
 							ImGui::Separator();
 
