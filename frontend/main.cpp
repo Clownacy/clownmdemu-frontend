@@ -1483,6 +1483,22 @@ int main(int argc, char **argv)
 
 							ImGui::InvisibleButton("VRAM canvas", vram_display_region);
 
+							// Goofy little trick to eliminate some duplicate code.
+							struct FunctionHolder
+							{
+								static void TileIndexToTextureCoordinates(size_t tile_index, ImVec2 *uv0, ImVec2 *uv1, size_t vram_texture_height_in_tiles, size_t tile_width, size_t tile_height)
+								{
+									const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
+									const size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
+
+									uv0->x = (float)current_tile_src_x / (float)(vram_texture_width);
+									uv0->y = (float)current_tile_src_y / (float)(vram_texture_height);
+
+									uv1->x = (float)(current_tile_src_x + tile_width) / (float)(vram_texture_width);
+									uv1->y = (float)(current_tile_src_y + tile_height) / (float)(vram_texture_height);
+								}
+							};
+
 							// When hovered over a tile, display info about it.
 							if (ImGui::IsItemHovered())
 							{
@@ -1497,19 +1513,8 @@ int main(int argc, char **argv)
 									ImGui::BeginTooltip();
 
 									// Obtain texture coordinates for the hovered tile.
-
-									// Nasty duplicate code start
-									const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
-									const size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
-
-									ImVec2 current_tile_uv0;
-									current_tile_uv0.x = (float)current_tile_src_x / (float)(vram_texture_width);
-									current_tile_uv0.y = (float)current_tile_src_y / (float)(vram_texture_height);
-
-									ImVec2 current_tile_uv1;
-									current_tile_uv1.x = (float)(current_tile_src_x + tile_width) / (float)(vram_texture_width);
-									current_tile_uv1.y = (float)(current_tile_src_y + tile_height) / (float)(vram_texture_height);
-									// Nasty duplicate code end
+									ImVec2 current_tile_uv0, current_tile_uv1;
+									FunctionHolder::TileIndexToTextureCoordinates(tile_index, &current_tile_uv0, &current_tile_uv1, vram_texture_height_in_tiles, tile_width, tile_height);
 
 									ImGui::Text("%zd/0x%zX", tile_index, tile_index);
 									ImGui::Image(vram_texture, ImVec2(dst_size.x * 3.0f, dst_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
@@ -1524,19 +1529,8 @@ int main(int argc, char **argv)
 							for (size_t i = 0; i < size_of_vram_in_tiles; ++i)
 							{
 								// Obtain texture coordinates for the current tile.
-
-								// Nasty duplicate code start
-								const size_t current_tile_src_x = (i / vram_texture_height_in_tiles) * tile_width;
-								const size_t current_tile_src_y = (i % vram_texture_height_in_tiles) * tile_height;
-
-								ImVec2 current_tile_uv0;
-								current_tile_uv0.x = (float)current_tile_src_x / (float)(vram_texture_width);
-								current_tile_uv0.y = (float)current_tile_src_y / (float)(vram_texture_height);
-
-								ImVec2 current_tile_uv1;
-								current_tile_uv1.x = (float)(current_tile_src_x + tile_width) / (float)(vram_texture_width);
-								current_tile_uv1.y = (float)(current_tile_src_y + tile_height) / (float)(vram_texture_height);
-								// Nasty duplicate code end
+								ImVec2 current_tile_uv0, current_tile_uv1;
+								FunctionHolder::TileIndexToTextureCoordinates(i, &current_tile_uv0, &current_tile_uv1, vram_texture_height_in_tiles, tile_width, tile_height);
 
 								// Figure out where the tile goes in the viewer.
 								const float current_tile_dst_x = SDL_fmodf((float)i * (dst_size.x + spacing), vram_display_region.x);
@@ -1560,7 +1554,6 @@ int main(int argc, char **argv)
 				{
 					if (ImGui::Begin("CRAM Viewer", &cram_viewer, ImGuiWindowFlags_AlwaysAutoResize))
 					{
-
 						for (size_t i = 0; i < CC_COUNT_OF(colours); ++i)
 						{
 							ImGui::PushID(i);
