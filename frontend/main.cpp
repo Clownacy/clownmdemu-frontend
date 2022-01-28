@@ -274,8 +274,6 @@ static bool InitAudio(void)
 	}
 	else
 	{
-		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
-
 		// Initialise audio backend
 		SDL_AudioSpec want, have;
 
@@ -471,6 +469,8 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 
 int main(int argc, char **argv)
 {
+	SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
+
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
