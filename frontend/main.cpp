@@ -250,16 +250,20 @@ void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
 static SDL_AudioDeviceID audio_device;
 static size_t audio_buffer_size;
 static ClownResampler_HighLevel_State resampler;
-static int native_audio_sample_rate;
+static unsigned int native_audio_sample_rate;
+static bool initialised_audio;
 
 static void SetAudioPALMode(bool enabled)
 {
-	const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16));
-	const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16));
+	if (initialised_audio)
+	{
+		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16));
+		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16));
 
-	SDL_LockAudioDevice(audio_device);
-	ClownResampler_HighLevel_Init(&resampler, 1, enabled ? pal_sample_rate : ntsc_sample_rate, native_audio_sample_rate);
-	SDL_UnlockAudioDevice(audio_device);
+		SDL_LockAudioDevice(audio_device);
+		ClownResampler_HighLevel_Init(&resampler, 1, enabled ? pal_sample_rate : ntsc_sample_rate, native_audio_sample_rate);
+		SDL_UnlockAudioDevice(audio_device);
+	}
 }
 
 static bool InitAudio(void)
@@ -292,11 +296,7 @@ static bool InitAudio(void)
 		else
 		{
 			audio_buffer_size = have.size;
-			native_audio_sample_rate = have.freq;
-
-			SetAudioPALMode(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-
-			SDL_PauseAudioDevice(audio_device, 0);
+			native_audio_sample_rate = (unsigned int)have.freq;
 
 			return true;
 		}
@@ -409,14 +409,32 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 {
 	short audio_buffer[0x400];
 
-	ResamplerCallbackUserData resampler_callback_user_data;
-	resampler_callback_user_data.state = (ClownMDEmu_State*)user_data;
-	resampler_callback_user_data.samples_remaining = total_samples;
+	ClownMDEmu_State *state = (ClownMDEmu_State*)user_data;
 
-	size_t total_resampled_samples;
-	while ((total_resampled_samples = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer), ResamplerCallback, &resampler_callback_user_data)) != 0)
-		if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
-			SDL_QueueAudio(audio_device, audio_buffer, (Uint32)total_resampled_samples * sizeof(*audio_buffer));
+	if (!initialised_audio)
+	{
+		// Even though there's no audio playback, we still need to update the PSG.
+		while (total_samples != 0)
+		{
+			const size_t samples_to_do = CC_MIN(total_samples, CC_COUNT_OF(audio_buffer));
+
+			ClownMDEmu_GeneratePSGAudio(state, audio_buffer, samples_to_do);
+
+			total_samples -= samples_to_do;
+		}
+	}
+	else
+	{
+		// Resample the generated PSG audio, and push it to SDL2 for playback.
+		ResamplerCallbackUserData resampler_callback_user_data;
+		resampler_callback_user_data.state = state;
+		resampler_callback_user_data.samples_remaining = total_samples;
+
+		size_t total_resampled_samples;
+		while ((total_resampled_samples = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer), ResamplerCallback, &resampler_callback_user_data)) != 0)
+			if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
+				SDL_QueueAudio(audio_device, audio_buffer, (Uint32)(total_resampled_samples * sizeof(*audio_buffer)));
+	}
 }
 
 static void CreateSaveState(SaveState *save_state)
@@ -521,12 +539,17 @@ int main(int argc, char **argv)
 			io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size, &font_cfg);
 
 			// Intiialise audio if we can (but it's okay if it fails).
-			const bool initialised_audio = InitAudio();
+			initialised_audio = InitAudio();
 
 			if (!initialised_audio)
 			{
 				PrintError("InitAudio failed"); // Allow program to continue if audio fails
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
+			}
+			else
+			{
+				SetAudioPALMode(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+				SDL_PauseAudioDevice(audio_device, 0);
 			}
 
 			// This should be called before any other clownmdemu functions are called!
