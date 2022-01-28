@@ -1053,6 +1053,8 @@ int main(int argc, char **argv)
 					ImGui::SetNextWindowSize(viewport->WorkSize);
 				}
 
+				ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+
 				ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 				if (!pop_out)
@@ -1283,14 +1285,7 @@ int main(int argc, char **argv)
 
 					if (emulator_running)
 					{
-						ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
-
-						// Avoid divisions by zero and random asserts.
-						if (size_of_display_region.x == 0.0f)
-							size_of_display_region.x = 1.0f;
-
-						if (size_of_display_region.y == 0.0f)
-							size_of_display_region.y = 1.0f;
+						const ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
 
 						// Create an invisible button which detects when input is intended for the emulator.
 						// We do this cursor stuff so that the framebuffer is drawn over the button.
@@ -1382,6 +1377,8 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale , 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+
 					if (ImGui::Begin("VRAM Viewer", &vram_viewer))
 					{
 						static size_t vram_texture_width;
@@ -1485,14 +1482,6 @@ int main(int argc, char **argv)
 
 							// Calculate the size of the VRAM display region.
 							ImVec2 vram_display_region = ImGui::GetContentRegionAvail();
-
-							// Avoid divisions by zero and random asserts.
-							// TODO - Just constrain the size of the window
-							if (vram_display_region.x == 0.0f)
-								vram_display_region.x = 1.0f;
-
-							if (vram_display_region.y == 0.0f)
-								vram_display_region.y = 1.0f;
 
 							vram_display_region.x -= SDL_fmodf(vram_display_region.x, dst_size.x + spacing);
 							vram_display_region.y = SDL_ceilf((float)size_of_vram_in_tiles * (dst_size.x + spacing) / vram_display_region.x) * (dst_size.y + spacing);
