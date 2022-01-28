@@ -181,10 +181,6 @@ static bool InitVideo(void)
 					if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
 						PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-					// Lock the texture so that we can write to its pixels later
-					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
-						framebuffer_texture_pixels = NULL;
-
 					framebuffer_texture_pitch /= sizeof(Uint32);
 
 					return true;
