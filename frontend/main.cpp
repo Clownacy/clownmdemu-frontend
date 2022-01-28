@@ -1294,6 +1294,7 @@ int main(int argc, char **argv)
 							SDL_SetRenderTarget(renderer, NULL);
 						}
 
+						// Center the framebuffer in the available region.
 						ImGui::SetCursorPosX((float)((int)ImGui::GetCursorPosX() + ((int)size_of_display_region.x - destination_rect.w) / 2));
 						ImGui::SetCursorPosY((float)((int)ImGui::GetCursorPosY() + ((int)size_of_display_region.y - destination_rect.h) / 2));
 
