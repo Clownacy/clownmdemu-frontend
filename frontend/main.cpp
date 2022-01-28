@@ -574,6 +574,10 @@ int main(int argc, char **argv)
 			// Used for tracking when to pop the emulation display out into its own little window.
 			bool pop_out = false;
 
+			bool cram_viewer = false;
+
+			bool dear_imgui_demo_window = false;
+
 			while (!quit)
 			{
 				const bool emulator_running = rom_buffer != NULL;
@@ -1018,8 +1022,8 @@ int main(int argc, char **argv)
 				ImGui_ImplSDL2_NewFrame();
 				ImGui::NewFrame();
 
-				// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-				//ImGui::ShowDemoWindow();
+				if (dear_imgui_demo_window)
+					ImGui::ShowDemoWindow(&dear_imgui_demo_window);
 
 				// Hide mouse when the user just wants a fullscreen display window
 				if (fullscreen && !pop_out)
@@ -1208,6 +1212,14 @@ int main(int argc, char **argv)
 							ImGui::EndMenu();
 						}
 
+						if (ImGui::BeginMenu("Debugging"))
+						{
+							if (ImGui::MenuItem("CRAM", NULL, cram_viewer))
+								cram_viewer = !cram_viewer;
+
+							ImGui::EndMenu();
+						}
+
 						if (ImGui::BeginMenu("Misc."))
 						{
 							if (ImGui::MenuItem("V-Sync", NULL, use_vsync))
@@ -1224,8 +1236,13 @@ int main(int argc, char **argv)
 								SetFullscreen(fullscreen);
 							}
 
-							//if (ImGui::MenuItem("Pop Out", NULL, pop_out))
-								//pop_out = !pop_out;
+							if (ImGui::MenuItem("Pop Out", NULL, pop_out))
+								pop_out = !pop_out;
+
+							ImGui::Separator();
+
+							if (ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, dear_imgui_demo_window))
+								dear_imgui_demo_window = !dear_imgui_demo_window;
 
 							ImGui::Separator();
 
@@ -1327,6 +1344,51 @@ int main(int argc, char **argv)
 				}
 
 				ImGui::End();
+
+				// Process CRAM viewer.
+				if (cram_viewer)
+				{
+					if (ImGui::Begin("CRAM Viewer", &cram_viewer, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						for (size_t i = 0; i < CC_COUNT_OF(colours); ++i)
+						{
+							ImGui::PushID(i);
+
+							const float alpha = (float)((colours[i] >> (8 * 3)) & 0xFF) / (float)0xFF;
+							const float red = (float)((colours[i] >> (8 * 2)) & 0xFF) / (float)0xFF;
+							const float green = (float)((colours[i] >> (8 * 1)) & 0xFF) / (float)0xFF;
+							const float blue = (float)((colours[i] >> (8 * 0)) & 0xFF) / (float)0xFF;
+
+							if (i % (CC_COUNT_OF(colours) / (4 * 3)) != 0)
+							{
+								ImGui::SameLine();
+							}
+							else if (i % (CC_COUNT_OF(colours) / 3) == 0)
+							{
+								switch (i / (CC_COUNT_OF(colours) / 3))
+								{
+									case 0:
+										ImGui::Text("Normal");
+										break;
+
+									case 1:
+										ImGui::Text("Shadow");
+										break;
+
+									case 2:
+										ImGui::Text("Highlight");
+										break;
+								}
+							}
+
+							ImGui::ColorButton("", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+
+							ImGui::PopID();
+						};
+					}
+
+					ImGui::End();
+				}
 
 				SDL_RenderClear(renderer);
 
