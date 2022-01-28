@@ -574,6 +574,8 @@ int main(int argc, char **argv)
 			// Used for tracking when to pop the emulation display out into its own little window.
 			bool pop_out = false;
 
+			bool emulator_paused = false;
+
 			bool vram_viewer = false;
 			bool cram_viewer = false;
 			bool psg_status = false;
@@ -658,6 +660,10 @@ int main(int argc, char **argv)
 
 									break;
 
+								case SDLK_PAUSE:
+									emulator_paused = !emulator_paused;
+									break;
+
 								case SDLK_F11:
 									// Toggle fullscreen
 									fullscreen = !fullscreen;
@@ -683,6 +689,8 @@ int main(int argc, char **argv)
 									// Soft-reset console
 									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
 
+									emulator_paused = false;
+
 									break;
 
 								case SDLK_F1:
@@ -699,7 +707,11 @@ int main(int argc, char **argv)
 								case SDLK_F9:
 									// Load save state
 									if (quick_save_exists)
+									{
 										ApplySaveState(&quick_save_state);
+
+										emulator_paused = false;
+									}
 
 									break;
 
@@ -1006,7 +1018,7 @@ int main(int argc, char **argv)
 					}
 				}
 
-				if (emulator_running)
+				if (emulator_running && !emulator_paused)
 				{
 					// Lock the texture so that we can write to its pixels later
 					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
@@ -1064,7 +1076,11 @@ int main(int argc, char **argv)
 								const char *rom_path = tinyfd_openFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
 
 								if (rom_path != NULL)
+								{
 									OpenSoftware(rom_path, &callbacks);
+
+									emulator_paused = false;
+								}
 							}
 
 							if (ImGui::MenuItem("Close Software", NULL, false, emulator_running))
@@ -1076,10 +1092,17 @@ int main(int argc, char **argv)
 
 							ImGui::Separator();
 
+							if (ImGui::MenuItem("Pause", "Pause", emulator_paused))
+								emulator_paused = !emulator_paused;
+
+							ImGui::Separator();
+
 							if (ImGui::MenuItem("Reset", "Tab"))
 							{
 								// Soft-reset console
 								ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+
+								emulator_paused = false;
 							}
 
 							ImGui::Separator();
@@ -1144,7 +1167,11 @@ int main(int argc, char **argv)
 							}
 
 							if (ImGui::MenuItem("Quick Load", "F9", false, emulator_running && quick_save_exists))
+							{
 								ApplySaveState(&quick_save_state);
+
+								emulator_paused = false;
+							}
 
 							ImGui::Separator();
 
@@ -1206,6 +1233,8 @@ int main(int argc, char **argv)
 										else
 										{
 											ApplySaveState(&save_state);
+
+											emulator_paused = false;
 										}
 
 										SDL_RWclose(file);
