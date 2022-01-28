@@ -1605,9 +1605,9 @@ int main(int argc, char **argv)
 						if (ImGui::TreeNodeEx("Latched Command", ImGuiTreeNodeFlags_DefaultOpen))
 						{
 							if (clownmdemu_state.psg.latched_command.channel == 3)
-								ImGui::Text("Channel: Tone #%u", clownmdemu_state.psg.latched_command.channel);
-							else
 								ImGui::TextUnformatted("Channel: Noise");
+							else
+								ImGui::Text("Channel: Tone #%u", clownmdemu_state.psg.latched_command.channel + 1);
 
 							ImGui::Text("Type: %s", clownmdemu_state.psg.latched_command.is_volume_command ? "Volume" : "Frequency");
 
