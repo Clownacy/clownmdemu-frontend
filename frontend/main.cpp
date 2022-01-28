@@ -1092,11 +1092,9 @@ int main(int argc, char **argv)
 
 							ImGui::Separator();
 
-							ImGui::MenuItem("Pause", "Pause", &emulator_paused);
+							ImGui::MenuItem("Pause", "Pause", &emulator_paused, emulator_running);
 
-							ImGui::Separator();
-
-							if (ImGui::MenuItem("Reset", "Tab"))
+							if (ImGui::MenuItem("Reset", "Tab", false, emulator_running))
 							{
 								// Soft-reset console
 								ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
