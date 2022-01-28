@@ -1354,7 +1354,7 @@ int main(int argc, char **argv)
 				ImGui::End();
 
 				// Process VRAM viewer.
-				if (!vram_texture)
+				if (!vram_viewer)
 				{
 					if (vram_texture != NULL)
 					{
@@ -1400,7 +1400,7 @@ int main(int argc, char **argv)
 							static int brightness_index;
 							static int palette_line;
 
-							if (ImGui::CollapsingHeader("Options", ImGuiTreeNodeFlags_DefaultOpen))
+							if (ImGui::TreeNodeEx("Options", ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_DefaultOpen))
 							{
 								ImGui::Text("Brightness");
 								ImGui::RadioButton("Normal", &brightness_index, CC_COUNT_OF(colours) / 3 * 0);
@@ -1592,7 +1592,7 @@ int main(int argc, char **argv)
 								}
 							}
 
-							ImGui::ColorButton("", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+							ImGui::ColorButton("Colour", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
 
 							ImGui::PopID();
 						};
