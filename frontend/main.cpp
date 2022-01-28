@@ -1392,7 +1392,7 @@ int main(int argc, char **argv)
 							vram_texture_height = vram_texture_height_rounded_up_to_16;
 
 							SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-							vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vram_texture_width, vram_texture_height);
+							vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, (int)vram_texture_width, (int)vram_texture_height);
 
 							if (vram_texture == NULL)
 								PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
@@ -1508,8 +1508,8 @@ int main(int argc, char **argv)
 							{
 								// Figure out which tile we're hovering over.
 								size_t tile_index = 0;
-								tile_index += SDL_floorf((io.MousePos.x - canvas_position.x) / (dst_size.x + spacing));
-								tile_index += SDL_floorf((io.MousePos.y - canvas_position.y) / (dst_size.y + spacing)) * (vram_display_region.x / (dst_size.x + spacing));
+								tile_index += (size_t)SDL_floorf((io.MousePos.x - canvas_position.x) / (dst_size.x + spacing));
+								tile_index += (size_t)SDL_floorf((io.MousePos.y - canvas_position.y) / (dst_size.y + spacing)) * (size_t)(vram_display_region.x / (dst_size.x + spacing));
 
 								// Make sure it's a valid tile (the user could have their mouse *after* the last tile).
 								if (tile_index < size_of_vram_in_tiles)
@@ -1558,7 +1558,7 @@ int main(int argc, char **argv)
 				{
 					if (ImGui::Begin("CRAM Viewer", &cram_viewer, ImGuiWindowFlags_AlwaysAutoResize))
 					{
-						for (size_t i = 0; i < CC_COUNT_OF(colours); ++i)
+						for (unsigned int i = 0; i < CC_COUNT_OF(colours); ++i)
 						{
 							ImGui::PushID(i);
 
