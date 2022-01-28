@@ -574,9 +574,12 @@ int main(int argc, char **argv)
 			// Used for tracking when to pop the emulation display out into its own little window.
 			bool pop_out = false;
 
+			bool vram_viewer = false;
 			bool cram_viewer = false;
 
 			bool dear_imgui_demo_window = false;
+
+			SDL_Texture *vram_texture = NULL;
 
 			while (!quit)
 			{
@@ -1214,7 +1217,10 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginMenu("Debugging"))
 						{
-							if (ImGui::MenuItem("CRAM", NULL, cram_viewer))
+							if (ImGui::MenuItem("VRAM Viewer", NULL, vram_viewer))
+								vram_viewer = !vram_viewer;
+
+							if (ImGui::MenuItem("CRAM Viewer", NULL, cram_viewer))
 								cram_viewer = !cram_viewer;
 
 							ImGui::EndMenu();
@@ -1259,7 +1265,7 @@ int main(int argc, char **argv)
 					{
 						ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
 
-						// Avoid divisions by zero and random asserts
+						// Avoid divisions by zero and random asserts.
 						if (size_of_display_region.x == 0.0f)
 							size_of_display_region.x = 1.0f;
 
@@ -1345,11 +1351,214 @@ int main(int argc, char **argv)
 
 				ImGui::End();
 
+				// Process VRAM viewer.
+				if (!vram_texture)
+				{
+					if (vram_texture != NULL)
+					{
+						SDL_DestroyTexture(vram_texture);
+						vram_texture = NULL;
+					}
+				}
+				else
+				{
+					if (ImGui::Begin("VRAM Viewer", &vram_viewer))
+					{
+						static size_t vram_texture_width;
+						static size_t vram_texture_height;
+
+						const size_t tile_width = 8;
+						const size_t tile_height = clownmdemu_state.vdp.interlace_mode_2_enabled ? 16 : 8;
+
+						const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu_state.vdp.vram) * 4 / (tile_width * tile_height);
+
+						// Create VRAM texture if it does not exist.
+						if (vram_texture == NULL)
+						{
+							// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
+							const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu_state.vdp.vram) * 4;
+							const size_t vram_texture_width_in_progress = (size_t)SDL_ceilf(SDL_sqrtf((float)size_of_vram_in_pixels));
+							const size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
+							const size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
+							const size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
+
+							vram_texture_width = vram_texture_width_rounded_up_to_8;
+							vram_texture_height = vram_texture_height_rounded_up_to_16;
+
+							SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+							vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, vram_texture_width, vram_texture_height);
+
+							if (vram_texture == NULL)
+								PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+						}
+
+						if (vram_texture != NULL)
+						{
+							// Handle VRAM viewing options.
+							static int brightness_index;
+							static int palette_line;
+
+							if (ImGui::CollapsingHeader("Options", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								ImGui::Text("Brightness");
+								ImGui::RadioButton("Normal", &brightness_index, CC_COUNT_OF(colours) / 3 * 0);
+								ImGui::SameLine();
+								ImGui::RadioButton("Shadow", &brightness_index, CC_COUNT_OF(colours) / 3 * 1);
+								ImGui::SameLine();
+								ImGui::RadioButton("Highlight", &brightness_index, CC_COUNT_OF(colours) / 3 * 2);
+
+								ImGui::Text("Palette Line");
+								ImGui::RadioButton("0", &palette_line, CC_COUNT_OF(colours) / (4 * 3) * 0);
+								ImGui::SameLine();
+								ImGui::RadioButton("1", &palette_line, CC_COUNT_OF(colours) / (4 * 3) * 1);
+								ImGui::SameLine();
+								ImGui::RadioButton("2", &palette_line, CC_COUNT_OF(colours) / (4 * 3) * 2);
+								ImGui::SameLine();
+								ImGui::RadioButton("3", &palette_line, CC_COUNT_OF(colours) / (4 * 3) * 3);
+							}
+
+							// Select the correct palette line.
+							const Uint32 *selected_palette = &colours[brightness_index + palette_line];
+
+							// Set up some variables that we're going to need soon.
+							const size_t vram_texture_width_in_tiles = vram_texture_width / tile_width;
+							const size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
+
+							// Lock texture so that we can write into it.
+							unsigned char *pixels;
+							int pitch;
+
+							if (SDL_LockTexture(vram_texture, NULL, (void**)&pixels, &pitch) == 0)
+							{
+								// Generate VRAM bitmap.
+								const unsigned short *vram_pointer = clownmdemu_state.vdp.vram;
+
+								for (size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+								{
+									for (size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
+									{
+										Uint32 *pixels_pointer = (Uint32*)(pixels + x * tile_width * sizeof(Uint32) + y * pitch);
+
+										for (unsigned int i = 0; i < 2; ++i)
+										{
+											const unsigned short tile_row = *vram_pointer++;
+
+											for (unsigned int j = 0; j < 4; ++j)
+											{
+												const unsigned int colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
+												*pixels_pointer++ = selected_palette[colour_index];
+											}
+										}
+									}
+								}
+
+								SDL_UnlockTexture(vram_texture);
+							}
+
+							// Actually display the VRAM now.
+							ImGui::BeginChild("VRAM contents");
+
+							// Variables relating to the sizing and spacing of the tiles in the viewer.
+							const float dst_tile_scale = SDL_roundf(3.0f * dpi_scale);
+							const ImVec2 dst_size(tile_width * dst_tile_scale, tile_height * dst_tile_scale);
+							const float spacing = SDL_roundf(5.0f * dpi_scale);
+
+							// Calculate the size of the VRAM display region.
+							ImVec2 vram_display_region = ImGui::GetContentRegionAvail();
+
+							// Avoid divisions by zero and random asserts.
+							// TODO - Just constrain the size of the window
+							if (vram_display_region.x == 0.0f)
+								vram_display_region.x = 1.0f;
+
+							if (vram_display_region.y == 0.0f)
+								vram_display_region.y = 1.0f;
+
+							vram_display_region.x -= SDL_fmodf(vram_display_region.x, dst_size.x + spacing);
+							vram_display_region.y = SDL_ceilf((float)size_of_vram_in_tiles * (dst_size.x + spacing) / vram_display_region.x) * (dst_size.y + spacing);
+
+							const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
+
+							ImGui::InvisibleButton("VRAM canvas", vram_display_region);
+
+							// When hovered over a tile, display info about it.
+							if (ImGui::IsItemHovered())
+							{
+								// Figure out which tile we're hovering over.
+								size_t tile_index = 0;
+								tile_index += SDL_floorf((io.MousePos.x - canvas_position.x) / (dst_size.x + spacing));
+								tile_index += SDL_floorf((io.MousePos.y - canvas_position.y) / (dst_size.y + spacing)) * (vram_display_region.x / (dst_size.x + spacing));
+
+								// Make sure it's a valid tile (the user could have their mouse *after* the last tile).
+								if (tile_index < size_of_vram_in_tiles)
+								{
+									ImGui::BeginTooltip();
+
+									// Obtain texture coordinates for the hovered tile.
+
+									// Nasty duplicate code start
+									const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
+									const size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
+
+									ImVec2 current_tile_uv0;
+									current_tile_uv0.x = (float)current_tile_src_x / (float)(vram_texture_width);
+									current_tile_uv0.y = (float)current_tile_src_y / (float)(vram_texture_height);
+
+									ImVec2 current_tile_uv1;
+									current_tile_uv1.x = (float)(current_tile_src_x + tile_width) / (float)(vram_texture_width);
+									current_tile_uv1.y = (float)(current_tile_src_y + tile_height) / (float)(vram_texture_height);
+									// Nasty duplicate code end
+
+									ImGui::Text("%zd/0x%zX", tile_index, tile_index);
+									ImGui::Image(vram_texture, ImVec2(dst_size.x * 3.0f, dst_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+
+									ImGui::EndTooltip();
+								}
+							}
+
+							// Draw the list of tiles.
+							ImDrawList *draw_list = ImGui::GetWindowDrawList();
+
+							for (size_t i = 0; i < size_of_vram_in_tiles; ++i)
+							{
+								// Obtain texture coordinates for the current tile.
+
+								// Nasty duplicate code start
+								const size_t current_tile_src_x = (i / vram_texture_height_in_tiles) * tile_width;
+								const size_t current_tile_src_y = (i % vram_texture_height_in_tiles) * tile_height;
+
+								ImVec2 current_tile_uv0;
+								current_tile_uv0.x = (float)current_tile_src_x / (float)(vram_texture_width);
+								current_tile_uv0.y = (float)current_tile_src_y / (float)(vram_texture_height);
+
+								ImVec2 current_tile_uv1;
+								current_tile_uv1.x = (float)(current_tile_src_x + tile_width) / (float)(vram_texture_width);
+								current_tile_uv1.y = (float)(current_tile_src_y + tile_height) / (float)(vram_texture_height);
+								// Nasty duplicate code end
+
+								// Figure out where the tile goes in the viewer.
+								const float current_tile_dst_x = SDL_fmodf((float)i * (dst_size.x + spacing), vram_display_region.x);
+								const float current_tile_dst_y = SDL_floorf((float)i * (dst_size.x + spacing) / vram_display_region.x) * (dst_size.y + spacing);
+
+								const ImVec2 tile_position(canvas_position.x + current_tile_dst_x + spacing * 0.5f, canvas_position.y + current_tile_dst_y + spacing * 0.5f);
+
+								// Finally, display the tile.
+								draw_list->AddImage(vram_texture, tile_position, ImVec2(tile_position.x + dst_size.x, tile_position.y + dst_size.y), current_tile_uv0, current_tile_uv1);
+							}
+
+							ImGui::EndChild();
+						}
+					}
+
+					ImGui::End();
+				}
+
 				// Process CRAM viewer.
 				if (cram_viewer)
 				{
 					if (ImGui::Begin("CRAM Viewer", &cram_viewer, ImGuiWindowFlags_AlwaysAutoResize))
 					{
+
 						for (size_t i = 0; i < CC_COUNT_OF(colours); ++i)
 						{
 							ImGui::PushID(i);
@@ -1399,6 +1608,8 @@ int main(int argc, char **argv)
 				// Finally display the rendered frame to the user.
 				SDL_RenderPresent(renderer);
 			}
+
+			SDL_DestroyTexture(vram_texture);
 
 			ClownMDEmu_Deinit(&clownmdemu_state);
 
