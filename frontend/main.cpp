@@ -1092,8 +1092,7 @@ int main(int argc, char **argv)
 
 							ImGui::Separator();
 
-							if (ImGui::MenuItem("Pause", "Pause", emulator_paused))
-								emulator_paused = !emulator_paused;
+							ImGui::MenuItem("Pause", "Pause", &emulator_paused);
 
 							ImGui::Separator();
 
@@ -1247,42 +1246,30 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginMenu("Debugging"))
 						{
-							if (ImGui::MenuItem("VRAM Viewer", NULL, vram_viewer))
-								vram_viewer = !vram_viewer;
+							ImGui::MenuItem("VRAM Viewer", NULL, &vram_viewer);
 
-							if (ImGui::MenuItem("CRAM Viewer", NULL, cram_viewer))
-								cram_viewer = !cram_viewer;
+							ImGui::MenuItem("CRAM Viewer", NULL, &cram_viewer);
 
-							if (ImGui::MenuItem("PSG Status", NULL, psg_status))
-								psg_status = !psg_status;
+							ImGui::MenuItem("PSG Status", NULL, &psg_status);
 
 							ImGui::EndMenu();
 						}
 
 						if (ImGui::BeginMenu("Misc."))
 						{
-							if (ImGui::MenuItem("V-Sync", NULL, use_vsync))
-							{
-								use_vsync = !use_vsync;
-
+							if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
 								if (!fast_forward)
 									SDL_RenderSetVSync(renderer, use_vsync);
-							}
 
-							if (ImGui::MenuItem("Fullscreen", "F11", fullscreen))
-							{
-								fullscreen = !fullscreen;
+							if (ImGui::MenuItem("Fullscreen", "F11", &fullscreen))
 								SetFullscreen(fullscreen);
-							}
 
-							if (ImGui::MenuItem("Pop Out", NULL, pop_out))
-								pop_out = !pop_out;
+							ImGui::MenuItem("Pop Out", NULL, &pop_out);
 
 						#ifndef NDEBUG
 							ImGui::Separator();
 
-							if (ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, dear_imgui_demo_window))
-								dear_imgui_demo_window = !dear_imgui_demo_window;
+							ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 						#endif
 
 							ImGui::Separator();
