@@ -619,12 +619,14 @@ int main(int argc, char **argv)
 
 			bool emulator_paused = false;
 
+			bool plane_viewer = false;
 			bool vram_viewer = false;
 			bool cram_viewer = false;
 			bool psg_status = false;
 
 			bool dear_imgui_demo_window = false;
 
+			SDL_Texture *plane_texture = NULL;
 			SDL_Texture *vram_texture = NULL;
 
 			while (!quit)
@@ -1372,6 +1374,8 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginMenu("Debugging"))
 						{
+							ImGui::MenuItem("Plane Viewer", NULL, &plane_viewer);
+
 							ImGui::MenuItem("VRAM Viewer", NULL, &vram_viewer);
 
 							ImGui::MenuItem("CRAM Viewer", NULL, &cram_viewer);
@@ -1495,6 +1499,104 @@ int main(int argc, char **argv)
 				}
 
 				ImGui::End();
+
+				// Process plane viewer.
+				if (!plane_viewer)
+				{
+					if (plane_texture != NULL)
+					{
+						SDL_DestroyTexture(plane_texture);
+						plane_texture = NULL;
+					}
+				}
+				else
+				{
+					if (ImGui::Begin("Plane Viewer", &plane_viewer, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						if (plane_texture == NULL)
+						{
+							SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+							plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 128 * 8, 128 * 8 * 2);
+
+							if (plane_texture == NULL)
+								PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+						}
+
+						if (plane_texture != NULL)
+						{
+							const unsigned int tile_width = 8;
+							const unsigned int tile_height = clownmdemu_state->vdp.interlace_mode_2_enabled ? 16 : 8;
+
+							// Lock texture so that we can write into it.
+							unsigned char *plane_texture_pixels;
+							int plane_texture_pitch;
+
+							if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
+							{
+								for (unsigned int plane = 0; plane < 2; ++plane)
+								{
+									const unsigned short *plane_pointer = &clownmdemu_state->vdp.vram[plane != 0 ? clownmdemu_state->vdp.plane_b_address : clownmdemu_state->vdp.plane_a_address];
+									unsigned char *plane_texture_pixels_start = &plane_texture_pixels[plane != 0 ? plane_texture_pitch * 128 * 8 : 0];
+
+									for (unsigned int tile_y_in_plane = 0; tile_y_in_plane < clownmdemu_state->vdp.plane_height; ++tile_y_in_plane)
+									{
+										for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu_state->vdp.plane_width; ++tile_x_in_plane)
+										{
+											const unsigned int plane_entry = *plane_pointer++;
+											const unsigned int tile_index = plane_entry & 0x7FF;
+											const unsigned int palette_line = (plane_entry >> 13) & 3;
+											const bool x_flip = (plane_entry & 0x800) != 0;
+											const bool y_flip = (plane_entry & 0x1000) != 0;
+
+											const unsigned int palette_line_index = palette_line * 16;
+											const unsigned x_flip_xor = x_flip ? tile_width - 1 : 0;
+											const unsigned y_flip_xor = y_flip ? tile_height - 1 : 0;
+
+											const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_index * (tile_width * tile_height / 4)];
+
+											for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
+											{
+												Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels_start[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + pixel_y_in_tile ^ y_flip_xor) * plane_texture_pitch];
+
+												for (unsigned int i = 0; i < 2; ++i)
+												{
+													const unsigned short tile_pixels = *tile_pointer++;
+
+													for (unsigned int j = 0; j < 4; ++j)
+													{
+														const unsigned int colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
+														plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = colours[palette_line_index + colour_index];
+													}
+												}
+											}
+										}
+									}
+								}
+
+								SDL_UnlockTexture(plane_texture);
+							}
+
+							const float plane_width_in_pixels = (float)(clownmdemu_state->vdp.plane_width * tile_width);
+							const float plane_height_in_pixels = (float)(clownmdemu_state->vdp.plane_height * tile_height);
+
+							if (ImGui::TreeNodeEx("Plane A", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								ImGui::Image(plane_texture, ImVec2((float)(plane_width_in_pixels * 2), (float)(plane_height_in_pixels * 2)), ImVec2(0.0f, 0.0f), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), (float)plane_height_in_pixels / (128.0f * 8.0f * 2.0f)));
+
+								ImGui::TreePop();
+							}
+
+							if (ImGui::TreeNodeEx("Plane B", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								ImGui::Image(plane_texture, ImVec2((float)(plane_width_in_pixels * 2), (float)(plane_height_in_pixels * 2)), ImVec2(0.0f, 0.5f), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), 0.5f + (float)plane_height_in_pixels / (128.0f * 8.0f * 2.0f)));
+
+								ImGui::TreePop();
+							}
+						}
+					}
+
+					ImGui::End();
+				}
 
 				// Process VRAM viewer.
 				if (!vram_viewer)
@@ -1836,6 +1938,7 @@ int main(int argc, char **argv)
 				SDL_RenderPresent(renderer);
 			}
 
+			SDL_DestroyTexture(plane_texture);
 			SDL_DestroyTexture(vram_texture);
 
 			ClownMDEmu_Deinit(clownmdemu_state);
