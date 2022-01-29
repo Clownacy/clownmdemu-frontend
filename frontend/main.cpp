@@ -519,7 +519,8 @@ int main(int argc, char **argv)
 
 				bool emulator_paused = false;
 
-				bool plane_viewer = false;
+				bool plane_a_viewer = false;
+				bool plane_b_viewer = false;
 				bool vram_viewer = false;
 				bool cram_viewer = false;
 				bool psg_status = false;
@@ -1271,7 +1272,9 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Debugging"))
 							{
-								ImGui::MenuItem("Plane Viewer", NULL, &plane_viewer);
+								ImGui::MenuItem("Plane A Viewer", NULL, &plane_a_viewer);
+
+								ImGui::MenuItem("Plane B Viewer", NULL, &plane_b_viewer);
 
 								ImGui::MenuItem("VRAM Viewer", NULL, &vram_viewer);
 
@@ -1397,8 +1400,11 @@ int main(int argc, char **argv)
 
 					ImGui::End();
 
-					if (plane_viewer)
-						Debug_Plane(&plane_viewer, clownmdemu_state);
+					if (plane_a_viewer)
+						Debug_PlaneA(&plane_a_viewer, clownmdemu_state);
+
+					if (plane_b_viewer)
+						Debug_PlaneB(&plane_b_viewer, clownmdemu_state);
 
 					if (vram_viewer)
 						Debug_VRAM(&vram_viewer, clownmdemu_state);

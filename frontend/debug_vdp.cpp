@@ -29,16 +29,17 @@ static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadat
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
+static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, bool plane_b)
 {
-	if (ImGui::Begin("Plane Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin(plane_b ? "Plane B Viewer" : "Plane A Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		static SDL_Texture *plane_texture;
+		static SDL_Texture *plane_textures[2];
+		SDL_Texture *&plane_texture = plane_textures[plane_b];
 
 		if (plane_texture == NULL)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 128 * 8, 128 * 8 * 2);
+			plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 128 * 8, 128 * 8);
 
 			if (plane_texture == NULL)
 			{
@@ -54,6 +55,8 @@ void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 
 		if (plane_texture != NULL)
 		{
+			const unsigned short *plane = &clownmdemu_state->vdp.vram[plane_b ? clownmdemu_state->vdp.plane_b_address : clownmdemu_state->vdp.plane_a_address];
+
 			const unsigned int tile_width = 8;
 			const unsigned int tile_height = clownmdemu_state->vdp.interlace_mode_2_enabled ? 16 : 8;
 
@@ -63,37 +66,33 @@ void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 
 			if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
 			{
-				for (unsigned int plane = 0; plane < 2; ++plane)
+				const unsigned short *plane_pointer = plane;
+
+				for (unsigned int tile_y_in_plane = 0; tile_y_in_plane < clownmdemu_state->vdp.plane_height; ++tile_y_in_plane)
 				{
-					const unsigned short *plane_pointer = &clownmdemu_state->vdp.vram[plane != 0 ? clownmdemu_state->vdp.plane_b_address : clownmdemu_state->vdp.plane_a_address];
-					unsigned char *plane_texture_pixels_start = &plane_texture_pixels[plane != 0 ? plane_texture_pitch * 128 * 8 : 0];
-
-					for (unsigned int tile_y_in_plane = 0; tile_y_in_plane < clownmdemu_state->vdp.plane_height; ++tile_y_in_plane)
+					for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu_state->vdp.plane_width; ++tile_x_in_plane)
 					{
-						for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu_state->vdp.plane_width; ++tile_x_in_plane)
+						TileMetadata tile_metadata;
+						DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
+
+						const unsigned int palette_line_index = tile_metadata.palette_line * 16;
+						const unsigned x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
+						const unsigned y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
+
+						const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
+
+						for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 						{
-							TileMetadata tile_metadata;
-							DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
+							Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + pixel_y_in_tile ^ y_flip_xor) * plane_texture_pitch];
 
-							const unsigned int palette_line_index = tile_metadata.palette_line * 16;
-							const unsigned x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
-							const unsigned y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
-
-							const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
-
-							for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
+							for (unsigned int i = 0; i < 2; ++i)
 							{
-								Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels_start[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + pixel_y_in_tile ^ y_flip_xor) * plane_texture_pitch];
+								const unsigned short tile_pixels = *tile_pointer++;
 
-								for (unsigned int i = 0; i < 2; ++i)
+								for (unsigned int j = 0; j < 4; ++j)
 								{
-									const unsigned short tile_pixels = *tile_pointer++;
-
-									for (unsigned int j = 0; j < 4; ++j)
-									{
-										const unsigned int colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
-										plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = colours[palette_line_index + colour_index];
-									}
+									const unsigned int colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
+									plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = colours[palette_line_index + colour_index];
 								}
 							}
 						}
@@ -105,20 +104,47 @@ void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 
 			const float plane_width_in_pixels = (float)(clownmdemu_state->vdp.plane_width * tile_width);
 			const float plane_height_in_pixels = (float)(clownmdemu_state->vdp.plane_height * tile_height);
+			const float plane_scale = SDL_roundf(1.0f * dpi_scale);
 
-			for (unsigned int plane = 0; plane < 2; ++plane)
+			const ImVec2 image_position = ImGui::GetCursorScreenPos();
+
+			ImGui::Image(plane_texture, ImVec2((float)plane_width_in_pixels * plane_scale, (float)plane_height_in_pixels * plane_scale), ImVec2(0.0f, 0.0f), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), (float)plane_height_in_pixels / (128.0f * 8.0f)));
+
+			if (ImGui::IsItemHovered())
 			{
-				if (ImGui::TreeNodeEx(plane != 0 ? "Plane B" : "Plane A", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					ImGui::Image(plane_texture, ImVec2((float)(plane_width_in_pixels * 2), (float)(plane_height_in_pixels * 2)), ImVec2(0.0f, 0.5f * (float)plane), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), 0.5f * (float)plane + (float)plane_height_in_pixels / (128.0f * 8.0f * 2.0f)));
+				ImGui::BeginTooltip();
 
-					ImGui::TreePop();
-				}
+				const ImVec2 mouse_position = ImGui::GetMousePos();
+
+				const unsigned int tile_x = (unsigned int)((mouse_position.x - image_position.x) / plane_scale / tile_width);
+				const unsigned int tile_y = (unsigned int)((mouse_position.y - image_position.y) / plane_scale / tile_height);
+
+				const unsigned short *plane = &clownmdemu_state->vdp.vram[plane_b ? clownmdemu_state->vdp.plane_b_address : clownmdemu_state->vdp.plane_a_address];
+				const unsigned int packed_tile_metadata = plane[tile_y * clownmdemu_state->vdp.plane_width + tile_x];
+
+				TileMetadata tile_metadata;
+				DecomposeTileMetadata(packed_tile_metadata, &tile_metadata);
+
+				ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2((tile_x * tile_width) / (128.0f * 8.0f), (tile_y * tile_height) / (128.0f * 8.0f)), ImVec2(((tile_x + 1.0f) * tile_width) / (128.0f * 8.0f), ((tile_y + 1.0f) * tile_height) / (128.0f * 8.0f)));
+				ImGui::SameLine();
+				ImGui::Text("Tile Index: %u/0x%X" "\n" "Palette Line: %d" "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
+
+				ImGui::EndTooltip();
 			}
 		}
 	}
 
 	ImGui::End();
+}
+
+void Debug_PlaneA(bool *open, const ClownMDEmu_State *clownmdemu_state)
+{
+	Debug_Plane(open, clownmdemu_state, false);
+}
+
+void Debug_PlaneB(bool *open, const ClownMDEmu_State *clownmdemu_state)
+{
+	Debug_Plane(open, clownmdemu_state, true);
 }
 
 void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state)
