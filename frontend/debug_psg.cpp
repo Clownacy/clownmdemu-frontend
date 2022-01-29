@@ -50,11 +50,11 @@ void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state)
 			{
 				switch (clownmdemu_state->psg.noise.type)
 				{
-					case clownmdemu_state->psg.noise.PSG_NOISE_TYPE_PERIODIC:
+					case PSG_NOISE_TYPE_PERIODIC:
 						ImGui::TextUnformatted("Type: Periodic Noise");
 						break;
 
-					case clownmdemu_state->psg.noise.PSG_NOISE_TYPE_WHITE:
+					case PSG_NOISE_TYPE_WHITE:
 						ImGui::TextUnformatted("Type: White Noise");
 						break;
 				}
