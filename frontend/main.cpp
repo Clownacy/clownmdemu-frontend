@@ -50,7 +50,10 @@ static Input keyboard_input;
 
 static ControllerInput *controller_input_list_head;
 
-static ClownMDEmu_State clownmdemu_state;
+static ClownMDEmu_State *clownmdemu_state;
+static ClownMDEmu_State state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
+static size_t state_rewind_index;
+static size_t state_rewind_remaining;
 
 static bool quick_save_exists = false;
 static SaveState quick_save_state;
@@ -439,18 +442,18 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 
 static void CreateSaveState(SaveState *save_state)
 {
-	save_state->state = clownmdemu_state;
+	save_state->state = *clownmdemu_state;
 	SDL_memcpy(save_state->colours, colours, sizeof(colours));
 }
 
 static void ApplySaveState(SaveState *save_state)
 {
-	clownmdemu_state = save_state->state;
+	*clownmdemu_state = save_state->state;
 	SDL_memcpy(colours, save_state->colours, sizeof(colours));
 
 	// We don't want the save state to override the user's configurations, so reapply them now.
-	ClownMDEmu_SetRegion(&clownmdemu_state, region);
-	ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
+	ClownMDEmu_SetRegion(clownmdemu_state, region);
+	ClownMDEmu_SetTVStandard(clownmdemu_state, tv_standard);
 }
 
 static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks)
@@ -476,8 +479,12 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		rom_buffer = temp_rom_buffer;
 		rom_buffer_size = temp_rom_buffer_size;
 
-		ClownMDEmu_Init(&clownmdemu_state, region, tv_standard);
-		ClownMDEmu_Reset(&clownmdemu_state, callbacks);
+		state_rewind_remaining = 0;
+		state_rewind_index = 0;
+		clownmdemu_state = &state_rewind_buffer[state_rewind_index];
+
+		ClownMDEmu_Init(clownmdemu_state, region, tv_standard);
+		ClownMDEmu_Reset(clownmdemu_state, callbacks);
 	}
 }
 
@@ -556,7 +563,7 @@ int main(int argc, char **argv)
 			ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
 			// Construct our big list of callbacks for clownmdemu.
-			const ClownMDEmu_Callbacks callbacks = {&clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+			ClownMDEmu_Callbacks callbacks = {clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
 			// If the user passed the path to the software on the command line, then load it here, automatically.
 			if (argc > 1)
@@ -567,6 +574,8 @@ int main(int argc, char **argv)
 
 			// Manages whether the emulator runs at a higher speed or not.
 			bool fast_forward = false;
+
+			bool rewind = false;
 
 			// Used for deciding when to pass inputs to the emulator.
 			bool emulator_has_focus = false;
@@ -587,6 +596,52 @@ int main(int argc, char **argv)
 			while (!quit)
 			{
 				const bool emulator_running = rom_buffer != NULL;
+
+				// Handle rewinding.
+				if (emulator_running && !emulator_paused && !(rewind && state_rewind_remaining == 0))
+				{
+					// We maintain a ring buffer of emulator states:
+					// when rewinding, we go backwards through this buffer,
+					// and when not rewinding, we go forwards through it.
+					size_t from_index, to_index;
+
+					if (rewind)
+					{
+						--state_rewind_remaining;
+
+						from_index = to_index = state_rewind_index;
+
+						if (from_index == 0)
+							from_index = CC_COUNT_OF(state_rewind_buffer) - 1;
+						else
+							--from_index;
+
+						state_rewind_index = from_index;
+
+						// We don't want the rewind to override the user's configurations, so reapply them now.
+						ClownMDEmu_SetRegion(&state_rewind_buffer[from_index], region);
+						ClownMDEmu_SetTVStandard(&state_rewind_buffer[from_index], tv_standard);
+					}
+					else
+					{
+						if (state_rewind_remaining < CC_COUNT_OF(state_rewind_buffer) - 1)
+							++state_rewind_remaining;
+
+						from_index = to_index = state_rewind_index;
+
+						if (to_index == CC_COUNT_OF(state_rewind_buffer) - 1)
+							to_index = 0;
+						else
+							++to_index;
+
+						state_rewind_index = to_index;
+					}
+
+					SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
+
+					clownmdemu_state = &state_rewind_buffer[to_index];
+					callbacks.user_data = clownmdemu_state;
+				}
 
 				// This loop processes events and manages the framerate.
 				for (;;)
@@ -687,7 +742,7 @@ int main(int argc, char **argv)
 										break;
 
 									// Soft-reset console
-									ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+									ClownMDEmu_Reset(clownmdemu_state, &callbacks);
 
 									emulator_paused = false;
 
@@ -747,6 +802,10 @@ int main(int argc, char **argv)
 									if (use_vsync)
 										SDL_RenderSetVSync(renderer, !pressed);
 
+									break;
+
+								case SDL_SCANCODE_R:
+									rewind = pressed;
 									break;
 
 								default:
@@ -1014,7 +1073,7 @@ int main(int argc, char **argv)
 					}
 				}
 
-				if (emulator_running && !emulator_paused)
+				if (emulator_running && !emulator_paused && !(rewind && state_rewind_remaining == 0))
 				{
 					// Lock the texture so that we can write to its pixels later
 					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
@@ -1023,7 +1082,7 @@ int main(int argc, char **argv)
 					framebuffer_texture_pitch /= sizeof(Uint32);
 
 					// Run the emulator for a frame
-					ClownMDEmu_Iterate(&clownmdemu_state, &callbacks);
+					ClownMDEmu_Iterate(clownmdemu_state, &callbacks);
 
 					// Unlock the texture so that we can draw it
 					SDL_UnlockTexture(framebuffer_texture);
@@ -1101,7 +1160,7 @@ int main(int argc, char **argv)
 							if (ImGui::MenuItem("Reset", "Tab", false, emulator_running))
 							{
 								// Soft-reset console
-								ClownMDEmu_Reset(&clownmdemu_state, &callbacks);
+								ClownMDEmu_Reset(clownmdemu_state, &callbacks);
 
 								emulator_paused = false;
 							}
@@ -1117,7 +1176,7 @@ int main(int argc, char **argv)
 									if (tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 									{
 										tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-										ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
+										ClownMDEmu_SetTVStandard(clownmdemu_state, tv_standard);
 										SetAudioPALMode(false);
 									}
 								}
@@ -1127,7 +1186,7 @@ int main(int argc, char **argv)
 									if (tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 									{
 										tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-										ClownMDEmu_SetTVStandard(&clownmdemu_state, tv_standard);
+										ClownMDEmu_SetTVStandard(clownmdemu_state, tv_standard);
 										SetAudioPALMode(true);
 									}
 								}
@@ -1141,7 +1200,7 @@ int main(int argc, char **argv)
 									if (region != CLOWNMDEMU_REGION_DOMESTIC)
 									{
 										region = CLOWNMDEMU_REGION_DOMESTIC;
-										ClownMDEmu_SetRegion(&clownmdemu_state, region);
+										ClownMDEmu_SetRegion(clownmdemu_state, region);
 									}
 								}
 
@@ -1150,7 +1209,7 @@ int main(int argc, char **argv)
 									if (region != CLOWNMDEMU_REGION_OVERSEAS)
 									{
 										region = CLOWNMDEMU_REGION_OVERSEAS;
-										ClownMDEmu_SetRegion(&clownmdemu_state, region);
+										ClownMDEmu_SetRegion(clownmdemu_state, region);
 									}
 								}
 
@@ -1389,15 +1448,15 @@ int main(int argc, char **argv)
 						static size_t vram_texture_height;
 
 						const size_t tile_width = 8;
-						const size_t tile_height = clownmdemu_state.vdp.interlace_mode_2_enabled ? 16 : 8;
+						const size_t tile_height = clownmdemu_state->vdp.interlace_mode_2_enabled ? 16 : 8;
 
-						const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu_state.vdp.vram) * 4 / (tile_width * tile_height);
+						const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu_state->vdp.vram) * 4 / (tile_width * tile_height);
 
 						// Create VRAM texture if it does not exist.
 						if (vram_texture == NULL)
 						{
 							// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-							const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu_state.vdp.vram) * 4;
+							const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu_state->vdp.vram) * 4;
 							const size_t vram_texture_width_in_progress = (size_t)SDL_ceilf(SDL_sqrtf((float)size_of_vram_in_pixels));
 							const size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
 							const size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
@@ -1455,7 +1514,7 @@ int main(int argc, char **argv)
 							if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
 							{
 								// Generate VRAM bitmap.
-								const unsigned short *vram_pointer = clownmdemu_state.vdp.vram;
+								const unsigned short *vram_pointer = clownmdemu_state->vdp.vram;
 
 								// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 								// instead of left-to-right then top-to-bottom.
@@ -1631,12 +1690,12 @@ int main(int argc, char **argv)
 						// Latched command.
 						if (ImGui::TreeNodeEx("Latched Command", ImGuiTreeNodeFlags_DefaultOpen))
 						{
-							if (clownmdemu_state.psg.latched_command.channel == 3)
+							if (clownmdemu_state->psg.latched_command.channel == 3)
 								ImGui::TextUnformatted("Channel: Noise");
 							else
-								ImGui::Text("Channel: Tone #%u", clownmdemu_state.psg.latched_command.channel + 1);
+								ImGui::Text("Channel: Tone #%u", clownmdemu_state->psg.latched_command.channel + 1);
 
-							ImGui::Text("Type: %s", clownmdemu_state.psg.latched_command.is_volume_command ? "Volume" : "Frequency");
+							ImGui::Text("Type: %s", clownmdemu_state->psg.latched_command.is_volume_command ? "Volume" : "Frequency");
 
 							ImGui::TreePop();
 						}
@@ -1647,18 +1706,18 @@ int main(int argc, char **argv)
 							const unsigned long psg_clock = (tv_standard == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_MASTER_CLOCK_PAL : CLOWNMDEMU_MASTER_CLOCK_NTSC) / 15 / 16;
 
 							// Tone channels.
-							for (unsigned int i = 0; i < CC_COUNT_OF(clownmdemu_state.psg.tones); ++i)
+							for (unsigned int i = 0; i < CC_COUNT_OF(clownmdemu_state->psg.tones); ++i)
 							{
 								char string_buffer[7 + 1];
 								SDL_snprintf(string_buffer, sizeof(string_buffer), "Tone #%d", i + 1);
 								if (ImGui::TreeNodeEx(string_buffer, ImGuiTreeNodeFlags_DefaultOpen))
 								{
-									ImGui::Text("Frequency: %u (%uHz)", clownmdemu_state.psg.tones[i].countdown_master, psg_clock / (clownmdemu_state.psg.tones[i].countdown_master + 1) / 2);
+									ImGui::Text("Frequency: %u (%uHz)", clownmdemu_state->psg.tones[i].countdown_master, psg_clock / (clownmdemu_state->psg.tones[i].countdown_master + 1) / 2);
 
-									if (clownmdemu_state.psg.tones[i].attenuation == 15)
+									if (clownmdemu_state->psg.tones[i].attenuation == 15)
 										ImGui::TextUnformatted("Attenuation: 15 (Silent)");
 									else
-										ImGui::Text("Attenuation: %u (%udb)", clownmdemu_state.psg.tones[i].attenuation, clownmdemu_state.psg.tones[i].attenuation * 2);
+										ImGui::Text("Attenuation: %u (%udb)", clownmdemu_state->psg.tones[i].attenuation, clownmdemu_state->psg.tones[i].attenuation * 2);
 
 									ImGui::TreePop();
 								}
@@ -1667,26 +1726,26 @@ int main(int argc, char **argv)
 							// Noise channel.
 							if (ImGui::TreeNodeEx("Noise", ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								switch (clownmdemu_state.psg.noise.type)
+								switch (clownmdemu_state->psg.noise.type)
 								{
-									case clownmdemu_state.psg.noise.PSG_NOISE_TYPE_PERIODIC:
+									case clownmdemu_state->psg.noise.PSG_NOISE_TYPE_PERIODIC:
 										ImGui::TextUnformatted("Type: Periodic Noise");
 										break;
 
-									case clownmdemu_state.psg.noise.PSG_NOISE_TYPE_WHITE:
+									case clownmdemu_state->psg.noise.PSG_NOISE_TYPE_WHITE:
 										ImGui::TextUnformatted("Type: White Noise");
 										break;
 								}
 
-								if (clownmdemu_state.psg.noise.frequency_mode == 3)
+								if (clownmdemu_state->psg.noise.frequency_mode == 3)
 									ImGui::TextUnformatted("Frequency Mode: Tone #3");
 								else
-									ImGui::Text("Frequency Mode: %u (%uHz)", clownmdemu_state.psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state.psg.noise.frequency_mode) / 2);
+									ImGui::Text("Frequency Mode: %u (%uHz)", clownmdemu_state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state->psg.noise.frequency_mode) / 2);
 
-								if (clownmdemu_state.psg.noise.attenuation == 15)
+								if (clownmdemu_state->psg.noise.attenuation == 15)
 									ImGui::TextUnformatted("Attenuation: 15 (Silent)");
 								else
-									ImGui::Text("Attenuation: %u (%udb)", clownmdemu_state.psg.noise.attenuation, clownmdemu_state.psg.noise.attenuation * 2);
+									ImGui::Text("Attenuation: %u (%udb)", clownmdemu_state->psg.noise.attenuation, clownmdemu_state->psg.noise.attenuation * 2);
 
 								ImGui::TreePop();
 							}
@@ -1710,7 +1769,7 @@ int main(int argc, char **argv)
 
 			SDL_DestroyTexture(vram_texture);
 
-			ClownMDEmu_Deinit(&clownmdemu_state);
+			ClownMDEmu_Deinit(clownmdemu_state);
 
 			SDL_free(rom_buffer);
 

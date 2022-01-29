@@ -89,6 +89,7 @@ Controller:
 
 Hotkeys:
 - Space = Fast-forward
+- R     = Rewind
 - Tab   = Soft reset
 - F1    = Toggle which joypad the keyboard controls
 - F5    = Create save state
