@@ -1409,14 +1409,18 @@ int main(int argc, char **argv)
 						ImGui::EndMenuBar();
 					}
 
+					// We need this block of logic to be outside of the below condition so that the emulator
+					// has keyboard focus on startup without needing the window to be clicked first.
+					// Weird behaviour - I know.
+					const ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
+
+					// Create an invisible button which detects when input is intended for the emulator.
+					// We do this cursor stuff so that the framebuffer is drawn over the button.
+					const ImVec2 cursor = ImGui::GetCursorPos();
+					ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
+
 					if (emulator_on)
 					{
-						const ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
-
-						// Create an invisible button which detects when input is intended for the emulator.
-						// We do this cursor stuff so that the framebuffer is drawn over the button.
-						const ImVec2 cursor = ImGui::GetCursorPos();
-						ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
 						emulator_has_focus = ImGui::IsItemFocused();
 						ImGui::SetCursorPos(cursor);
 
