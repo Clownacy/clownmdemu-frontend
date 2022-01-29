@@ -1155,6 +1155,8 @@ int main(int argc, char **argv)
 				// Prevent the window from getting too small or we'll get division by zero errors later on.
 				ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
+				const bool show_menu_bar = !fullscreen || pop_out || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
+
 				// We don't want the emulator window overlapping the others while it's maximised.
 				ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBringToFrontOnFocus;
 
@@ -1163,7 +1165,7 @@ int main(int argc, char **argv)
 					window_flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
 
 				// Hide the menu bar when maximised in fullscreen.
-				if (!fullscreen || pop_out || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
+				if (show_menu_bar)
 					window_flags |= ImGuiWindowFlags_MenuBar;
 
 				// Tweak the style so that the display fill the window.
@@ -1173,7 +1175,7 @@ int main(int argc, char **argv)
 
 				if (not_collapsed)
 				{
-					if ((!fullscreen || pop_out || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0) && ImGui::BeginMenuBar())
+					if (show_menu_bar && ImGui::BeginMenuBar())
 					{
 						if (ImGui::BeginMenu("Console"))
 						{
