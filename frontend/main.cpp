@@ -551,7 +551,6 @@ int main(int argc, char **argv)
 			ImGuiIO &io = ImGui::GetIO();
 			ImGuiStyle &style = ImGui::GetStyle();
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-			//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
 			// Setup Dear ImGui style
 			ImGui::StyleColorsDark();
@@ -916,6 +915,17 @@ int main(int argc, char **argv)
 						}
 
 						case SDL_CONTROLLERBUTTONDOWN:
+							if (event.cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSTICK)
+							{
+								// Toggle Dear ImGui gamepad controls.
+								io.ConfigFlags ^= ImGuiConfigFlags_NavEnableGamepad;
+							}
+
+							// Don't use inputs that are for Dear ImGui
+							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
+								break;
+
+							// Fallthrough
 						case SDL_CONTROLLERBUTTONUP:
 						{
 							const bool pressed = event.cbutton.state == SDL_PRESSED;
