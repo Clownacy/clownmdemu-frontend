@@ -88,6 +88,7 @@ Controller:
 - Back  = Toggle which joypad the controller controls
 - LB    = Rewind
 - RB    = Fast-forward
+- RSB   = Toggle menu controls (see http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
 Hotkeys:
 - Space = Fast-forward
