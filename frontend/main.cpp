@@ -1681,7 +1681,7 @@ int main(int argc, char **argv)
 								if (clownmdemu_state.psg.noise.frequency_mode == 3)
 									ImGui::TextUnformatted("Frequency Mode: Tone #3");
 								else
-									ImGui::Text("Frequency Mode: %u (%udb)", clownmdemu_state.psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state.psg.noise.frequency_mode) / 2);
+									ImGui::Text("Frequency Mode: %u (%uHz)", clownmdemu_state.psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state.psg.noise.frequency_mode) / 2);
 
 								if (clownmdemu_state.psg.noise.attenuation == 15)
 									ImGui::TextUnformatted("Attenuation: 15 (Silent)");
