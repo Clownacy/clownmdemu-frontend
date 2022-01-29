@@ -1856,7 +1856,7 @@ int main(int argc, char **argv)
 				// Process PSG status menu.
 				if (psg_status)
 				{
-					if (ImGui::Begin("PSG Status", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+					if (ImGui::Begin("PSG Status", &psg_status, ImGuiWindowFlags_AlwaysAutoResize))
 					{
 						// Latched command.
 						if (ImGui::TreeNodeEx("Latched Command", ImGuiTreeNodeFlags_DefaultOpen))
