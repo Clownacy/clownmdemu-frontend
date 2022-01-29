@@ -11,6 +11,24 @@
 #include "error.h"
 #include "video.h"
 
+typedef struct TileMetadata
+{
+	unsigned int tile_index;
+	unsigned int palette_line;
+	bool x_flip;
+	bool y_flip;
+	bool priority;
+} TileMetadata;
+
+static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadata *tile_metadata)
+{
+	tile_metadata->tile_index = packed_tile_metadata & 0x7FF;
+	tile_metadata->palette_line = (packed_tile_metadata >> 13) & 3;
+	tile_metadata->x_flip = (packed_tile_metadata & 0x800) != 0;
+	tile_metadata->y_flip = (packed_tile_metadata & 0x1000) != 0;
+	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
+}
+
 void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 {
 	if (ImGui::Begin("Plane Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
@@ -54,17 +72,14 @@ void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 					{
 						for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu_state->vdp.plane_width; ++tile_x_in_plane)
 						{
-							const unsigned int plane_entry = *plane_pointer++;
-							const unsigned int tile_index = plane_entry & 0x7FF;
-							const unsigned int palette_line = (plane_entry >> 13) & 3;
-							const bool x_flip = (plane_entry & 0x800) != 0;
-							const bool y_flip = (plane_entry & 0x1000) != 0;
+							TileMetadata tile_metadata;
+							DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
 
-							const unsigned int palette_line_index = palette_line * 16;
-							const unsigned x_flip_xor = x_flip ? tile_width - 1 : 0;
-							const unsigned y_flip_xor = y_flip ? tile_height - 1 : 0;
+							const unsigned int palette_line_index = tile_metadata.palette_line * 16;
+							const unsigned x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
+							const unsigned y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-							const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_index * (tile_width * tile_height / 4)];
+							const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
 
 							for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 							{
@@ -91,18 +106,14 @@ void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 			const float plane_width_in_pixels = (float)(clownmdemu_state->vdp.plane_width * tile_width);
 			const float plane_height_in_pixels = (float)(clownmdemu_state->vdp.plane_height * tile_height);
 
-			if (ImGui::TreeNodeEx("Plane A", ImGuiTreeNodeFlags_DefaultOpen))
+			for (unsigned int plane = 0; plane < 2; ++plane)
 			{
-				ImGui::Image(plane_texture, ImVec2((float)(plane_width_in_pixels * 2), (float)(plane_height_in_pixels * 2)), ImVec2(0.0f, 0.0f), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), (float)plane_height_in_pixels / (128.0f * 8.0f * 2.0f)));
+				if (ImGui::TreeNodeEx(plane != 0 ? "Plane B" : "Plane A", ImGuiTreeNodeFlags_DefaultOpen))
+				{
+					ImGui::Image(plane_texture, ImVec2((float)(plane_width_in_pixels * 2), (float)(plane_height_in_pixels * 2)), ImVec2(0.0f, 0.5f * (float)plane), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), 0.5f * (float)plane + (float)plane_height_in_pixels / (128.0f * 8.0f * 2.0f)));
 
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Plane B", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Image(plane_texture, ImVec2((float)(plane_width_in_pixels * 2), (float)(plane_height_in_pixels * 2)), ImVec2(0.0f, 0.5f), ImVec2((float)plane_width_in_pixels / (128.0f * 8.0f), 0.5f + (float)plane_height_in_pixels / (128.0f * 8.0f * 2.0f)));
-
-				ImGui::TreePop();
+					ImGui::TreePop();
+				}
 			}
 		}
 	}
