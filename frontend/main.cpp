@@ -22,6 +22,7 @@
 
 #include "imgui/karla_regular.h"
 
+#include "audio.h"
 #include "error.h"
 
 typedef struct Input
@@ -240,15 +241,11 @@ void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
 	}
 }
 
-
 ///////////
 // Audio //
 ///////////
 
-static SDL_AudioDeviceID audio_device;
-static size_t audio_buffer_size;
 static ClownResampler_HighLevel_State resampler;
-static unsigned int native_audio_sample_rate;
 static bool initialised_audio;
 
 static void SetAudioPALMode(bool enabled)
@@ -258,57 +255,11 @@ static void SetAudioPALMode(bool enabled)
 		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16));
 		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16));
 
+		// TODO - Wait... there's no need to lock here.
 		SDL_LockAudioDevice(audio_device);
 		ClownResampler_HighLevel_Init(&resampler, 1, enabled ? pal_sample_rate : ntsc_sample_rate, native_audio_sample_rate);
 		SDL_UnlockAudioDevice(audio_device);
 	}
-}
-
-static bool InitAudio(void)
-{
-	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
-	{
-		PrintError("SDL_InitSubSystem(SDL_INIT_AUDIO) failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		// Initialise audio backend
-		SDL_AudioSpec want, have;
-
-		SDL_zero(want);
-		want.freq = 48000;
-		want.format = AUDIO_S16;
-		want.channels = 1;
-		// We want a 25ms buffer (this value must be a power of two)
-		want.samples = 1;
-		while (want.samples < (want.freq * want.channels) / (1000 / 25))
-			want.samples <<= 1;
-		want.callback = NULL;
-
-		audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-
-		if (audio_device == 0)
-		{
-			PrintError("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			audio_buffer_size = have.size;
-			native_audio_sample_rate = (unsigned int)have.freq;
-
-			return true;
-		}
-
-		SDL_QuitSubSystem(SDL_INIT_AUDIO);
-	}
-
-	return false;
-}
-
-static void DeinitAudio(void)
-{
-	SDL_CloseAudioDevice(audio_device);
-	SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
 static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)

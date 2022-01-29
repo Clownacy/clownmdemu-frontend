@@ -7,6 +7,8 @@ project(clownmdemufrontend LANGUAGES C CXX)
 
 add_executable(clownmdemufrontend WIN32
 	"main.cpp"
+	"audio.cpp"
+	"audio.h"
 	"error.cpp"
 	"error.h"
 	"clownresampler/clownresampler.h"
