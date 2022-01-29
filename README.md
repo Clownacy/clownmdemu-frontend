@@ -86,6 +86,8 @@ Controller:
 - A     = B
 - Start = Start
 - Back  = Toggle which joypad the controller controls
+- LB    = Rewind
+- RB    = Fast-forward
 
 Hotkeys:
 - Space = Fast-forward

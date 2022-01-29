@@ -26,6 +26,8 @@ typedef struct Input
 {
 	unsigned int bound_joypad;
 	bool buttons[CLOWNMDEMU_BUTTON_MAX];
+	bool fast_forward;
+	bool rewind;
 } Input;
 
 typedef struct ControllerInput
@@ -488,6 +490,35 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 	}
 }
 
+// Manages whether the emulator runs at a higher speed or not.
+static bool fast_forward;
+static bool rewind;
+
+static void UpdateFastForwardStatus(void)
+{
+	const bool previous_fast_forward = fast_forward;
+
+	fast_forward = keyboard_input.fast_forward;
+
+	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+		fast_forward |= controller_input->input.fast_forward;
+
+	if (previous_fast_forward != fast_forward)
+	{
+		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
+		if (use_vsync)
+			SDL_RenderSetVSync(renderer, !fast_forward);
+	}
+}
+
+static void UpdateRewindStatus(void)
+{
+	rewind = keyboard_input.rewind;
+
+	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+		rewind |= controller_input->input.rewind;
+}
+
 int main(int argc, char **argv)
 {
 	SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
@@ -571,11 +602,6 @@ int main(int argc, char **argv)
 
 			// Manages whether the program exits or not.
 			bool quit = false;
-
-			// Manages whether the emulator runs at a higher speed or not.
-			bool fast_forward = false;
-
-			bool rewind = false;
 
 			// Used for deciding when to pass inputs to the emulator.
 			bool emulator_has_focus = false;
@@ -796,16 +822,13 @@ int main(int argc, char **argv)
 
 								case SDL_SCANCODE_SPACE:
 									// Toggle fast-forward
-									fast_forward = pressed;
-
-									// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
-									if (use_vsync)
-										SDL_RenderSetVSync(renderer, !pressed);
-
+									keyboard_input.fast_forward = pressed;
+									UpdateFastForwardStatus();
 									break;
 
 								case SDL_SCANCODE_R:
-									rewind = pressed;
+									keyboard_input.rewind = pressed;
+									UpdateRewindStatus();
 									break;
 
 								default:
@@ -967,6 +990,16 @@ int main(int argc, char **argv)
 											if (pressed)
 												controller_input->input.bound_joypad ^= 1;
 
+											break;
+
+										case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+											controller_input->input.rewind = pressed;
+											UpdateRewindStatus();
+											break;
+
+										case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+											controller_input->input.fast_forward = pressed;
+											UpdateFastForwardStatus();
 											break;
 
 										default:
