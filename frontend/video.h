@@ -5,6 +5,7 @@
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;
+extern float dpi_scale;
 
 bool InitVideo(void);
 void DeinitVideo(void);

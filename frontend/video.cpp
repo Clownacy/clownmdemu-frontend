@@ -8,6 +8,7 @@
 
 SDL_Window *window;
 SDL_Renderer *renderer;
+float dpi_scale;
 
 bool InitVideo(void)
 {
@@ -35,6 +36,13 @@ bool InitVideo(void)
 			}
 			else
 			{
+				// Get DPI scale
+				dpi_scale = 1.0f;
+
+				float ddpi;
+				if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
+					dpi_scale = ddpi / 96.0f; // 96 DPI appears to be the "normal" DPI
+
 				return true;
 			}
 
