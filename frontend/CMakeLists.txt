@@ -19,36 +19,36 @@ add_executable(clownmdemufrontend WIN32
 	"debug_psg.h"
 	"debug_vdp.cpp"
 	"debug_vdp.h"
-	"clownresampler/clownresampler.h"
-	"tinyfiledialogs.c"
-	"tinyfiledialogs.h"
-	"imgui/imconfig.h"
-	"imgui/imgui.cpp"
-	"imgui/imgui.h"
-	"imgui/imgui_demo.cpp"
-	"imgui/imgui_draw.cpp"
-	"imgui/imgui_impl_sdl.cpp"
-	"imgui/imgui_impl_sdl.h"
-	"imgui/imgui_impl_sdlrenderer.cpp"
-	"imgui/imgui_impl_sdlrenderer.h"
-	"imgui/imgui_internal.h"
-	"imgui/imgui_tables.cpp"
-	"imgui/imgui_widgets.cpp"
-	"imgui/imstb_rectpack.h"
-	"imgui/imstb_textedit.h"
+	"libraries/clownresampler/clownresampler.h"
+	"libraries/tinyfiledialogs/tinyfiledialogs.c"
+	"libraries/tinyfiledialogs/tinyfiledialogs.h"
+	"libraries/imgui/imconfig.h"
+	"libraries/imgui/imgui.cpp"
+	"libraries/imgui/imgui.h"
+	"libraries/imgui/imgui_demo.cpp"
+	"libraries/imgui/imgui_draw.cpp"
+	"libraries/imgui/imgui_impl_sdl.cpp"
+	"libraries/imgui/imgui_impl_sdl.h"
+	"libraries/imgui/imgui_impl_sdlrenderer.cpp"
+	"libraries/imgui/imgui_impl_sdlrenderer.h"
+	"libraries/imgui/imgui_internal.h"
+	"libraries/imgui/imgui_tables.cpp"
+	"libraries/imgui/imgui_widgets.cpp"
+	"libraries/imgui/imstb_rectpack.h"
+	"libraries/imgui/imstb_textedit.h"
 	"frontend.manifest"
 )
 
 if(CLOWNMDEMUFRONTEND_FREETYPE)
 	target_sources(clownmdemufrontend PRIVATE
-		"imgui/imgui_freetype.cpp"
-		"imgui/imgui_freetype.h"
+		"libraries/imgui/imgui_freetype.cpp"
+		"libraries/imgui/imgui_freetype.h"
 	)
 
 	target_compile_definitions(clownmdemufrontend PRIVATE IMGUI_ENABLE_FREETYPE)
 else()
 	target_sources(clownmdemufrontend PRIVATE
-		"imgui/imstb_truetype.h"
+		"libraries/imgui/imstb_truetype.h"
 	)
 endif()
 
@@ -74,7 +74,7 @@ find_package(SDL2)
 if(SDL2_FOUND)
 	target_link_libraries(clownmdemufrontend SDL2::SDL2main SDL2::SDL2)
 else()
-	add_subdirectory("SDL" EXCLUDE_FROM_ALL)
+	add_subdirectory("libraries/SDL" EXCLUDE_FROM_ALL)
 	target_link_libraries(clownmdemufrontend SDL2::SDL2main SDL2::SDL2-static)
 endif()
 
@@ -84,7 +84,7 @@ if(CLOWNMDEMUFRONTEND_FREETYPE)
 	if(FREETYPE_FOUND)
 		target_link_libraries(clownmdemufrontend Freetype::Freetype)
 	else()
-		add_subdirectory("freetype" EXCLUDE_FROM_ALL)
+		add_subdirectory("libraries/freetype" EXCLUDE_FROM_ALL)
 		target_link_libraries(clownmdemufrontend freetype)
 	endif()
 endif()

@@ -1,9 +1,9 @@
-[submodule "frontend/SDL"]
-	path = frontend/SDL
+[submodule "frontend/libraries/SDL"]
+	path = frontend/libraries/SDL
 	url = https://github.com/libsdl-org/SDL
 [submodule "frontend/clownresampler"]
-	path = frontend/clownresampler
+	path = frontend/libraries/clownresampler
 	url = https://github.com/Clownacy/clownresampler
 [submodule "frontend/freetype"]
-	path = frontend/freetype
+	path = frontend/libraries/freetype
 	url = https://gitlab.freedesktop.org/freetype/freetype

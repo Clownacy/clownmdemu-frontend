@@ -13,15 +13,15 @@
 #define CLOWNRESAMPLER_SIN SDL_sin
 #define CLOWNRESAMPLER_MEMSET SDL_memset
 #define CLOWNRESAMPLER_MEMMOVE SDL_memmove
-#include "clownresampler/clownresampler.h"
+#include "libraries/clownresampler/clownresampler.h"
 
-#include "tinyfiledialogs.h"
+#include "libraries/tinyfiledialogs/tinyfiledialogs.h"
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_sdl.h"
-#include "imgui/imgui_impl_sdlrenderer.h"
+#include "libraries/imgui/imgui.h"
+#include "libraries/imgui/imgui_impl_sdl.h"
+#include "libraries/imgui/imgui_impl_sdlrenderer.h"
 
-#include "imgui/karla_regular.h"
+#include "libraries/imgui/karla_regular.h"
 
 #include "audio.h"
 #include "colour.h"

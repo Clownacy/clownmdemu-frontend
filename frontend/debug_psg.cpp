@@ -1,7 +1,7 @@
 #include "debug_psg.h"
 
 #include "SDL.h"
-#include "imgui/imgui.h"
+#include "libraries/imgui/imgui.h"
 #include "../clowncommon.h"
 #include "../clownmdemu.h"
 
