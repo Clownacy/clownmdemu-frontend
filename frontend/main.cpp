@@ -22,6 +22,8 @@
 
 #include "imgui/karla_regular.h"
 
+#include "error.h"
+
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -69,19 +71,6 @@ static size_t rom_buffer_size;
 
 static ClownMDEmu_Region region = CLOWNMDEMU_REGION_OVERSEAS;
 static ClownMDEmu_TVStandard tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-
-static void PrintErrorInternal(const char *format, va_list args)
-{
-	SDL_LogMessageV(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, format, args);
-}
-
-static void PrintError(const char *format, ...)
-{
-	va_list args;
-	va_start(args, format);
-	PrintErrorInternal(format, args);
-	va_end(args);
-}
 
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
