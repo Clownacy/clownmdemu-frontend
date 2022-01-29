@@ -2,6 +2,11 @@
 
 #include "SDL.h"
 
+void InitError(void)
+{
+	SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
+}
+
 void PrintErrorInternal(const char *format, va_list args)
 {
 	SDL_LogMessageV(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, format, args);

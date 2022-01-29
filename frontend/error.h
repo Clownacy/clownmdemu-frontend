@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 
+void InitError(void);
 void PrintErrorInternal(const char *format, va_list args);
 void PrintError(const char *format, ...);
 

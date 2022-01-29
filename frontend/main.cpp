@@ -467,7 +467,7 @@ static void UpdateRewindStatus(void)
 
 int main(int argc, char **argv)
 {
-	SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
+	InitError();
 
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
