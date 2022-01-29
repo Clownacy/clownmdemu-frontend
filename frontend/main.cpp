@@ -1163,7 +1163,7 @@ int main(int argc, char **argv)
 					window_flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
 
 				// Hide the menu bar when maximised in fullscreen.
-				if (!fullscreen || pop_out)
+				if (!fullscreen || pop_out || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
 					window_flags |= ImGuiWindowFlags_MenuBar;
 
 				// Tweak the style so that the display fill the window.
@@ -1173,7 +1173,7 @@ int main(int argc, char **argv)
 
 				if (not_collapsed)
 				{
-					if ((!fullscreen || pop_out) && ImGui::BeginMenuBar())
+					if ((!fullscreen || pop_out || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0) && ImGui::BeginMenuBar())
 					{
 						if (ImGui::BeginMenu("Console"))
 						{
