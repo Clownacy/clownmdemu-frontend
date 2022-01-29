@@ -772,7 +772,7 @@ int main(int argc, char **argv)
 							}
 
 							// Don't use inputs that are for Dear ImGui
-							if (!emulator_has_focus)
+							if (!emulator_on || !emulator_has_focus)
 								break;
 
 							switch (event.key.keysym.sym)
@@ -940,7 +940,7 @@ int main(int argc, char **argv)
 							}
 
 							// Don't use inputs that are for Dear ImGui
-							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
+							if (!emulator_on || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
 								break;
 
 							// Fallthrough
