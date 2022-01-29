@@ -11,6 +11,8 @@ add_executable(clownmdemufrontend WIN32
 	"audio.h"
 	"error.cpp"
 	"error.h"
+	"video.cpp"
+	"video.h"
 	"clownresampler/clownresampler.h"
 	"tinyfiledialogs.c"
 	"tinyfiledialogs.h"
