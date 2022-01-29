@@ -1088,7 +1088,7 @@ int main(int argc, char **argv)
 												else
 												{
 													// This is a list of directions expressed as unit vectors.
-													const float directions[4][2] = {
+													static const float directions[4][2] = {
 														{ 0.0f, -1.0f}, // Up
 														{ 0.0f,  1.0f}, // Down
 														{-1.0f,  0.0f}, // Left
@@ -1102,7 +1102,7 @@ int main(int argc, char **argv)
 													controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * ((float)M_PI / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
 												}
 
-												const unsigned int buttons[4] = {
+												static const unsigned int buttons[4] = {
 													CLOWNMDEMU_BUTTON_UP,
 													CLOWNMDEMU_BUTTON_DOWN,
 													CLOWNMDEMU_BUTTON_LEFT,
