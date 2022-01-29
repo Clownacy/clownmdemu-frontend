@@ -36,7 +36,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, bo
 		static SDL_Texture *plane_textures[2];
 		SDL_Texture *&plane_texture = plane_textures[plane_b];
 		const unsigned int plane_texture_width = 128 * 8; // 128 is the maximum plane size
-		const unsigned int plane_texture_height = 128 * 8;
+		const unsigned int plane_texture_height = 64 * 16;
 
 		if (plane_texture == NULL)
 		{
