@@ -162,8 +162,6 @@ static bool InitFramebuffer(void)
 		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
 			PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-		framebuffer_texture_pitch /= sizeof(Uint32);
-
 		return true;
 	}
 
