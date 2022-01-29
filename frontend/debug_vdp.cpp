@@ -23,7 +23,15 @@ void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state)
 			plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 128 * 8, 128 * 8 * 2);
 
 			if (plane_texture == NULL)
+			{
 				PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				// Disable blending, since we don't need it
+				if (SDL_SetTextureBlendMode(plane_texture, SDL_BLENDMODE_NONE) < 0)
+					PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			}
 		}
 
 		if (plane_texture != NULL)
@@ -135,7 +143,15 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state)
 			vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, (int)vram_texture_width, (int)vram_texture_height);
 
 			if (vram_texture == NULL)
+			{
 				PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				// Disable blending, since we don't need it
+				if (SDL_SetTextureBlendMode(vram_texture, SDL_BLENDMODE_NONE) < 0)
+					PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			}
 		}
 
 		if (vram_texture != NULL)
