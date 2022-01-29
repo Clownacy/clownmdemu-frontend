@@ -1406,7 +1406,6 @@ int main(int argc, char **argv)
 					if (cram_viewer)
 						Debug_CRAM(&cram_viewer);
 
-					// Process PSG status menu.
 					if (psg_status)
 						Debug_PSG(&psg_status, clownmdemu_state);
 
