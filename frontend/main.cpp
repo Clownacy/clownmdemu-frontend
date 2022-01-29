@@ -640,7 +640,7 @@ int main(int argc, char **argv)
 
 			#ifdef CLOWNMDEMUFRONTEND_REWINDING
 				// Handle rewinding.
-				if ()
+				if (emulator_running)
 				{
 					// We maintain a ring buffer of emulator states:
 					// when rewinding, we go backwards through this buffer,
