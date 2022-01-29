@@ -52,10 +52,14 @@ static Input keyboard_input;
 
 static ControllerInput *controller_input_list_head;
 
-static ClownMDEmu_State *clownmdemu_state;
+#ifdef CLOWNMDEMUFRONTEND_REWINDING
 static ClownMDEmu_State state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
 static size_t state_rewind_index;
 static size_t state_rewind_remaining;
+#else
+static ClownMDEmu_State state_rewind_buffer[1];
+#endif
+static ClownMDEmu_State *clownmdemu_state = state_rewind_buffer;
 
 static bool quick_save_exists = false;
 static SaveState quick_save_state;
@@ -481,9 +485,11 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		rom_buffer = temp_rom_buffer;
 		rom_buffer_size = temp_rom_buffer_size;
 
+	#ifdef CLOWNMDEMUFRONTEND_REWINDING
 		state_rewind_remaining = 0;
 		state_rewind_index = 0;
-		clownmdemu_state = &state_rewind_buffer[state_rewind_index];
+	#endif
+		clownmdemu_state = &state_rewind_buffer[0];
 
 		ClownMDEmu_Init(clownmdemu_state, region, tv_standard);
 		ClownMDEmu_Reset(clownmdemu_state, callbacks);
@@ -492,7 +498,6 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 
 // Manages whether the emulator runs at a higher speed or not.
 static bool fast_forward;
-static bool rewind;
 
 static void UpdateFastForwardStatus(void)
 {
@@ -511,6 +516,9 @@ static void UpdateFastForwardStatus(void)
 	}
 }
 
+#ifdef CLOWNMDEMUFRONTEND_REWINDING
+static bool rewind;
+
 static void UpdateRewindStatus(void)
 {
 	rewind = keyboard_input.rewind;
@@ -518,6 +526,7 @@ static void UpdateRewindStatus(void)
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
 		rewind |= controller_input->input.rewind;
 }
+#endif
 
 int main(int argc, char **argv)
 {
@@ -620,10 +629,16 @@ int main(int argc, char **argv)
 
 			while (!quit)
 			{
-				const bool emulator_running = rom_buffer != NULL;
+				const bool emulator_on = rom_buffer != NULL;
+				const bool emulator_running = emulator_on && !emulator_paused
+				#ifdef CLOWNMDEMUFRONTEND_REWINDING
+					&& !(rewind && state_rewind_remaining == 0)
+				#endif
+					;
 
+			#ifdef CLOWNMDEMUFRONTEND_REWINDING
 				// Handle rewinding.
-				if (emulator_running && !emulator_paused && !(rewind && state_rewind_remaining == 0))
+				if ()
 				{
 					// We maintain a ring buffer of emulator states:
 					// when rewinding, we go backwards through this buffer,
@@ -667,6 +682,7 @@ int main(int argc, char **argv)
 					clownmdemu_state = &state_rewind_buffer[to_index];
 					callbacks.user_data = clownmdemu_state;
 				}
+			#endif
 
 				// This loop processes events and manages the framerate.
 				for (;;)
@@ -825,10 +841,12 @@ int main(int argc, char **argv)
 									UpdateFastForwardStatus();
 									break;
 
+								#ifdef CLOWNMDEMUFRONTEND_REWINDING
 								case SDL_SCANCODE_R:
 									keyboard_input.rewind = pressed;
 									UpdateRewindStatus();
 									break;
+								#endif
 
 								default:
 									break;
@@ -1002,10 +1020,12 @@ int main(int argc, char **argv)
 
 											break;
 
+										#ifdef CLOWNMDEMUFRONTEND_REWINDING
 										case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
 											controller_input->input.rewind = pressed;
 											UpdateRewindStatus();
 											break;
+										#endif
 
 										case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 											controller_input->input.fast_forward = pressed;
@@ -1116,7 +1136,7 @@ int main(int argc, char **argv)
 					}
 				}
 
-				if (emulator_running && !emulator_paused && !(rewind && state_rewind_remaining == 0))
+				if (emulator_running)
 				{
 					// Lock the texture so that we can write to its pixels later
 					if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
@@ -1191,7 +1211,7 @@ int main(int argc, char **argv)
 								}
 							}
 
-							if (ImGui::MenuItem("Close Software", NULL, false, emulator_running))
+							if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
 							{
 								SDL_free(rom_buffer);
 								rom_buffer = NULL;
@@ -1200,9 +1220,9 @@ int main(int argc, char **argv)
 
 							ImGui::Separator();
 
-							ImGui::MenuItem("Pause", "Pause", &emulator_paused, emulator_running);
+							ImGui::MenuItem("Pause", "Pause", &emulator_paused, emulator_on);
 
-							if (ImGui::MenuItem("Reset", "Tab", false, emulator_running))
+							if (ImGui::MenuItem("Reset", "Tab", false, emulator_on))
 							{
 								// Soft-reset console
 								ClownMDEmu_Reset(clownmdemu_state, &callbacks);
@@ -1265,13 +1285,13 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginMenu("Save States"))
 						{
-							if (ImGui::MenuItem("Quick Save", "F5", false, emulator_running))
+							if (ImGui::MenuItem("Quick Save", "F5", false, emulator_on))
 							{
 								quick_save_exists = true;
 								CreateSaveState(&quick_save_state);
 							}
 
-							if (ImGui::MenuItem("Quick Load", "F9", false, emulator_running && quick_save_exists))
+							if (ImGui::MenuItem("Quick Load", "F9", false, emulator_on && quick_save_exists))
 							{
 								ApplySaveState(&quick_save_state);
 
@@ -1280,7 +1300,7 @@ int main(int argc, char **argv)
 
 							ImGui::Separator();
 
-							if (ImGui::MenuItem("Save To File...", NULL, false, emulator_running))
+							if (ImGui::MenuItem("Save To File...", NULL, false, emulator_on))
 							{
 								// Obtain a filename and path from the user.
 								const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
@@ -1311,7 +1331,7 @@ int main(int argc, char **argv)
 								}
 							}
 
-							if (ImGui::MenuItem("Load From File...", NULL, false, emulator_running))
+							if (ImGui::MenuItem("Load From File...", NULL, false, emulator_on))
 							{
 								// Obtain a filename and path from the user.
 								const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
@@ -1389,7 +1409,7 @@ int main(int argc, char **argv)
 						ImGui::EndMenuBar();
 					}
 
-					if (emulator_running)
+					if (emulator_on)
 					{
 						const ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
 
