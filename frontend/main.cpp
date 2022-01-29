@@ -397,34 +397,34 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 }
 
 // Manages whether the emulator runs at a higher speed or not.
-static bool fast_forward;
+static bool fast_forward_in_progress;
 
 static void UpdateFastForwardStatus(void)
 {
-	const bool previous_fast_forward = fast_forward;
+	const bool previous_fast_forward_in_progress = fast_forward_in_progress;
 
-	fast_forward = keyboard_input.fast_forward;
+	fast_forward_in_progress = keyboard_input.fast_forward;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
-		fast_forward |= controller_input->input.fast_forward;
+		fast_forward_in_progress |= controller_input->input.fast_forward;
 
-	if (previous_fast_forward != fast_forward)
+	if (previous_fast_forward_in_progress != fast_forward_in_progress)
 	{
 		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
 		if (use_vsync)
-			SDL_RenderSetVSync(renderer, !fast_forward);
+			SDL_RenderSetVSync(renderer, !fast_forward_in_progress);
 	}
 }
 
 #ifdef CLOWNMDEMUFRONTEND_REWINDING
-static bool rewind;
+static bool rewind_in_progress;
 
 static void UpdateRewindStatus(void)
 {
-	rewind = keyboard_input.rewind;
+	rewind_in_progress = keyboard_input.rewind;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
-		rewind |= controller_input->input.rewind;
+		rewind_in_progress |= controller_input->input.rewind;
 }
 #endif
 
@@ -532,7 +532,7 @@ int main(int argc, char **argv)
 					const bool emulator_on = rom_buffer != NULL;
 					const bool emulator_running = emulator_on && !emulator_paused
 					#ifdef CLOWNMDEMUFRONTEND_REWINDING
-						&& !(rewind && state_rewind_remaining == 0)
+						&& !(rewind_in_progress && state_rewind_remaining == 0)
 					#endif
 						;
 
@@ -545,7 +545,7 @@ int main(int argc, char **argv)
 						// and when not rewinding, we go forwards through it.
 						size_t from_index, to_index;
 
-						if (rewind)
+						if (rewind_in_progress)
 						{
 							--state_rewind_remaining;
 
@@ -622,7 +622,7 @@ int main(int argc, char **argv)
 									break;
 							}
 
-							next_time += delta >> (fast_forward ? 2 : 0);
+							next_time += delta >> (fast_forward_in_progress ? 2 : 0);
 
 							break;
 						}
@@ -1288,7 +1288,7 @@ int main(int argc, char **argv)
 							if (ImGui::BeginMenu("Misc."))
 							{
 								if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
-									if (!fast_forward)
+									if (!fast_forward_in_progress)
 										SDL_RenderSetVSync(renderer, use_vsync);
 
 								if (ImGui::MenuItem("Fullscreen", "F11", &fullscreen))
