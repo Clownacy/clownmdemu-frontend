@@ -722,10 +722,6 @@ int main(int argc, char **argv)
 							// Fallthrough
 						case SDL_KEYUP:
 						{
-							// Don't use inputs that are for Dear ImGui
-							if (!emulator_has_focus)
-								break;
-
 							const bool pressed = event.key.state == SDL_PRESSED;
 
 							switch (event.key.keysym.scancode)
