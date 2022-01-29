@@ -36,6 +36,7 @@ add_executable(clownmdemufrontend WIN32
 	"libraries/imgui/imgui_widgets.cpp"
 	"libraries/imgui/imstb_rectpack.h"
 	"libraries/imgui/imstb_textedit.h"
+	"libraries/imgui/karla_regular.h"
 	"frontend.manifest"
 )
 
