@@ -61,10 +61,13 @@ set_target_properties(clownmdemufrontend PROPERTIES
 	C_STANDARD 90
 	C_STANDARD_REQUIRED NO
 	C_EXTENSIONS OFF
-	CXX_STANDARD 11 # Dear ImGui requires C++11
+	CXX_STANDARD 98
 	CXX_STANDARD_REQUIRED NO
 	CXX_EXTENSIONS OFF
 )
+
+# Dear ImGui requires some C++11 features
+target_compile_features(clownmdemufrontend PRIVATE cxx_long_long_type cxx_static_assert)
 
 # Link clownmdemu core
 add_subdirectory("../" EXCLUDE_FROM_ALL "clownmdemu")
