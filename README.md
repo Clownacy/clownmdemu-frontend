@@ -67,7 +67,8 @@ high-level emulator than accuracy-focussed alternatives may.
 # Frontend
 
 An example frontend is provided in the `frontend` directory; it is written in
-C++98 and leverages the SDL2, Dear ImGui, and tinyfiledialogs libraries.
+C++98 and leverages the SDL2, Dear ImGui, FreeType, and tinyfiledialogs
+libraries.
 
 The control scheme is currently hardcoded to the following layout:
 
