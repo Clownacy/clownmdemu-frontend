@@ -421,6 +421,34 @@ static void UpdateRewindStatus(void)
 }
 #endif
 
+static const char* OpenFileDialog(char const *aTitle, char const *aDefaultPathAndFile, int aNumOfFilterPatterns, const char* const *aFilterPatterns, char const *aSingleFilterDescription, int aAllowMultipleSelects)
+{
+	// A workaround to prevent the dialog being impossible to close in fullscreen (at least on Windows).
+	if (fullscreen)
+		SetFullscreen(false);
+
+	const char *path = tinyfd_openFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
+
+	if (fullscreen)
+		SetFullscreen(true);
+
+	return path;
+}
+
+static const char* SaveFileDialog(char const *aTitle, char const *aDefaultPathAndFile, int aNumOfFilterPatterns, const char* const *aFilterPatterns, char const *aSingleFilterDescription)
+{
+	// A workaround to prevent the dialog being impossible to close in fullscreen (at least on Windows).
+	if (fullscreen)
+		SetFullscreen(false);
+
+	const char *path = tinyfd_saveFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
+
+	if (fullscreen)
+		SetFullscreen(true);
+
+	return path;
+}
+
 int main(int argc, char **argv)
 {
 	InitError();
@@ -1095,11 +1123,7 @@ int main(int argc, char **argv)
 							{
 								if (ImGui::MenuItem("Open Software..."))
 								{
-									// A workaround to avoid the dialog being impossible to close in fullscreen.
-									fullscreen = false;
-									SetFullscreen(fullscreen);
-
-									const char *rom_path = tinyfd_openFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
+									const char *rom_path = OpenFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
 
 									if (rom_path != NULL)
 									{
@@ -1203,7 +1227,7 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Save To File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
-									const char *save_state_path = tinyfd_saveFileDialog("Create Save State", NULL, 0, NULL, NULL);
+									const char *save_state_path = SaveFileDialog("Create Save State", NULL, 0, NULL, NULL);
 
 									if (save_state_path != NULL)
 									{
@@ -1239,7 +1263,7 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Load From File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
-									const char *save_state_path = tinyfd_openFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
+									const char *save_state_path = OpenFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
 
 									if (save_state_path != NULL)
 									{
