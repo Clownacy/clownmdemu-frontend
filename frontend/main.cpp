@@ -132,7 +132,6 @@ static SDL_Texture *framebuffer_texture;
 static Uint32 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
 static SDL_Texture *framebuffer_texture_upscaled;
-static unsigned int framebuffer_upscale_factor;
 
 static unsigned int current_screen_width;
 static unsigned int current_screen_height;
@@ -173,14 +172,8 @@ static void DeinitFramebuffer(void)
 	SDL_DestroyTexture(framebuffer_texture);
 }
 
-void RecreateUpscaledFramebuffer(int destination_width, int destination_height)
+void RecreateUpscaledFramebuffer(unsigned int framebuffer_upscale_factor)
 {
-	const unsigned int source_width = current_screen_width;
-	const unsigned int source_height = current_screen_height;
-
-	// Round to the nearest multiples of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
-	framebuffer_upscale_factor = CC_MAX(1, CC_MIN((destination_width + source_width / 2) / source_width, (destination_height + source_height / 2) / source_height));
-
 	static unsigned int previous_framebuffer_upscale_factor = 0;
 
 	if (framebuffer_upscale_factor != previous_framebuffer_upscale_factor)
@@ -539,6 +532,8 @@ int main(int argc, char **argv)
 				bool pop_out = false;
 
 				bool emulator_paused = false;
+
+				bool integer_screen_scaling = false;
 
 				bool plane_a_viewer = false;
 				bool plane_b_viewer = false;
@@ -1349,6 +1344,8 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Fullscreen", "F11", &fullscreen))
 									SetFullscreen(fullscreen);
 
+								ImGui::MenuItem("Integer Screen Scaling", NULL, &integer_screen_scaling);
+
 								ImGui::MenuItem("Pop Out", NULL, &pop_out);
 
 							#ifndef NDEBUG
@@ -1383,73 +1380,83 @@ int main(int argc, char **argv)
 							emulator_has_focus = ImGui::IsItemFocused();
 							ImGui::SetCursorPos(cursor);
 
-							// Correct the aspect ratio of the rendered frame
-							// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+							SDL_Texture *selected_framebuffer_texture = framebuffer_texture;
+
 							const unsigned int work_width = (unsigned int)size_of_display_region.x;
 							const unsigned int work_height = (unsigned int)size_of_display_region.y;
 
-							RecreateUpscaledFramebuffer(work_width, work_height);
+							const unsigned int source_width = current_screen_width;
+							const unsigned int source_height = current_screen_height;
 
-							SDL_Rect destination_rect;
+							unsigned int destination_width;
+							unsigned int destination_height;
 
-							if (work_width > work_height * 320 / current_screen_height)
+							if (integer_screen_scaling)
 							{
-								destination_rect.w = work_height * 320 / current_screen_height;
-								destination_rect.h = work_height;
+								// Round down to the nearest multiple of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
+								const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(work_width / source_width, work_height / source_height));
+
+								destination_width = source_width * framebuffer_upscale_factor;
+								destination_height = source_height * framebuffer_upscale_factor;
 							}
 							else
 							{
-								destination_rect.w = work_width;
-								destination_rect.h = work_width * current_screen_height / 320;
-							}
+								// Round to the nearest multiple of FRAMEBUFFER_WIDTH and FRAMEBUFFER_HEIGHT
+								const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN((work_width + source_width / 2) / source_width, (work_height + source_height / 2) / source_height));
 
-							destination_rect.x = (int)viewport->WorkPos.x + (work_width - destination_rect.w) / 2;
-							destination_rect.y = (int)viewport->WorkPos.y + (work_height - destination_rect.h) / 2;
+								RecreateUpscaledFramebuffer(framebuffer_upscale_factor);
 
-							SDL_Texture *selected_framebuffer_texture;
+								// Correct the aspect ratio of the rendered frame
+								// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive)
+								if (work_width > work_height * 320 / current_screen_height)
+								{
+									destination_width = work_height * 320 / current_screen_height;
+									destination_height = work_height;
+								}
+								else
+								{
+									destination_width = work_width;
+									destination_height = work_width * current_screen_height / 320;
+								}
 
-							// Avoid blurring if...
-							// 1. The upscale texture failed to be created
-							// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple
-							if (framebuffer_texture_upscaled == NULL || (destination_rect.w % current_screen_width == 0 && destination_rect.h % current_screen_height == 0))
-							{
-								// Render the framebuffer to the screen
-								selected_framebuffer_texture = framebuffer_texture;
-							}
-							else
-							{
-								// Render the upscaled framebuffer to the screen.
-								selected_framebuffer_texture = framebuffer_texture_upscaled;
+								// Avoid blurring if...
+								// 1. The upscale texture failed to be created
+								// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple
+								if (framebuffer_texture_upscaled != NULL && (destination_width % current_screen_width != 0 || destination_height % current_screen_height != 0))
+								{
+									// Render the upscaled framebuffer to the screen.
+									selected_framebuffer_texture = framebuffer_texture_upscaled;
 
-								// Before we can do that though, we have to actually render the upscaled framebuffer.
-								SDL_Rect framebuffer_rect;
-								framebuffer_rect.x = 0;
-								framebuffer_rect.y = 0;
-								framebuffer_rect.w = current_screen_width;
-								framebuffer_rect.h = current_screen_height;
+									// Before we can do that though, we have to actually render the upscaled framebuffer.
+									SDL_Rect framebuffer_rect;
+									framebuffer_rect.x = 0;
+									framebuffer_rect.y = 0;
+									framebuffer_rect.w = current_screen_width;
+									framebuffer_rect.h = current_screen_height;
 
-								SDL_Rect upscaled_framebuffer_rect;
-								upscaled_framebuffer_rect.x = 0;
-								upscaled_framebuffer_rect.y = 0;
-								upscaled_framebuffer_rect.w = current_screen_width * framebuffer_upscale_factor;
-								upscaled_framebuffer_rect.h = current_screen_height * framebuffer_upscale_factor;
+									SDL_Rect upscaled_framebuffer_rect;
+									upscaled_framebuffer_rect.x = 0;
+									upscaled_framebuffer_rect.y = 0;
+									upscaled_framebuffer_rect.w = current_screen_width * framebuffer_upscale_factor;
+									upscaled_framebuffer_rect.h = current_screen_height * framebuffer_upscale_factor;
 
-								// Render to the upscaled framebuffer.
-								SDL_SetRenderTarget(renderer, framebuffer_texture_upscaled);
+									// Render to the upscaled framebuffer.
+									SDL_SetRenderTarget(renderer, framebuffer_texture_upscaled);
 
-								// Render.
-								SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+									// Render.
+									SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
 
-								// Switch back to actually rendering to the screen.
-								SDL_SetRenderTarget(renderer, NULL);
+									// Switch back to actually rendering to the screen.
+									SDL_SetRenderTarget(renderer, NULL);
+								}
 							}
 
 							// Center the framebuffer in the available region.
-							ImGui::SetCursorPosX((float)((int)ImGui::GetCursorPosX() + ((int)size_of_display_region.x - destination_rect.w) / 2));
-							ImGui::SetCursorPosY((float)((int)ImGui::GetCursorPosY() + ((int)size_of_display_region.y - destination_rect.h) / 2));
+							ImGui::SetCursorPosX((float)((int)ImGui::GetCursorPosX() + ((int)size_of_display_region.x - destination_width) / 2));
+							ImGui::SetCursorPosY((float)((int)ImGui::GetCursorPosY() + ((int)size_of_display_region.y - destination_height) / 2));
 
 							// Draw the upscaled framebuffer in the window.
-							ImGui::Image(selected_framebuffer_texture, ImVec2((float)destination_rect.w, (float)destination_rect.h), ImVec2(0, 0), ImVec2((float)current_screen_width / (float)FRAMEBUFFER_WIDTH, (float)current_screen_height / (float)FRAMEBUFFER_HEIGHT));
+							ImGui::Image(selected_framebuffer_texture, ImVec2((float)destination_width, (float)destination_height), ImVec2(0, 0), ImVec2((float)current_screen_width / (float)FRAMEBUFFER_WIDTH, (float)current_screen_height / (float)FRAMEBUFFER_HEIGHT));
 						}
 					}
 
