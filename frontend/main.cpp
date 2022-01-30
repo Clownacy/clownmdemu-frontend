@@ -1060,10 +1060,6 @@ int main(int argc, char **argv)
 					if (dear_imgui_demo_window)
 						ImGui::ShowDemoWindow(&dear_imgui_demo_window);
 
-					// Hide mouse when the user just wants a fullscreen display window
-					if (fullscreen && !pop_out)
-						ImGui::SetMouseCursor(ImGuiMouseCursor_None);
-
 					const ImGuiViewport *viewport = ImGui::GetMainViewport();
 
 					// Maximise the window if needed.
@@ -1076,7 +1072,11 @@ int main(int argc, char **argv)
 					// Prevent the window from getting too small or we'll get division by zero errors later on.
 					ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
-					const bool show_menu_bar = !fullscreen || pop_out || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
+					const bool show_menu_bar = !fullscreen || pop_out || plane_a_viewer || plane_b_viewer || vram_viewer || cram_viewer || psg_status || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
+
+					// Hide mouse when the user just wants a fullscreen display window
+					if (!show_menu_bar)
+						ImGui::SetMouseCursor(ImGuiMouseCursor_None);
 
 					// We don't want the emulator window overlapping the others while it's maximised.
 					ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBringToFrontOnFocus;
