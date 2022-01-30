@@ -39,7 +39,7 @@ bool InitVideo(void)
 			SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
 
 			// Create renderer
-			renderer = SDL_CreateRenderer(window, -1, 0);
+			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
 
 			if (renderer == NULL)
 			{
