@@ -61,6 +61,7 @@ static Input keyboard_input;
 static ControllerInput *controller_input_list_head;
 
 #ifdef CLOWNMDEMUFRONTEND_REWINDING
+// TODO - Shouldn't rewinding be backing up the colour buffer too?
 static ClownMDEmu_State state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
 static size_t state_rewind_index;
 static size_t state_rewind_remaining;
