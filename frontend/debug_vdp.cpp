@@ -210,8 +210,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 col
 
 			if (ImGui::TreeNodeEx("Options", ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				const size_t length_of_palette = CC_COUNT_OF(colours) / 3;
-				const size_t length_of_palette_line = length_of_palette / 4;
+				const unsigned int length_of_palette_line = 16;
+				const unsigned int length_of_palette = length_of_palette_line * 4;
 
 				ImGui::Text("Brightness");
 				ImGui::RadioButton("Normal", &brightness_index, length_of_palette * 0);
@@ -367,12 +367,13 @@ void Debug_CRAM(bool *open, Uint32 colours[16 * 4 * 3])
 {
 	if (ImGui::Begin("CRAM Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		for (unsigned int i = 0; i < CC_COUNT_OF(colours); ++i)
+		const unsigned int length_of_palette_line = 16;
+		const unsigned int length_of_palette = length_of_palette_line * 4;
+		const unsigned int total_colours = length_of_palette * 3;
+
+		for (unsigned int i = 0; i < total_colours; ++i)
 		{
 			ImGui::PushID(i);
-
-			const size_t length_of_palette = CC_COUNT_OF(colours) / 3;
-			const size_t length_of_palette_line = length_of_palette / 4;
 
 			// Decompose the ARGB8888 colour into something that Dear Imgui can use.
 			const float alpha = (float)((colours[i] >> (8 * 3)) & 0xFF) / (float)0xFF;
