@@ -9,8 +9,6 @@ add_executable(clownmdemufrontend WIN32
 	"main.cpp"
 	"audio.cpp"
 	"audio.h"
-	"colour.cpp"
-	"colour.h"
 	"error.cpp"
 	"error.h"
 	"video.cpp"

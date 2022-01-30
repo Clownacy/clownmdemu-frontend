@@ -7,7 +7,6 @@
 #include "../clowncommon.h"
 #include "../clownmdemu.h"
 
-#include "colour.h"
 #include "error.h"
 #include "video.h"
 
@@ -29,7 +28,7 @@ static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadat
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, bool plane_b)
+static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3], bool plane_b)
 {
 	if (ImGui::Begin(plane_b ? "Plane B Viewer" : "Plane A Viewer", open))
 	{
@@ -149,17 +148,17 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, bo
 	ImGui::End();
 }
 
-void Debug_PlaneA(bool *open, const ClownMDEmu_State *clownmdemu_state)
+void Debug_PlaneA(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3])
 {
-	Debug_Plane(open, clownmdemu_state, false);
+	Debug_Plane(open, clownmdemu_state, colours, false);
 }
 
-void Debug_PlaneB(bool *open, const ClownMDEmu_State *clownmdemu_state)
+void Debug_PlaneB(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3])
 {
-	Debug_Plane(open, clownmdemu_state, true);
+	Debug_Plane(open, clownmdemu_state, colours, true);
 }
 
-void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state)
+void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3])
 {
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
@@ -364,7 +363,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state)
 	ImGui::End();
 }
 
-void Debug_CRAM(bool *open)
+void Debug_CRAM(bool *open, Uint32 colours[16 * 4 * 3])
 {
 	if (ImGui::Begin("CRAM Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

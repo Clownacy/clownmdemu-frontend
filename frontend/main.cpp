@@ -24,7 +24,6 @@
 #include "libraries/imgui/karla_regular.h"
 
 #include "audio.h"
-#include "colour.h"
 #include "error.h"
 #include "video.h"
 #include "debug_psg.h"
@@ -50,11 +49,11 @@ typedef struct ControllerInput
 	struct ControllerInput *next;
 } ControllerInput;
 
-typedef struct SaveState
+typedef struct EmulationState
 {
-	ClownMDEmu_State state;
+	ClownMDEmu_State clownmdemu;
 	Uint32 colours[3 * 4 * 16];
-} SaveState;
+} EmulationState;
 
 static Input keyboard_input;
 
@@ -62,16 +61,16 @@ static ControllerInput *controller_input_list_head;
 
 #ifdef CLOWNMDEMUFRONTEND_REWINDING
 // TODO - Shouldn't rewinding be backing up the colour buffer too?
-static ClownMDEmu_State state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
+static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
 static size_t state_rewind_index;
 static size_t state_rewind_remaining;
 #else
-static ClownMDEmu_State state_rewind_buffer[1];
+static EmulationState state_rewind_buffer[1];
 #endif
-static ClownMDEmu_State *clownmdemu_state = state_rewind_buffer;
+static EmulationState *emulation_state = state_rewind_buffer;
 
 static bool quick_save_exists = false;
-static SaveState quick_save_state;
+static EmulationState quick_save_state;
 
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
@@ -259,7 +258,7 @@ static void ColourUpdatedCallback(void *user_data, unsigned int index, unsigned 
 	const Uint32 blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	colours[index] = (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5);
+	emulation_state->colours[index] = (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5);
 }
 
 static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
@@ -271,7 +270,7 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 
 	if (framebuffer_texture_pixels != NULL)
 		for (unsigned int i = 0; i < screen_width; ++i)
-			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = colours[pixels[i]];
+			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
 static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownMDEmu_Button button_id)
@@ -347,20 +346,13 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 	}
 }
 
-static void CreateSaveState(SaveState *save_state)
+static void ApplySaveState(EmulationState *save_state)
 {
-	save_state->state = *clownmdemu_state;
-	SDL_memcpy(save_state->colours, colours, sizeof(colours));
-}
-
-static void ApplySaveState(SaveState *save_state)
-{
-	*clownmdemu_state = save_state->state;
-	SDL_memcpy(colours, save_state->colours, sizeof(colours));
+	*emulation_state = *save_state;
 
 	// We don't want the save state to override the user's configurations, so reapply them now.
-	ClownMDEmu_SetRegion(clownmdemu_state, region);
-	ClownMDEmu_SetTVStandard(clownmdemu_state, tv_standard);
+	ClownMDEmu_SetRegion(&emulation_state->clownmdemu, region);
+	ClownMDEmu_SetTVStandard(&emulation_state->clownmdemu, tv_standard);
 }
 
 static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks)
@@ -390,10 +382,10 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		state_rewind_remaining = 0;
 		state_rewind_index = 0;
 	#endif
-		clownmdemu_state = &state_rewind_buffer[0];
+		emulation_state = &state_rewind_buffer[0];
 
-		ClownMDEmu_Init(clownmdemu_state, region, tv_standard);
-		ClownMDEmu_Reset(clownmdemu_state, callbacks);
+		ClownMDEmu_Init(&emulation_state->clownmdemu, region, tv_standard);
+		ClownMDEmu_Reset(&emulation_state->clownmdemu, callbacks);
 	}
 }
 
@@ -503,7 +495,7 @@ int main(int argc, char **argv)
 				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
 				// Construct our big list of callbacks for clownmdemu.
-				ClownMDEmu_Callbacks callbacks = {clownmdemu_state, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+				ClownMDEmu_Callbacks callbacks = {&emulation_state->clownmdemu, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
@@ -560,8 +552,8 @@ int main(int argc, char **argv)
 							state_rewind_index = from_index;
 
 							// We don't want the rewind to override the user's configurations, so reapply them now.
-							ClownMDEmu_SetRegion(&state_rewind_buffer[from_index], region);
-							ClownMDEmu_SetTVStandard(&state_rewind_buffer[from_index], tv_standard);
+							ClownMDEmu_SetRegion(&state_rewind_buffer[from_index].clownmdemu, region);
+							ClownMDEmu_SetTVStandard(&state_rewind_buffer[from_index].clownmdemu, tv_standard);
 						}
 						else
 						{
@@ -580,8 +572,8 @@ int main(int argc, char **argv)
 
 						SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
 
-						clownmdemu_state = &state_rewind_buffer[to_index];
-						callbacks.user_data = clownmdemu_state;
+						emulation_state = &state_rewind_buffer[to_index];
+						callbacks.user_data = &emulation_state->clownmdemu;
 					}
 				#endif
 
@@ -685,7 +677,7 @@ int main(int argc, char **argv)
 											break;
 
 										// Soft-reset console
-										ClownMDEmu_Reset(clownmdemu_state, &callbacks);
+										ClownMDEmu_Reset(&emulation_state->clownmdemu, &callbacks);
 
 										emulator_paused = false;
 
@@ -699,7 +691,7 @@ int main(int argc, char **argv)
 									case SDLK_F5:
 										// Save save state
 										quick_save_exists = true;
-										CreateSaveState(&quick_save_state);
+										quick_save_state = *emulation_state;
 										break;
 
 									case SDLK_F9:
@@ -1047,7 +1039,7 @@ int main(int argc, char **argv)
 						framebuffer_texture_pitch /= sizeof(Uint32);
 
 						// Run the emulator for a frame
-						ClownMDEmu_Iterate(clownmdemu_state, &callbacks);
+						ClownMDEmu_Iterate(&emulation_state->clownmdemu, &callbacks);
 
 						// Unlock the texture so that we can draw it
 						SDL_UnlockTexture(framebuffer_texture);
@@ -1127,7 +1119,7 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Reset", "Tab", false, emulator_on))
 								{
 									// Soft-reset console
-									ClownMDEmu_Reset(clownmdemu_state, &callbacks);
+									ClownMDEmu_Reset(&emulation_state->clownmdemu, &callbacks);
 
 									emulator_paused = false;
 								}
@@ -1143,7 +1135,7 @@ int main(int argc, char **argv)
 										if (tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 										{
 											tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-											ClownMDEmu_SetTVStandard(clownmdemu_state, tv_standard);
+											ClownMDEmu_SetTVStandard(&emulation_state->clownmdemu, tv_standard);
 											SetAudioPALMode(false);
 										}
 									}
@@ -1153,7 +1145,7 @@ int main(int argc, char **argv)
 										if (tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 										{
 											tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-											ClownMDEmu_SetTVStandard(clownmdemu_state, tv_standard);
+											ClownMDEmu_SetTVStandard(&emulation_state->clownmdemu, tv_standard);
 											SetAudioPALMode(true);
 										}
 									}
@@ -1167,7 +1159,7 @@ int main(int argc, char **argv)
 										if (region != CLOWNMDEMU_REGION_DOMESTIC)
 										{
 											region = CLOWNMDEMU_REGION_DOMESTIC;
-											ClownMDEmu_SetRegion(clownmdemu_state, region);
+											ClownMDEmu_SetRegion(&emulation_state->clownmdemu, region);
 										}
 									}
 
@@ -1176,7 +1168,7 @@ int main(int argc, char **argv)
 										if (region != CLOWNMDEMU_REGION_OVERSEAS)
 										{
 											region = CLOWNMDEMU_REGION_OVERSEAS;
-											ClownMDEmu_SetRegion(clownmdemu_state, region);
+											ClownMDEmu_SetRegion(&emulation_state->clownmdemu, region);
 										}
 									}
 
@@ -1190,7 +1182,7 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Quick Save", "F5", false, emulator_on))
 								{
 									quick_save_exists = true;
-									CreateSaveState(&quick_save_state);
+									quick_save_state = *emulation_state;
 								}
 
 								if (ImGui::MenuItem("Quick Load", "F9", false, emulator_on && quick_save_exists))
@@ -1228,10 +1220,7 @@ int main(int argc, char **argv)
 											}
 											else
 											{
-												SaveState save_state;
-												CreateSaveState(&save_state);
-
-												if (SDL_RWwrite(file, &save_state, sizeof(save_state), 1) != 1)
+												if (SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
 												{
 													PrintError("Could not write save state file");
 													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
@@ -1260,7 +1249,7 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											if (SDL_RWsize(file) != sizeof(save_state_magic) + sizeof(SaveState))
+											if (SDL_RWsize(file) != sizeof(save_state_magic) + sizeof(EmulationState))
 											{
 												PrintError("Invalid save state size");
 												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
@@ -1283,7 +1272,7 @@ int main(int argc, char **argv)
 													}
 													else
 													{
-														SaveState save_state;
+														EmulationState save_state;
 
 														if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
 														{
@@ -1439,19 +1428,19 @@ int main(int argc, char **argv)
 					ImGui::End();
 
 					if (plane_a_viewer)
-						Debug_PlaneA(&plane_a_viewer, clownmdemu_state);
+						Debug_PlaneA(&plane_a_viewer, &emulation_state->clownmdemu, emulation_state->colours);
 
 					if (plane_b_viewer)
-						Debug_PlaneB(&plane_b_viewer, clownmdemu_state);
+						Debug_PlaneB(&plane_b_viewer, &emulation_state->clownmdemu, emulation_state->colours);
 
 					if (vram_viewer)
-						Debug_VRAM(&vram_viewer, clownmdemu_state);
+						Debug_VRAM(&vram_viewer, &emulation_state->clownmdemu, emulation_state->colours);
 
 					if (cram_viewer)
-						Debug_CRAM(&cram_viewer);
+						Debug_CRAM(&cram_viewer, emulation_state->colours);
 
 					if (psg_status)
-						Debug_PSG(&psg_status, clownmdemu_state);
+						Debug_PSG(&psg_status, &emulation_state->clownmdemu);
 
 					SDL_RenderClear(renderer);
 
@@ -1463,7 +1452,7 @@ int main(int argc, char **argv)
 					SDL_RenderPresent(renderer);
 				}
 
-				ClownMDEmu_Deinit(clownmdemu_state);
+				ClownMDEmu_Deinit(&emulation_state->clownmdemu);
 
 				SDL_free(rom_buffer);
 
