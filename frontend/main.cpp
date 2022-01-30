@@ -1337,12 +1337,12 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Misc."))
 							{
+								if (ImGui::MenuItem("Fullscreen", "F11", &fullscreen))
+									SetFullscreen(fullscreen);
+
 								if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
 									if (!fast_forward_in_progress)
 										SDL_RenderSetVSync(renderer, use_vsync);
-
-								if (ImGui::MenuItem("Fullscreen", "F11", &fullscreen))
-									SetFullscreen(fullscreen);
 
 								ImGui::MenuItem("Integer Screen Scaling", NULL, &integer_screen_scaling);
 
