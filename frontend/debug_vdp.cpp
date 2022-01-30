@@ -371,44 +371,53 @@ void Debug_CRAM(bool *open, Uint32 colours[16 * 4 * 3])
 		const unsigned int length_of_palette = length_of_palette_line * 4;
 		const unsigned int total_colours = length_of_palette * 3;
 
-		for (unsigned int i = 0; i < total_colours; ++i)
+		for (unsigned int i = 0; i < total_colours / length_of_palette; ++i)
 		{
-			ImGui::PushID(i);
+			const Uint32 *palette = &colours[i * length_of_palette];
 
-			// Decompose the ARGB8888 colour into something that Dear Imgui can use.
-			const float alpha = (float)((colours[i] >> (8 * 3)) & 0xFF) / (float)0xFF;
-			const float red = (float)((colours[i] >> (8 * 2)) & 0xFF) / (float)0xFF;
-			const float green = (float)((colours[i] >> (8 * 1)) & 0xFF) / (float)0xFF;
-			const float blue = (float)((colours[i] >> (8 * 0)) & 0xFF) / (float)0xFF;
+			const char *palette_name = NULL;
 
-			if (i % length_of_palette_line != 0)
+			switch (i)
 			{
-				// Split the colours into palette lines.
-				ImGui::SameLine();
+				case 0:
+					palette_name = "Normal";
+					break;
+
+				case 1:
+					palette_name = "Shadow";
+					break;
+
+				case 2:
+					palette_name = "Highlight";
+					break;
 			}
-			else if (i % length_of_palette == 0)
+
+			if (ImGui::TreeNodeEx(palette_name, ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				// Display headers for each palette.
-				switch (i / length_of_palette)
+				for (unsigned int j = 0; j < length_of_palette; ++j)
 				{
-					case 0:
-						ImGui::Text("Normal");
-						break;
+					ImGui::PushID(j);
 
-					case 1:
-						ImGui::Text("Shadow");
-						break;
+					// Decompose the ARGB8888 colour into something that Dear Imgui can use.
+					const float alpha = (float)((palette[j] >> (8 * 3)) & 0xFF) / (float)0xFF;
+					const float red = (float)((palette[j] >> (8 * 2)) & 0xFF) / (float)0xFF;
+					const float green = (float)((palette[j] >> (8 * 1)) & 0xFF) / (float)0xFF;
+					const float blue = (float)((palette[j] >> (8 * 0)) & 0xFF) / (float)0xFF;
 
-					case 2:
-						ImGui::Text("Highlight");
-						break;
+					if (j % length_of_palette_line != 0)
+					{
+						// Split the colours into palette lines.
+						ImGui::SameLine();
+					}
+
+					ImGui::ColorButton("", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+
+					ImGui::PopID();
 				}
+
+				ImGui::TreePop();
 			}
-
-			ImGui::ColorButton("", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
-
-			ImGui::PopID();
-		};
+		}
 	}
 
 	ImGui::End();
