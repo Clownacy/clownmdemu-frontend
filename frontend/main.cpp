@@ -678,8 +678,9 @@ int main(int argc, char **argv)
 								switch (event.key.keysym.sym)
 								{
 									case SDLK_TAB:
-										// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows)
-										if ((SDL_GetModState() & KMOD_CTRL) != 0)
+										// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows),
+										// and ALT+TAB (used by the OS for cycling its windows).
+										if (SDL_GetModState() != KMOD_NONE)
 											break;
 
 										// Soft-reset console
