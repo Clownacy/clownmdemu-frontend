@@ -7,6 +7,12 @@ but many standard features of the Mega Drive are currently unemulated (see
 `TODO.md` for more information).
 
 
+# Screenshots
+
+![Minimal](/screenshot-minimal.png)
+![Debug](/screenshot-debug.png)
+
+
 # Design
 
 clownmdemu's code adheres to the following principles, emphasising minimalism
