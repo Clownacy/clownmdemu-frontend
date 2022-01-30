@@ -1095,6 +1095,10 @@ int main(int argc, char **argv)
 							{
 								if (ImGui::MenuItem("Open Software..."))
 								{
+									// A workaround to avoid the dialog being impossible to close in fullscreen.
+									fullscreen = false;
+									SetFullscreen(fullscreen);
+
 									const char *rom_path = tinyfd_openFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
 
 									if (rom_path != NULL)
