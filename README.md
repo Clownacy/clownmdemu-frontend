@@ -7,12 +7,6 @@ but many standard features of the Mega Drive are currently unemulated (see
 `TODO.md` for more information).
 
 
-# Screenshots
-
-![Minimal](/screenshot-minimal.png)
-![Debug](/screenshot-debug.png)
-
-
 # Design
 
 clownmdemu's code adheres to the following principles, emphasising minimalism
@@ -65,6 +59,9 @@ high-level emulator than accuracy-focussed alternatives may.
 
 
 # Frontend
+
+![Minimal](/screenshot-minimal.png)
+![Debug](/screenshot-debug.png)
 
 An example frontend is provided in the `frontend` directory; it is written in
 C++98 and leverages the SDL2, Dear ImGui, FreeType, and tinyfiledialogs
