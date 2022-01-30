@@ -1201,6 +1201,8 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
+								static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
+
 								if (ImGui::MenuItem("Save To File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
@@ -1218,13 +1220,21 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											SaveState save_state;
-											CreateSaveState(&save_state);
-
-											if (SDL_RWwrite(file, &save_state, sizeof(save_state), 1) != 1)
+											if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1)
 											{
 												PrintError("Could not write save state file");
 												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+											}
+											else
+											{
+												SaveState save_state;
+												CreateSaveState(&save_state);
+
+												if (SDL_RWwrite(file, &save_state, sizeof(save_state), 1) != 1)
+												{
+													PrintError("Could not write save state file");
+													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+												}
 											}
 
 											SDL_RWclose(file);
@@ -1249,18 +1259,44 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											SaveState save_state;
-
-											if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
+											if (SDL_RWsize(file) != sizeof(save_state_magic) + sizeof(SaveState))
 											{
-												PrintError("Could not read save state file");
-												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+												PrintError("Invalid save state size");
+												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
 											}
 											else
 											{
-												ApplySaveState(&save_state);
+												char magic_buffer[sizeof(save_state_magic)];
 
-												emulator_paused = false;
+												if (SDL_RWread(file, magic_buffer, sizeof(magic_buffer), 1) != 1)
+												{
+													PrintError("Could not read save state file");
+													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+												}
+												else
+												{
+													if (SDL_memcmp(magic_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
+													{
+														PrintError("Invalid save state magic");
+														SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
+													}
+													else
+													{
+														SaveState save_state;
+
+														if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
+														{
+															PrintError("Could not read save state file");
+															SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+														}
+														else
+														{
+															ApplySaveState(&save_state);
+
+															emulator_paused = false;
+														}
+													}
+												}
 											}
 
 											SDL_RWclose(file);
