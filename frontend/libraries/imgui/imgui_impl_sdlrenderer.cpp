@@ -204,25 +204,45 @@ bool ImGui_ImplSDLRenderer_CreateFontsTexture()
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplSDLRenderer_Data* bd = ImGui_ImplSDLRenderer_GetBackendData();
 
+    bool success = false;
+
     // Build texture atlas
     unsigned char* pixels;
     int width, height;
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+    io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height);   // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
-    // Upload texture to graphics system
-    bd->FontTexture = SDL_CreateTexture(bd->SDLRenderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, width, height);
-    if (bd->FontTexture == NULL)
+    if (pixels != NULL)
     {
-        SDL_Log("error creating texture");
-        return false;
+        Uint32 *argb_buffer = (Uint32*)SDL_malloc(width * height * sizeof(Uint32));
+
+        if (argb_buffer != NULL)
+        {
+            // Upload texture to graphics system
+            bd->FontTexture = SDL_CreateTexture(bd->SDLRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, width, height);
+
+            if (bd->FontTexture == NULL)
+            {
+                SDL_Log("error creating texture - %s", SDL_GetError());
+            }
+            else
+            {
+                for (unsigned int i = 0; i < width * height; ++i)
+                    argb_buffer[i] = 0xFFFFFF | ((Uint32)pixels[i] << 24);
+
+                SDL_UpdateTexture(bd->FontTexture, NULL, argb_buffer, 4 * width);
+                SDL_SetTextureBlendMode(bd->FontTexture, SDL_BLENDMODE_BLEND);
+
+                // Store our identifier
+                io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
+
+                success = true;
+            }
+
+            SDL_free(argb_buffer);
+        }
     }
-    SDL_UpdateTexture(bd->FontTexture, NULL, pixels, 4 * width);
-    SDL_SetTextureBlendMode(bd->FontTexture, SDL_BLENDMODE_BLEND);
 
-    // Store our identifier
-    io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
-
-    return true;
+    return success;
 }
 
 void ImGui_ImplSDLRenderer_DestroyFontsTexture()
