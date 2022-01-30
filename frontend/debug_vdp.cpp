@@ -405,7 +405,7 @@ void Debug_CRAM(bool *open, Uint32 colours[16 * 4 * 3])
 				}
 			}
 
-			ImGui::ColorButton("Colour", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+			ImGui::ColorButton("", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
 
 			ImGui::PopID();
 		};
