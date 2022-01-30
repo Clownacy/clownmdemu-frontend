@@ -1346,7 +1346,7 @@ int main(int argc, char **argv)
 
 								ImGui::MenuItem("Integer Screen Scaling", NULL, &integer_screen_scaling);
 
-								ImGui::MenuItem("Pop Out", NULL, &pop_out);
+								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
 
 							#ifndef NDEBUG
 								ImGui::Separator();
