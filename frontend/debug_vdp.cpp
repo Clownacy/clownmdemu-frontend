@@ -84,9 +84,12 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, Ui
 							TileMetadata tile_metadata;
 							DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
 
-							const unsigned int palette_line_index = tile_metadata.palette_line * 16;
 							const unsigned x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 							const unsigned y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
+
+							const unsigned int palette_index = tile_metadata.palette_line * 16 + (clownmdemu_state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+
+							const Uint32 *palette_line = &colours[palette_index];
 
 							const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
 
@@ -101,7 +104,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, Ui
 									for (unsigned int j = 0; j < 4; ++j)
 									{
 										const unsigned int colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
-										plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = colours[palette_line_index + colour_index];
+										plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = palette_line[colour_index];
 									}
 								}
 							}
