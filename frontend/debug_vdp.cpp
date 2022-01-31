@@ -28,7 +28,7 @@ static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadat
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3], bool plane_b)
+static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3], bool plane_b)
 {
 	if (ImGui::Begin(plane_b ? "Plane B Viewer" : "Plane A Viewer", open))
 	{
@@ -151,17 +151,17 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, Ui
 	ImGui::End();
 }
 
-void Debug_PlaneA(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3])
+void Debug_PlaneA(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3])
 {
 	Debug_Plane(open, clownmdemu_state, colours, false);
 }
 
-void Debug_PlaneB(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3])
+void Debug_PlaneB(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3])
 {
 	Debug_Plane(open, clownmdemu_state, colours, true);
 }
 
-void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 colours[16 * 4 * 3])
+void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3])
 {
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
@@ -217,9 +217,9 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 col
 				const unsigned int length_of_palette = length_of_palette_line * 4;
 
 				ImGui::Text("Brightness");
-				ImGui::RadioButton("Normal", &brightness_index, length_of_palette * 0);
-				ImGui::SameLine();
 				ImGui::RadioButton("Shadow", &brightness_index, length_of_palette * 1);
+				ImGui::SameLine();
+				ImGui::RadioButton("Normal", &brightness_index, length_of_palette * 0);
 				ImGui::SameLine();
 				ImGui::RadioButton("Highlight", &brightness_index, length_of_palette * 2);
 
@@ -356,60 +356,78 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 col
 	ImGui::End();
 }
 
-void Debug_CRAM(bool *open, Uint32 colours[16 * 4 * 3])
+void Debug_CRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3], ImFont *monospace_font)
 {
 	if (ImGui::Begin("CRAM Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		static int brightness = 1;
+
+		ImGui::Text("Brightness");
+		ImGui::RadioButton("Shadow", &brightness, 0);
+		ImGui::SameLine();
+		ImGui::RadioButton("Normal", &brightness, 1);
+		ImGui::SameLine();
+		ImGui::RadioButton("Highlight", &brightness, 2);
+		ImGui::Separator();
+
 		const unsigned int length_of_palette_line = 16;
 		const unsigned int length_of_palette = length_of_palette_line * 4;
-		const unsigned int total_colours = length_of_palette * 3;
 
-		for (unsigned int i = 0; i < total_colours / length_of_palette; ++i)
+		for (unsigned int j = 0; j < length_of_palette; ++j)
 		{
-			const Uint32 *palette = &colours[i * length_of_palette];
+			ImGui::PushID(j);
 
-			const char *palette_name = NULL;
+			const unsigned int value = clownmdemu_state->vdp.cram[j];
+			const unsigned int blue = (value >> 9) & 7;
+			const unsigned int green = (value >> 5) & 7;
+			const unsigned int red = (value >> 1) & 7;
 
-			switch (i)
+			unsigned int value_shaded = value & 0xEEE;
+
+			switch (brightness)
 			{
 				case 0:
-					palette_name = "Normal";
+					value_shaded >>= 1;
 					break;
 
 				case 1:
-					palette_name = "Shadow";
 					break;
 
 				case 2:
-					palette_name = "Highlight";
+					value_shaded >>= 1;
+					value_shaded |= 0x888;
 					break;
 			}
 
-			if (ImGui::TreeNodeEx(palette_name, ImGuiTreeNodeFlags_DefaultOpen))
+			const unsigned int blue_shaded = (value_shaded >> 8) & 0xF;
+			const unsigned int green_shaded = (value_shaded >> 4) & 0xF;
+			const unsigned int red_shaded = (value_shaded >> 0) & 0xF;
+
+			if (j % length_of_palette_line != 0)
 			{
-				for (unsigned int j = 0; j < length_of_palette; ++j)
-				{
-					ImGui::PushID(j);
-
-					// Decompose the ARGB8888 colour into something that Dear Imgui can use.
-					const float alpha = (float)((palette[j] >> (8 * 3)) & 0xFF) / (float)0xFF;
-					const float red = (float)((palette[j] >> (8 * 2)) & 0xFF) / (float)0xFF;
-					const float green = (float)((palette[j] >> (8 * 1)) & 0xFF) / (float)0xFF;
-					const float blue = (float)((palette[j] >> (8 * 0)) & 0xFF) / (float)0xFF;
-
-					if (j % length_of_palette_line != 0)
-					{
-						// Split the colours into palette lines.
-						ImGui::SameLine();
-					}
-
-					ImGui::ColorButton("", ImVec4(red, green, blue, alpha), ImGuiColorEditFlags_NoBorder, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
-
-					ImGui::PopID();
-				}
-
-				ImGui::TreePop();
+				// Split the colours into palette lines.
+				ImGui::SameLine();
 			}
+
+			ImGui::ColorButton("", ImVec4((float)red_shaded / (float)0xF, (float)green_shaded / (float)0xF, (float)blue_shaded / (float)0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+
+				ImGui::Text("Line %d, Colour %d", j / length_of_palette_line, j % length_of_palette_line);
+				ImGui::Separator();
+				ImGui::PushFont(monospace_font);
+				ImGui::Text("Value: %03X", value);
+				ImGui::Text("Blue:  %d/7", blue);
+				ImGui::Text("Green: %d/7", green);
+				ImGui::Text("Red:   %d/7", red);
+				ImGui::PopFont();
+
+				ImGui::EndTooltip();
+			}
+
+			ImGui::PopID();
 		}
 	}
 

@@ -1475,7 +1475,7 @@ int main(int argc, char **argv)
 						Debug_VRAM(&vram_viewer, &emulation_state->clownmdemu, emulation_state->colours);
 
 					if (cram_viewer)
-						Debug_CRAM(&cram_viewer, emulation_state->colours);
+						Debug_CRAM(&cram_viewer, &emulation_state->clownmdemu, emulation_state->colours, monospace_font);
 
 					if (psg_status)
 						Debug_PSG(&psg_status, &emulation_state->clownmdemu, monospace_font);
