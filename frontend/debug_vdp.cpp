@@ -284,16 +284,15 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint
 			const float spacing = SDL_roundf(5.0f * dpi_scale);
 
 			// Calculate the size of the VRAM display region.
-			ImVec2 vram_display_region = ImGui::GetContentRegionAvail();
-
 			// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
-			vram_display_region.x -= SDL_fmodf(vram_display_region.x, dst_tile_size.x + spacing);
-
-			// Extend the region down so that it's given a scroll bar.
-			vram_display_region.y = SDL_ceilf((float)size_of_vram_in_tiles * (dst_tile_size.x + spacing) / vram_display_region.x) * (dst_tile_size.y + spacing);
+			const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size.x + spacing);
+			const float vram_display_region_height = SDL_ceilf((float)size_of_vram_in_tiles * (dst_tile_size.x + spacing) / vram_display_region_width) * (dst_tile_size.y + spacing);
 
 			const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
 			const bool window_is_hovered = ImGui::IsWindowHovered();
+
+			// Extend the region down so that it's given a scroll bar.
+			ImGui::SetCursorScreenPos(ImVec2(canvas_position.x, canvas_position.y + vram_display_region_height));
 
 			// Draw the list of tiles.
 			ImDrawList *draw_list = ImGui::GetWindowDrawList();
@@ -313,8 +312,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint
 					(float)(current_tile_src_y + tile_height) / (float)vram_texture_height);
 
 				// Figure out where the tile goes in the viewer.
-				const float current_tile_dst_x = SDL_fmodf((float)tile_index * (dst_tile_size.x + spacing), vram_display_region.x);
-				const float current_tile_dst_y = SDL_floorf((float)tile_index * (dst_tile_size.x + spacing) / vram_display_region.x) * (dst_tile_size.y + spacing);
+				const float current_tile_dst_x = SDL_fmodf((float)tile_index * (dst_tile_size.x + spacing), vram_display_region_width);
+				const float current_tile_dst_y = SDL_floorf((float)tile_index * (dst_tile_size.x + spacing) / vram_display_region_width) * (dst_tile_size.y + spacing);
 
 				const ImVec2 tile_boundary_position_top_left(
 					canvas_position.x + current_tile_dst_x,
