@@ -5,19 +5,23 @@
 #include "../clowncommon.h"
 #include "../clownmdemu.h"
 
-void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state)
+void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state, ImFont *monospace_font)
 {
 	if (ImGui::Begin("PSG Status", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Latched command.
 		if (ImGui::TreeNodeEx("Latched Command", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			ImGui::PushFont(monospace_font);
+
 			if (clownmdemu_state->psg.latched_command.channel == 3)
 				ImGui::TextUnformatted("Channel: Noise");
 			else
 				ImGui::Text("Channel: Tone #%u", clownmdemu_state->psg.latched_command.channel + 1);
 
-			ImGui::Text("Type: %s", clownmdemu_state->psg.latched_command.is_volume_command ? "Volume" : "Frequency");
+			ImGui::TextUnformatted(clownmdemu_state->psg.latched_command.is_volume_command ? "Type:    Attenuation" : "Type:    Frequency");
+
+			ImGui::PopFont();
 
 			ImGui::TreePop();
 		}
@@ -34,12 +38,16 @@ void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state)
 				SDL_snprintf(string_buffer, sizeof(string_buffer), "Tone #%d", i + 1);
 				if (ImGui::TreeNodeEx(string_buffer, ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					ImGui::Text("Frequency: %u (%uHz)", clownmdemu_state->psg.tones[i].countdown_master, psg_clock / (clownmdemu_state->psg.tones[i].countdown_master + 1) / 2);
+					ImGui::PushFont(monospace_font);
+
+					ImGui::Text("Frequency: 0x%03X (%6uHz)", clownmdemu_state->psg.tones[i].countdown_master, psg_clock / (clownmdemu_state->psg.tones[i].countdown_master + 1) / 2);
 
 					if (clownmdemu_state->psg.tones[i].attenuation == 15)
-						ImGui::TextUnformatted("Attenuation: 15 (Silent)");
+						ImGui::TextUnformatted("Attenuation: 0xF (Mute)");
 					else
-						ImGui::Text("Attenuation: %u (%udb)", clownmdemu_state->psg.tones[i].attenuation, clownmdemu_state->psg.tones[i].attenuation * 2);
+						ImGui::Text("Attenuation: 0x%X (%2udb)", clownmdemu_state->psg.tones[i].attenuation, clownmdemu_state->psg.tones[i].attenuation * 2);
+
+					ImGui::PopFont();
 
 					ImGui::TreePop();
 				}
@@ -48,6 +56,8 @@ void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state)
 			// Noise channel.
 			if (ImGui::TreeNodeEx("Noise", ImGuiTreeNodeFlags_DefaultOpen))
 			{
+				ImGui::PushFont(monospace_font);
+
 				switch (clownmdemu_state->psg.noise.type)
 				{
 					case PSG_NOISE_TYPE_PERIODIC:
@@ -62,12 +72,14 @@ void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state)
 				if (clownmdemu_state->psg.noise.frequency_mode == 3)
 					ImGui::TextUnformatted("Frequency Mode: Tone #3");
 				else
-					ImGui::Text("Frequency Mode: %u (%uHz)", clownmdemu_state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state->psg.noise.frequency_mode) / 2);
+					ImGui::Text("Frequency Mode: %d (%4uHz)", clownmdemu_state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state->psg.noise.frequency_mode) / 2);
 
 				if (clownmdemu_state->psg.noise.attenuation == 15)
-					ImGui::TextUnformatted("Attenuation: 15 (Silent)");
+					ImGui::TextUnformatted("Attenuation:  0xF (Mute)");
 				else
-					ImGui::Text("Attenuation: %u (%udb)", clownmdemu_state->psg.noise.attenuation, clownmdemu_state->psg.noise.attenuation * 2);
+					ImGui::Text("Attenuation:  0x%X (%2udb)", clownmdemu_state->psg.noise.attenuation, clownmdemu_state->psg.noise.attenuation * 2);
+
+				ImGui::PopFont();
 
 				ImGui::TreePop();
 			}

@@ -21,6 +21,7 @@
 #include "libraries/imgui/imgui_impl_sdl.h"
 #include "libraries/imgui/imgui_impl_sdlrenderer.h"
 
+#include "libraries/imgui/inconsolata_regular.h"
 #include "libraries/imgui/karla_regular.h"
 
 #include "audio.h"
@@ -497,6 +498,8 @@ int main(int argc, char **argv)
 				ImFontConfig font_cfg = ImFontConfig();
 				SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %dpx", (int)font_size);
 				io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size, &font_cfg);
+				SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %dpx", (int)font_size);
+				ImFont *monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, font_size, &font_cfg);
 
 				// Intiialise audio if we can (but it's okay if it fails).
 				initialised_audio = InitAudio();
@@ -1475,7 +1478,7 @@ int main(int argc, char **argv)
 						Debug_CRAM(&cram_viewer, emulation_state->colours);
 
 					if (psg_status)
-						Debug_PSG(&psg_status, &emulation_state->clownmdemu);
+						Debug_PSG(&psg_status, &emulation_state->clownmdemu, monospace_font);
 
 					SDL_RenderClear(renderer);
 
