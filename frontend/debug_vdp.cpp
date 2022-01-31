@@ -293,6 +293,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 col
 			vram_display_region.y = SDL_ceilf((float)size_of_vram_in_tiles * (dst_tile_size.x + spacing) / vram_display_region.x) * (dst_tile_size.y + spacing);
 
 			const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
+			const bool window_is_hovered = ImGui::IsWindowHovered();
 
 			// Draw the list of tiles.
 			ImDrawList *draw_list = ImGui::GetWindowDrawList();
@@ -334,7 +335,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, Uint32 col
 				// Finally, display the tile.
 				draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
 
-				if (ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
+				if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
 				{
 					ImGui::BeginTooltip();
 
