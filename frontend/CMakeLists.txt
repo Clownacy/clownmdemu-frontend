@@ -36,8 +36,16 @@ add_executable(clownmdemufrontend WIN32
 	"libraries/imgui/imstb_textedit.h"
 	"libraries/imgui/inconsolata_regular.h"
 	"libraries/imgui/karla_regular.h"
-	"frontend.manifest"
 )
+
+# Link a manifest file that enables Hi-DPI support on Windows
+if(WIN32)
+	if (MSVC)
+		target_sources(clownmdemufrontend PRIVATE "clownmdemufrontend.manifest")
+	elseif (MINGW)
+		target_sources(clownmdemufrontend PRIVATE "clownmdemufrontend.rc")
+	endif()
+endif()
 
 if(CLOWNMDEMUFRONTEND_FREETYPE)
 	target_sources(clownmdemufrontend PRIVATE
