@@ -73,6 +73,11 @@ add_subdirectory("../" EXCLUDE_FROM_ALL "clownmdemu")
 target_link_libraries(clownmdemufrontend clownmdemu)
 
 # Link SDL2
+if(MINGW)
+	# SDL2main and libmingw32 have a circular dependency issue
+	# that break MinGW right now, so fix it by doing this.
+	target_link_libraries(clownmdemufrontend mingw32)
+endif()
 find_package(SDL2)
 if(SDL2_FOUND)
 	target_link_libraries(clownmdemufrontend SDL2::SDL2main SDL2::SDL2)
