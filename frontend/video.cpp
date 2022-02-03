@@ -47,12 +47,7 @@ bool InitVideo(void)
 			}
 			else
 			{
-				// Get DPI scale
-				dpi_scale = 1.0f;
-
-				float ddpi;
-				if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
-					dpi_scale = ddpi / 96.0f; // 96 DPI appears to be the "normal" DPI
+				dpi_scale = GetNewDPIScale();
 
 				return true;
 			}
@@ -71,4 +66,15 @@ void DeinitVideo(void)
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
+
+float GetNewDPIScale(void)
+{
+	float dpi_scale = 1.0f;
+
+	float ddpi;
+	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
+		dpi_scale = ddpi / 96.0f;
+
+	return dpi_scale;
 }

@@ -447,6 +447,28 @@ static const char* SaveFileDialog(char const *aTitle, char const *aDefaultPathAn
 	return path;
 }
 
+static ImFont *monospace_font;
+
+static unsigned int CalculateFontSize(void)
+{
+	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
+	return (unsigned int)(15.0f * dpi_scale);
+}
+
+static void ReloadFonts(unsigned int font_size)
+{
+	ImGuiIO &io = ImGui::GetIO();
+
+	io.Fonts->Clear();
+	ImGui_ImplSDLRenderer_DestroyFontsTexture();
+
+	ImFontConfig font_cfg = ImFontConfig();
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %upx", font_size);
+	io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, (float)font_size, &font_cfg);
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
+	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, (float)font_size, &font_cfg);
+}
+
 int main(int argc, char **argv)
 {
 	InitError();
@@ -487,9 +509,9 @@ int main(int argc, char **argv)
 
 				// Apply DPI scale (also resize the window so that there's room for the menu bar).
 				style.ScaleAllSizes(dpi_scale);
-				const float font_size = SDL_floorf(15.0f * dpi_scale);
-				const float menu_bar_size = font_size + style.FramePadding.y * 2; // An inlined ImGui::GetFrameHeight that actually works
-				SDL_SetWindowSize(window, (int)(320 * 2 * dpi_scale), (int)(224 * 2 * dpi_scale + menu_bar_size));
+				const unsigned int font_size = CalculateFontSize();
+				const float menu_bar_size = (float)font_size + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
+				SDL_SetWindowSize(window, (int)(320.0f * 2.0f * dpi_scale), (int)(224.0f * 2.0f * dpi_scale + menu_bar_size));
 
 				// We are now ready to show the window
 				SDL_ShowWindow(window);
@@ -498,12 +520,8 @@ int main(int argc, char **argv)
 				ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
 				ImGui_ImplSDLRenderer_Init(renderer);
 
-				// Load Font
-				ImFontConfig font_cfg = ImFontConfig();
-				SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %dpx", (int)font_size);
-				io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, font_size, &font_cfg);
-				SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %dpx", (int)font_size);
-				ImFont *monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, font_size, &font_cfg);
+				// Load fonts
+				ReloadFonts(font_size);
 
 				// Intiialise audio if we can (but it's okay if it fails).
 				initialised_audio = InitAudio();
@@ -1058,6 +1076,17 @@ int main(int argc, char **argv)
 							default:
 								break;
 						}
+					}
+
+					// Handle dynamic DPI support
+					const float new_dpi = GetNewDPIScale();
+					if (dpi_scale != new_dpi) // 96 DPI appears to be the "normal" DPI
+					{
+						style.ScaleAllSizes(new_dpi / dpi_scale);
+
+						dpi_scale = new_dpi;
+
+						ReloadFonts(CalculateFontSize());
 					}
 
 					if (emulator_running)

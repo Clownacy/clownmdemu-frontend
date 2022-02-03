@@ -9,5 +9,6 @@ extern float dpi_scale;
 
 bool InitVideo(void);
 void DeinitVideo(void);
+float GetNewDPIScale(void);
 
 #endif /* VIDEO_H */
