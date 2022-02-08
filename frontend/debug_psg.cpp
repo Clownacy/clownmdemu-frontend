@@ -40,7 +40,7 @@ void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state, ImFont *monospace
 				{
 					ImGui::PushFont(monospace_font);
 
-					ImGui::Text("Frequency: 0x%03X (%6uHz)", clownmdemu_state->psg.tones[i].countdown_master, psg_clock / (clownmdemu_state->psg.tones[i].countdown_master + 1) / 2);
+					ImGui::Text("Frequency: 0x%03X (%6luHz)", clownmdemu_state->psg.tones[i].countdown_master, psg_clock / (clownmdemu_state->psg.tones[i].countdown_master + 1) / 2);
 
 					if (clownmdemu_state->psg.tones[i].attenuation == 15)
 						ImGui::TextUnformatted("Attenuation: 0xF (Mute)");
@@ -72,7 +72,7 @@ void Debug_PSG(bool *open, ClownMDEmu_State *clownmdemu_state, ImFont *monospace
 				if (clownmdemu_state->psg.noise.frequency_mode == 3)
 					ImGui::TextUnformatted("Frequency Mode: Tone #3");
 				else
-					ImGui::Text("Frequency Mode: %d (%4uHz)", clownmdemu_state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state->psg.noise.frequency_mode) / 2);
+					ImGui::Text("Frequency Mode: %d (%4luHz)", clownmdemu_state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu_state->psg.noise.frequency_mode) / 2);
 
 				if (clownmdemu_state->psg.noise.attenuation == 15)
 					ImGui::TextUnformatted("Attenuation:  0xF (Mute)");
