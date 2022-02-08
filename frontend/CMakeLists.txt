@@ -86,7 +86,7 @@ if(MINGW)
 	# that break MinGW right now, so fix it by doing this.
 	target_link_libraries(clownmdemufrontend mingw32)
 endif()
-find_package(SDL2)
+find_package(SDL2 2.0.18)
 if(SDL2_FOUND)
 	target_link_libraries(clownmdemufrontend SDL2::SDL2main SDL2::SDL2)
 else()
