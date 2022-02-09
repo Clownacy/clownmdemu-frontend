@@ -17,6 +17,8 @@ add_executable(clownmdemufrontend WIN32
 	"debug_psg.h"
 	"debug_vdp.cpp"
 	"debug_vdp.h"
+	"inconsolata_regular.h"
+	"karla_regular.h"
 	"libraries/clownresampler/clownresampler.h"
 	"libraries/tinyfiledialogs/tinyfiledialogs.c"
 	"libraries/tinyfiledialogs/tinyfiledialogs.h"
@@ -25,17 +27,15 @@ add_executable(clownmdemufrontend WIN32
 	"libraries/imgui/imgui.h"
 	"libraries/imgui/imgui_demo.cpp"
 	"libraries/imgui/imgui_draw.cpp"
-	"libraries/imgui/imgui_impl_sdl.cpp"
-	"libraries/imgui/imgui_impl_sdl.h"
-	"libraries/imgui/imgui_impl_sdlrenderer.cpp"
-	"libraries/imgui/imgui_impl_sdlrenderer.h"
 	"libraries/imgui/imgui_internal.h"
 	"libraries/imgui/imgui_tables.cpp"
 	"libraries/imgui/imgui_widgets.cpp"
 	"libraries/imgui/imstb_rectpack.h"
 	"libraries/imgui/imstb_textedit.h"
-	"libraries/imgui/inconsolata_regular.h"
-	"libraries/imgui/karla_regular.h"
+	"libraries/imgui/backends/imgui_impl_sdl.cpp"
+	"libraries/imgui/backends/imgui_impl_sdl.h"
+	"libraries/imgui/backends/imgui_impl_sdlrenderer.cpp"
+	"libraries/imgui/backends/imgui_impl_sdlrenderer.h"
 )
 
 # Link a manifest file that enables Hi-DPI support on Windows
@@ -49,8 +49,8 @@ endif()
 
 if(CLOWNMDEMUFRONTEND_FREETYPE)
 	target_sources(clownmdemufrontend PRIVATE
-		"libraries/imgui/imgui_freetype.cpp"
-		"libraries/imgui/imgui_freetype.h"
+		"libraries/imgui/misc/freetype/imgui_freetype.cpp"
+		"libraries/imgui/misc/freetype/imgui_freetype.h"
 	)
 
 	target_compile_definitions(clownmdemufrontend PRIVATE IMGUI_ENABLE_FREETYPE)
@@ -72,6 +72,9 @@ set_target_properties(clownmdemufrontend PROPERTIES
 	CXX_STANDARD_REQUIRED NO
 	CXX_EXTENSIONS OFF
 )
+
+target_compile_definitions(clownmdemufrontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
+target_include_directories(clownmdemufrontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
 
 # Dear ImGui requires some C++11 features
 target_compile_features(clownmdemufrontend PRIVATE cxx_long_long_type cxx_static_assert)

@@ -18,11 +18,11 @@
 #include "libraries/tinyfiledialogs/tinyfiledialogs.h"
 
 #include "libraries/imgui/imgui.h"
-#include "libraries/imgui/imgui_impl_sdl.h"
-#include "libraries/imgui/imgui_impl_sdlrenderer.h"
+#include "libraries/imgui/backends/imgui_impl_sdl.h"
+#include "libraries/imgui/backends/imgui_impl_sdlrenderer.h"
 
-#include "libraries/imgui/inconsolata_regular.h"
-#include "libraries/imgui/karla_regular.h"
+#include "inconsolata_regular.h"
+#include "karla_regular.h"
 
 #include "audio.h"
 #include "error.h"

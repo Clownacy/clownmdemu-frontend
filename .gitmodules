@@ -7,3 +7,7 @@
 [submodule "frontend/freetype"]
 	path = frontend/libraries/freetype
 	url = https://gitlab.freedesktop.org/freetype/freetype
+[submodule "frontend/libraries/imgui"]
+	path = frontend/libraries/imgui
+	url = https://github.com/Clownacy/imgui/
+	branch = clownmdemufrontend
