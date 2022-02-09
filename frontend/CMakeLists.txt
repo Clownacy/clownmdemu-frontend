@@ -5,6 +5,11 @@ option(CLOWNMDEMUFRONTEND_REWINDING "Enable the ability to rewind the emulator (
 
 project(clownmdemufrontend LANGUAGES C CXX)
 
+
+#
+# Sources
+#
+
 add_executable(clownmdemufrontend WIN32
 	"main.cpp"
 	"audio.cpp"
@@ -47,6 +52,27 @@ if(WIN32)
 	endif()
 endif()
 
+
+#
+# Required language versions
+#
+
+# Only require C90 and C++98
+set_target_properties(clownmdemufrontend PROPERTIES
+	C_STANDARD 90
+	C_STANDARD_REQUIRED NO
+	C_EXTENSIONS OFF
+	CXX_STANDARD 98
+	CXX_STANDARD_REQUIRED NO
+	CXX_EXTENSIONS OFF
+)
+
+
+#
+# Handle options
+#
+
+# Handle selecting either FreeType or stb_truetype font rendering
 if(CLOWNMDEMUFRONTEND_FREETYPE)
 	target_sources(clownmdemufrontend PRIVATE
 		"libraries/imgui/misc/freetype/imgui_freetype.cpp"
@@ -60,24 +86,29 @@ else()
 	)
 endif()
 
+# Handle enabling rewinding
 if(CLOWNMDEMUFRONTEND_REWINDING)
 	target_compile_definitions(clownmdemufrontend PRIVATE CLOWNMDEMUFRONTEND_REWINDING)
 endif()
 
-set_target_properties(clownmdemufrontend PROPERTIES
-	C_STANDARD 90
-	C_STANDARD_REQUIRED NO
-	C_EXTENSIONS OFF
-	CXX_STANDARD 98
-	CXX_STANDARD_REQUIRED NO
-	CXX_EXTENSIONS OFF
-)
 
-target_compile_definitions(clownmdemufrontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
-target_include_directories(clownmdemufrontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
+#
+# Dear ImGui stuff
+#
 
 # Dear ImGui requires some C++11 features
 target_compile_features(clownmdemufrontend PRIVATE cxx_long_long_type cxx_static_assert)
+
+# Disable some deprecated junk in Dear ImGui
+target_compile_definitions(clownmdemufrontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
+
+# Dear ImGui needs these directories in the include path
+target_include_directories(clownmdemufrontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
+
+
+#
+# Link libraries
+#
 
 # Link clownmdemu core
 add_subdirectory("../" EXCLUDE_FROM_ALL "clownmdemu")
@@ -86,7 +117,7 @@ target_link_libraries(clownmdemufrontend clownmdemu)
 # Link SDL2
 if(MINGW)
 	# SDL2main and libmingw32 have a circular dependency issue
-	# that break MinGW right now, so fix it by doing this.
+	# that breaks MinGW right now, so fix it by doing this.
 	target_link_libraries(clownmdemufrontend mingw32)
 endif()
 find_package(SDL2 2.0.18)
