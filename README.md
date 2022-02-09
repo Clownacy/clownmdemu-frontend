@@ -3,8 +3,8 @@
 This is clownmdemu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
 
 It is currently in the very early stages of development: it can run some games,
-but many standard features of the Mega Drive are currently unemulated (see
-`TODO.md` for more information).
+but many standard features of the Mega Drive are unemulated (see `TODO.md` for
+more information).
 
 
 # Design
