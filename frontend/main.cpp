@@ -27,6 +27,7 @@
 #include "audio.h"
 #include "error.h"
 #include "video.h"
+#include "debug_m68k.h"
 #include "debug_psg.h"
 #include "debug_vdp.h"
 
@@ -559,6 +560,7 @@ int main(int argc, char **argv)
 
 				bool integer_screen_scaling = false;
 
+				bool m68k_ram_viewer = false;
 				bool plane_a_viewer = false;
 				bool plane_b_viewer = false;
 				bool vram_viewer = false;
@@ -1358,6 +1360,8 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Debugging"))
 							{
+								ImGui::MenuItem("68000 RAM Viewer", NULL, &m68k_ram_viewer);
+
 								ImGui::MenuItem("Plane A Viewer", NULL, &plane_a_viewer);
 
 								ImGui::MenuItem("Plane B Viewer", NULL, &plane_b_viewer);
@@ -1497,6 +1501,9 @@ int main(int argc, char **argv)
 					}
 
 					ImGui::End();
+
+					if (m68k_ram_viewer)
+						Debug_M68k_RAM(&m68k_ram_viewer, &emulation_state->clownmdemu, monospace_font);
 
 					if (plane_a_viewer)
 						Debug_PlaneA(&plane_a_viewer, &emulation_state->clownmdemu, emulation_state->colours);
