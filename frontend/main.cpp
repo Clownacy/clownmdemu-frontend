@@ -1070,6 +1070,9 @@ int main(int argc, char **argv)
 							case SDL_DROPFILE:
 								OpenSoftware(event.drop.file, &callbacks);
 								SDL_free(event.drop.file);
+
+								emulator_paused = false;
+
 								break;
 
 							default:
@@ -1156,11 +1159,7 @@ int main(int argc, char **argv)
 									const char *rom_path = OpenFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
 
 									if (rom_path != NULL)
-									{
 										OpenSoftware(rom_path, &callbacks);
-
-										emulator_paused = false;
-									}
 								}
 
 								if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
@@ -1168,6 +1167,8 @@ int main(int argc, char **argv)
 									SDL_free(rom_buffer);
 									rom_buffer = NULL;
 									rom_buffer_size = 0;
+
+									emulator_paused = false;
 								}
 
 								ImGui::Separator();
