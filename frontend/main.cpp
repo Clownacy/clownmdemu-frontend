@@ -566,6 +566,9 @@ int main(int argc, char **argv)
 				bool vram_viewer = false;
 				bool cram_viewer = false;
 				bool psg_status = false;
+				bool disable_sprite_plane = false;
+				bool disable_plane_a = false;
+				bool disable_plane_b = false;
 
 				bool dear_imgui_demo_window = false;
 
@@ -1371,6 +1374,17 @@ int main(int argc, char **argv)
 								ImGui::MenuItem("CRAM Viewer", NULL, &cram_viewer);
 
 								ImGui::MenuItem("PSG Status", NULL, &psg_status);
+
+								ImGui::Separator();
+
+								if (ImGui::MenuItem("Disable Sprite Plane", NULL, &disable_sprite_plane))
+									emulation_state->clownmdemu.vdp.debug.sprites_disabled = disable_sprite_plane;
+
+								if (ImGui::MenuItem("Disable Plane A", NULL, &disable_plane_a))
+									emulation_state->clownmdemu.vdp.debug.planes_disabled[0] = disable_plane_a;
+
+								if (ImGui::MenuItem("Disable Plane B", NULL, &disable_plane_b))
+									emulation_state->clownmdemu.vdp.debug.planes_disabled[1] = disable_plane_b;
 
 								ImGui::EndMenu();
 							}
