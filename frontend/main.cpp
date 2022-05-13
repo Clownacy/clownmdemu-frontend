@@ -495,6 +495,20 @@ int main(int argc, char **argv)
 			}
 			else
 			{
+				const int display_index = SDL_GetWindowDisplayIndex(window);
+
+				if (display_index >= 0)
+				{
+					SDL_DisplayMode display_mode;
+
+					if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
+					{
+						// Enable V-sync on displays with an FPS of a multiple of 60.
+						use_vsync = display_mode.refresh_rate % 60 == 0;
+						SDL_RenderSetVSync(renderer, use_vsync);
+					}
+				}
+
 				// Setup Dear ImGui context
 				IMGUI_CHECKVERSION();
 				ImGui::CreateContext();
