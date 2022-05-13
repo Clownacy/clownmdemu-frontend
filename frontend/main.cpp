@@ -72,7 +72,7 @@ static size_t state_rewind_remaining;
 #else
 static EmulationState state_rewind_buffer[1];
 #endif
-static EmulationState *emulation_state = state_rewind_buffer;
+static EmulationState *emulation_state;
 
 static bool quick_save_exists = false;
 static EmulationState quick_save_state;
@@ -80,8 +80,9 @@ static EmulationState quick_save_state;
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
 
-static ClownMDEmu_Region region = CLOWNMDEMU_REGION_OVERSEAS;
-static ClownMDEmu_TVStandard tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+static ClownMDEmu_Config clownmdemu_config;
+static ClownMDEmu_Persistent clownmdemu_persistent;
+static ClownMDEmu_Data clownmdemu;
 
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
@@ -293,7 +294,6 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 
 typedef struct ResamplerCallbackUserData
 {
-	ClownMDEmu_State *state;
 	size_t samples_remaining;
 } ResamplerCallbackUserData;
 
@@ -305,7 +305,7 @@ static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_si
 
 	SDL_memset(buffer, 0, samples_to_do * sizeof(*buffer));
 
-	ClownMDEmu_GeneratePSGAudio(resampler_callback_user_data->state, buffer, samples_to_do);
+	ClownMDEmu_GeneratePSGAudio(&clownmdemu, buffer, samples_to_do);
 
 	resampler_callback_user_data->samples_remaining -= samples_to_do;
 
@@ -316,7 +316,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 {
 	short audio_buffer[0x400];
 
-	ClownMDEmu_State *state = (ClownMDEmu_State*)user_data;
+	(void)user_data;
 
 	if (!initialised_audio)
 	{
@@ -325,7 +325,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 		{
 			const size_t samples_to_do = CC_MIN(total_samples, CC_COUNT_OF(audio_buffer));
 
-			ClownMDEmu_GeneratePSGAudio(state, audio_buffer, samples_to_do);
+			ClownMDEmu_GeneratePSGAudio(&clownmdemu, audio_buffer, samples_to_do);
 
 			total_samples -= samples_to_do;
 		}
@@ -334,7 +334,6 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 	{
 		// Resample the generated PSG audio, and push it to SDL2 for playback.
 		ResamplerCallbackUserData resampler_callback_user_data;
-		resampler_callback_user_data.state = state;
 		resampler_callback_user_data.samples_remaining = total_samples;
 
 		size_t total_resampled_samples;
@@ -347,10 +346,6 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 static void ApplySaveState(EmulationState *save_state)
 {
 	*emulation_state = *save_state;
-
-	// We don't want the save state to override the user's configurations, so reapply them now.
-	ClownMDEmu_SetRegion(&emulation_state->clownmdemu, region);
-	ClownMDEmu_SetTVStandard(&emulation_state->clownmdemu, tv_standard);
 }
 
 static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks)
@@ -381,9 +376,10 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		state_rewind_index = 0;
 	#endif
 		emulation_state = &state_rewind_buffer[0];
+		clownmdemu.state = &emulation_state->clownmdemu;
 
-		ClownMDEmu_Init(&emulation_state->clownmdemu, region, tv_standard);
-		ClownMDEmu_Reset(&emulation_state->clownmdemu, callbacks);
+		ClownMDEmu_StateInitialise(clownmdemu.state);
+		ClownMDEmu_Reset(&clownmdemu, callbacks);
 	}
 }
 
@@ -446,6 +442,10 @@ static const char* SaveFileDialog(char const *aTitle, char const *aDefaultPathAn
 
 	return path;
 }
+
+///////////
+// Fonts //
+///////////
 
 static ImFont *monospace_font;
 
@@ -523,6 +523,24 @@ int main(int argc, char **argv)
 				// Load fonts
 				ReloadFonts(font_size);
 
+				// This should be called before any other clownmdemu functions are called!
+				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
+
+				// Initialise the clownmdemu configuration struct.
+				clownmdemu_config.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+				clownmdemu_config.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+				clownmdemu_config.vdp.sprites_disabled = cc_false;
+				clownmdemu_config.vdp.planes_disabled[0] = cc_false;
+				clownmdemu_config.vdp.planes_disabled[1] = cc_false;
+
+				// Initialise persistent data such as lookup tables.
+				ClownMDEmu_PersistentInitialise(&clownmdemu_persistent);
+
+				// Create the clownmdemu state struct.
+				clownmdemu.config = &clownmdemu_config;
+				clownmdemu.persistent = &clownmdemu_persistent;
+				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
+
 				// Intiialise audio if we can (but it's okay if it fails).
 				initialised_audio = InitAudio();
 
@@ -533,15 +551,12 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					SetAudioPALMode(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+					SetAudioPALMode(clownmdemu_config.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 					SDL_PauseAudioDevice(audio_device, 0);
 				}
 
-				// This should be called before any other clownmdemu functions are called!
-				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
-
 				// Construct our big list of callbacks for clownmdemu.
-				ClownMDEmu_Callbacks callbacks = {&emulation_state->clownmdemu, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+				ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
@@ -602,10 +617,6 @@ int main(int argc, char **argv)
 								--from_index;
 
 							state_rewind_index = from_index;
-
-							// We don't want the rewind to override the user's configurations, so reapply them now.
-							ClownMDEmu_SetRegion(&state_rewind_buffer[from_index].clownmdemu, region);
-							ClownMDEmu_SetTVStandard(&state_rewind_buffer[from_index].clownmdemu, tv_standard);
 						}
 						else
 						{
@@ -625,7 +636,7 @@ int main(int argc, char **argv)
 						SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
 
 						emulation_state = &state_rewind_buffer[to_index];
-						callbacks.user_data = &emulation_state->clownmdemu;
+						clownmdemu.state = &emulation_state->clownmdemu;
 					}
 				#endif
 
@@ -653,7 +664,7 @@ int main(int argc, char **argv)
 							// Calculate when the next frame will be
 							Uint32 delta;
 
-							switch (tv_standard)
+							switch (clownmdemu_config.general.tv_standard)
 							{
 								default:
 								case CLOWNMDEMU_TV_STANDARD_NTSC:
@@ -713,7 +724,6 @@ int main(int argc, char **argv)
 
 									default:
 										break;
-
 								}
 
 								// Don't use inputs that are for Dear ImGui
@@ -729,7 +739,7 @@ int main(int argc, char **argv)
 											break;
 
 										// Soft-reset console
-										ClownMDEmu_Reset(&emulation_state->clownmdemu, &callbacks);
+										ClownMDEmu_Reset(&clownmdemu, &callbacks);
 
 										emulator_paused = false;
 
@@ -1105,7 +1115,7 @@ int main(int argc, char **argv)
 						framebuffer_texture_pitch /= sizeof(Uint32);
 
 						// Run the emulator for a frame
-						ClownMDEmu_Iterate(&emulation_state->clownmdemu, &callbacks);
+						ClownMDEmu_Iterate(&clownmdemu, &callbacks);
 
 						// Unlock the texture so that we can draw it
 						SDL_UnlockTexture(framebuffer_texture);
@@ -1183,7 +1193,7 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Reset", "Tab", false, emulator_on))
 								{
 									// Soft-reset console
-									ClownMDEmu_Reset(&emulation_state->clownmdemu, &callbacks);
+									ClownMDEmu_Reset(&clownmdemu, &callbacks);
 
 									emulator_paused = false;
 								}
@@ -1194,22 +1204,20 @@ int main(int argc, char **argv)
 								{
 									ImGui::MenuItem("TV Standard", NULL, false, false);
 
-									if (ImGui::MenuItem("NTSC (60Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+									if (ImGui::MenuItem("NTSC (60Hz)", NULL, clownmdemu_config.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 									{
-										if (tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
+										if (clownmdemu_config.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 										{
-											tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-											ClownMDEmu_SetTVStandard(&emulation_state->clownmdemu, tv_standard);
+											clownmdemu_config.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 											SetAudioPALMode(false);
 										}
 									}
 
-									if (ImGui::MenuItem("PAL (50Hz)", NULL, tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
+									if (ImGui::MenuItem("PAL (50Hz)", NULL, clownmdemu_config.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
 									{
-										if (tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
+										if (clownmdemu_config.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 										{
-											tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-											ClownMDEmu_SetTVStandard(&emulation_state->clownmdemu, tv_standard);
+											clownmdemu_config.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
 											SetAudioPALMode(true);
 										}
 									}
@@ -1218,23 +1226,11 @@ int main(int argc, char **argv)
 
 									ImGui::MenuItem("Region", NULL, false, false);
 
-									if (ImGui::MenuItem("Domestic (Japan)", NULL, region == CLOWNMDEMU_REGION_DOMESTIC))
-									{
-										if (region != CLOWNMDEMU_REGION_DOMESTIC)
-										{
-											region = CLOWNMDEMU_REGION_DOMESTIC;
-											ClownMDEmu_SetRegion(&emulation_state->clownmdemu, region);
-										}
-									}
+									if (ImGui::MenuItem("Domestic (Japan)", NULL, clownmdemu_config.general.region == CLOWNMDEMU_REGION_DOMESTIC))
+										clownmdemu_config.general.region = CLOWNMDEMU_REGION_DOMESTIC;
 
-									if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, region == CLOWNMDEMU_REGION_OVERSEAS))
-									{
-										if (region != CLOWNMDEMU_REGION_OVERSEAS)
-										{
-											region = CLOWNMDEMU_REGION_OVERSEAS;
-											ClownMDEmu_SetRegion(&emulation_state->clownmdemu, region);
-										}
-									}
+									if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, clownmdemu_config.general.region == CLOWNMDEMU_REGION_OVERSEAS))
+										clownmdemu_config.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 
 									ImGui::EndMenu();
 								}
@@ -1377,14 +1373,11 @@ int main(int argc, char **argv)
 
 									ImGui::Separator();
 
-									if (ImGui::MenuItem("Disable Sprite Plane", NULL, &disable_sprite_plane))
-										emulation_state->clownmdemu.vdp.debug.sprites_disabled = disable_sprite_plane;
+									ImGui::MenuItem("Disable Sprite Plane", NULL, &clownmdemu_config.vdp.sprites_disabled);
 
-									if (ImGui::MenuItem("Disable Plane A", NULL, &disable_plane_a))
-										emulation_state->clownmdemu.vdp.debug.planes_disabled[0] = disable_plane_a;
+									ImGui::MenuItem("Disable Plane A", NULL, &clownmdemu_config.vdp.planes_disabled[0]);
 
-									if (ImGui::MenuItem("Disable Plane B", NULL, &disable_plane_b))
-										emulation_state->clownmdemu.vdp.debug.planes_disabled[1] = disable_plane_b;
+									ImGui::MenuItem("Disable Plane B", NULL, &clownmdemu_config.vdp.planes_disabled[1]);
 
 									ImGui::EndMenu();
 								}
@@ -1522,22 +1515,22 @@ int main(int argc, char **argv)
 					ImGui::End();
 
 					if (m68k_ram_viewer)
-						Debug_M68k_RAM(&m68k_ram_viewer, &emulation_state->clownmdemu, monospace_font);
+						Debug_M68k_RAM(&m68k_ram_viewer, &clownmdemu, monospace_font);
 
 					if (plane_a_viewer)
-						Debug_PlaneA(&plane_a_viewer, &emulation_state->clownmdemu, emulation_state->colours);
+						Debug_PlaneA(&plane_a_viewer, &clownmdemu, emulation_state->colours);
 
 					if (plane_b_viewer)
-						Debug_PlaneB(&plane_b_viewer, &emulation_state->clownmdemu, emulation_state->colours);
+						Debug_PlaneB(&plane_b_viewer, &clownmdemu, emulation_state->colours);
 
 					if (vram_viewer)
-						Debug_VRAM(&vram_viewer, &emulation_state->clownmdemu, emulation_state->colours);
+						Debug_VRAM(&vram_viewer, &clownmdemu, emulation_state->colours);
 
 					if (cram_viewer)
-						Debug_CRAM(&cram_viewer, &emulation_state->clownmdemu, emulation_state->colours, monospace_font);
+						Debug_CRAM(&cram_viewer, &clownmdemu, emulation_state->colours, monospace_font);
 
 					if (psg_status)
-						Debug_PSG(&psg_status, &emulation_state->clownmdemu, monospace_font);
+						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
 
 					SDL_RenderClear(renderer);
 
@@ -1548,8 +1541,6 @@ int main(int argc, char **argv)
 					// Finally display the rendered frame to the user.
 					SDL_RenderPresent(renderer);
 				}
-
-				ClownMDEmu_Deinit(&emulation_state->clownmdemu);
 
 				SDL_free(rom_buffer);
 

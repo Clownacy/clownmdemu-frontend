@@ -28,7 +28,7 @@ static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadat
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3], bool plane_b)
+static void Debug_Plane(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3], bool plane_b)
 {
 	if (ImGui::Begin(plane_b ? "Plane B Viewer" : "Plane A Viewer", open))
 	{
@@ -64,10 +64,10 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, co
 
 			if (ImGui::BeginChild("Plane View"))
 			{
-				const unsigned short *plane = &clownmdemu_state->vdp.vram[plane_b ? clownmdemu_state->vdp.plane_b_address : clownmdemu_state->vdp.plane_a_address];
+				const unsigned short *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
 
 				const unsigned int tile_width = 8;
-				const unsigned int tile_height = clownmdemu_state->vdp.interlace_mode_2_enabled ? 16 : 8;
+				const unsigned int tile_height = clownmdemu->state->vdp.interlace_mode_2_enabled ? 16 : 8;
 
 				// Lock texture so that we can write into it.
 				unsigned char *plane_texture_pixels;
@@ -77,9 +77,9 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, co
 				{
 					const unsigned short *plane_pointer = plane;
 
-					for (unsigned int tile_y_in_plane = 0; tile_y_in_plane < clownmdemu_state->vdp.plane_height; ++tile_y_in_plane)
+					for (unsigned int tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
 					{
-						for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu_state->vdp.plane_width; ++tile_x_in_plane)
+						for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
 						{
 							TileMetadata tile_metadata;
 							DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
@@ -87,11 +87,11 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, co
 							const unsigned x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 							const unsigned y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-							const unsigned int palette_index = tile_metadata.palette_line * 16 + (clownmdemu_state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+							const unsigned int palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
 							const Uint32 *palette_line = &colours[palette_index];
 
-							const unsigned short *tile_pointer = &clownmdemu_state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
+							const unsigned short *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
 
 							for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 							{
@@ -114,8 +114,8 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, co
 					SDL_UnlockTexture(plane_texture);
 				}
 
-				const float plane_width_in_pixels = (float)(clownmdemu_state->vdp.plane_width * tile_width);
-				const float plane_height_in_pixels = (float)(clownmdemu_state->vdp.plane_height * tile_height);
+				const float plane_width_in_pixels = (float)(clownmdemu->state->vdp.plane_width * tile_width);
+				const float plane_height_in_pixels = (float)(clownmdemu->state->vdp.plane_height * tile_height);
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
@@ -130,8 +130,8 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, co
 					const unsigned int tile_x = (unsigned int)((mouse_position.x - image_position.x) / plane_scale / tile_width);
 					const unsigned int tile_y = (unsigned int)((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const unsigned short *plane = &clownmdemu_state->vdp.vram[plane_b ? clownmdemu_state->vdp.plane_b_address : clownmdemu_state->vdp.plane_a_address];
-					const unsigned int packed_tile_metadata = plane[tile_y * clownmdemu_state->vdp.plane_width + tile_x];
+					const unsigned short *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
+					const unsigned int packed_tile_metadata = plane[tile_y * clownmdemu->state->vdp.plane_width + tile_x];
 
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, &tile_metadata);
@@ -151,17 +151,17 @@ static void Debug_Plane(bool *open, const ClownMDEmu_State *clownmdemu_state, co
 	ImGui::End();
 }
 
-void Debug_PlaneA(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3])
+void Debug_PlaneA(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3])
 {
-	Debug_Plane(open, clownmdemu_state, colours, false);
+	Debug_Plane(open, clownmdemu, colours, false);
 }
 
-void Debug_PlaneB(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3])
+void Debug_PlaneB(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3])
 {
-	Debug_Plane(open, clownmdemu_state, colours, true);
+	Debug_Plane(open, clownmdemu, colours, true);
 }
 
-void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3])
+void Debug_VRAM(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3])
 {
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
@@ -173,15 +173,15 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint
 		static size_t vram_texture_height;
 
 		const size_t tile_width = 8;
-		const size_t tile_height = clownmdemu_state->vdp.interlace_mode_2_enabled ? 16 : 8;
+		const size_t tile_height = clownmdemu->state->vdp.interlace_mode_2_enabled ? 16 : 8;
 
-		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu_state->vdp.vram) * 4 / (tile_width * tile_height);
+		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 4 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
 		if (vram_texture == NULL)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-			const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu_state->vdp.vram) * 4;
+			const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 4;
 			const size_t vram_texture_width_in_progress = (size_t)SDL_ceilf(SDL_sqrtf((float)size_of_vram_in_pixels));
 			const size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
 			const size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
@@ -247,7 +247,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint
 			if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
 			{
 				// Generate VRAM bitmap.
-				const unsigned short *vram_pointer = clownmdemu_state->vdp.vram;
+				const unsigned short *vram_pointer = clownmdemu->state->vdp.vram;
 
 				// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 				// instead of left-to-right then top-to-bottom.
@@ -355,7 +355,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint
 	ImGui::End();
 }
 
-void Debug_CRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint32 colours[16 * 4 * 3], ImFont *monospace_font)
+void Debug_CRAM(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3], ImFont *monospace_font)
 {
 	if (ImGui::Begin("CRAM Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -376,7 +376,7 @@ void Debug_CRAM(bool *open, const ClownMDEmu_State *clownmdemu_state, const Uint
 		{
 			ImGui::PushID(j);
 
-			const unsigned int value = clownmdemu_state->vdp.cram[j];
+			const unsigned int value = clownmdemu->state->vdp.cram[j];
 			const unsigned int blue = (value >> 9) & 7;
 			const unsigned int green = (value >> 5) & 7;
 			const unsigned int red = (value >> 1) & 7;

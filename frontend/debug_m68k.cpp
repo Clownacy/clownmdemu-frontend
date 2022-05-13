@@ -5,7 +5,7 @@
 #include "../clowncommon.h"
 #include "../clownmdemu.h"
 
-void Debug_M68k_RAM(bool *open, ClownMDEmu_State *clownmdemu_state, ImFont *monospace_font)
+void Debug_M68k_RAM(bool *open, ClownMDEmu_Data *clownmdemu, ImFont *monospace_font)
 {
 	ImGui::PushFont(monospace_font);
 
@@ -21,13 +21,13 @@ void Debug_M68k_RAM(bool *open, ClownMDEmu_State *clownmdemu_state, ImFont *mono
 		ImGui::PushFont(monospace_font);
 
 		ImGuiListClipper clipper;
-		clipper.Begin(CC_COUNT_OF(clownmdemu_state->m68k_ram) / 0x10);
+		clipper.Begin(CC_COUNT_OF(clownmdemu->state->m68k_ram) / 0x10);
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
 			{
 				const size_t offset = i * 0x10;
-				const unsigned char* const bytes = &clownmdemu_state->m68k_ram[offset];
+				const unsigned char* const bytes = &clownmdemu->state->m68k_ram[offset];
 
 				ImGui::Text("%04zX: %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X", offset,
 					bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3], bytes[0x4], bytes[0x5], bytes[0x6], bytes[0x7],
