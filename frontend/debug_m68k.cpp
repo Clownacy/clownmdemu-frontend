@@ -5,7 +5,7 @@
 #include "../clowncommon.h"
 #include "../clownmdemu.h"
 
-void Debug_M68k_RAM(bool *open, ClownMDEmu_Data *clownmdemu, ImFont *monospace_font)
+void Debug_M68k_RAM(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
 	ImGui::PushFont(monospace_font);
 

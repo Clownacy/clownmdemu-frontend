@@ -80,9 +80,9 @@ static EmulationState quick_save_state;
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
 
-static ClownMDEmu_Config clownmdemu_config;
+static ClownMDEmu_Configuration clownmdemu_configuration;
 static ClownMDEmu_Persistent clownmdemu_persistent;
-static ClownMDEmu_Data clownmdemu;
+static ClownMDEmu clownmdemu;
 
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
@@ -527,17 +527,17 @@ int main(int argc, char **argv)
 				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
 				// Initialise the clownmdemu configuration struct.
-				clownmdemu_config.general.region = CLOWNMDEMU_REGION_OVERSEAS;
-				clownmdemu_config.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-				clownmdemu_config.vdp.sprites_disabled = cc_false;
-				clownmdemu_config.vdp.planes_disabled[0] = cc_false;
-				clownmdemu_config.vdp.planes_disabled[1] = cc_false;
+				clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+				clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+				clownmdemu_configuration.vdp.sprites_disabled = cc_false;
+				clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
+				clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
 
 				// Initialise persistent data such as lookup tables.
 				ClownMDEmu_PersistentInitialise(&clownmdemu_persistent);
 
 				// Create the clownmdemu state struct.
-				clownmdemu.config = &clownmdemu_config;
+				clownmdemu.configuration = &clownmdemu_configuration;
 				clownmdemu.persistent = &clownmdemu_persistent;
 				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
 
@@ -551,7 +551,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
-					SetAudioPALMode(clownmdemu_config.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 					SDL_PauseAudioDevice(audio_device, 0);
 				}
 
@@ -581,9 +581,6 @@ int main(int argc, char **argv)
 				bool vram_viewer = false;
 				bool cram_viewer = false;
 				bool psg_status = false;
-				bool disable_sprite_plane = false;
-				bool disable_plane_a = false;
-				bool disable_plane_b = false;
 
 				bool dear_imgui_demo_window = false;
 
@@ -664,7 +661,7 @@ int main(int argc, char **argv)
 							// Calculate when the next frame will be
 							Uint32 delta;
 
-							switch (clownmdemu_config.general.tv_standard)
+							switch (clownmdemu_configuration.general.tv_standard)
 							{
 								default:
 								case CLOWNMDEMU_TV_STANDARD_NTSC:
@@ -1204,20 +1201,20 @@ int main(int argc, char **argv)
 								{
 									ImGui::MenuItem("TV Standard", NULL, false, false);
 
-									if (ImGui::MenuItem("NTSC (60Hz)", NULL, clownmdemu_config.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+									if (ImGui::MenuItem("NTSC (60Hz)", NULL, clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 									{
-										if (clownmdemu_config.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
+										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 										{
-											clownmdemu_config.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 											SetAudioPALMode(false);
 										}
 									}
 
-									if (ImGui::MenuItem("PAL (50Hz)", NULL, clownmdemu_config.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
+									if (ImGui::MenuItem("PAL (50Hz)", NULL, clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
 									{
-										if (clownmdemu_config.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
+										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 										{
-											clownmdemu_config.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
 											SetAudioPALMode(true);
 										}
 									}
@@ -1226,11 +1223,11 @@ int main(int argc, char **argv)
 
 									ImGui::MenuItem("Region", NULL, false, false);
 
-									if (ImGui::MenuItem("Domestic (Japan)", NULL, clownmdemu_config.general.region == CLOWNMDEMU_REGION_DOMESTIC))
-										clownmdemu_config.general.region = CLOWNMDEMU_REGION_DOMESTIC;
+									if (ImGui::MenuItem("Domestic (Japan)", NULL, clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
+										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
 
-									if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, clownmdemu_config.general.region == CLOWNMDEMU_REGION_OVERSEAS))
-										clownmdemu_config.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+									if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
+										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 
 									ImGui::EndMenu();
 								}
@@ -1373,11 +1370,11 @@ int main(int argc, char **argv)
 
 									ImGui::Separator();
 
-									ImGui::MenuItem("Disable Sprite Plane", NULL, &clownmdemu_config.vdp.sprites_disabled);
+									ImGui::MenuItem("Disable Sprite Plane", NULL, &clownmdemu_configuration.vdp.sprites_disabled);
 
-									ImGui::MenuItem("Disable Plane A", NULL, &clownmdemu_config.vdp.planes_disabled[0]);
+									ImGui::MenuItem("Disable Plane A", NULL, &clownmdemu_configuration.vdp.planes_disabled[0]);
 
-									ImGui::MenuItem("Disable Plane B", NULL, &clownmdemu_config.vdp.planes_disabled[1]);
+									ImGui::MenuItem("Disable Plane B", NULL, &clownmdemu_configuration.vdp.planes_disabled[1]);
 
 									ImGui::EndMenu();
 								}

@@ -28,7 +28,7 @@ static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadat
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3], bool plane_b)
+static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3], bool plane_b)
 {
 	if (ImGui::Begin(plane_b ? "Plane B Viewer" : "Plane A Viewer", open))
 	{
@@ -151,17 +151,17 @@ static void Debug_Plane(bool *open, const ClownMDEmu_Data *clownmdemu, const Uin
 	ImGui::End();
 }
 
-void Debug_PlaneA(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3])
+void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3])
 {
 	Debug_Plane(open, clownmdemu, colours, false);
 }
 
-void Debug_PlaneB(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3])
+void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3])
 {
 	Debug_Plane(open, clownmdemu, colours, true);
 }
 
-void Debug_VRAM(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3])
+void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3])
 {
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
@@ -355,7 +355,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colo
 	ImGui::End();
 }
 
-void Debug_CRAM(bool *open, const ClownMDEmu_Data *clownmdemu, const Uint32 colours[16 * 4 * 3], ImFont *monospace_font)
+void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3], ImFont *monospace_font)
 {
 	if (ImGui::Begin("CRAM Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

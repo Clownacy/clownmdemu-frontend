@@ -5,7 +5,7 @@
 #include "../clowncommon.h"
 #include "../clownmdemu.h"
 
-void Debug_PSG(bool *open, ClownMDEmu_Data *clownmdemu, ImFont *monospace_font)
+void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
 	if (ImGui::Begin("PSG Status", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -29,7 +29,7 @@ void Debug_PSG(bool *open, ClownMDEmu_Data *clownmdemu, ImFont *monospace_font)
 		// Channels.
 		if (ImGui::TreeNodeEx("Channels", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			const unsigned long psg_clock = (clownmdemu->config->general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_MASTER_CLOCK_PAL : CLOWNMDEMU_MASTER_CLOCK_NTSC) / 15 / 16;
+			const unsigned long psg_clock = (clownmdemu->configuration->general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_MASTER_CLOCK_PAL : CLOWNMDEMU_MASTER_CLOCK_NTSC) / 15 / 16;
 
 			// Tone channels.
 			for (unsigned int i = 0; i < CC_COUNT_OF(clownmdemu->state->psg.tones); ++i)
