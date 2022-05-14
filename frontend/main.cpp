@@ -1384,11 +1384,14 @@ int main(int argc, char **argv)
 
 									ImGui::Separator();
 
-									ImGui::MenuItem("Disable Sprite Plane", NULL, &clownmdemu_configuration.vdp.sprites_disabled);
+									if (ImGui::MenuItem("Disable Sprite Plane", NULL, clownmdemu_configuration.vdp.sprites_disabled))
+										clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
 
-									ImGui::MenuItem("Disable Plane A", NULL, &clownmdemu_configuration.vdp.planes_disabled[0]);
+									if (ImGui::MenuItem("Disable Plane A", NULL, clownmdemu_configuration.vdp.planes_disabled[0]))
+										clownmdemu_configuration.vdp.planes_disabled[0] = !clownmdemu_configuration.vdp.planes_disabled[0];
 
-									ImGui::MenuItem("Disable Plane B", NULL, &clownmdemu_configuration.vdp.planes_disabled[1]);
+									if (ImGui::MenuItem("Disable Plane B", NULL, clownmdemu_configuration.vdp.planes_disabled[1]))
+										clownmdemu_configuration.vdp.planes_disabled[1] = !clownmdemu_configuration.vdp.planes_disabled[1];
 
 									ImGui::EndMenu();
 								}
