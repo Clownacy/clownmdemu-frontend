@@ -67,7 +67,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 c
 				const unsigned short *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
 
 				const unsigned int tile_width = 8;
-				const unsigned int tile_height = clownmdemu->state->vdp.interlace_mode_2_enabled ? 16 : 8;
+				const unsigned int tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
 				// Lock texture so that we can write into it.
 				unsigned char *plane_texture_pixels;
@@ -173,7 +173,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 		static size_t vram_texture_height;
 
 		const size_t tile_width = 8;
-		const size_t tile_height = clownmdemu->state->vdp.interlace_mode_2_enabled ? 16 : 8;
+		const size_t tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
 		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 4 / (tile_width * tile_height);
 
