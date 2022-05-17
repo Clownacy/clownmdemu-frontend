@@ -598,6 +598,7 @@ int main(int argc, char **argv)
 				bool emulator_paused = false;
 
 				bool integer_screen_scaling = false;
+				bool tall_double_resolution_mode = false;
 
 				bool m68k_ram_viewer = false;
 				bool plane_a_viewer = false;
@@ -1427,6 +1428,8 @@ int main(int argc, char **argv)
 									framebuffer_texture_upscaled = NULL;
 								}
 
+								ImGui::MenuItem("Tall Double Resolution Mode", NULL, &tall_double_resolution_mode);
+
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
 
 							#ifndef NDEBUG
@@ -1485,12 +1488,12 @@ int main(int argc, char **argv)
 									break;
 
 								case 448:
-									destination_width = 640;
+									destination_width = tall_double_resolution_mode ? 320 : 640;
 									destination_height = 448;
 									break;
 
 								case 480:
-									destination_width = 640;
+									destination_width = tall_double_resolution_mode ? 320 : 640;
 									destination_height = 480;
 									break;
 							}
