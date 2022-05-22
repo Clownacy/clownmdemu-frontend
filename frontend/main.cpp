@@ -224,8 +224,8 @@ static void SetAudioPALMode(bool enabled)
 {
 	if (initialised_audio)
 	{
-		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / (15 * 16)));
-		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / (15 * 16)));
+		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
+		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
 
 		ClownResampler_HighLevel_Init(&resampler, 1, enabled ? pal_sample_rate : ntsc_sample_rate, native_audio_sample_rate);
 	}
@@ -603,7 +603,7 @@ int main(int argc, char **argv)
 
 				// Intiialise audio if we can (but it's okay if it fails).
 				/// TODO - PAL, and bring the resampler back!
-				if (!CreateAudioDevice(&fm_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / (7 * 6 * 6 * 4))), 2))
+				if (!CreateAudioDevice(&fm_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC)), 2))
 				{
 					PrintError("FM CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise FM audio subsystem: the program will not output FM audio!", window);
@@ -613,7 +613,7 @@ int main(int argc, char **argv)
 					SDL_PauseAudioDevice(fm_audio_device.identifier, 0);
 				}
 
-				if (!CreateAudioDevice(&psg_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / (15 * 16))), 1))
+				if (!CreateAudioDevice(&psg_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC)), 1))
 				{
 					PrintError("PSG CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise PSG audio subsystem: the program will not output PSG audio!", window);
