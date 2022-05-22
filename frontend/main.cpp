@@ -215,20 +215,22 @@ void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int displa
 // Audio //
 ///////////
 
+static AudioDevice fm_audio_device;
+static AudioDevice psg_audio_device;
 static ClownResampler_HighLevel_State resampler;
-static bool initialised_audio;
-
+//static bool initialised_audio;
+/*
 static void SetAudioPALMode(bool enabled)
 {
 	if (initialised_audio)
 	{
-		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / 15 / 16));
-		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / 15 / 16));
+		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_PAL / (15 * 16)));
+		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / (15 * 16)));
 
 		ClownResampler_HighLevel_Init(&resampler, 1, enabled ? pal_sample_rate : ntsc_sample_rate, native_audio_sample_rate);
 	}
 }
-
+*/
 static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)
 {
 	(void)user_data;
@@ -328,15 +330,14 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 
 	(void)user_data;
 
-	// Even though there's no audio playback, we still need to update the PSG.
 	while (total_frames != 0)
 	{
 		const size_t frames_to_do = CC_MIN(total_frames, CC_COUNT_OF(audio_buffer) / 2);
 
 		SDL_memset(audio_buffer, 0, frames_to_do * sizeof(*audio_buffer) * 2);
 		generate_fm_audio(&clownmdemu, audio_buffer, frames_to_do);
-		if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
-			SDL_QueueAudio(audio_device, audio_buffer, (Uint32)CC_MIN(total_frames * sizeof(*audio_buffer) * 2, sizeof(audio_buffer)));
+		if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
+			SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)CC_MIN(total_frames * sizeof(*audio_buffer) * 2, sizeof(audio_buffer)));
 
 		total_frames -= frames_to_do;
 	}
@@ -344,11 +345,22 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 
 static void PSGAudioCallback(void *user_data, size_t total_samples, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
 {
-	return;
 	short audio_buffer[0x400];
 
 	(void)user_data;
 
+	while (total_samples != 0)
+	{
+		const size_t samples_to_do = CC_MIN(total_samples, CC_COUNT_OF(audio_buffer));
+
+		SDL_memset(audio_buffer, 0, samples_to_do * sizeof(*audio_buffer));
+		generate_psg_audio(&clownmdemu, audio_buffer, samples_to_do);
+		if (SDL_GetQueuedAudioSize(psg_audio_device.identifier) < psg_audio_device.audio_buffer_size * 2)
+			SDL_QueueAudio(psg_audio_device.identifier, audio_buffer, (Uint32)CC_MIN(total_samples * sizeof(*audio_buffer), sizeof(audio_buffer)));
+
+		total_samples -= samples_to_do;
+	}
+	/*
 	if (!initialised_audio)
 	{
 		// Even though there's no audio playback, we still need to update the PSG.
@@ -370,9 +382,10 @@ static void PSGAudioCallback(void *user_data, size_t total_samples, void (*gener
 
 		size_t total_resampled_samples;
 		while ((total_resampled_samples = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer), ResamplerCallback, &resampler_callback_user_data)) != 0)
-			if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
-				SDL_QueueAudio(audio_device, audio_buffer, (Uint32)(total_resampled_samples * sizeof(*audio_buffer)));
+			if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
+				SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)(total_resampled_samples * sizeof(*audio_buffer)));
 	}
+	*/
 }
 
 static void ApplySaveState(EmulationState *save_state)
@@ -507,7 +520,7 @@ int main(int argc, char **argv)
 	InitError();
 
 	// Initialise SDL2
-	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", NULL);
@@ -589,8 +602,28 @@ int main(int argc, char **argv)
 				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
 
 				// Intiialise audio if we can (but it's okay if it fails).
-				initialised_audio = InitAudio();
+				/// TODO - PAL, and bring the resampler back!
+				if (!CreateAudioDevice(&fm_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / (7 * 6 * 6 * 4))), 2))
+				{
+					PrintError("FM CreateAudioDevice failed");
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise FM audio subsystem: the program will not output FM audio!", window);
+				}
+				else
+				{
+					SDL_PauseAudioDevice(fm_audio_device.identifier, 0);
+				}
 
+				if (!CreateAudioDevice(&psg_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_MASTER_CLOCK_NTSC / (15 * 16))), 1))
+				{
+					PrintError("PSG CreateAudioDevice failed");
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise PSG audio subsystem: the program will not output PSG audio!", window);
+				}
+				else
+				{
+					SDL_PauseAudioDevice(psg_audio_device.identifier, 0);
+				}
+
+				/*
 				if (!initialised_audio)
 				{
 					PrintError("InitAudio failed"); // Allow program to continue if audio fails
@@ -601,6 +634,7 @@ int main(int argc, char **argv)
 					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 					SDL_PauseAudioDevice(audio_device, 0);
 				}
+				*/
 
 				// Construct our big list of callbacks for clownmdemu.
 				ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback};
@@ -1254,7 +1288,7 @@ int main(int argc, char **argv)
 										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 										{
 											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-											SetAudioPALMode(false);
+											//SetAudioPALMode(false);
 										}
 									}
 
@@ -1263,7 +1297,7 @@ int main(int argc, char **argv)
 										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 										{
 											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-											SetAudioPALMode(true);
+											//SetAudioPALMode(true);
 										}
 									}
 
@@ -1631,8 +1665,11 @@ int main(int argc, char **argv)
 
 				SDL_free(rom_buffer);
 
-				if (initialised_audio)
-					DeinitAudio();
+				if (fm_audio_device.identifier != 0)
+					DestroyAudioDevice(&fm_audio_device);
+
+				if (psg_audio_device.identifier != 0)
+					DestroyAudioDevice(&psg_audio_device);
 
 				ImGui_ImplSDLRenderer_Shutdown();
 				ImGui_ImplSDL2_Shutdown();

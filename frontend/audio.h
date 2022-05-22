@@ -5,11 +5,14 @@
 
 #include "SDL.h"
 
-extern SDL_AudioDeviceID audio_device;
-extern size_t audio_buffer_size;
-extern unsigned int native_audio_sample_rate;
+struct AudioDevice
+{
+	SDL_AudioDeviceID identifier;
+	size_t audio_buffer_size;
+	//unsigned int native_audio_sample_rate;
+};
 
-bool InitAudio(void);
-void DeinitAudio(void);
+bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels);
+void DestroyAudioDevice(AudioDevice *audio_device);
 
 #endif /* AUDIO_H */
