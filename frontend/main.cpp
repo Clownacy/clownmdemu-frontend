@@ -81,7 +81,7 @@ static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
 
 static ClownMDEmu_Configuration clownmdemu_configuration;
-static ClownMDEmu_Persistent clownmdemu_persistent;
+static ClownMDEmu_Constant clownmdemu_constant;
 static ClownMDEmu clownmdemu;
 
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
@@ -423,7 +423,7 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		emulation_state = &state_rewind_buffer[0];
 		clownmdemu.state = &emulation_state->clownmdemu;
 
-		ClownMDEmu_StateInitialise(clownmdemu.state);
+		ClownMDEmu_State_Initialise(clownmdemu.state);
 		ClownMDEmu_Reset(&clownmdemu, callbacks);
 	}
 }
@@ -594,11 +594,11 @@ int main(int argc, char **argv)
 				clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
 
 				// Initialise persistent data such as lookup tables.
-				ClownMDEmu_PersistentInitialise(&clownmdemu_persistent);
+				ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
 
 				// Create the clownmdemu state struct.
 				clownmdemu.configuration = &clownmdemu_configuration;
-				clownmdemu.persistent = &clownmdemu_persistent;
+				clownmdemu.constant = &clownmdemu_constant;
 				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
 
 				// Intiialise audio if we can (but it's okay if it fails).
