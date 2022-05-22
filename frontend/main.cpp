@@ -303,6 +303,7 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 
 typedef struct ResamplerCallbackUserData
 {
+	void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples);
 	size_t samples_remaining;
 } ResamplerCallbackUserData;
 
@@ -314,15 +315,36 @@ static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_si
 
 	SDL_memset(buffer, 0, samples_to_do * sizeof(*buffer));
 
-	ClownMDEmu_GeneratePSGAudio(&clownmdemu, buffer, samples_to_do);
+	resampler_callback_user_data->generate_psg_audio(&clownmdemu, buffer, samples_to_do);
 
 	resampler_callback_user_data->samples_remaining -= samples_to_do;
 
 	return samples_to_do;
 }
 
-static void PSGAudioCallback(void *user_data, size_t total_samples)
+static void FMAudioCallback(void *user_data, size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
 {
+	short audio_buffer[0x400];
+
+	(void)user_data;
+
+	// Even though there's no audio playback, we still need to update the PSG.
+	while (total_frames != 0)
+	{
+		const size_t frames_to_do = CC_MIN(total_frames, CC_COUNT_OF(audio_buffer) / 2);
+
+		SDL_memset(audio_buffer, 0, frames_to_do * sizeof(*audio_buffer) * 2);
+		generate_fm_audio(&clownmdemu, audio_buffer, frames_to_do);
+		if (SDL_GetQueuedAudioSize(audio_device) < audio_buffer_size * 2)
+			SDL_QueueAudio(audio_device, audio_buffer, (Uint32)CC_MIN(total_frames * sizeof(*audio_buffer) * 2, sizeof(audio_buffer)));
+
+		total_frames -= frames_to_do;
+	}
+}
+
+static void PSGAudioCallback(void *user_data, size_t total_samples, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
+{
+	return;
 	short audio_buffer[0x400];
 
 	(void)user_data;
@@ -334,7 +356,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 		{
 			const size_t samples_to_do = CC_MIN(total_samples, CC_COUNT_OF(audio_buffer));
 
-			ClownMDEmu_GeneratePSGAudio(&clownmdemu, audio_buffer, samples_to_do);
+			generate_psg_audio(&clownmdemu, audio_buffer, samples_to_do);
 
 			total_samples -= samples_to_do;
 		}
@@ -343,6 +365,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples)
 	{
 		// Resample the generated PSG audio, and push it to SDL2 for playback.
 		ResamplerCallbackUserData resampler_callback_user_data;
+		resampler_callback_user_data.generate_psg_audio = generate_psg_audio;
 		resampler_callback_user_data.samples_remaining = total_samples;
 
 		size_t total_resampled_samples;
@@ -580,7 +603,7 @@ int main(int argc, char **argv)
 				}
 
 				// Construct our big list of callbacks for clownmdemu.
-				ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, PSGAudioCallback};
+				ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback};
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)

@@ -22,9 +22,9 @@ bool InitAudio(void)
 		SDL_AudioSpec want, have;
 
 		SDL_zero(want);
-		want.freq = 48000;
+		want.freq = 53263;
 		want.format = AUDIO_S16;
-		want.channels = 1;
+		want.channels = 2;
 		// We want a 25ms buffer (this value must be a power of two)
 		want.samples = 1;
 		while (want.samples < (want.freq * want.channels) / (1000 / 25))
