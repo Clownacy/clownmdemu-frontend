@@ -9,7 +9,7 @@ struct AudioDevice
 {
 	SDL_AudioDeviceID identifier;
 	size_t audio_buffer_size;
-	//unsigned int native_audio_sample_rate;
+	unsigned int native_audio_sample_rate;
 };
 
 bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels);

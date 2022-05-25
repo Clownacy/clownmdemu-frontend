@@ -219,18 +219,18 @@ static AudioDevice fm_audio_device;
 static AudioDevice psg_audio_device;
 static ClownResampler_HighLevel_State resampler;
 //static bool initialised_audio;
-/*
+
 static void SetAudioPALMode(bool enabled)
 {
-	if (initialised_audio)
+//	if (initialised_audio)
 	{
-		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
-		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
+		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
+		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
 
-		ClownResampler_HighLevel_Init(&resampler, 1, enabled ? pal_sample_rate : ntsc_sample_rate, native_audio_sample_rate);
+		ClownResampler_HighLevel_Init(&resampler, 2, enabled ? pal_sample_rate : ntsc_sample_rate, fm_audio_device.native_audio_sample_rate);
 	}
 }
-*/
+
 static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)
 {
 	(void)user_data;
@@ -305,23 +305,23 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 
 typedef struct ResamplerCallbackUserData
 {
-	void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples);
-	size_t samples_remaining;
+	void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames);
+	size_t frames_remaining;
 } ResamplerCallbackUserData;
 
 static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
 {
 	ResamplerCallbackUserData *resampler_callback_user_data = (ResamplerCallbackUserData*)user_data;
 
-	const size_t samples_to_do = CC_MIN(resampler_callback_user_data->samples_remaining, buffer_size);
+	const size_t frames_to_do = CC_MIN(resampler_callback_user_data->frames_remaining, buffer_size);
 
-	SDL_memset(buffer, 0, samples_to_do * sizeof(*buffer));
+	SDL_memset(buffer, 0, frames_to_do * sizeof(*buffer) * 2);
 
-	resampler_callback_user_data->generate_psg_audio(&clownmdemu, buffer, samples_to_do);
+	resampler_callback_user_data->generate_fm_audio(&clownmdemu, buffer, frames_to_do);
 
-	resampler_callback_user_data->samples_remaining -= samples_to_do;
+	resampler_callback_user_data->frames_remaining -= frames_to_do;
 
-	return samples_to_do;
+	return frames_to_do;
 }
 
 static void FMAudioCallback(void *user_data, size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
@@ -330,6 +330,19 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 
 	(void)user_data;
 
+	// Resample the generated PSG audio, and push it to SDL2 for playback.
+	ResamplerCallbackUserData resampler_callback_user_data;
+	resampler_callback_user_data.generate_fm_audio = generate_fm_audio;
+	resampler_callback_user_data.frames_remaining = total_frames;
+
+	const unsigned int total_channels = 2;
+
+	size_t total_resampled_frames;
+	while ((total_resampled_frames = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer) / total_channels, ResamplerCallback, &resampler_callback_user_data)) != 0)
+		if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
+			SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)(total_resampled_frames * sizeof(*audio_buffer) * total_channels));
+
+#if 0
 	while (total_frames != 0)
 	{
 		const size_t frames_to_do = CC_MIN(total_frames, CC_COUNT_OF(audio_buffer) / 2);
@@ -341,6 +354,7 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 
 		total_frames -= frames_to_do;
 	}
+#endif
 }
 
 static void PSGAudioCallback(void *user_data, size_t total_samples, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
@@ -610,6 +624,7 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 					SDL_PauseAudioDevice(fm_audio_device.identifier, 0);
 				}
 

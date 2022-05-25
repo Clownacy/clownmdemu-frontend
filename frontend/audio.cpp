@@ -21,7 +21,7 @@ bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, uns
 		want.samples <<= 1;
 	want.callback = NULL;
 
-	audio_device->identifier = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+	audio_device->identifier = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 
 	if (audio_device->identifier == 0)
 	{
@@ -30,7 +30,7 @@ bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, uns
 	else
 	{
 		audio_device->audio_buffer_size = have.size;
-		//audio_device->native_audio_sample_rate = (unsigned int)have.freq;
+		audio_device->native_audio_sample_rate = (unsigned int)have.freq;
 
 		return true;
 	}
