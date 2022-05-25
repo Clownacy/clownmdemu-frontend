@@ -31,10 +31,6 @@
 #include "debug_psg.h"
 #include "debug_vdp.h"
 
-#ifndef M_PI
-#define M_PI 3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679
-#endif
-
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -1149,7 +1145,7 @@ int main(int argc, char **argv)
 														const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
 
 														// If the stick is within 67.5 degrees of the specified direction, then this will be true.
-														controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * ((float)M_PI / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
+														controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * ((float)CC_PI / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
 													}
 
 													static const unsigned int buttons[4] = {
