@@ -8,16 +8,17 @@
 
 bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels, bool allow_frequency_change)
 {
-	// Initialise audio backend
+	// Initialise audio backend.
 	SDL_AudioSpec want, have;
 
 	SDL_zero(want);
 	want.freq = sample_rate;
 	want.format = AUDIO_S16;
 	want.channels = channels;
-	// We want a 25ms buffer (this value must be a power of two)
+	// We want a 10ms buffer (this value must be a power of two).
+	// The 10ms buffer is necessary for getting the FM and PSG audio stream synchronised.
 	want.samples = 1;
-	while (want.samples < (want.freq * want.channels) / (1000 / 25))
+	while (want.samples < (want.freq * want.channels) / (1000 / 10))
 		want.samples <<= 1;
 	want.callback = NULL;
 
