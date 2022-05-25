@@ -613,7 +613,7 @@ int main(int argc, char **argv)
 
 				// Intiialise audio if we can (but it's okay if it fails).
 				/// TODO - PAL, and bring the resampler back!
-				if (!CreateAudioDevice(&fm_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC)), 2))
+				if (!CreateAudioDevice(&fm_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC)), 2, true))
 				{
 					PrintError("FM CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise FM audio subsystem: the program will not output FM audio!", window);
@@ -624,7 +624,7 @@ int main(int argc, char **argv)
 					SDL_PauseAudioDevice(fm_audio_device.identifier, 0);
 				}
 
-				if (!CreateAudioDevice(&psg_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC)), 1))
+				if (!CreateAudioDevice(&psg_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC)), 1, false))
 				{
 					PrintError("PSG CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise PSG audio subsystem: the program will not output PSG audio!", window);

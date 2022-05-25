@@ -6,7 +6,7 @@
 
 #include "error.h"
 
-bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels)
+bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels, bool allow_frequency_change)
 {
 	// Initialise audio backend
 	SDL_AudioSpec want, have;
@@ -21,7 +21,7 @@ bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, uns
 		want.samples <<= 1;
 	want.callback = NULL;
 
-	audio_device->identifier = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+	audio_device->identifier = SDL_OpenAudioDevice(NULL, 0, &want, &have, allow_frequency_change ? SDL_AUDIO_ALLOW_FREQUENCY_CHANGE : 0);
 
 	if (audio_device->identifier == 0)
 	{

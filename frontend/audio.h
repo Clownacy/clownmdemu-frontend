@@ -12,7 +12,7 @@ struct AudioDevice
 	unsigned int native_audio_sample_rate;
 };
 
-bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels);
+bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels, bool allow_frequency_change);
 void DestroyAudioDevice(AudioDevice *audio_device);
 
 #endif /* AUDIO_H */
