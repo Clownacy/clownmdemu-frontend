@@ -113,5 +113,5 @@ complicated.
 
 # Licence
 
-clownmdemu is free software, licensed under the GPLv3 (or any later version).
+clownmdemu is free software, licensed under the AGPLv3 (or any later version).
 See `LICENCE.txt` for more information.
