@@ -345,28 +345,7 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 
 	return value;
 }
-#if 0
-typedef struct ResamplerCallbackUserData
-{
-	void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames);
-	size_t frames_remaining;
-} ResamplerCallbackUserData;
 
-static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
-{
-	ResamplerCallbackUserData *resampler_callback_user_data = (ResamplerCallbackUserData*)user_data;
-
-	const size_t frames_to_do = CC_MIN(resampler_callback_user_data->frames_remaining, buffer_size);
-
-	SDL_memset(buffer, 0, frames_to_do * sizeof(*buffer) * 2);
-
-	resampler_callback_user_data->generate_fm_audio(&clownmdemu, buffer, frames_to_do);
-
-	resampler_callback_user_data->frames_remaining -= frames_to_do;
-
-	return frames_to_do;
-}
-#endif
 static void FMAudioCallback(void *user_data, size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
 {
 	(void)user_data;
@@ -374,88 +353,15 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 	generate_fm_audio(&clownmdemu, &fm_sample_buffer[fm_sample_buffer_write_index], total_frames);
 
 	fm_sample_buffer_write_index += total_frames * FM_CHANNEL_COUNT;
-
-
-
-#if 0
-
-	short audio_buffer[0x400];
-
-
-	// Resample the generated PSG audio, and push it to SDL2 for playback.
-	ResamplerCallbackUserData resampler_callback_user_data;
-	resampler_callback_user_data.generate_fm_audio = generate_fm_audio;
-	resampler_callback_user_data.frames_remaining = total_frames;
-
-	const unsigned int total_channels = 2;
-
-	size_t total_resampled_frames;
-	while ((total_resampled_frames = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer) / total_channels, ResamplerCallback, &resampler_callback_user_data)) != 0)
-		if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
-			SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)(total_resampled_frames * sizeof(*audio_buffer) * total_channels));
-
-	while (total_frames != 0)
-	{
-		const size_t frames_to_do = CC_MIN(total_frames, CC_COUNT_OF(audio_buffer) / 2);
-
-		SDL_memset(audio_buffer, 0, frames_to_do * sizeof(*audio_buffer) * 2);
-		generate_fm_audio(&clownmdemu, audio_buffer, frames_to_do);
-		if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
-			SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)CC_MIN(total_frames * sizeof(*audio_buffer) * 2, sizeof(audio_buffer)));
-
-		total_frames -= frames_to_do;
-	}
-#endif
 }
 
 static void PSGAudioCallback(void *user_data, size_t total_samples, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
 {
+	(void)user_data;
+
 	generate_psg_audio(&clownmdemu, &psg_sample_buffer[psg_sample_buffer_write_index], total_samples);
 
 	psg_sample_buffer_write_index += total_samples * PSG_CHANNEL_COUNT;
-#if 0
-	short audio_buffer[0x400];
-
-	(void)user_data;
-
-	while (total_samples != 0)
-	{
-		const size_t samples_to_do = CC_MIN(total_samples, CC_COUNT_OF(audio_buffer));
-
-		SDL_memset(audio_buffer, 0, samples_to_do * sizeof(*audio_buffer));
-		generate_psg_audio(&clownmdemu, audio_buffer, samples_to_do);
-		if (SDL_GetQueuedAudioSize(psg_audio_device.identifier) < psg_audio_device.audio_buffer_size * 2)
-			SDL_QueueAudio(psg_audio_device.identifier, audio_buffer, (Uint32)CC_MIN(total_samples * sizeof(*audio_buffer), sizeof(audio_buffer)));
-
-		total_samples -= samples_to_do;
-	}
-#endif
-	/*
-	if (!initialised_audio)
-	{
-		// Even though there's no audio playback, we still need to update the PSG.
-		while (total_samples != 0)
-		{
-			const size_t samples_to_do = CC_MIN(total_samples, CC_COUNT_OF(audio_buffer));
-
-			generate_psg_audio(&clownmdemu, audio_buffer, samples_to_do);
-
-			total_samples -= samples_to_do;
-		}
-	}
-	else
-	{
-		// Resample the generated PSG audio, and push it to SDL2 for playback.
-		ResamplerCallbackUserData resampler_callback_user_data;
-		resampler_callback_user_data.generate_psg_audio = generate_psg_audio;
-		resampler_callback_user_data.samples_remaining = total_samples;
-
-		size_t total_resampled_samples;
-		while ((total_resampled_samples = ClownResampler_HighLevel_Resample(&resampler, audio_buffer, CC_COUNT_OF(audio_buffer), ResamplerCallback, &resampler_callback_user_data)) != 0)
-			if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
-				SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)(total_resampled_samples * sizeof(*audio_buffer)));
-	}
-	*/
 }
 
 static void ApplySaveState(EmulationState *save_state)
@@ -1248,6 +1154,7 @@ int main(int argc, char **argv)
 
 					if (emulator_running)
 					{
+						/* Reset the audio buffers so that they can be mixed into. */
 						SDL_memset(fm_sample_buffer, 0, sizeof(fm_sample_buffer));
 						SDL_memset(psg_sample_buffer, 0, sizeof(psg_sample_buffer));
 						fm_sample_buffer_write_index = 0;
@@ -1265,7 +1172,7 @@ int main(int argc, char **argv)
 						// Unlock the texture so that we can draw it
 						SDL_UnlockTexture(framebuffer_texture);
 
-						/* Something something audio. */
+						/* Resample, mix, and output the audio for this frame. */
 						if (SDL_GetQueuedAudioSize(audio_device.identifier) < audio_device.audio_buffer_size * 2)
 						{
 							fm_sample_buffer_read_index = 0;
@@ -1273,19 +1180,24 @@ int main(int argc, char **argv)
 
 							for (;;)
 							{
+								/* Resample the FM and PSG outputs into their respective buffers. */
 								const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&fm_resampler, fm_resampler_buffer, CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT, FMResamplerCallback, NULL);
 								const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&psg_resampler, psg_resampler_buffer, CC_COUNT_OF(psg_resampler_buffer) / PSG_CHANNEL_COUNT, PSGResamplerCallback, NULL);
 
 								const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
 
+								/* Mix the resampled PSG output into the resampled FM output. */
+								/* There is no need for clamping because the samples are output low enough to never exceed the 16-bit limit. */
 								for (size_t i = 0; i < frames_to_output; ++i)
 								{
 									fm_resampler_buffer[i * 2 + 0] += psg_resampler_buffer[i];
 									fm_resampler_buffer[i * 2 + 1] += psg_resampler_buffer[i];
 								}
 
+								/* Push the resampled, mixed audio to the device for playback. */
 								SDL_QueueAudio(audio_device.identifier, fm_resampler_buffer, (Uint32)(frames_to_output * sizeof(*fm_resampler_buffer) * FM_CHANNEL_COUNT));
 
+								/* If the resampler has run out of data, then we're free to exit this loop. */
 								if (frames_to_output != CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT)
 									break;
 							}
@@ -1759,9 +1671,6 @@ int main(int argc, char **argv)
 
 				if (audio_device.identifier != 0)
 					DestroyAudioDevice(&audio_device);
-
-				//if (psg_audio_device.identifier != 0)
-					//DestroyAudioDevice(&psg_audio_device);
 
 				ImGui_ImplSDLRenderer_Shutdown();
 				ImGui_ImplSDL2_Shutdown();
