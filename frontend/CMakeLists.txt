@@ -14,8 +14,6 @@ add_executable(clownmdemufrontend WIN32
 	"main.cpp"
 	"error.cpp"
 	"error.h"
-	"video.cpp"
-	"video.h"
 	"debug_m68k.cpp"
 	"debug_m68k.h"
 	"debug_psg.cpp"

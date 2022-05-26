@@ -25,7 +25,6 @@
 #include "karla_regular.h"
 
 #include "error.h"
-#include "video.h"
 #include "debug_m68k.h"
 #include "debug_psg.h"
 #include "debug_vdp.h"
@@ -129,6 +128,9 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 #define FRAMEBUFFER_WIDTH 320
 #define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
 
+static SDL_Window *window;
+static SDL_Renderer *renderer;
+
 static SDL_Texture *framebuffer_texture;
 static Uint32 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
@@ -141,13 +143,83 @@ static unsigned int current_screen_height;
 
 static bool use_vsync;
 static bool fullscreen;
+static float dpi_scale;
+
+static float GetNewDPIScale(void)
+{
+	float dpi_scale = 1.0f;
+
+	float ddpi;
+	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
+		dpi_scale = ddpi / 96.0f;
+
+	return dpi_scale;
+}
+
+static bool InitialiseVideo(void)
+{
+	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
+	{
+		PrintError("SDL_InitSubSystem(SDL_INIT_VIDEO) failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		// Create window
+		window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+
+		if (window == NULL)
+		{
+			PrintError("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			// Use batching even if the user forces a specific rendering backend (wtf SDL).
+			//
+			// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
+			// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
+			// for backwards compatibility reasons. Setting this hint prevents that.
+			//
+			// Normally if a user is setting an environment variable to force a specific rendering
+			// backend, then they're expected to set another environment variable to set this hint too,
+			// but I might as well just do it myself and save everyone else the hassle.
+			SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
+
+			// Create renderer
+			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
+
+			if (renderer == NULL)
+			{
+				PrintError("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				dpi_scale = GetNewDPIScale();
+
+				return true;
+			}
+
+			SDL_DestroyWindow(window);
+		}
+
+		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
+
+	return false;
+}
+
+static void DeinitialiseVideo(void)
+{
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_QuitSubSystem(SDL_INIT_VIDEO);
+}
 
 static void SetFullscreen(bool enabled)
 {
 	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
-static bool InitFramebuffer(void)
+static bool InitialiseFramebuffer(void)
 {
 	// Create framebuffer texture
 	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
@@ -170,12 +242,12 @@ static bool InitFramebuffer(void)
 	return false;
 }
 
-static void DeinitFramebuffer(void)
+static void DeinitialiseFramebuffer(void)
 {
 	SDL_DestroyTexture(framebuffer_texture);
 }
 
-void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height)
+static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height)
 {
 	static unsigned int previous_framebuffer_size_factor = 0;
 
@@ -599,14 +671,14 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		if (!InitVideo())
+		if (!InitialiseVideo())
 		{
 			PrintError("InitVideo failed");
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", NULL);
 		}
 		else
 		{
-			if (!InitFramebuffer())
+			if (!InitialiseFramebuffer())
 			{
 				PrintError("CreateFramebuffer failed");
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise framebuffer. The program will now close.", NULL);
@@ -1697,17 +1769,19 @@ int main(int argc, char **argv)
 					if (m68k_ram_viewer)
 						Debug_M68k_RAM(&m68k_ram_viewer, &clownmdemu, monospace_font);
 
+					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, dpi_scale};
+
 					if (plane_a_viewer)
-						Debug_PlaneA(&plane_a_viewer, &clownmdemu, emulation_state->colours);
+						Debug_PlaneA(&plane_a_viewer, &clownmdemu, &debug_vdp_data);
 
 					if (plane_b_viewer)
-						Debug_PlaneB(&plane_b_viewer, &clownmdemu, emulation_state->colours);
+						Debug_PlaneB(&plane_b_viewer, &clownmdemu, &debug_vdp_data);
 
 					if (vram_viewer)
-						Debug_VRAM(&vram_viewer, &clownmdemu, emulation_state->colours);
+						Debug_VRAM(&vram_viewer, &clownmdemu, &debug_vdp_data);
 
 					if (cram_viewer)
-						Debug_CRAM(&cram_viewer, &clownmdemu, emulation_state->colours, monospace_font);
+						Debug_CRAM(&cram_viewer, &clownmdemu, &debug_vdp_data, monospace_font);
 
 					if (psg_status)
 						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
@@ -1732,10 +1806,10 @@ int main(int argc, char **argv)
 
 				SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-				DeinitFramebuffer();
+				DeinitialiseFramebuffer();
 			}
 
-			DeinitVideo();
+			DeinitialiseVideo();
 		}
 
 		SDL_Quit();

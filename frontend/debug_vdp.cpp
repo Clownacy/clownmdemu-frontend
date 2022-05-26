@@ -8,7 +8,6 @@
 #include "../clownmdemu.h"
 
 #include "error.h"
-#include "video.h"
 
 typedef struct TileMetadata
 {
@@ -28,7 +27,7 @@ static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadat
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3], bool plane_b)
+static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, bool plane_b)
 {
 	if (ImGui::Begin(plane_b ? "Plane B Viewer" : "Plane A Viewer", open))
 	{
@@ -40,7 +39,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 c
 		if (plane_texture == NULL)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_texture = SDL_CreateTexture(data->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
 			if (plane_texture == NULL)
 			{
@@ -89,7 +88,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 c
 
 							const unsigned int palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
-							const Uint32 *palette_line = &colours[palette_index];
+							const Uint32 *palette_line = &data->colours[palette_index];
 
 							const unsigned short *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
 
@@ -136,7 +135,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 c
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, &tile_metadata);
 
-					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2((float)(tile_x * tile_width) / (float)plane_texture_width, (float)(tile_y * tile_height) / (float)plane_texture_height), ImVec2((float)((tile_x + 1) * tile_width) / (float)plane_texture_width, (float)((tile_y + 1) * tile_height) / (float)plane_texture_width));
+					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * data->dpi_scale), tile_height * SDL_roundf(9.0f * data->dpi_scale)), ImVec2((float)(tile_x * tile_width) / (float)plane_texture_width, (float)(tile_y * tile_height) / (float)plane_texture_height), ImVec2((float)((tile_x + 1) * tile_width) / (float)plane_texture_width, (float)((tile_y + 1) * tile_height) / (float)plane_texture_width));
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %u/0x%X" "\n" "Palette Line: %d" "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -151,20 +150,20 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Uint32 c
 	ImGui::End();
 }
 
-void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3])
+void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
-	Debug_Plane(open, clownmdemu, colours, false);
+	Debug_Plane(open, clownmdemu, data, false);
 }
 
-void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3])
+void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
-	Debug_Plane(open, clownmdemu, colours, true);
+	Debug_Plane(open, clownmdemu, data, true);
 }
 
-void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3])
+void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
 	// Don't let the window become too small, or we can get division by zero errors later on.
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data->dpi_scale, 100.0f * data->dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
 	if (ImGui::Begin("VRAM Viewer", open))
 	{
@@ -191,7 +190,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 			vram_texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, (int)vram_texture_width, (int)vram_texture_height);
+			vram_texture = SDL_CreateTexture(data->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, (int)vram_texture_width, (int)vram_texture_height);
 
 			if (vram_texture == NULL)
 			{
@@ -234,7 +233,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 			}
 
 			// Select the correct palette line.
-			const Uint32 *selected_palette = &colours[brightness_index + palette_line];
+			const Uint32 *selected_palette = &data->colours[brightness_index + palette_line];
 
 			// Set up some variables that we're going to need soon.
 			const size_t vram_texture_width_in_tiles = vram_texture_width / tile_width;
@@ -277,11 +276,11 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 			ImGui::BeginChild("VRAM contents");
 
 			// Variables relating to the sizing and spacing of the tiles in the viewer.
-			const float dst_tile_scale = SDL_roundf(3.0f * dpi_scale);
+			const float dst_tile_scale = SDL_roundf(3.0f * data->dpi_scale);
 			const ImVec2 dst_tile_size(
 				tile_width  * dst_tile_scale,
 				tile_height * dst_tile_scale);
-			const float spacing = SDL_roundf(5.0f * dpi_scale);
+			const float spacing = SDL_roundf(5.0f * data->dpi_scale);
 
 			// Calculate the size of the VRAM display region.
 			// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
@@ -355,7 +354,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 	ImGui::End();
 }
 
-void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[16 * 4 * 3], ImFont *monospace_font)
+void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, ImFont *monospace_font)
 {
 	if (ImGui::Begin("CRAM Viewer", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -408,7 +407,7 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 				ImGui::SameLine();
 			}
 
-			ImGui::ColorButton("", ImVec4((float)red_shaded / (float)0xF, (float)green_shaded / (float)0xF, (float)blue_shaded / (float)0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+			ImGui::ColorButton("", ImVec4((float)red_shaded / (float)0xF, (float)green_shaded / (float)0xF, (float)blue_shaded / (float)0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * data->dpi_scale, 20.0f * data->dpi_scale));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -432,4 +431,3 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Uint32 colours[1
 
 	ImGui::End();
 }
-
