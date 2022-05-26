@@ -1286,7 +1286,7 @@ int main(int argc, char **argv)
 										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 										{
 											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-											//SetAudioPALMode(false);
+											SetAudioPALMode(false);
 										}
 									}
 
@@ -1295,7 +1295,7 @@ int main(int argc, char **argv)
 										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 										{
 											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-											//SetAudioPALMode(true);
+											SetAudioPALMode(true);
 										}
 									}
 
