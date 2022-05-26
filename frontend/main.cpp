@@ -24,7 +24,6 @@
 #include "inconsolata_regular.h"
 #include "karla_regular.h"
 
-#include "audio.h"
 #include "error.h"
 #include "video.h"
 #include "debug_m68k.h"
@@ -214,7 +213,9 @@ void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int displa
 #define FM_CHANNEL_COUNT 2
 #define PSG_CHANNEL_COUNT 1
 
-static AudioDevice audio_device;
+static SDL_AudioDeviceID audio_device;
+static Uint32 audio_device_buffer_size;
+static unsigned int audio_device_sample_rate;
 
 static short fm_sample_buffer[FM_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL))];
 static size_t fm_sample_buffer_write_index;
@@ -228,9 +229,45 @@ static size_t psg_sample_buffer_read_index;
 static ClownResampler_HighLevel_State psg_resampler;
 static short psg_resampler_buffer[0x400 * PSG_CHANNEL_COUNT];
 
+static bool InitialiseAudio(void)
+{
+	SDL_AudioSpec want, have;
+
+	SDL_zero(want);
+	want.freq = 48000;
+	want.format = AUDIO_S16;
+	want.channels = FM_CHANNEL_COUNT;
+	// We want a 25ms buffer (this value must be a power of two).
+	want.samples = 1;
+	while (want.samples < (want.freq * want.channels) / (1000 / 25))
+		want.samples <<= 1;
+	want.callback = NULL;
+
+	audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+
+	if (audio_device == 0)
+	{
+		PrintError("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		audio_device_buffer_size = have.size;
+		audio_device_sample_rate = (unsigned int)have.freq;
+
+		return true;
+	}
+
+	return false;
+}
+
+static void DeinitialiseAudio(void)
+{
+	SDL_CloseAudioDevice(audio_device);
+}
+
 static void SetAudioPALMode(bool enabled)
 {
-	if (audio_device.identifier != 0)
+	if (audio_device != 0)
 	{
 		/* Reinitialise the resamplers to support the current region's sample rate. */
 
@@ -238,13 +275,13 @@ static void SetAudioPALMode(bool enabled)
 		const unsigned int pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
 		const unsigned int ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
 
-		ClownResampler_HighLevel_Init(&fm_resampler, FM_CHANNEL_COUNT, enabled ? pal_fm_sample_rate : ntsc_fm_sample_rate, audio_device.native_audio_sample_rate);
+		ClownResampler_HighLevel_Init(&fm_resampler, FM_CHANNEL_COUNT, enabled ? pal_fm_sample_rate : ntsc_fm_sample_rate, audio_device_sample_rate);
 
 		/* Divide and multiple by the sample to try to make the sample rate closer to the emulator's output. */
 		const unsigned int pal_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
 		const unsigned int ntsc_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
 
-		ClownResampler_HighLevel_Init(&psg_resampler, PSG_CHANNEL_COUNT, enabled ? pal_psg_sample_rate : ntsc_psg_sample_rate, audio_device.native_audio_sample_rate);
+		ClownResampler_HighLevel_Init(&psg_resampler, PSG_CHANNEL_COUNT, enabled ? pal_psg_sample_rate : ntsc_psg_sample_rate, audio_device_sample_rate);
 	}
 }
 
@@ -580,7 +617,7 @@ int main(int argc, char **argv)
 				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
 
 				// Intiialise audio if we can (but it's okay if it fails).
-				if (!CreateAudioDevice(&audio_device, 48000, 2))
+				if (!InitialiseAudio())
 				{
 					PrintError("FM CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
@@ -588,7 +625,7 @@ int main(int argc, char **argv)
 				else
 				{
 					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-					SDL_PauseAudioDevice(audio_device.identifier, 0);
+					SDL_PauseAudioDevice(audio_device, 0);
 				}
 
 				// Construct our big list of callbacks for clownmdemu.
@@ -1142,7 +1179,7 @@ int main(int argc, char **argv)
 
 					if (emulator_running)
 					{
-						if (audio_device.identifier != 0)
+						if (audio_device != 0)
 						{
 							/* Reset the audio buffers so that they can be mixed into. */
 							SDL_memset(fm_sample_buffer, 0, sizeof(fm_sample_buffer));
@@ -1163,10 +1200,10 @@ int main(int argc, char **argv)
 						// Unlock the texture so that we can draw it
 						SDL_UnlockTexture(framebuffer_texture);
 
-						if (audio_device.identifier != 0)
+						if (audio_device != 0)
 						{
 							/* Resample, mix, and output the audio for this frame. */
-							if (SDL_GetQueuedAudioSize(audio_device.identifier) < audio_device.audio_buffer_size * 2)
+							if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 2)
 							{
 								fm_sample_buffer_read_index = 0;
 								psg_sample_buffer_read_index = 0;
@@ -1188,7 +1225,7 @@ int main(int argc, char **argv)
 									}
 
 									/* Push the resampled, mixed audio to the device for playback. */
-									SDL_QueueAudio(audio_device.identifier, fm_resampler_buffer, (Uint32)(frames_to_output * sizeof(*fm_resampler_buffer) * FM_CHANNEL_COUNT));
+									SDL_QueueAudio(audio_device, fm_resampler_buffer, (Uint32)(frames_to_output * sizeof(*fm_resampler_buffer) * FM_CHANNEL_COUNT));
 
 									/* If the resampler has run out of data, then we're free to exit this loop. */
 									if (frames_to_output != CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT)
@@ -1663,8 +1700,8 @@ int main(int argc, char **argv)
 
 				SDL_free(rom_buffer);
 
-				if (audio_device.identifier != 0)
-					DestroyAudioDevice(&audio_device);
+				if (audio_device != 0)
+					DeinitialiseAudio();
 
 				ImGui_ImplSDLRenderer_Shutdown();
 				ImGui_ImplSDL2_Shutdown();
