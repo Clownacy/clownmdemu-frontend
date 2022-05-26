@@ -211,20 +211,67 @@ void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int displa
 // Audio //
 ///////////
 
-static AudioDevice fm_audio_device;
-static AudioDevice psg_audio_device;
-static ClownResampler_HighLevel_State resampler;
+#define FM_CHANNEL_COUNT 2
+#define PSG_CHANNEL_COUNT 1
+
+static AudioDevice audio_device;
+
+static short fm_sample_buffer[FM_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL))];
+static size_t fm_sample_buffer_write_index;
+static size_t fm_sample_buffer_read_index;
+static ClownResampler_HighLevel_State fm_resampler;
+static short fm_resampler_buffer[0x400 * FM_CHANNEL_COUNT];
+
+static short psg_sample_buffer[PSG_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL))];
+static size_t psg_sample_buffer_write_index;
+static size_t psg_sample_buffer_read_index;
+static ClownResampler_HighLevel_State psg_resampler;
+static short psg_resampler_buffer[0x400 * PSG_CHANNEL_COUNT];
+
 //static bool initialised_audio;
 
 static void SetAudioPALMode(bool enabled)
 {
 //	if (initialised_audio)
 	{
-		const unsigned int pal_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
-		const unsigned int ntsc_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
+		const unsigned int pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
+		const unsigned int ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
 
-		ClownResampler_HighLevel_Init(&resampler, 2, enabled ? pal_sample_rate : ntsc_sample_rate, fm_audio_device.native_audio_sample_rate);
+		ClownResampler_HighLevel_Init(&fm_resampler, FM_CHANNEL_COUNT, enabled ? pal_fm_sample_rate : ntsc_fm_sample_rate, audio_device.native_audio_sample_rate);
+
+		const unsigned int pal_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
+		const unsigned int ntsc_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
+
+		ClownResampler_HighLevel_Init(&psg_resampler, PSG_CHANNEL_COUNT, enabled ? pal_psg_sample_rate : ntsc_psg_sample_rate, audio_device.native_audio_sample_rate);
 	}
+}
+
+static size_t FMResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
+{
+	(void)user_data;
+
+	// TODO: Zero-copy version of this.
+	const size_t frames_to_do = CC_MIN(buffer_size, (fm_sample_buffer_write_index - fm_sample_buffer_read_index) / FM_CHANNEL_COUNT);
+
+	SDL_memcpy(buffer, &fm_sample_buffer[fm_sample_buffer_read_index], frames_to_do * sizeof(*fm_sample_buffer) * FM_CHANNEL_COUNT);
+
+	fm_sample_buffer_read_index += frames_to_do * FM_CHANNEL_COUNT;
+
+	return frames_to_do;
+}
+
+static size_t PSGResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
+{
+	(void)user_data;
+
+	// TODO: Zero-copy version of this.
+	const size_t frames_to_do = CC_MIN(buffer_size, (psg_sample_buffer_write_index - psg_sample_buffer_read_index) / PSG_CHANNEL_COUNT);
+
+	SDL_memcpy(buffer, &psg_sample_buffer[psg_sample_buffer_read_index], frames_to_do * sizeof(*psg_sample_buffer) * PSG_CHANNEL_COUNT);
+
+	psg_sample_buffer_read_index += frames_to_do * PSG_CHANNEL_COUNT;
+
+	return frames_to_do;
 }
 
 static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)
@@ -298,7 +345,7 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 
 	return value;
 }
-
+#if 0
 typedef struct ResamplerCallbackUserData
 {
 	void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames);
@@ -319,12 +366,21 @@ static size_t ResamplerCallback(void *user_data, short *buffer, size_t buffer_si
 
 	return frames_to_do;
 }
-
+#endif
 static void FMAudioCallback(void *user_data, size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
 {
+	(void)user_data;
+
+	generate_fm_audio(&clownmdemu, &fm_sample_buffer[fm_sample_buffer_write_index], total_frames);
+
+	fm_sample_buffer_write_index += total_frames * FM_CHANNEL_COUNT;
+
+
+
+#if 0
+
 	short audio_buffer[0x400];
 
-	(void)user_data;
 
 	// Resample the generated PSG audio, and push it to SDL2 for playback.
 	ResamplerCallbackUserData resampler_callback_user_data;
@@ -338,7 +394,6 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 		if (SDL_GetQueuedAudioSize(fm_audio_device.identifier) < fm_audio_device.audio_buffer_size * 2)
 			SDL_QueueAudio(fm_audio_device.identifier, audio_buffer, (Uint32)(total_resampled_frames * sizeof(*audio_buffer) * total_channels));
 
-#if 0
 	while (total_frames != 0)
 	{
 		const size_t frames_to_do = CC_MIN(total_frames, CC_COUNT_OF(audio_buffer) / 2);
@@ -355,6 +410,10 @@ static void FMAudioCallback(void *user_data, size_t total_frames, void (*generat
 
 static void PSGAudioCallback(void *user_data, size_t total_samples, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
 {
+	generate_psg_audio(&clownmdemu, &psg_sample_buffer[psg_sample_buffer_write_index], total_samples);
+
+	psg_sample_buffer_write_index += total_samples * PSG_CHANNEL_COUNT;
+#if 0
 	short audio_buffer[0x400];
 
 	(void)user_data;
@@ -370,6 +429,7 @@ static void PSGAudioCallback(void *user_data, size_t total_samples, void (*gener
 
 		total_samples -= samples_to_do;
 	}
+#endif
 	/*
 	if (!initialised_audio)
 	{
@@ -613,7 +673,7 @@ int main(int argc, char **argv)
 
 				// Intiialise audio if we can (but it's okay if it fails).
 				/// TODO - PAL, and bring the resampler back!
-				if (!CreateAudioDevice(&fm_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC)), 2, true))
+				if (!CreateAudioDevice(&audio_device, 48000, 2, true))
 				{
 					PrintError("FM CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise FM audio subsystem: the program will not output FM audio!", window);
@@ -621,17 +681,7 @@ int main(int argc, char **argv)
 				else
 				{
 					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-					SDL_PauseAudioDevice(fm_audio_device.identifier, 0);
-				}
-
-				if (!CreateAudioDevice(&psg_audio_device, CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC)), 1, false))
-				{
-					PrintError("PSG CreateAudioDevice failed");
-					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise PSG audio subsystem: the program will not output PSG audio!", window);
-				}
-				else
-				{
-					SDL_PauseAudioDevice(psg_audio_device.identifier, 0);
+					SDL_PauseAudioDevice(audio_device.identifier, 0);
 				}
 
 				/*
@@ -1198,6 +1248,11 @@ int main(int argc, char **argv)
 
 					if (emulator_running)
 					{
+						SDL_memset(fm_sample_buffer, 0, sizeof(fm_sample_buffer));
+						SDL_memset(psg_sample_buffer, 0, sizeof(psg_sample_buffer));
+						fm_sample_buffer_write_index = 0;
+						psg_sample_buffer_write_index = 0;
+
 						// Lock the texture so that we can write to its pixels later
 						if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
 							framebuffer_texture_pixels = NULL;
@@ -1209,6 +1264,32 @@ int main(int argc, char **argv)
 
 						// Unlock the texture so that we can draw it
 						SDL_UnlockTexture(framebuffer_texture);
+
+						/* Something something audio. */
+						if (SDL_GetQueuedAudioSize(audio_device.identifier) < audio_device.audio_buffer_size * 2)
+						{
+							fm_sample_buffer_read_index = 0;
+							psg_sample_buffer_read_index = 0;
+
+							for (;;)
+							{
+								const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&fm_resampler, fm_resampler_buffer, CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT, FMResamplerCallback, NULL);
+								const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&psg_resampler, psg_resampler_buffer, CC_COUNT_OF(psg_resampler_buffer) / PSG_CHANNEL_COUNT, PSGResamplerCallback, NULL);
+
+								const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
+
+								for (size_t i = 0; i < frames_to_output; ++i)
+								{
+									fm_resampler_buffer[i * 2 + 0] += psg_resampler_buffer[i];
+									fm_resampler_buffer[i * 2 + 1] += psg_resampler_buffer[i];
+								}
+
+								SDL_QueueAudio(audio_device.identifier, fm_resampler_buffer, (Uint32)(frames_to_output * sizeof(*fm_resampler_buffer) * FM_CHANNEL_COUNT));
+
+								if (frames_to_output != CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT)
+									break;
+							}
+						}
 					}
 
 					// Start the Dear ImGui frame
@@ -1676,11 +1757,11 @@ int main(int argc, char **argv)
 
 				SDL_free(rom_buffer);
 
-				if (fm_audio_device.identifier != 0)
-					DestroyAudioDevice(&fm_audio_device);
+				if (audio_device.identifier != 0)
+					DestroyAudioDevice(&audio_device);
 
-				if (psg_audio_device.identifier != 0)
-					DestroyAudioDevice(&psg_audio_device);
+				//if (psg_audio_device.identifier != 0)
+					//DestroyAudioDevice(&psg_audio_device);
 
 				ImGui_ImplSDLRenderer_Shutdown();
 				ImGui_ImplSDL2_Shutdown();
