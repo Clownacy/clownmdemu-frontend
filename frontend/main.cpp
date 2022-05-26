@@ -254,6 +254,9 @@ static bool InitialiseAudio(void)
 		audio_device_buffer_size = have.size;
 		audio_device_sample_rate = (unsigned int)have.freq;
 
+		// Unpause audio device, so that playback can begin.
+		SDL_PauseAudioDevice(audio_device, 0);
+
 		return true;
 	}
 
@@ -262,22 +265,23 @@ static bool InitialiseAudio(void)
 
 static void DeinitialiseAudio(void)
 {
-	SDL_CloseAudioDevice(audio_device);
+	if (audio_device != 0)
+		SDL_CloseAudioDevice(audio_device);
 }
 
 static void SetAudioPALMode(bool enabled)
 {
 	if (audio_device != 0)
 	{
-		/* Reinitialise the resamplers to support the current region's sample rate. */
+		// Reinitialise the resamplers to support the current region's sample rate.
 
-		/* Divide and multiple by the sample to try to make the sample rate closer to the emulator's output. */
+		// Divide and multiple by the sample to try to make the sample rate closer to the emulator's output.
 		const unsigned int pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
 		const unsigned int ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
 
 		ClownResampler_HighLevel_Init(&fm_resampler, FM_CHANNEL_COUNT, enabled ? pal_fm_sample_rate : ntsc_fm_sample_rate, audio_device_sample_rate);
 
-		/* Divide and multiple by the sample to try to make the sample rate closer to the emulator's output. */
+		// Divide and multiple by the sample to try to make the sample rate closer to the emulator's output.
 		const unsigned int pal_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
 		const unsigned int ntsc_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
 
@@ -312,6 +316,86 @@ static size_t PSGResamplerCallback(void *user_data, short *buffer, size_t buffer
 
 	return frames_to_do;
 }
+
+static void ClearAudioBuffers(void)
+{
+	if (audio_device != 0)
+	{
+		SDL_memset(fm_sample_buffer, 0, sizeof(fm_sample_buffer));
+		SDL_memset(psg_sample_buffer, 0, sizeof(psg_sample_buffer));
+		fm_sample_buffer_write_index = 0;
+		psg_sample_buffer_write_index = 0;
+	}
+}
+
+static void OutputAudioBuffers(void)
+{
+	if (audio_device != 0)
+	{
+		// If there's a lot of audio queued, then don't queue any more.
+		if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 2)
+		{
+			fm_sample_buffer_read_index = 0;
+			psg_sample_buffer_read_index = 0;
+
+			for (;;)
+			{
+				// Resample the FM and PSG outputs into their respective buffers.
+				const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&fm_resampler, fm_resampler_buffer, CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT, FMResamplerCallback, NULL);
+				const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&psg_resampler, psg_resampler_buffer, CC_COUNT_OF(psg_resampler_buffer) / PSG_CHANNEL_COUNT, PSGResamplerCallback, NULL);
+
+				const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
+
+				// Mix the resampled PSG output into the resampled FM output.
+				// There is no need for clamping because the samples are output low enough to never exceed the 16-bit limit.
+				for (size_t i = 0; i < frames_to_output; ++i)
+				{
+					fm_resampler_buffer[i * 2 + 0] += psg_resampler_buffer[i];
+					fm_resampler_buffer[i * 2 + 1] += psg_resampler_buffer[i];
+				}
+
+				// Push the resampled, mixed audio to the device for playback.
+				SDL_QueueAudio(audio_device, fm_resampler_buffer, (Uint32)(frames_to_output * sizeof(*fm_resampler_buffer) * FM_CHANNEL_COUNT));
+
+				// If the resampler has run out of data, then we're free to exit this loop.
+				if (frames_to_output != CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT)
+					break;
+			}
+		}
+	}
+}
+
+
+///////////
+// Fonts //
+///////////
+
+static ImFont *monospace_font;
+
+static unsigned int CalculateFontSize(void)
+{
+	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
+	return (unsigned int)(15.0f * dpi_scale);
+}
+
+static void ReloadFonts(unsigned int font_size)
+{
+	ImGuiIO &io = ImGui::GetIO();
+
+	io.Fonts->Clear();
+	ImGui_ImplSDLRenderer_DestroyFontsTexture();
+
+	ImFontConfig font_cfg = ImFontConfig();
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %upx", font_size);
+	io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, (float)font_size, &font_cfg);
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
+	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, (float)font_size, &font_cfg);
+}
+
+
+////////////////////////////
+// Emulator Functionality //
+////////////////////////////
 
 static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)
 {
@@ -503,33 +587,6 @@ static const char* SaveFileDialog(char const *aTitle, char const *aDefaultPathAn
 	return path;
 }
 
-
-///////////
-// Fonts //
-///////////
-
-static ImFont *monospace_font;
-
-static unsigned int CalculateFontSize(void)
-{
-	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
-	return (unsigned int)(15.0f * dpi_scale);
-}
-
-static void ReloadFonts(unsigned int font_size)
-{
-	ImGuiIO &io = ImGui::GetIO();
-
-	io.Fonts->Clear();
-	ImGui_ImplSDLRenderer_DestroyFontsTexture();
-
-	ImFontConfig font_cfg = ImFontConfig();
-	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %upx", font_size);
-	io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, (float)font_size, &font_cfg);
-	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
-	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, (float)font_size, &font_cfg);
-}
-
 int main(int argc, char **argv)
 {
 	InitError();
@@ -624,8 +681,8 @@ int main(int argc, char **argv)
 				}
 				else
 				{
+					// Initialise resamplers.
 					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-					SDL_PauseAudioDevice(audio_device, 0);
 				}
 
 				// Construct our big list of callbacks for clownmdemu.
@@ -1179,14 +1236,8 @@ int main(int argc, char **argv)
 
 					if (emulator_running)
 					{
-						if (audio_device != 0)
-						{
-							/* Reset the audio buffers so that they can be mixed into. */
-							SDL_memset(fm_sample_buffer, 0, sizeof(fm_sample_buffer));
-							SDL_memset(psg_sample_buffer, 0, sizeof(psg_sample_buffer));
-							fm_sample_buffer_write_index = 0;
-							psg_sample_buffer_write_index = 0;
-						}
+						// Reset the audio buffers so that they can be mixed into.
+						ClearAudioBuffers();
 
 						// Lock the texture so that we can write to its pixels later
 						if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
@@ -1200,39 +1251,8 @@ int main(int argc, char **argv)
 						// Unlock the texture so that we can draw it
 						SDL_UnlockTexture(framebuffer_texture);
 
-						if (audio_device != 0)
-						{
-							/* Resample, mix, and output the audio for this frame. */
-							if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 2)
-							{
-								fm_sample_buffer_read_index = 0;
-								psg_sample_buffer_read_index = 0;
-
-								for (;;)
-								{
-									/* Resample the FM and PSG outputs into their respective buffers. */
-									const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&fm_resampler, fm_resampler_buffer, CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT, FMResamplerCallback, NULL);
-									const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&psg_resampler, psg_resampler_buffer, CC_COUNT_OF(psg_resampler_buffer) / PSG_CHANNEL_COUNT, PSGResamplerCallback, NULL);
-
-									const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
-
-									/* Mix the resampled PSG output into the resampled FM output. */
-									/* There is no need for clamping because the samples are output low enough to never exceed the 16-bit limit. */
-									for (size_t i = 0; i < frames_to_output; ++i)
-									{
-										fm_resampler_buffer[i * 2 + 0] += psg_resampler_buffer[i];
-										fm_resampler_buffer[i * 2 + 1] += psg_resampler_buffer[i];
-									}
-
-									/* Push the resampled, mixed audio to the device for playback. */
-									SDL_QueueAudio(audio_device, fm_resampler_buffer, (Uint32)(frames_to_output * sizeof(*fm_resampler_buffer) * FM_CHANNEL_COUNT));
-
-									/* If the resampler has run out of data, then we're free to exit this loop. */
-									if (frames_to_output != CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT)
-										break;
-								}
-							}
-						}
+						// Resample, mix, and output the audio for this frame.
+						OutputAudioBuffers();
 					}
 
 					// Start the Dear ImGui frame
@@ -1568,7 +1588,7 @@ int main(int argc, char **argv)
 							{
 								default:
 									assert(false);
-									/* Fallthrough */
+									// Fallthrough
 								case 224:
 									destination_width = 320;
 									destination_height = 224;
@@ -1700,8 +1720,7 @@ int main(int argc, char **argv)
 
 				SDL_free(rom_buffer);
 
-				if (audio_device != 0)
-					DeinitialiseAudio();
+				DeinitialiseAudio();
 
 				ImGui_ImplSDLRenderer_Shutdown();
 				ImGui_ImplSDL2_Shutdown();
