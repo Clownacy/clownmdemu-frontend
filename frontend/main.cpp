@@ -580,7 +580,7 @@ int main(int argc, char **argv)
 				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
 
 				// Intiialise audio if we can (but it's okay if it fails).
-				if (!CreateAudioDevice(&audio_device, 48000, 2, true))
+				if (!CreateAudioDevice(&audio_device, 48000, 2))
 				{
 					PrintError("FM CreateAudioDevice failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);

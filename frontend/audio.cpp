@@ -6,23 +6,21 @@
 
 #include "error.h"
 
-bool CreateAudioDevice(AudioDevice *audio_device, unsigned long sample_rate, unsigned int channels, bool allow_frequency_change)
+bool CreateAudioDevice(AudioDevice *audio_device, unsigned long preferred_sample_rate, unsigned int channels)
 {
-	// Initialise audio backend.
 	SDL_AudioSpec want, have;
 
 	SDL_zero(want);
-	want.freq = sample_rate;
+	want.freq = preferred_sample_rate;
 	want.format = AUDIO_S16;
 	want.channels = channels;
-	// We want a 10ms buffer (this value must be a power of two).
-	// The 10ms buffer is necessary for getting the FM and PSG audio stream synchronised.
+	// We want a 25ms buffer (this value must be a power of two).
 	want.samples = 1;
-	while (want.samples < (want.freq * want.channels) / (1000 / 10))
+	while (want.samples < (want.freq * want.channels) / (1000 / 25))
 		want.samples <<= 1;
 	want.callback = NULL;
 
-	audio_device->identifier = SDL_OpenAudioDevice(NULL, 0, &want, &have, allow_frequency_change ? SDL_AUDIO_ALLOW_FREQUENCY_CHANGE : 0);
+	audio_device->identifier = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 
 	if (audio_device->identifier == 0)
 	{
