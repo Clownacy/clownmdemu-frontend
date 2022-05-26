@@ -1308,7 +1308,11 @@ int main(int argc, char **argv)
 									const char *rom_path = OpenFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
 
 									if (rom_path != NULL)
+									{
 										OpenSoftware(rom_path, &callbacks);
+
+										emulator_paused = false;
+									}
 								}
 
 								if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
