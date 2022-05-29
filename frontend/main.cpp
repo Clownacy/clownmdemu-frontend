@@ -309,9 +309,9 @@ static bool InitialiseAudio(void)
 	want.freq = 48000;
 	want.format = AUDIO_S16;
 	want.channels = FM_CHANNEL_COUNT;
-	// We want a 25ms buffer (this value must be a power of two).
+	// We want a 10ms buffer (this value must be a power of two).
 	want.samples = 1;
-	while (want.samples < (want.freq * want.channels) / (1000 / 25))
+	while (want.samples < (want.freq * want.channels) / (1000 / 10))
 		want.samples <<= 1;
 	want.callback = NULL;
 
