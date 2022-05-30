@@ -106,8 +106,8 @@ Hotkeys:
 
 # Compiling
 
-clownmdemu can be built using CMake, however it should not be hard to create
-your own build system if necessary, as the emulator's build process is not
+clownmdemu can be built using CMake, however it should not be hard to make it
+use whatever build system if necessary, as the emulator's build process is not
 complicated.
 
 
