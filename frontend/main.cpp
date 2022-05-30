@@ -288,6 +288,7 @@ static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int
 static SDL_AudioDeviceID audio_device;
 static Uint32 audio_device_buffer_size;
 static unsigned int audio_device_sample_rate;
+static ClownResampler_Precomputed resampler_precomputed;
 
 static short fm_sample_buffer[FM_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL))];
 static size_t fm_sample_buffer_write_index;
@@ -328,6 +329,9 @@ static bool InitialiseAudio(void)
 
 		// Unpause audio device, so that playback can begin.
 		SDL_PauseAudioDevice(audio_device, 0);
+
+		// Compute clownresampler's lookup tables.
+		ClownResampler_Precompute(&resampler_precomputed);
 
 		return true;
 	}
@@ -413,8 +417,8 @@ static void OutputAudioBuffers(void)
 			for (;;)
 			{
 				// Resample the FM and PSG outputs into their respective buffers.
-				const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&fm_resampler, fm_resampler_buffer, CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT, FMResamplerCallback, NULL);
-				const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&psg_resampler, psg_resampler_buffer, CC_COUNT_OF(psg_resampler_buffer) / PSG_CHANNEL_COUNT, PSGResamplerCallback, NULL);
+				const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&fm_resampler, &resampler_precomputed, fm_resampler_buffer, CC_COUNT_OF(fm_resampler_buffer) / FM_CHANNEL_COUNT, FMResamplerCallback, NULL);
+				const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&psg_resampler, &resampler_precomputed, psg_resampler_buffer, CC_COUNT_OF(psg_resampler_buffer) / PSG_CHANNEL_COUNT, PSGResamplerCallback, NULL);
 
 				const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
 
