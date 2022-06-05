@@ -1,11 +1,10 @@
-#include "debug_m68k.h"
+#include "debug_memory.h"
 
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"
 #include "../clowncommon.h"
-#include "../clownmdemu.h"
 
-void Debug_M68k_RAM(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
+void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const unsigned char *buffer, size_t buffer_length)
 {
 	ImGui::PushFont(monospace_font);
 
@@ -16,18 +15,18 @@ void Debug_M68k_RAM(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 	ImGui::PopFont();
 
-	if (ImGui::Begin("68000 RAM Viewer", open))
+	if (ImGui::Begin(window_name, open))
 	{
 		ImGui::PushFont(monospace_font);
 
 		ImGuiListClipper clipper;
-		clipper.Begin(CC_COUNT_OF(clownmdemu->state->m68k_ram) / 0x10);
+		clipper.Begin(buffer_length / 0x10);
 		while (clipper.Step())
 		{
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
 			{
 				const size_t offset = i * 0x10;
-				const unsigned char* const bytes = &clownmdemu->state->m68k_ram[offset];
+				const unsigned char* const bytes = &buffer[offset];
 
 				ImGui::Text("%04zX: %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X", offset,
 					bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3], bytes[0x4], bytes[0x5], bytes[0x6], bytes[0x7],

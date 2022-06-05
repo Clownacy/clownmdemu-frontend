@@ -25,7 +25,7 @@
 #include "karla_regular.h"
 
 #include "error.h"
-#include "debug_m68k.h"
+#include "debug_memory.h"
 #include "debug_psg.h"
 #include "debug_vdp.h"
 
@@ -783,6 +783,7 @@ int main(int argc, char **argv)
 				bool tall_double_resolution_mode = false;
 
 				bool m68k_ram_viewer = false;
+				bool z80_ram_viewer = false;
 				bool plane_a_viewer = false;
 				bool plane_b_viewer = false;
 				bool vram_viewer = false;
@@ -1575,6 +1576,8 @@ int main(int argc, char **argv)
 							{
 								ImGui::MenuItem("68000 RAM Viewer", NULL, &m68k_ram_viewer);
 
+								ImGui::MenuItem("Z80 RAM Viewer", NULL, &z80_ram_viewer);
+
 								if (ImGui::BeginMenu("VDP"))
 								{
 									ImGui::MenuItem("Plane A Viewer", NULL, &plane_a_viewer);
@@ -1771,7 +1774,10 @@ int main(int argc, char **argv)
 					ImGui::End();
 
 					if (m68k_ram_viewer)
-						Debug_M68k_RAM(&m68k_ram_viewer, &clownmdemu, monospace_font);
+						Debug_Memory(&m68k_ram_viewer, monospace_font, "68000 RAM Viewer", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
+
+					if (z80_ram_viewer)
+						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM Viewer", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
 
 					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, dpi_scale};
 
