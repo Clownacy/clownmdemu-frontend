@@ -34,8 +34,8 @@ void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			// Tone channels.
 			for (unsigned int i = 0; i < CC_COUNT_OF(clownmdemu->state->psg.tones); ++i)
 			{
-				char string_buffer[7 + 1];
-				SDL_snprintf(string_buffer, sizeof(string_buffer), "Tone #%d", i + 1);
+				char string_buffer[sizeof("Tone 0")];
+				SDL_snprintf(string_buffer, sizeof(string_buffer), "Tone %u", i + 1);
 				if (ImGui::TreeNodeEx(string_buffer, ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					ImGui::PushFont(monospace_font);
