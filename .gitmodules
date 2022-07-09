@@ -10,4 +10,4 @@
 [submodule "frontend/libraries/imgui"]
 	path = frontend/libraries/imgui
 	url = https://github.com/Clownacy/imgui/
-	branch = clownmdemufrontend
+	branch = font-nonlinear
