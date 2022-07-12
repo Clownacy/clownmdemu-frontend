@@ -39,11 +39,11 @@ and portability:
 
   - Do not depend on integer type sizes. 'char', 'short', 'int', and 'long' may
     be different sizes on different platforms, so do not rely on their ability
-    to hold (or not hold) values larger than their standard capcities:
+    to hold (or not hold) values larger than their standard capacities:
     - -127 to 127 for 'signed char'.
     - 0 to 255 for 'unsigned char'.
     - -32767 to 32767 for 'short' and 'int'.
-    - 0 to 65535  for 'unsigned short' and 'unsigned int'.
+    - 0 to 65535 for 'unsigned short' and 'unsigned int'.
     - -2147483647 to 2147483647 for 'long'.
     - 0 to 4294967295 for 'unsigned long'.
 
@@ -122,7 +122,7 @@ Hotkeys:
 # Compiling
 
 clownmdemu can be built using CMake, however it should not be hard to make it
-use a different build system if necessary, as the emulator's build process is
+use a different build system if necessary as the emulator's build process is
 not complicated.
 
 
