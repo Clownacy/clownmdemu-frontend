@@ -125,6 +125,9 @@ clownmdemu can be built using CMake, however it should not be hard to make it
 use a different build system if necessary as the emulator's build process is
 not complicated.
 
+Be aware that this repo uses Git submodules: use `git submodule update --init`
+to pull in these submodules before compiling the frontend.
+
 
 # Licence
 
