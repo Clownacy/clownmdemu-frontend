@@ -43,15 +43,8 @@ void Mixer_Constant_Initialise(Mixer_Constant *constant)
 	ClownResampler_Precompute(&constant->resampler_precomputed);
 }
 
-void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate)
+void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bool pal_mode)
 {
-	state->output_sample_rate = sample_rate;
-}
-
-void Mixer_SetPALMode(const Mixer *mixer, cc_bool enabled)
-{
-	/* Reinitialise the resamplers to support the current region's sample rate. */
-
 	/* Divide and multiple by the sample to try to make the sample rate closer to the emulator's output. */
 	const unsigned int pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
 	const unsigned int ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
@@ -59,8 +52,8 @@ void Mixer_SetPALMode(const Mixer *mixer, cc_bool enabled)
 	const unsigned int pal_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
 	const unsigned int ntsc_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
 
-	ClownResampler_HighLevel_Init(&mixer->state->fm_resampler, MIXER_FM_CHANNEL_COUNT, enabled ? pal_fm_sample_rate : ntsc_fm_sample_rate, mixer->state->output_sample_rate);
-	ClownResampler_HighLevel_Init(&mixer->state->psg_resampler, MIXER_PSG_CHANNEL_COUNT, enabled ? pal_psg_sample_rate : ntsc_psg_sample_rate, mixer->state->output_sample_rate);
+	ClownResampler_HighLevel_Init(&state->fm_resampler, MIXER_FM_CHANNEL_COUNT, pal_mode ? pal_fm_sample_rate : ntsc_fm_sample_rate, sample_rate);
+	ClownResampler_HighLevel_Init(&state->psg_resampler, MIXER_PSG_CHANNEL_COUNT, pal_mode ? pal_psg_sample_rate : ntsc_psg_sample_rate, sample_rate);
 }
 
 void Mixer_Begin(const Mixer *mixer)

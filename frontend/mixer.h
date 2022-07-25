@@ -24,8 +24,6 @@ typedef struct Mixer_Constant
 
 typedef struct Mixer_State
 {
-	unsigned int output_sample_rate;
-
 	short fm_sample_buffer[MIXER_FM_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL))];
 	size_t fm_sample_buffer_write_index;
 	size_t fm_sample_buffer_read_index;
@@ -46,8 +44,7 @@ typedef struct Mixer
 } Mixer;
 
 void Mixer_Constant_Initialise(Mixer_Constant *constant);
-void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate);
-void Mixer_SetPALMode(const Mixer *mixer, cc_bool enabled);
+void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bool pal_mode);
 void Mixer_Begin(const Mixer *mixer);
 short* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames);
 short* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames);

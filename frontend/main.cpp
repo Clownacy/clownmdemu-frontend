@@ -277,6 +277,7 @@ static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int
 
 static SDL_AudioDeviceID audio_device;
 static Uint32 audio_device_buffer_size;
+static unsigned long audio_device_sample_rate;
 static Mixer_Constant mixer_constant;
 static Mixer_State mixer_state;
 static const Mixer mixer = {&mixer_constant, &mixer_state};
@@ -304,10 +305,11 @@ static bool InitialiseAudio(void)
 	else
 	{
 		audio_device_buffer_size = have.size;
+		audio_device_sample_rate = (unsigned long)have.freq;
 
 		// Initialise the mixer.
 		Mixer_Constant_Initialise(&mixer_constant);
-		Mixer_State_Initialise(&mixer_state, have.freq);
+		Mixer_State_Initialise(&mixer_state, have.freq, cc_false);
 
 		// Unpause audio device, so that playback can begin.
 		SDL_PauseAudioDevice(audio_device, 0);
@@ -327,7 +329,7 @@ static void DeinitialiseAudio(void)
 static void SetAudioPALMode(bool enabled)
 {
 	if (audio_device != 0)
-		Mixer_SetPALMode(&mixer, enabled);
+		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, enabled);
 }
 
 static void AudioPushCallback(const void *user_data, short *audio_samples, size_t total_frames)
