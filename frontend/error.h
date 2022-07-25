@@ -3,8 +3,10 @@
 
 #include <stdarg.h>
 
+#include "../clowncommon.h"
+
 void InitError(void);
 void PrintErrorInternal(const char *format, va_list args);
-void PrintError(const char *format, ...);
+CC_ATTRIBUTE_PRINTF(1, 2) void PrintError(const char *format, ...);
 
 #endif /* ERROR_H */
