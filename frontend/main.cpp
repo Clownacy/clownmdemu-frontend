@@ -279,7 +279,7 @@ static SDL_AudioDeviceID audio_device;
 static Uint32 audio_device_buffer_size;
 static Mixer_Constant mixer_constant;
 static Mixer_State mixer_state;
-static Mixer mixer = {&mixer_constant, &mixer_state};
+static const Mixer mixer = {&mixer_constant, &mixer_state};
 
 static bool InitialiseAudio(void)
 {
@@ -330,7 +330,7 @@ static void SetAudioPALMode(bool enabled)
 		Mixer_SetPALMode(&mixer, enabled);
 }
 
-static void AudioPushCallback(void *user_data, short *audio_samples, size_t total_frames)
+static void AudioPushCallback(const void *user_data, short *audio_samples, size_t total_frames)
 {
 	(void)user_data;
 
@@ -369,7 +369,7 @@ static void ReloadFonts(unsigned int font_size)
 // Emulator Functionality //
 ////////////////////////////
 
-static unsigned int CartridgeReadCallback(void *user_data, unsigned long address)
+static unsigned int CartridgeReadCallback(const void *user_data, unsigned long address)
 {
 	(void)user_data;
 
@@ -379,7 +379,7 @@ static unsigned int CartridgeReadCallback(void *user_data, unsigned long address
 	return rom_buffer[address];
 }
 
-static void CartridgeWrittenCallback(void *user_data, unsigned long address, unsigned int value)
+static void CartridgeWrittenCallback(const void *user_data, unsigned long address, unsigned int value)
 {
 	(void)user_data;
 
@@ -395,7 +395,7 @@ static void CartridgeWrittenCallback(void *user_data, unsigned long address, uns
 	*/
 }
 
-static void ColourUpdatedCallback(void *user_data, unsigned int index, unsigned int colour)
+static void ColourUpdatedCallback(const void *user_data, unsigned int index, unsigned int colour)
 {
 	(void)user_data;
 
@@ -408,7 +408,7 @@ static void ColourUpdatedCallback(void *user_data, unsigned int index, unsigned 
 	emulation_state->colours[index] = (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5);
 }
 
-static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
+static void ScanlineRenderedCallback(const void *user_data, unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
 {
 
 	(void)user_data;
@@ -421,7 +421,7 @@ static void ScanlineRenderedCallback(void *user_data, unsigned int scanline, con
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
-static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownMDEmu_Button button_id)
+static cc_bool ReadInputCallback(const void *user_data, unsigned int player_id, ClownMDEmu_Button button_id)
 {
 	(void)user_data;
 
@@ -441,14 +441,14 @@ static cc_bool ReadInputCallback(void *user_data, unsigned int player_id, ClownM
 	return value;
 }
 
-static void FMAudioCallback(void *user_data, size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
+static void FMAudioCallback(const void *user_data, size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
 {
 	(void)user_data;
 
 	generate_fm_audio(&clownmdemu, Mixer_AllocateFMSamples(&mixer, total_frames), total_frames);
 }
 
-static void PSGAudioCallback(void *user_data, size_t total_samples, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
+static void PSGAudioCallback(const void *user_data, size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
 {
 	(void)user_data;
 

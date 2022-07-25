@@ -47,11 +47,11 @@ typedef struct Mixer
 
 void Mixer_Constant_Initialise(Mixer_Constant *constant);
 void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate);
-void Mixer_SetPALMode(Mixer *mixer, cc_bool enabled);
-void Mixer_Begin(Mixer *mixer);
-short* Mixer_AllocateFMSamples(Mixer *mixer, size_t total_frames);
-short* Mixer_AllocatePSGSamples(Mixer *mixer, size_t total_frames);
-void Mixer_End(Mixer *mixer, void (*callback)(void *user_data, short *audio_samples, size_t total_frames), void *user_data);
+void Mixer_SetPALMode(const Mixer *mixer, cc_bool enabled);
+void Mixer_Begin(const Mixer *mixer);
+short* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames);
+short* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames);
+void Mixer_End(const Mixer *mixer, void (*callback)(const void *user_data, short *audio_samples, size_t total_frames), const void *user_data);
 
 #ifdef __cplusplus
 }

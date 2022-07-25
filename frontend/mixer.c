@@ -9,7 +9,7 @@
 #define CLOWNRESAMPLER_STATIC
 #include "libraries/clownresampler/clownresampler.h"
 
-static size_t FMResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
+static size_t FMResamplerCallback(const void *user_data, short *buffer, size_t buffer_size)
 {
 	Mixer* const mixer = (Mixer*)user_data;
 
@@ -23,7 +23,7 @@ static size_t FMResamplerCallback(void *user_data, short *buffer, size_t buffer_
 	return frames_to_do;
 }
 
-static size_t PSGResamplerCallback(void *user_data, short *buffer, size_t buffer_size)
+static size_t PSGResamplerCallback(const void *user_data, short *buffer, size_t buffer_size)
 {
 	Mixer* const mixer = (Mixer*)user_data;
 
@@ -48,7 +48,7 @@ void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate)
 	state->output_sample_rate = sample_rate;
 }
 
-void Mixer_SetPALMode(Mixer *mixer, cc_bool enabled)
+void Mixer_SetPALMode(const Mixer *mixer, cc_bool enabled)
 {
 	/* Reinitialise the resamplers to support the current region's sample rate. */
 
@@ -63,7 +63,7 @@ void Mixer_SetPALMode(Mixer *mixer, cc_bool enabled)
 	ClownResampler_HighLevel_Init(&mixer->state->psg_resampler, MIXER_PSG_CHANNEL_COUNT, enabled ? pal_psg_sample_rate : ntsc_psg_sample_rate, mixer->state->output_sample_rate);
 }
 
-void Mixer_Begin(Mixer *mixer)
+void Mixer_Begin(const Mixer *mixer)
 {
 	/* Reset the audio buffers so that they can be mixed into. */
 	memset(mixer->state->fm_sample_buffer, 0, sizeof(mixer->state->fm_sample_buffer));
@@ -72,7 +72,7 @@ void Mixer_Begin(Mixer *mixer)
 	mixer->state->psg_sample_buffer_write_index = 0;
 }
 
-short* Mixer_AllocateFMSamples(Mixer *mixer, size_t total_frames)
+short* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames)
 {
 	short* const allocated_samples = &mixer->state->fm_sample_buffer[mixer->state->fm_sample_buffer_write_index];
 
@@ -81,7 +81,7 @@ short* Mixer_AllocateFMSamples(Mixer *mixer, size_t total_frames)
 	return allocated_samples;
 }
 
-short* Mixer_AllocatePSGSamples(Mixer *mixer, size_t total_frames)
+short* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames)
 {
 	short* const allocated_samples = &mixer->state->psg_sample_buffer[mixer->state->psg_sample_buffer_write_index];
 
@@ -90,7 +90,7 @@ short* Mixer_AllocatePSGSamples(Mixer *mixer, size_t total_frames)
 	return allocated_samples;
 }
 
-void Mixer_End(Mixer *mixer, void (*callback)(void *user_data, short *audio_samples, size_t total_frames), void *user_data)
+void Mixer_End(const Mixer *mixer, void (*callback)(const void *user_data, short *audio_samples, size_t total_frames), const void *user_data)
 {
 	/* Resample, mix, and output the audio for this frame. */
 	mixer->state->fm_sample_buffer_read_index = 0;
