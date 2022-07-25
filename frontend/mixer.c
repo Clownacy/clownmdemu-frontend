@@ -104,9 +104,11 @@ void Mixer_End(const Mixer *mixer, void (*callback)(const void *user_data, short
 
 		const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
 
+		size_t i;
+
 		/* Mix the resampled PSG output into the resampled FM output. */
 		/* There is no need for clamping because the samples are output low enough to never exceed the 16-bit limit. */
-		for (size_t i = 0; i < frames_to_output; ++i)
+		for (i = 0; i < frames_to_output; ++i)
 		{
 			mixer->state->fm_resampler_buffer[i * 2 + 0] += mixer->state->psg_resampler_buffer[i];
 			mixer->state->fm_resampler_buffer[i * 2 + 1] += mixer->state->psg_resampler_buffer[i];
