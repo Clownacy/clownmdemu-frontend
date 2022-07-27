@@ -45,7 +45,7 @@ void Mixer_Constant_Initialise(Mixer_Constant *constant)
 
 void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bool pal_mode)
 {
-	/* Divide and multiple by the sample to try to make the sample rate closer to the emulator's output. */
+	/* Divide and multiply by the frame rate to try to make the sample rate closer to the emulator's output. */
 	const unsigned int pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
 	const unsigned int ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
 
