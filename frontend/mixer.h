@@ -44,7 +44,7 @@ typedef struct Mixer
 } Mixer;
 
 void Mixer_Constant_Initialise(Mixer_Constant *constant);
-void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bool pal_mode);
+void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bool pal_mode, cc_bool low_pass_filter);
 void Mixer_Begin(const Mixer *mixer);
 short* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames);
 short* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames);

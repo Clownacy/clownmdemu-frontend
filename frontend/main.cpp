@@ -278,6 +278,9 @@ static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int
 static SDL_AudioDeviceID audio_device;
 static Uint32 audio_device_buffer_size;
 static unsigned long audio_device_sample_rate;
+static cc_bool pal_mode;
+static cc_bool low_pass_filter = cc_true;
+
 static Mixer_Constant mixer_constant;
 static Mixer_State mixer_state;
 static const Mixer mixer = {&mixer_constant, &mixer_state};
@@ -309,7 +312,7 @@ static bool InitialiseAudio(void)
 
 		// Initialise the mixer.
 		Mixer_Constant_Initialise(&mixer_constant);
-		Mixer_State_Initialise(&mixer_state, have.freq, cc_false);
+		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 
 		// Unpause audio device, so that playback can begin.
 		SDL_PauseAudioDevice(audio_device, 0);
@@ -328,8 +331,10 @@ static void DeinitialiseAudio(void)
 
 static void SetAudioPALMode(bool enabled)
 {
+	pal_mode = enabled;
+
 	if (audio_device != 0)
-		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, enabled);
+		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 }
 
 static void AudioPushCallback(const void *user_data, short *audio_samples, size_t total_frames)
@@ -1551,6 +1556,9 @@ int main(int argc, char **argv)
 								}
 
 								ImGui::MenuItem("Tall Double Resolution Mode", NULL, &tall_double_resolution_mode);
+
+								if (ImGui::MenuItem("Low-Pass Filter", NULL, &low_pass_filter))
+									Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
 
