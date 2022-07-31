@@ -1337,7 +1337,7 @@ int main(int argc, char **argv)
 								{
 									ImGui::MenuItem("TV Standard", NULL, false, false);
 
-									if (ImGui::MenuItem("NTSC (60Hz)", NULL, clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+									if (ImGui::MenuItem("NTSC (59.94Hz)", NULL, clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 									{
 										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 										{
