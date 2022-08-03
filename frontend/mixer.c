@@ -9,32 +9,64 @@
 #define CLOWNRESAMPLER_STATIC
 #include "libraries/clownresampler/clownresampler.h"
 
-static size_t FMResamplerCallback(const void *user_data, short *buffer, size_t buffer_size)
+static size_t FMResamplerInputCallback(const void *user_data, short *buffer, size_t buffer_size)
 {
 	Mixer* const mixer = (Mixer*)user_data;
 
-	/* TODO: Zero-copy version of this. */
-	const size_t frames_to_do = CC_MIN(buffer_size, (mixer->state->fm_sample_buffer_write_index - mixer->state->fm_sample_buffer_read_index) / MIXER_FM_CHANNEL_COUNT);
+	const size_t frames_to_do = CC_MIN(buffer_size, (mixer->state->fm_input_buffer_write_index - mixer->state->fm_input_buffer_read_index) / MIXER_FM_CHANNEL_COUNT);
 
-	memcpy(buffer, &mixer->state->fm_sample_buffer[mixer->state->fm_sample_buffer_read_index], frames_to_do * sizeof(*mixer->state->fm_sample_buffer) * MIXER_FM_CHANNEL_COUNT);
+	memcpy(buffer, &mixer->state->fm_input_buffer[mixer->state->fm_input_buffer_read_index], frames_to_do * sizeof(*mixer->state->fm_input_buffer) * MIXER_FM_CHANNEL_COUNT);
 
-	mixer->state->fm_sample_buffer_read_index += frames_to_do * MIXER_FM_CHANNEL_COUNT;
+	mixer->state->fm_input_buffer_read_index += frames_to_do * MIXER_FM_CHANNEL_COUNT;
 
 	return frames_to_do;
 }
 
-static size_t PSGResamplerCallback(const void *user_data, short *buffer, size_t buffer_size)
+static size_t PSGResamplerInputCallback(const void *user_data, short *buffer, size_t buffer_size)
 {
 	Mixer* const mixer = (Mixer*)user_data;
 
-	/* TODO: Zero-copy version of this. */
-	const size_t frames_to_do = CC_MIN(buffer_size, (mixer->state->psg_sample_buffer_write_index - mixer->state->psg_sample_buffer_read_index) / MIXER_PSG_CHANNEL_COUNT);
+	const size_t frames_to_do = CC_MIN(buffer_size, (mixer->state->psg_input_buffer_write_index - mixer->state->psg_input_buffer_read_index) / MIXER_PSG_CHANNEL_COUNT);
 
-	memcpy(buffer, &mixer->state->psg_sample_buffer[mixer->state->psg_sample_buffer_read_index], frames_to_do * sizeof(*mixer->state->psg_sample_buffer) * MIXER_PSG_CHANNEL_COUNT);
+	memcpy(buffer, &mixer->state->psg_input_buffer[mixer->state->psg_input_buffer_read_index], frames_to_do * sizeof(*mixer->state->psg_input_buffer) * MIXER_PSG_CHANNEL_COUNT);
 
-	mixer->state->psg_sample_buffer_read_index += frames_to_do * MIXER_PSG_CHANNEL_COUNT;
+	mixer->state->psg_input_buffer_read_index += frames_to_do * MIXER_PSG_CHANNEL_COUNT;
 
 	return frames_to_do;
+}
+
+/* There is no need for clamping in either of these callbacks because the
+   samples are output low enough to never exceed the 16-bit limit. */
+
+static char FMResamplerOutputCallback(const void *user_data, long *samples, unsigned int channels)
+{
+	Mixer* const mixer = (Mixer*)user_data;
+
+	unsigned int i;
+
+	(void)channels;
+
+	/* Copy the samples directly into the output buffer. */
+	for (i = 0; i < MIXER_FM_CHANNEL_COUNT; ++i)
+		*mixer->state->output_buffer_pointer++ = (short)*samples++;
+
+	return mixer->state->output_buffer_pointer != &mixer->state->output_buffer[CC_COUNT_OF(mixer->state->output_buffer)];
+}
+
+static char PSGResamplerOutputCallback(const void *user_data, long *samples, unsigned int channels)
+{
+	Mixer* const mixer = (Mixer*)user_data;
+	const short sample = (short)*samples;
+
+	unsigned int i;
+
+	(void)channels;
+
+	/* Upsample from mono to stereo and mix with the FM samples that are already in the output buffer. */
+	for (i = 0; i < MIXER_FM_CHANNEL_COUNT; ++i)
+		*mixer->state->output_buffer_pointer++ += sample;
+
+	return mixer->state->output_buffer_pointer != &mixer->state->output_buffer[CC_COUNT_OF(mixer->state->output_buffer)];
 }
 
 void Mixer_Constant_Initialise(Mixer_Constant *constant)
@@ -61,59 +93,58 @@ void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bo
 void Mixer_Begin(const Mixer *mixer)
 {
 	/* Reset the audio buffers so that they can be mixed into. */
-	memset(mixer->state->fm_sample_buffer, 0, sizeof(mixer->state->fm_sample_buffer));
-	memset(mixer->state->psg_sample_buffer, 0, sizeof(mixer->state->psg_sample_buffer));
-	mixer->state->fm_sample_buffer_write_index = 0;
-	mixer->state->psg_sample_buffer_write_index = 0;
+	memset(mixer->state->fm_input_buffer, 0, sizeof(mixer->state->fm_input_buffer));
+	memset(mixer->state->psg_input_buffer, 0, sizeof(mixer->state->psg_input_buffer));
+	mixer->state->fm_input_buffer_write_index = 0;
+	mixer->state->psg_input_buffer_write_index = 0;
 }
 
 short* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames)
 {
-	short* const allocated_samples = &mixer->state->fm_sample_buffer[mixer->state->fm_sample_buffer_write_index];
+	short* const allocated_samples = &mixer->state->fm_input_buffer[mixer->state->fm_input_buffer_write_index];
 
-	mixer->state->fm_sample_buffer_write_index += total_frames * MIXER_FM_CHANNEL_COUNT;
+	mixer->state->fm_input_buffer_write_index += total_frames * MIXER_FM_CHANNEL_COUNT;
 
 	return allocated_samples;
 }
 
 short* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames)
 {
-	short* const allocated_samples = &mixer->state->psg_sample_buffer[mixer->state->psg_sample_buffer_write_index];
+	short* const allocated_samples = &mixer->state->psg_input_buffer[mixer->state->psg_input_buffer_write_index];
 
-	mixer->state->psg_sample_buffer_write_index += total_frames * MIXER_PSG_CHANNEL_COUNT;
+	mixer->state->psg_input_buffer_write_index += total_frames * MIXER_PSG_CHANNEL_COUNT;
 
 	return allocated_samples;
 }
 
 void Mixer_End(const Mixer *mixer, void (*callback)(const void *user_data, short *audio_samples, size_t total_frames), const void *user_data)
 {
+	size_t frames_to_output;
+
 	/* Resample, mix, and output the audio for this frame. */
-	mixer->state->fm_sample_buffer_read_index = 0;
-	mixer->state->psg_sample_buffer_read_index = 0;
+	mixer->state->fm_input_buffer_read_index = 0;
+	mixer->state->psg_input_buffer_read_index = 0;
 
-	for (;;)
+	do
 	{
-		/* Resample the FM and PSG outputs into their respective buffers. */
-		const size_t total_resampled_fm_frames = ClownResampler_HighLevel_Resample(&mixer->state->fm_resampler, &mixer->constant->resampler_precomputed, mixer->state->fm_resampler_buffer, CC_COUNT_OF(mixer->state->fm_resampler_buffer) / MIXER_FM_CHANNEL_COUNT, FMResamplerCallback, mixer);
-		const size_t total_resampled_psg_frames = ClownResampler_HighLevel_Resample(&mixer->state->psg_resampler, &mixer->constant->resampler_precomputed, mixer->state->psg_resampler_buffer, CC_COUNT_OF(mixer->state->psg_resampler_buffer) / MIXER_PSG_CHANNEL_COUNT, PSGResamplerCallback, mixer);
+		size_t total_resampled_fm_frames;
+		size_t total_resampled_psg_frames;
 
-		const size_t frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
+		/* Resample the FM and PSG outputs and mix them together into a single buffer. */
+		mixer->state->output_buffer_pointer = mixer->state->output_buffer;
+		ClownResampler_HighLevel_Resample(&mixer->state->fm_resampler, &mixer->constant->resampler_precomputed, FMResamplerInputCallback, FMResamplerOutputCallback, mixer);
+		total_resampled_fm_frames = (mixer->state->output_buffer_pointer - mixer->state->output_buffer) / MIXER_FM_CHANNEL_COUNT;
 
-		size_t i;
+		mixer->state->output_buffer_pointer = mixer->state->output_buffer;
+		ClownResampler_HighLevel_Resample(&mixer->state->psg_resampler, &mixer->constant->resampler_precomputed, PSGResamplerInputCallback, PSGResamplerOutputCallback, mixer);
+		total_resampled_psg_frames = (mixer->state->output_buffer_pointer - mixer->state->output_buffer) / MIXER_FM_CHANNEL_COUNT;
 
-		/* Mix the resampled PSG output into the resampled FM output. */
-		/* There is no need for clamping because the samples are output low enough to never exceed the 16-bit limit. */
-		for (i = 0; i < frames_to_output; ++i)
-		{
-			mixer->state->fm_resampler_buffer[i * 2 + 0] += mixer->state->psg_resampler_buffer[i];
-			mixer->state->fm_resampler_buffer[i * 2 + 1] += mixer->state->psg_resampler_buffer[i];
-		}
+		/* In case there's a mismatch between the number of FM and PSG frames, output the smaller of the two. */
+		frames_to_output = CC_MIN(total_resampled_fm_frames, total_resampled_psg_frames);
 
 		/* Push the resampled, mixed audio to the device for playback. */
-		callback(user_data, mixer->state->fm_resampler_buffer, frames_to_output);
+		callback(user_data, mixer->state->output_buffer, frames_to_output);
 
 		/* If the resampler has run out of data, then we're free to exit this loop. */
-		if (frames_to_output != CC_COUNT_OF(mixer->state->fm_resampler_buffer) / MIXER_FM_CHANNEL_COUNT)
-			break;
-	}
+	} while (frames_to_output == CC_COUNT_OF(mixer->state->output_buffer) / MIXER_FM_CHANNEL_COUNT);
 }

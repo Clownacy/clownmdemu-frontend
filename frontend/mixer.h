@@ -24,17 +24,18 @@ typedef struct Mixer_Constant
 
 typedef struct Mixer_State
 {
-	short fm_sample_buffer[MIXER_FM_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL))];
-	size_t fm_sample_buffer_write_index;
-	size_t fm_sample_buffer_read_index;
+	short fm_input_buffer[MIXER_FM_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL))];
+	size_t fm_input_buffer_write_index;
+	size_t fm_input_buffer_read_index;
 	ClownResampler_HighLevel_State fm_resampler;
-	short fm_resampler_buffer[0x400 * MIXER_FM_CHANNEL_COUNT];
 
-	short psg_sample_buffer[MIXER_PSG_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL))];
-	size_t psg_sample_buffer_write_index;
-	size_t psg_sample_buffer_read_index;
+	short psg_input_buffer[MIXER_PSG_CHANNEL_COUNT * CC_MAX(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC), CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL))];
+	size_t psg_input_buffer_write_index;
+	size_t psg_input_buffer_read_index;
 	ClownResampler_HighLevel_State psg_resampler;
-	short psg_resampler_buffer[0x400 * MIXER_PSG_CHANNEL_COUNT];
+
+	short output_buffer[0x400 * MIXER_FM_CHANNEL_COUNT];
+	short *output_buffer_pointer;
 } Mixer_State;
 
 typedef struct Mixer
