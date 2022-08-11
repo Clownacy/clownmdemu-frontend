@@ -38,7 +38,7 @@ static size_t PSGResamplerInputCallback(const void *user_data, short *buffer, si
 /* There is no need for clamping in either of these callbacks because the
    samples are output low enough to never exceed the 16-bit limit. */
 
-static char FMResamplerOutputCallback(const void *user_data, long *samples, unsigned int channels)
+static char FMResamplerOutputCallback(const void *user_data, const long *frame, unsigned int channels)
 {
 	Mixer* const mixer = (Mixer*)user_data;
 
@@ -48,15 +48,15 @@ static char FMResamplerOutputCallback(const void *user_data, long *samples, unsi
 
 	/* Copy the samples directly into the output buffer. */
 	for (i = 0; i < MIXER_FM_CHANNEL_COUNT; ++i)
-		*mixer->state->output_buffer_pointer++ = (short)*samples++;
+		*mixer->state->output_buffer_pointer++ = (short)*frame++;
 
 	return mixer->state->output_buffer_pointer != &mixer->state->output_buffer[CC_COUNT_OF(mixer->state->output_buffer)];
 }
 
-static char PSGResamplerOutputCallback(const void *user_data, long *samples, unsigned int channels)
+static char PSGResamplerOutputCallback(const void *user_data, const long *frame, unsigned int channels)
 {
 	Mixer* const mixer = (Mixer*)user_data;
-	const short sample = (short)*samples;
+	const short sample = (short)*frame;
 
 	unsigned int i;
 
