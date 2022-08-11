@@ -278,8 +278,8 @@ static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int
 static SDL_AudioDeviceID audio_device;
 static Uint32 audio_device_buffer_size;
 static unsigned long audio_device_sample_rate;
-static cc_bool pal_mode;
-static cc_bool low_pass_filter = cc_true;
+static bool pal_mode;
+static bool low_pass_filter = true;
 
 static Mixer_Constant mixer_constant;
 static Mixer_State mixer_state;
