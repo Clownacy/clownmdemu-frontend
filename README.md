@@ -19,16 +19,16 @@ and portability:
 - Use integer-only logic. The Sega Mega Drive/Sega Genesis had no support for
   floating point types. Therefore, emulating it should not require floating
   point types. Additionally, floating point types are prone to rounding error
-  and other precision issues, so I don't trust them. I am also concerned about
+  and other precision issues, so I do not trust them. I am also concerned about
   their performance compared to integers, especially on lower-end hardware.
 
 - Do not use dynamic memory. Memory allocation is slow, will cause memory leaks
   when not correctly freed, and can cause software to fail mid-execution when
-  memory is exhausted (which is more effort to account for than it's worth).
+  memory is exhausted, which is more effort to account for than it is worth.
 
-- Use no global state. All state should be kept in a struct that functions
+- Use no global state. All state should be kept in a struct which functions
   access through a pointer, allowing for such things as simple fast save-state
-  support, as well as the possibility of running multiple instances of the
+  support as well as the possibility of running multiple instances of the
   emulator at once. Note that the state must not contain pointers, so that it
   is relocatable and position-independent. Likewise, the state must not depend
   on outside state, so that it is useable across multiple executions of the
@@ -47,7 +47,7 @@ and portability:
     - -2147483647 to 2147483647 for 'long'.
     - 0 to 4294967295 for 'unsigned long'.
 
-  - Do not assume that 'char' is always signed by default: it isn't. For
+  - Do not assume that 'char' is always signed by default: it is not. For
     instance, it is unsigned by default on ARM CPUs.
 
   - Do not rely on C language extensions.
@@ -119,14 +119,25 @@ Hotkeys:
 - F11   = Toggle fullscreen
 
 
+# libretro
+
+A frontend that exposes clownmdemu as a libretro core is provided in the
+`libretro` directory. It is written in C89 and should provide all of the same
+features as the example frontend aside from the debug menus.
+
+
 # Compiling
 
 clownmdemu can be built using CMake, however it should not be hard to make it
 use a different build system if necessary as the emulator's build process is
 not complicated.
 
+The reference frontend is also built using CMake.
+
+The libretro core can be built using either CMake or GNU Make.
+
 Be aware that this repo uses Git submodules: use `git submodule update --init`
-to pull in these submodules before compiling the frontend.
+to pull in these submodules before compiling either frontend.
 
 
 # Licence
