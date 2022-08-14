@@ -59,7 +59,7 @@ static size_t state_rewind_remaining;
 #else
 static EmulationState state_rewind_buffer[1];
 #endif
-static EmulationState *emulation_state;
+static EmulationState *emulation_state = state_rewind_buffer;
 
 static bool quick_save_exists = false;
 static EmulationState quick_save_state;
