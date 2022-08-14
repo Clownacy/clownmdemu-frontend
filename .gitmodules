@@ -11,3 +11,6 @@
 	path = frontend/libraries/imgui
 	url = https://github.com/Clownacy/imgui.git
 	branch = font-nonlinear
+[submodule "frontend/libraries/tinyfiledialogs"]
+	path = frontend/libraries/tinyfiledialogs
+	url = https://github.com/jfolker/tinyfiledialogs
