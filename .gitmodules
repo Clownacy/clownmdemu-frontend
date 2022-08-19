@@ -13,4 +13,4 @@
 	branch = font-nonlinear
 [submodule "frontend/libraries/tinyfiledialogs"]
 	path = frontend/libraries/tinyfiledialogs
-	url = https://github.com/jfolker/tinyfiledialogs
+	url = https://github.com/jfolker/tinyfiledialogs.git
