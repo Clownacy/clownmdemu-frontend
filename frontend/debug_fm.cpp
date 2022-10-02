@@ -49,7 +49,6 @@ void Debug_FM_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospac
 
 	if (ImGui::Begin(window_name_buffer, open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const FM_State* const fm = &clownmdemu->state->fm;
 		const FM_ChannelMetadata* const channel = &clownmdemu->state->fm.channels[channel_index];
 
 		if (ImGui::BeginTable("Channel Table", 2, ImGuiTableFlags_Borders))

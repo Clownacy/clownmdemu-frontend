@@ -94,7 +94,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 							for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 							{
-								Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + pixel_y_in_tile ^ y_flip_xor) * plane_texture_pitch];
+								Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * plane_texture_pitch];
 
 								for (unsigned int i = 0; i < 2; ++i)
 								{
