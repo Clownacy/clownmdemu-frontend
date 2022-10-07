@@ -299,7 +299,7 @@ static bool InitialiseAudio(void)
 		want.samples <<= 1;
 	want.callback = NULL;
 
-	audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+	audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
 
 	if (audio_device == 0)
 	{
