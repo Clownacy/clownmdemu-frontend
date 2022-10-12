@@ -337,7 +337,7 @@ static void SetAudioPALMode(bool enabled)
 		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 }
 
-static void AudioPushCallback(const void *user_data, short *audio_samples, size_t total_frames)
+static void AudioPushCallback(const void *user_data, cc_s16l *audio_samples, size_t total_frames)
 {
 	(void)user_data;
 
@@ -448,14 +448,14 @@ static cc_bool ReadInputCallback(const void *user_data, unsigned int player_id, 
 	return value;
 }
 
-static void FMAudioCallback(const void *user_data, size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_frames))
+static void FMAudioCallback(const void *user_data, size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, size_t total_frames))
 {
 	(void)user_data;
 
 	generate_fm_audio(&clownmdemu, Mixer_AllocateFMSamples(&mixer, total_frames), total_frames);
 }
 
-static void PSGAudioCallback(const void *user_data, size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, short *sample_buffer, size_t total_samples))
+static void PSGAudioCallback(const void *user_data, size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, size_t total_samples))
 {
 	(void)user_data;
 

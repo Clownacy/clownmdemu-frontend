@@ -9,9 +9,9 @@
 #define CLOWNRESAMPLER_STATIC
 #include "libraries/clownresampler/clownresampler.h"
 
-static size_t FMResamplerInputCallback(const void *user_data, short *buffer, size_t buffer_size)
+static size_t FMResamplerInputCallback(const void *user_data, cc_s16l *buffer, size_t buffer_size)
 {
-	Mixer* const mixer = (Mixer*)user_data;
+	const Mixer* const mixer = (const Mixer*)user_data;
 
 	const size_t frames_to_do = CC_MIN(buffer_size, (mixer->state->fm_input_buffer_write_index - mixer->state->fm_input_buffer_read_index) / MIXER_FM_CHANNEL_COUNT);
 
@@ -22,9 +22,9 @@ static size_t FMResamplerInputCallback(const void *user_data, short *buffer, siz
 	return frames_to_do;
 }
 
-static size_t PSGResamplerInputCallback(const void *user_data, short *buffer, size_t buffer_size)
+static size_t PSGResamplerInputCallback(const void *user_data, cc_s16l *buffer, size_t buffer_size)
 {
-	Mixer* const mixer = (Mixer*)user_data;
+	const Mixer* const mixer = (const Mixer*)user_data;
 
 	const size_t frames_to_do = CC_MIN(buffer_size, (mixer->state->psg_input_buffer_write_index - mixer->state->psg_input_buffer_read_index) / MIXER_PSG_CHANNEL_COUNT);
 
@@ -38,27 +38,27 @@ static size_t PSGResamplerInputCallback(const void *user_data, short *buffer, si
 /* There is no need for clamping in either of these callbacks because the
    samples are output low enough to never exceed the 16-bit limit. */
 
-static char FMResamplerOutputCallback(const void *user_data, const long *frame, unsigned int channels)
+static cc_bool FMResamplerOutputCallback(const void *user_data, const cc_s32f *frame, cc_u8f channels)
 {
-	Mixer* const mixer = (Mixer*)user_data;
+	const Mixer* const mixer = (const Mixer*)user_data;
 
-	unsigned int i;
+	cc_u8f i;
 
 	(void)channels;
 
 	/* Copy the samples directly into the output buffer. */
 	for (i = 0; i < MIXER_FM_CHANNEL_COUNT; ++i)
-		*mixer->state->output_buffer_pointer++ = (short)*frame++;
+		*mixer->state->output_buffer_pointer++ = (cc_s16l)*frame++;
 
 	return mixer->state->output_buffer_pointer != &mixer->state->output_buffer[CC_COUNT_OF(mixer->state->output_buffer)];
 }
 
-static char PSGResamplerOutputCallback(const void *user_data, const long *frame, unsigned int channels)
+static cc_bool PSGResamplerOutputCallback(const void *user_data, const cc_s32f *frame, cc_u8f channels)
 {
-	Mixer* const mixer = (Mixer*)user_data;
-	const short sample = (short)*frame;
+	const Mixer* const mixer = (const Mixer*)user_data;
+	const cc_s16l sample = (cc_s16l)*frame;
 
-	unsigned int i;
+	cc_u8f i;
 
 	(void)channels;
 
@@ -75,16 +75,16 @@ void Mixer_Constant_Initialise(Mixer_Constant *constant)
 	ClownResampler_Precompute(&constant->resampler_precomputed);
 }
 
-void Mixer_State_Initialise(Mixer_State *state, unsigned long sample_rate, cc_bool pal_mode, cc_bool low_pass_filter)
+void Mixer_State_Initialise(Mixer_State *state, cc_u32f sample_rate, cc_bool pal_mode, cc_bool low_pass_filter)
 {
 	/* Divide and multiply by the frame rate to try to make the sample rate closer to the emulator's output. */
-	const unsigned int pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
-	const unsigned int ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
+	const cc_u32f pal_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_PAL));
+	const cc_u32f ntsc_fm_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_FM_SAMPLE_RATE_NTSC));
 
-	const unsigned int pal_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
-	const unsigned int ntsc_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
+	const cc_u32f pal_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_PAL_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_PAL));
+	const cc_u32f ntsc_psg_sample_rate = CLOWNMDEMU_MULTIPLY_BY_NTSC_FRAMERATE(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC));
 
-	const unsigned long low_pass_filter_sample_rate = low_pass_filter ? 22000 : sample_rate;
+	const cc_u32f low_pass_filter_sample_rate = low_pass_filter ? 22000 : sample_rate;
 
 	ClownResampler_HighLevel_Init(&state->fm_resampler, MIXER_FM_CHANNEL_COUNT, pal_mode ? pal_fm_sample_rate : ntsc_fm_sample_rate, sample_rate, low_pass_filter_sample_rate);
 	ClownResampler_HighLevel_Init(&state->psg_resampler, MIXER_PSG_CHANNEL_COUNT, pal_mode ? pal_psg_sample_rate : ntsc_psg_sample_rate, sample_rate, low_pass_filter_sample_rate);
@@ -99,25 +99,25 @@ void Mixer_Begin(const Mixer *mixer)
 	mixer->state->psg_input_buffer_write_index = 0;
 }
 
-short* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames)
+cc_s16l* Mixer_AllocateFMSamples(const Mixer *mixer, size_t total_frames)
 {
-	short* const allocated_samples = &mixer->state->fm_input_buffer[mixer->state->fm_input_buffer_write_index];
+	cc_s16l* const allocated_samples = &mixer->state->fm_input_buffer[mixer->state->fm_input_buffer_write_index];
 
 	mixer->state->fm_input_buffer_write_index += total_frames * MIXER_FM_CHANNEL_COUNT;
 
 	return allocated_samples;
 }
 
-short* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames)
+cc_s16l* Mixer_AllocatePSGSamples(const Mixer *mixer, size_t total_frames)
 {
-	short* const allocated_samples = &mixer->state->psg_input_buffer[mixer->state->psg_input_buffer_write_index];
+	cc_s16l* const allocated_samples = &mixer->state->psg_input_buffer[mixer->state->psg_input_buffer_write_index];
 
 	mixer->state->psg_input_buffer_write_index += total_frames * MIXER_PSG_CHANNEL_COUNT;
 
 	return allocated_samples;
 }
 
-void Mixer_End(const Mixer *mixer, void (*callback)(const void *user_data, short *audio_samples, size_t total_frames), const void *user_data)
+void Mixer_End(const Mixer *mixer, void (*callback)(const void *user_data, cc_s16l *audio_samples, size_t total_frames), const void *user_data)
 {
 	size_t frames_to_output;
 
