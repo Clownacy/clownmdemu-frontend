@@ -16,11 +16,13 @@
 #include "karla_regular.h"
 
 #include "error.h"
-#include "mixer.h"
 #include "debug_memory.h"
 #include "debug_fm.h"
 #include "debug_psg.h"
 #include "debug_vdp.h"
+
+#define MIXER_FORMAT Sint16
+#include "mixer.c"
 
 typedef struct Input
 {
@@ -337,11 +339,11 @@ static void SetAudioPALMode(bool enabled)
 		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 }
 
-static void AudioPushCallback(const void *user_data, cc_s16l *audio_samples, size_t total_frames)
+static void AudioPushCallback(const void *user_data, Sint16 *audio_samples, size_t total_frames)
 {
 	(void)user_data;
 
-	SDL_QueueAudio(audio_device, audio_samples, (Uint32)(total_frames * sizeof(short) * MIXER_FM_CHANNEL_COUNT));
+	SDL_QueueAudio(audio_device, audio_samples, (Uint32)(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
 }
 
 
