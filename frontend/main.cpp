@@ -497,9 +497,9 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		state_rewind_index = 0;
 	#endif
 		emulation_state = &state_rewind_buffer[0];
-		clownmdemu.state = &emulation_state->clownmdemu;
 
-		ClownMDEmu_State_Initialise(clownmdemu.state);
+		ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
+		ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
 		ClownMDEmu_Reset(&clownmdemu, callbacks);
 	}
 }
@@ -645,11 +645,6 @@ int main(int argc, char **argv)
 				// Initialise persistent data such as lookup tables.
 				ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
 
-				// Create the clownmdemu state struct.
-				clownmdemu.configuration = &clownmdemu_configuration;
-				clownmdemu.constant = &clownmdemu_constant;
-				// 'clownmdemu.state' is initialised by 'OpenSoftware'.
-
 				// Intiialise audio if we can (but it's okay if it fails).
 				if (!InitialiseAudio())
 				{
@@ -744,7 +739,7 @@ int main(int argc, char **argv)
 						SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
 
 						emulation_state = &state_rewind_buffer[to_index];
-						clownmdemu.state = &emulation_state->clownmdemu;
+						ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
 					}
 				#endif
 
