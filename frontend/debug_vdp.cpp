@@ -11,14 +11,14 @@
 
 typedef struct TileMetadata
 {
-	unsigned int tile_index;
-	unsigned int palette_line;
+	cc_u16f tile_index;
+	cc_u16f palette_line;
 	bool x_flip;
 	bool y_flip;
 	bool priority;
 } TileMetadata;
 
-static void DecomposeTileMetadata(unsigned int packed_tile_metadata, TileMetadata *tile_metadata)
+static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata *tile_metadata)
 {
 	tile_metadata->tile_index = packed_tile_metadata & 0x7FF;
 	tile_metadata->palette_line = (packed_tile_metadata >> 13) & 3;
@@ -33,8 +33,8 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 	{
 		static SDL_Texture *plane_textures[2];
 		SDL_Texture *&plane_texture = plane_textures[plane_b];
-		const unsigned int plane_texture_width = 128 * 8; // 128 is the maximum plane size
-		const unsigned int plane_texture_height = 64 * 16;
+		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
+		const cc_u16f plane_texture_height = 64 * 16;
 
 		if (plane_texture == NULL)
 		{
@@ -63,46 +63,46 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 			if (ImGui::BeginChild("Plane View"))
 			{
-				const unsigned short *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
+				const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
 
-				const unsigned int tile_width = 8;
-				const unsigned int tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
+				const cc_u16f tile_width = 8;
+				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
 				// Lock texture so that we can write into it.
-				unsigned char *plane_texture_pixels;
+				cc_u8l *plane_texture_pixels;
 				int plane_texture_pitch;
 
 				if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
 				{
-					const unsigned short *plane_pointer = plane;
+					const cc_u16l *plane_pointer = plane;
 
-					for (unsigned int tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
+					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
 					{
-						for (unsigned int tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
+						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
 						{
 							TileMetadata tile_metadata;
 							DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
 
-							const unsigned x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
-							const unsigned y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
+							const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
+							const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-							const unsigned int palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+							const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
 							const Uint32 *palette_line = &data->colours[palette_index];
 
-							const unsigned short *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
+							const cc_u16l *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
 
-							for (unsigned int pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
+							for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 							{
 								Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * plane_texture_pitch];
 
-								for (unsigned int i = 0; i < 2; ++i)
+								for (cc_u16f i = 0; i < 2; ++i)
 								{
-									const unsigned short tile_pixels = *tile_pointer++;
+									const cc_u16l tile_pixels = *tile_pointer++;
 
-									for (unsigned int j = 0; j < 4; ++j)
+									for (cc_u16f j = 0; j < 4; ++j)
 									{
-										const unsigned int colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
+										const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
 										plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = palette_line[colour_index];
 									}
 								}
@@ -126,18 +126,18 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 					const ImVec2 mouse_position = ImGui::GetMousePos();
 
-					const unsigned int tile_x = (unsigned int)((mouse_position.x - image_position.x) / plane_scale / tile_width);
-					const unsigned int tile_y = (unsigned int)((mouse_position.y - image_position.y) / plane_scale / tile_height);
+					const cc_u16f tile_x = (cc_u16f)((mouse_position.x - image_position.x) / plane_scale / tile_width);
+					const cc_u16f tile_y = (cc_u16f)((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const unsigned short *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
-					const unsigned int packed_tile_metadata = plane[tile_y * clownmdemu->state->vdp.plane_width + tile_x];
+					const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
+					const cc_u16f packed_tile_metadata = plane[tile_y * clownmdemu->state->vdp.plane_width + tile_x];
 
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, &tile_metadata);
 
 					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * data->dpi_scale), tile_height * SDL_roundf(9.0f * data->dpi_scale)), ImVec2((float)(tile_x * tile_width) / (float)plane_texture_width, (float)(tile_y * tile_height) / (float)plane_texture_height), ImVec2((float)((tile_x + 1) * tile_width) / (float)plane_texture_width, (float)((tile_y + 1) * tile_height) / (float)plane_texture_width));
 					ImGui::SameLine();
-					ImGui::Text("Tile Index: %u/0x%X" "\n" "Palette Line: %d" "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
+					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
 					ImGui::EndTooltip();
 				}
@@ -212,8 +212,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 			if (ImGui::TreeNodeEx("Options", ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				const unsigned int length_of_palette_line = 16;
-				const unsigned int length_of_palette = length_of_palette_line * 4;
+				const int length_of_palette_line = 16;
+				const int length_of_palette = length_of_palette_line * 4;
 
 				ImGui::Text("Brightness");
 				ImGui::RadioButton("Shadow", &brightness_index, length_of_palette * 1);
@@ -240,13 +240,13 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			const size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
 
 			// Lock texture so that we can write into it.
-			unsigned char *vram_texture_pixels;
+			cc_u8l *vram_texture_pixels;
 			int vram_texture_pitch;
 
 			if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
 			{
 				// Generate VRAM bitmap.
-				const unsigned short *vram_pointer = clownmdemu->state->vdp.vram;
+				const cc_u16l *vram_pointer = clownmdemu->state->vdp.vram;
 
 				// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 				// instead of left-to-right then top-to-bottom.
@@ -256,13 +256,13 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 					{
 						Uint32 *pixels_pointer = (Uint32*)(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
 
-						for (unsigned int i = 0; i < 2; ++i)
+						for (cc_u16f i = 0; i < 2; ++i)
 						{
-							const unsigned short tile_row = *vram_pointer++;
+							const cc_u16l tile_row = *vram_pointer++;
 
-							for (unsigned int j = 0; j < 4; ++j)
+							for (cc_u16f j = 0; j < 4; ++j)
 							{
-								const unsigned int colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
+								const cc_u16f colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
 								*pixels_pointer++ = selected_palette[colour_index];
 							}
 						}
@@ -368,19 +368,19 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 		ImGui::RadioButton("Highlight", &brightness, 2);
 		ImGui::Separator();
 
-		const unsigned int length_of_palette_line = 16;
-		const unsigned int length_of_palette = length_of_palette_line * 4;
+		const cc_u16f length_of_palette_line = 16;
+		const cc_u16f length_of_palette = length_of_palette_line * 4;
 
-		for (unsigned int j = 0; j < length_of_palette; ++j)
+		for (cc_u16f j = 0; j < length_of_palette; ++j)
 		{
 			ImGui::PushID(j);
 
-			const unsigned int value = clownmdemu->state->vdp.cram[j];
-			const unsigned int blue = (value >> 9) & 7;
-			const unsigned int green = (value >> 5) & 7;
-			const unsigned int red = (value >> 1) & 7;
+			const cc_u16f value = clownmdemu->state->vdp.cram[j];
+			const cc_u16f blue = (value >> 9) & 7;
+			const cc_u16f green = (value >> 5) & 7;
+			const cc_u16f red = (value >> 1) & 7;
 
-			unsigned int value_shaded = value & 0xEEE;
+			cc_u16f value_shaded = value & 0xEEE;
 
 			switch (brightness)
 			{
@@ -397,9 +397,9 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 					break;
 			}
 
-			const unsigned int blue_shaded = (value_shaded >> 8) & 0xF;
-			const unsigned int green_shaded = (value_shaded >> 4) & 0xF;
-			const unsigned int red_shaded = (value_shaded >> 0) & 0xF;
+			const cc_u16f blue_shaded = (value_shaded >> 8) & 0xF;
+			const cc_u16f green_shaded = (value_shaded >> 4) & 0xF;
+			const cc_u16f red_shaded = (value_shaded >> 0) & 0xF;
 
 			if (j % length_of_palette_line != 0)
 			{
@@ -413,13 +413,13 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			{
 				ImGui::BeginTooltip();
 
-				ImGui::Text("Line %d, Colour %d", j / length_of_palette_line, j % length_of_palette_line);
+				ImGui::Text("Line %" CC_PRIdFAST16 ", Colour %" CC_PRIdFAST16, j / length_of_palette_line, j % length_of_palette_line);
 				ImGui::Separator();
 				ImGui::PushFont(monospace_font);
-				ImGui::Text("Value: %03X", value);
-				ImGui::Text("Blue:  %d/7", blue);
-				ImGui::Text("Green: %d/7", green);
-				ImGui::Text("Red:   %d/7", red);
+				ImGui::Text("Value: %03" CC_PRIXFAST16, value);
+				ImGui::Text("Blue:  %" CC_PRIdFAST16 "/7", blue);
+				ImGui::Text("Green: %" CC_PRIdFAST16 "/7", green);
+				ImGui::Text("Red:   %" CC_PRIdFAST16 "/7", red);
 				ImGui::PopFont();
 
 				ImGui::EndTooltip();

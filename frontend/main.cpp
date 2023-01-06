@@ -404,29 +404,28 @@ static void CartridgeWrittenCallback(const void *user_data, unsigned long addres
 	*/
 }
 
-static void ColourUpdatedCallback(const void *user_data, unsigned int index, unsigned int colour)
+static void ColourUpdatedCallback(const void *user_data, cc_u16f index, cc_u16f colour)
 {
 	(void)user_data;
 
 	// Decompose XBGR4444 into individual colour channels
-	const Uint32 red = (colour >> 4 * 0) & 0xF;
-	const Uint32 green = (colour >> 4 * 1) & 0xF;
-	const Uint32 blue = (colour >> 4 * 2) & 0xF;
+	const cc_u32f red = (colour >> 4 * 0) & 0xF;
+	const cc_u32f green = (colour >> 4 * 1) & 0xF;
+	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	emulation_state->colours[index] = (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5);
+	emulation_state->colours[index] = (Uint32)((blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
-static void ScanlineRenderedCallback(const void *user_data, unsigned int scanline, const unsigned char *pixels, unsigned int screen_width, unsigned int screen_height)
+static void ScanlineRenderedCallback(const void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height)
 {
-
 	(void)user_data;
 
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
 
 	if (framebuffer_texture_pixels != NULL)
-		for (unsigned int i = 0; i < screen_width; ++i)
+		for (cc_u16f i = 0; i < screen_width; ++i)
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
