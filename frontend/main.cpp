@@ -1461,19 +1461,23 @@ int main(int argc, char **argv)
 													}
 													else
 													{
-														EmulationState save_state;
+														EmulationState *save_state;
 
-														if (SDL_RWread(file, &save_state, sizeof(save_state), 1) != 1)
+														save_state = (EmulationState*)SDL_malloc(sizeof(EmulationState));
+
+														if (save_state != NULL && SDL_RWread(file, save_state, sizeof(EmulationState), 1) != 1)
 														{
 															PrintError("Could not read save state file");
 															SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
 														}
 														else
 														{
-															ApplySaveState(&save_state);
+															ApplySaveState(save_state);
 
 															emulator_paused = false;
 														}
+
+														SDL_free(save_state);
 													}
 												}
 											}
