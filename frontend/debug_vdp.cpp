@@ -69,7 +69,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
 				// Lock texture so that we can write into it.
-				cc_u8l *plane_texture_pixels;
+				Uint8 *plane_texture_pixels;
 				int plane_texture_pitch;
 
 				if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
@@ -240,7 +240,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			const size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
 
 			// Lock texture so that we can write into it.
-			cc_u8l *vram_texture_pixels;
+			Uint8 *vram_texture_pixels;
 			int vram_texture_pitch;
 
 			if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
