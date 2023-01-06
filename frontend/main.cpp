@@ -378,7 +378,7 @@ static void ReloadFonts(unsigned int font_size)
 // Emulator Functionality //
 ////////////////////////////
 
-static unsigned int CartridgeReadCallback(const void *user_data, unsigned long address)
+static cc_u16f CartridgeReadCallback(const void *user_data, cc_u32f address)
 {
 	(void)user_data;
 
@@ -388,7 +388,7 @@ static unsigned int CartridgeReadCallback(const void *user_data, unsigned long a
 	return rom_buffer[address];
 }
 
-static void CartridgeWrittenCallback(const void *user_data, unsigned long address, unsigned int value)
+static void CartridgeWrittenCallback(const void *user_data, cc_u32f address, cc_u16f value)
 {
 	(void)user_data;
 
@@ -429,7 +429,7 @@ static void ScanlineRenderedCallback(const void *user_data, cc_u16f scanline, co
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
-static cc_bool ReadInputCallback(const void *user_data, unsigned int player_id, ClownMDEmu_Button button_id)
+static cc_bool ReadInputCallback(const void *user_data, cc_u16f player_id, ClownMDEmu_Button button_id)
 {
 	(void)user_data;
 

@@ -4,7 +4,7 @@
 #include "libraries/imgui/imgui.h"
 #include "../clowncommon.h"
 
-void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const unsigned char *buffer, size_t buffer_length)
+void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const cc_u8l *buffer, size_t buffer_length)
 {
 	ImGui::PushFont(monospace_font);
 
@@ -26,9 +26,16 @@ void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, c
 			for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
 			{
 				const size_t offset = i * 0x10;
-				const unsigned char* const bytes = &buffer[offset];
+				const cc_u8l* const bytes = &buffer[offset];
 
-				ImGui::Text("%04zX: %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X %02X%02X", offset,
+				ImGui::Text("%04zX: %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8
+				                  " %02" CC_PRIXLEAST8 "%02" CC_PRIXLEAST8, offset,
 					bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3], bytes[0x4], bytes[0x5], bytes[0x6], bytes[0x7],
 					bytes[0x8], bytes[0x9], bytes[0xA], bytes[0xB], bytes[0xC], bytes[0xD], bytes[0xE], bytes[0xF]);
 			}
