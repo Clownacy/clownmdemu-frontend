@@ -14,6 +14,8 @@ add_executable(clownmdemufrontend WIN32
 	"main.cpp"
 	"error.cpp"
 	"error.h"
+	"debug_m68k.cpp"
+	"debug_m68k.h"
 	"debug_memory.cpp"
 	"debug_memory.h"
 	"debug_fm.cpp"

@@ -16,6 +16,7 @@
 #include "karla_regular.h"
 
 #include "error.h"
+#include "debug_m68k.h"
 #include "debug_memory.h"
 #include "debug_fm.h"
 #include "debug_psg.h"
@@ -677,6 +678,7 @@ int main(int argc, char **argv)
 				bool integer_screen_scaling = false;
 				bool tall_double_resolution_mode = false;
 
+				bool m68k_status = false;
 				bool m68k_ram_viewer = false;
 				bool z80_ram_viewer = false;
 				bool plane_a_viewer = false;
@@ -1254,6 +1256,7 @@ int main(int argc, char **argv)
 
 					const bool show_menu_bar = !fullscreen
 					                        || pop_out
+					                        || m68k_status
 					                        || m68k_ram_viewer
 					                        || z80_ram_viewer
 					                        || plane_a_viewer
@@ -1494,6 +1497,8 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Debugging"))
 							{
+								ImGui::MenuItem("68000 Status", NULL, &m68k_status);
+
 								ImGui::MenuItem("68000 RAM Viewer", NULL, &m68k_ram_viewer);
 
 								ImGui::MenuItem("Z80 RAM Viewer", NULL, &z80_ram_viewer);
@@ -1709,6 +1714,9 @@ int main(int argc, char **argv)
 					}
 
 					ImGui::End();
+
+					if (m68k_status)
+						Debug_M68k(&m68k_status, &clownmdemu.state->m68k, monospace_font);
 
 					if (m68k_ram_viewer)
 						Debug_Memory(&m68k_ram_viewer, monospace_font, "68000 RAM Viewer", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
