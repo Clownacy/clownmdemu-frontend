@@ -24,6 +24,8 @@ add_executable(clownmdemufrontend WIN32
 	"debug_psg.h"
 	"debug_vdp.cpp"
 	"debug_vdp.h"
+	"debug_z80.cpp"
+	"debug_z80.h"
 	"inconsolata_regular.h"
 	"karla_regular.h"
 	"libraries/clownresampler/clownresampler.h"
