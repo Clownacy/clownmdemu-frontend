@@ -1254,6 +1254,8 @@ int main(int argc, char **argv)
 
 					const bool show_menu_bar = !fullscreen
 					                        || pop_out
+					                        || m68k_ram_viewer
+					                        || z80_ram_viewer
 					                        || plane_a_viewer
 					                        || plane_b_viewer
 					                        || vram_viewer
