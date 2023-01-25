@@ -6,7 +6,7 @@
 
 void Debug_Z80(bool *open, Z80_State *z80, ImFont *monospace_font)
 {
-	if (ImGui::Begin("Z80 Status", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("Z80 Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::PushFont(monospace_font);
 

@@ -7,7 +7,7 @@
 
 void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
-	if (ImGui::Begin("PSG Status", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("PSG", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		// Latched command.
 		if (ImGui::TreeNodeEx("Latched Command", ImGuiTreeNodeFlags_DefaultOpen))

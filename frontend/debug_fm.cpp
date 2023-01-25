@@ -9,7 +9,7 @@
 
 void Debug_DAC_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
-	if (ImGui::Begin("DAC Status", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("DAC", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		const FM_State* const fm = &clownmdemu->state->fm;
 
@@ -44,8 +44,8 @@ void Debug_DAC_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospa
 
 void Debug_FM_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font, cc_u16f channel_index)
 {
-	char window_name_buffer[sizeof("FM Channel 0 Status")];
-	SDL_snprintf(window_name_buffer, sizeof(window_name_buffer), "FM Channel %" CC_PRIuFAST16 " Status", channel_index + 1);
+	char window_name_buffer[sizeof("FM Channel 0")];
+	SDL_snprintf(window_name_buffer, sizeof(window_name_buffer), "FM Channel %" CC_PRIuFAST16, channel_index + 1);
 
 	if (ImGui::Begin(window_name_buffer, open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

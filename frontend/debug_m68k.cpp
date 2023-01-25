@@ -6,7 +6,7 @@
 
 void Debug_M68k(bool *open, M68k_State *m68k, ImFont *monospace_font)
 {
-	if (ImGui::Begin("68000 Status", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("68000 Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::PushFont(monospace_font);
 

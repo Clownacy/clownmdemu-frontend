@@ -1500,23 +1500,31 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Debugging"))
 							{
-								ImGui::MenuItem("68000 Status", NULL, &m68k_status);
+								if (ImGui::BeginMenu("68000"))
+								{
+									ImGui::MenuItem("Registers", NULL, &m68k_status);
+									ImGui::MenuItem("RAM", NULL, &m68k_ram_viewer);
 
-								ImGui::MenuItem("Z80 Status", NULL, &z80_status);
+									ImGui::EndMenu();
+								}
 
-								ImGui::MenuItem("68000 RAM Viewer", NULL, &m68k_ram_viewer);
+								if (ImGui::BeginMenu("Z80"))
+								{
+									ImGui::MenuItem("Registers", NULL, &z80_status);
+									ImGui::MenuItem("RAM", NULL, &z80_ram_viewer);
 
-								ImGui::MenuItem("Z80 RAM Viewer", NULL, &z80_ram_viewer);
+									ImGui::EndMenu();
+								}
 
 								if (ImGui::BeginMenu("VDP"))
 								{
-									ImGui::MenuItem("Plane A Viewer", NULL, &plane_a_viewer);
+									ImGui::MenuItem("Plane A", NULL, &plane_a_viewer);
 
-									ImGui::MenuItem("Plane B Viewer", NULL, &plane_b_viewer);
+									ImGui::MenuItem("Plane B", NULL, &plane_b_viewer);
 
-									ImGui::MenuItem("VRAM Viewer", NULL, &vram_viewer);
+									ImGui::MenuItem("VRAM", NULL, &vram_viewer);
 
-									ImGui::MenuItem("CRAM Viewer", NULL, &cram_viewer);
+									ImGui::MenuItem("CRAM", NULL, &cram_viewer);
 
 									ImGui::Separator();
 
@@ -1534,19 +1542,19 @@ int main(int argc, char **argv)
 
 								if (ImGui::BeginMenu("FM"))
 								{
-									ImGui::MenuItem("DAC Status", NULL, &dac_status);
+									ImGui::MenuItem("DAC", NULL, &dac_status);
 
-									ImGui::MenuItem("Channel 1 Status", NULL, &fm_status[0]);
-									ImGui::MenuItem("Channel 2 Status", NULL, &fm_status[1]);
-									ImGui::MenuItem("Channel 3 Status", NULL, &fm_status[2]);
-									ImGui::MenuItem("Channel 4 Status", NULL, &fm_status[3]);
-									ImGui::MenuItem("Channel 5 Status", NULL, &fm_status[4]);
-									ImGui::MenuItem("Channel 6 Status", NULL, &fm_status[5]);
+									ImGui::MenuItem("Channel 1", NULL, &fm_status[0]);
+									ImGui::MenuItem("Channel 2", NULL, &fm_status[1]);
+									ImGui::MenuItem("Channel 3", NULL, &fm_status[2]);
+									ImGui::MenuItem("Channel 4", NULL, &fm_status[3]);
+									ImGui::MenuItem("Channel 5", NULL, &fm_status[4]);
+									ImGui::MenuItem("Channel 6", NULL, &fm_status[5]);
 
 									ImGui::EndMenu();
 								}
 
-								ImGui::MenuItem("PSG Status", NULL, &psg_status);
+								ImGui::MenuItem("PSG", NULL, &psg_status);
 
 								ImGui::EndMenu();
 							}
@@ -1727,10 +1735,10 @@ int main(int argc, char **argv)
 						Debug_Z80(&z80_status, &clownmdemu.state->z80, monospace_font);
 
 					if (m68k_ram_viewer)
-						Debug_Memory(&m68k_ram_viewer, monospace_font, "68000 RAM Viewer", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
+						Debug_Memory(&m68k_ram_viewer, monospace_font, "68000 RAM", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
 
 					if (z80_ram_viewer)
-						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM Viewer", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
+						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
 
 					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, dpi_scale};
 
