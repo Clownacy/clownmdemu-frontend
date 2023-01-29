@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "../clowncommon.h"
+#include "../clowncommon/clowncommon.h"
 
 #define CLOWNRESAMPLER_IMPLEMENTATION
 #define CLOWNRESAMPLER_STATIC

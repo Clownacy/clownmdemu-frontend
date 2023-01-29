@@ -2,7 +2,7 @@
 #define DEBUG_FM_H
 
 #include "libraries/imgui/imgui.h"
-#include "../clowncommon.h"
+#include "../clowncommon/clowncommon.h"
 #include "../clownmdemu.h"
 
 void Debug_DAC_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font);

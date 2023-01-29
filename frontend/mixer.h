@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "../clowncommon.h"
+#include "../clowncommon/clowncommon.h"
 
 #define CLOWNRESAMPLER_STATIC
 #include "libraries/clownresampler/clownresampler.h"
