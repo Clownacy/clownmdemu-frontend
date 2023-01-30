@@ -3,8 +3,8 @@
 
 #include "SDL.h"
 
-#include "../clowncommon.h"
-#include "../clownmdemu.h"
+#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 #include "libraries/tinyfiledialogs/tinyfiledialogs.h"
 
@@ -24,7 +24,7 @@
 #include "debug_z80.h"
 
 #define MIXER_FORMAT Sint16
-#include "mixer.c"
+#include "clownmdemu-frontend-common/mixer.c"
 
 typedef struct Input
 {

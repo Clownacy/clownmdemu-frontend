@@ -28,7 +28,6 @@ add_executable(clownmdemufrontend WIN32
 	"debug_z80.h"
 	"inconsolata_regular.h"
 	"karla_regular.h"
-	"libraries/clownresampler/clownresampler.h"
 	"libraries/tinyfiledialogs/tinyfiledialogs.c"
 	"libraries/tinyfiledialogs/tinyfiledialogs.h"
 	"libraries/imgui/imconfig.h"
@@ -115,7 +114,7 @@ target_include_directories(clownmdemufrontend PRIVATE "libraries/imgui" "librari
 #
 
 # Link clownmdemu core
-add_subdirectory("../" EXCLUDE_FROM_ALL "clownmdemu")
+add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemufrontend clownmdemu)
 
 # Link SDL2

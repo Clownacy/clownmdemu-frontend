@@ -1,8 +1,8 @@
 #include "debug_m68k.h"
 
 #include "libraries/imgui/imgui.h"
-#include "../clowncommon.h"
-#include "../clownmdemu.h"
+#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 void Debug_M68k(bool *open, M68k_State *m68k, ImFont *monospace_font)
 {

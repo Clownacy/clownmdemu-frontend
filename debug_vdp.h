@@ -4,7 +4,7 @@
 #include "SDL.h"
 
 #include "libraries/imgui/imgui.h"
-#include "../clownmdemu.h"
+#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 struct Debug_VDP_Data
 {

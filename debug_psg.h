@@ -2,7 +2,7 @@
 #define DEBUG_PSG_H
 
 #include "libraries/imgui/imgui.h"
-#include "../clownmdemu.h"
+#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font);
 

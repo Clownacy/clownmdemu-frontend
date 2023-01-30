@@ -4,8 +4,8 @@
 
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"
-#include "../clowncommon.h"
-#include "../clownmdemu.h"
+#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 void Debug_DAC_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {

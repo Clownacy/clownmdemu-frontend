@@ -3,7 +3,7 @@
 
 #include <stdarg.h>
 
-#include "../clowncommon/clowncommon.h"
+#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
 void InitError(void);
 void PrintErrorInternal(const char *format, va_list args);

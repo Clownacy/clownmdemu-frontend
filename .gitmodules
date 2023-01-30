@@ -1,18 +1,15 @@
 [submodule "frontend/libraries/SDL"]
-	path = frontend/libraries/SDL
+	path = libraries/SDL
 	url = https://github.com/libsdl-org/SDL.git
-[submodule "frontend/clownresampler"]
-	path = frontend/libraries/clownresampler
-	url = https://github.com/Clownacy/clownresampler.git
 [submodule "frontend/freetype"]
-	path = frontend/libraries/freetype
+	path = libraries/freetype
 	url = https://gitlab.freedesktop.org/freetype/freetype.git
 [submodule "frontend/libraries/imgui"]
-	path = frontend/libraries/imgui
+	path = libraries/imgui
 	url = https://github.com/Clownacy/imgui.git
 	branch = font-nonlinear
 [submodule "frontend/libraries/tinyfiledialogs"]
-	path = frontend/libraries/tinyfiledialogs
+	path = libraries/tinyfiledialogs
 	url = https://github.com/jfolker/tinyfiledialogs.git
 [submodule "clowncommon"]
 	path = clowncommon
@@ -20,3 +17,6 @@
 [submodule "clown68000"]
 	path = clown68000
 	url = https://github.com/Clownacy/clown68000
+[submodule "clownmdemu-frontend-common"]
+	path = clownmdemu-frontend-common
+	url = https://github.com/Clownacy/clownmdemu-frontend-common
