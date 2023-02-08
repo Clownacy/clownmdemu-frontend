@@ -470,6 +470,24 @@ static void ApplySaveState(EmulationState *save_state)
 	*emulation_state = *save_state;
 }
 
+static void SetSoftware(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
+{
+	quick_save_exists = false;
+
+	rom_buffer = rom_buffer_parameter;
+	rom_buffer_size = rom_buffer_size_parameter;
+
+#ifdef CLOWNMDEMUFRONTEND_REWINDING
+	state_rewind_remaining = 0;
+	state_rewind_index = 0;
+#endif
+	emulation_state = &state_rewind_buffer[0];
+
+	ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
+	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
+	ClownMDEmu_Reset(&clownmdemu, callbacks);
+}
+
 static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks)
 {
 	unsigned char *temp_rom_buffer;
@@ -488,20 +506,7 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		// Unload the previous ROM in memory.
 		SDL_free(rom_buffer);
 
-		quick_save_exists = false;
-
-		rom_buffer = temp_rom_buffer;
-		rom_buffer_size = temp_rom_buffer_size;
-
-	#ifdef CLOWNMDEMUFRONTEND_REWINDING
-		state_rewind_remaining = 0;
-		state_rewind_index = 0;
-	#endif
-		emulation_state = &state_rewind_buffer[0];
-
-		ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
-		ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
-		ClownMDEmu_Reset(&clownmdemu, callbacks);
+		SetSoftware(temp_rom_buffer, temp_rom_buffer_size, callbacks);
 	}
 }
 
@@ -664,6 +669,8 @@ int main(int argc, char **argv)
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
 					OpenSoftware(argv[1], &callbacks);
+				else
+					SetSoftware(NULL, 0, &callbacks);
 
 				// Manages whether the program exits or not.
 				bool quit = false;
