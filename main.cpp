@@ -616,6 +616,7 @@ int main(int argc, char **argv)
 				ImGuiIO &io = ImGui::GetIO();
 				ImGuiStyle &style = ImGui::GetStyle();
 				io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+				io.IniFilename = "clownmdemufrontend-imgui.ini";
 
 				// Setup Dear ImGui style
 				ImGui::StyleColorsDark();
