@@ -56,7 +56,7 @@ static Input keyboard_input;
 
 static ControllerInput *controller_input_list_head;
 
-#ifdef CLOWNMDEMUFRONTEND_REWINDING
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
 static size_t state_rewind_index;
 static size_t state_rewind_remaining;
@@ -162,7 +162,7 @@ static bool InitialiseVideo(void)
 	else
 	{
 		// Create window
-		window = SDL_CreateWindow("clownmdemufrontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+		window = SDL_CreateWindow("clownmdemu-frontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
 
 		if (window == NULL)
 		{
@@ -477,7 +477,7 @@ static void SetSoftware(unsigned char *rom_buffer_parameter, size_t rom_buffer_s
 	rom_buffer = rom_buffer_parameter;
 	rom_buffer_size = rom_buffer_size_parameter;
 
-#ifdef CLOWNMDEMUFRONTEND_REWINDING
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	state_rewind_remaining = 0;
 	state_rewind_index = 0;
 #endif
@@ -530,7 +530,7 @@ static void UpdateFastForwardStatus(void)
 	}
 }
 
-#ifdef CLOWNMDEMUFRONTEND_REWINDING
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static bool rewind_in_progress;
 
 static void UpdateRewindStatus(void)
@@ -616,7 +616,7 @@ int main(int argc, char **argv)
 				ImGuiIO &io = ImGui::GetIO();
 				ImGuiStyle &style = ImGui::GetStyle();
 				io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-				io.IniFilename = "clownmdemufrontend-imgui.ini";
+				io.IniFilename = "clownmdemu-frontend-imgui.ini";
 
 				// Setup Dear ImGui style
 				ImGui::StyleColorsDark();
@@ -705,12 +705,12 @@ int main(int argc, char **argv)
 				{
 					const bool emulator_on = rom_buffer != NULL;
 					const bool emulator_running = emulator_on && !emulator_paused
-					#ifdef CLOWNMDEMUFRONTEND_REWINDING
+					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 						&& !(rewind_in_progress && state_rewind_remaining == 0)
 					#endif
 						;
 
-				#ifdef CLOWNMDEMUFRONTEND_REWINDING
+				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 					// Handle rewinding.
 					if (emulator_running)
 					{
@@ -911,7 +911,7 @@ int main(int argc, char **argv)
 										UpdateFastForwardStatus();
 										break;
 
-									#ifdef CLOWNMDEMUFRONTEND_REWINDING
+									#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 									case SDL_SCANCODE_R:
 										keyboard_input.rewind = pressed;
 										UpdateRewindStatus();
@@ -1090,7 +1090,7 @@ int main(int argc, char **argv)
 
 												break;
 
-											#ifdef CLOWNMDEMUFRONTEND_REWINDING
+											#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 											case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
 												controller_input->input.rewind = pressed;
 												UpdateRewindStatus();
