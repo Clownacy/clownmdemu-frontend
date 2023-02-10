@@ -1239,7 +1239,7 @@ int main(int argc, char **argv)
 
 						// Resample, mix, and output the audio for this frame.
 						// If there's a lot of audio queued, then don't queue any more.
-						if (audio_device != 0 && SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 2)
+						if (audio_device != 0 && SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
 							Mixer_End(&mixer, AudioPushCallback, NULL);
 					}
 
