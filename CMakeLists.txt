@@ -46,6 +46,8 @@ add_executable(clownmdemu-frontend WIN32
 	"libraries/imgui/backends/imgui_impl_sdlrenderer.h"
 )
 
+set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
+
 # Link a manifest file that enables Hi-DPI support on Windows
 if(WIN32)
 	if (MSVC)
