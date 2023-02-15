@@ -203,7 +203,7 @@ static bool InitialiseVideo(void)
 	else
 	{
 		// Create window
-		window = SDL_CreateWindow("clownmdemu-frontend", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+		window = SDL_CreateWindow("clownmdemu-frontend v0.3", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
 
 		if (window == NULL)
 		{
