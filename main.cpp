@@ -1742,7 +1742,7 @@ int main(int argc, char **argv)
 
 								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
-								DoToolTip("Makes the program occupy the entire screen.");
+								DoToolTip("Makes this program occupy the entire screen.");
 
 								if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
 									if (!fast_forward_in_progress)
