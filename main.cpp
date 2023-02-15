@@ -860,7 +860,7 @@ int main(int argc, char **argv)
 								if (!emulator_on || !emulator_has_focus)
 									break;
 
-								if (event.key.keysym.sym == SDLK_ESCAPE)
+								if (event.key.keysym.scancode == SDLK_ESCAPE)
 								{
 									// Exit fullscreen
 									if (fullscreen)
@@ -872,7 +872,7 @@ int main(int argc, char **argv)
 
 								// Prevent invalid memory accesses due to future API expansions.
 								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-								if (event.key.keysym.sym >= CC_COUNT_OF(keyboard_bindings))
+								if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
 									break;
 
 								switch (keyboard_bindings[event.key.keysym.scancode])
