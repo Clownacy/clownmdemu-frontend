@@ -1935,6 +1935,8 @@ int main(int argc, char **argv)
 
 					if (options_menu)
 					{
+						ImGui::SetNextWindowSize(ImVec2(550, 550), ImGuiCond_FirstUseEver);
+
 						if (ImGui::Begin("Options", &options_menu))
 						{
 							if (ImGui::CollapsingHeader("Console", ImGuiTreeNodeFlags_DefaultOpen))
