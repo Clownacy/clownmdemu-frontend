@@ -1914,18 +1914,24 @@ int main(int argc, char **argv)
 							{
 								bool next_menu = false;
 
-								ImGui::Text("Press the key that you want to bind...");
+								ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
+								ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
 
 								int total_keys;
 								const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
 
 								for (int i = 0; i < total_keys; ++i)
 								{
-									if (keys_pressed[i])
+									if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
 									{
-										next_menu = true;
 										ImGui::CloseCurrentPopup();
-										selected_scancode = (SDL_Scancode)i;
+
+										// The 'escape' key will exit the menu without binding.
+										if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
+										{
+											next_menu = true;
+											selected_scancode = (SDL_Scancode)i;
+										}
 										break;
 									}
 								}
