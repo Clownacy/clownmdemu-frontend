@@ -52,9 +52,35 @@ typedef struct EmulationState
 	Uint32 colours[3 * 4 * 16];
 } EmulationState;
 
+typedef enum InputBinding
+{
+	INPUT_BINDING_NONE,
+	INPUT_BINDING_CONTROLLER_UP,
+	INPUT_BINDING_CONTROLLER_DOWN,
+	INPUT_BINDING_CONTROLLER_LEFT,
+	INPUT_BINDING_CONTROLLER_RIGHT,
+	INPUT_BINDING_CONTROLLER_A,
+	INPUT_BINDING_CONTROLLER_B,
+	INPUT_BINDING_CONTROLLER_C,
+	INPUT_BINDING_CONTROLLER_START,
+	INPUT_BINDING_PAUSE,
+	INPUT_BINDING_RESET,
+	INPUT_BINDING_FAST_FORWARD,
+	INPUT_BINDING_REWIND,
+	INPUT_BINDING_QUICK_SAVE_STATE,
+	INPUT_BINDING_QUICK_LOAD_STATE,
+	INPUT_BINDING_TOGGLE_FULLSCREEN,
+	INPUT_BINDING_EXIT_FULLSCREEN,
+	INPUT_BINDING_TOGGLE_CONTROL_PAD
+} InputBinding;
+
+#define INPUT_BINDING__TOTAL (INPUT_BINDING_TOGGLE_CONTROL_PAD + 1)
+
 static Input keyboard_input;
 
 static ControllerInput *controller_input_list_head;
+
+static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
@@ -673,6 +699,24 @@ int main(int argc, char **argv)
 				else
 					SetSoftware(NULL, 0, &callbacks);
 
+				keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
+				keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
+				keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_LEFT;
+				keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_RIGHT;
+				keyboard_bindings[SDL_SCANCODE_O] = INPUT_BINDING_CONTROLLER_A;
+				keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
+				keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
+				keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_ESCAPE)] = INPUT_BINDING_EXIT_FULLSCREEN;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
+				keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
+				keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
+
 				// Manages whether the program exits or not.
 				bool quit = false;
 
@@ -698,6 +742,7 @@ int main(int argc, char **argv)
 				bool dac_status = false;
 				bool fm_status[6] = {false, false, false, false, false, false};
 				bool psg_status = false;
+				bool keyboard_bindings_menu = false;
 
 				bool dear_imgui_demo_window = false;
 
@@ -814,9 +859,9 @@ int main(int argc, char **argv)
 									break;
 
 								// Special hotkeys that can be used even when not focussed on the emulation window.
-								switch (event.key.keysym.sym)
+								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
-									case SDLK_ESCAPE:
+									case INPUT_BINDING_EXIT_FULLSCREEN:
 										// Exit fullscreen
 										if (fullscreen)
 										{
@@ -826,11 +871,11 @@ int main(int argc, char **argv)
 
 										break;
 
-									case SDLK_PAUSE:
+									case INPUT_BINDING_PAUSE:
 										emulator_paused = !emulator_paused;
 										break;
 
-									case SDLK_F11:
+									case INPUT_BINDING_TOGGLE_FULLSCREEN:
 										// Toggle fullscreen
 										fullscreen = !fullscreen;
 										SetFullscreen(fullscreen);
@@ -844,9 +889,9 @@ int main(int argc, char **argv)
 								if (!emulator_on || !emulator_has_focus)
 									break;
 
-								switch (event.key.keysym.sym)
+								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
-									case SDLK_TAB:
+									case INPUT_BINDING_RESET:
 										// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows),
 										// and ALT+TAB (used by the OS for cycling its windows).
 										if (SDL_GetModState() != KMOD_NONE)
@@ -859,18 +904,18 @@ int main(int argc, char **argv)
 
 										break;
 
-									case SDLK_F1:
+									case INPUT_BINDING_TOGGLE_CONTROL_PAD:
 										// Toggle which joypad the keyboard controls
 										keyboard_input.bound_joypad ^= 1;
 										break;
 
-									case SDLK_F5:
+									case INPUT_BINDING_QUICK_SAVE_STATE:
 										// Save save state
 										quick_save_exists = true;
 										quick_save_state = *emulation_state;
 										break;
 
-									case SDLK_F9:
+									case INPUT_BINDING_QUICK_LOAD_STATE:
 										// Load save state
 										if (quick_save_exists)
 										{
@@ -883,36 +928,40 @@ int main(int argc, char **argv)
 
 									default:
 										break;
-
 								}
 								// Fallthrough
 							case SDL_KEYUP:
 							{
+								// Prevent invalid memory accesses due to future API expansions.
+								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
+								if (event.key.keysym.sym >= CC_COUNT_OF(keyboard_bindings))
+									break;
+
 								const bool pressed = event.key.state == SDL_PRESSED;
 
-								switch (event.key.keysym.scancode)
+								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
 									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break
 
-									DO_KEY(CLOWNMDEMU_BUTTON_UP, SDL_SCANCODE_W);
-									DO_KEY(CLOWNMDEMU_BUTTON_DOWN, SDL_SCANCODE_S);
-									DO_KEY(CLOWNMDEMU_BUTTON_LEFT, SDL_SCANCODE_A);
-									DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, SDL_SCANCODE_D);
-									DO_KEY(CLOWNMDEMU_BUTTON_A, SDL_SCANCODE_O);
-									DO_KEY(CLOWNMDEMU_BUTTON_B, SDL_SCANCODE_P);
-									DO_KEY(CLOWNMDEMU_BUTTON_C, SDL_SCANCODE_LEFTBRACKET);
-									DO_KEY(CLOWNMDEMU_BUTTON_START, SDL_SCANCODE_RETURN);
+									DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
+									DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
+									DO_KEY(CLOWNMDEMU_BUTTON_LEFT, INPUT_BINDING_CONTROLLER_LEFT);
+									DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, INPUT_BINDING_CONTROLLER_RIGHT);
+									DO_KEY(CLOWNMDEMU_BUTTON_A, INPUT_BINDING_CONTROLLER_A);
+									DO_KEY(CLOWNMDEMU_BUTTON_B, INPUT_BINDING_CONTROLLER_B);
+									DO_KEY(CLOWNMDEMU_BUTTON_C, INPUT_BINDING_CONTROLLER_C);
+									DO_KEY(CLOWNMDEMU_BUTTON_START, INPUT_BINDING_CONTROLLER_START);
 
 									#undef DO_KEY
 
-									case SDL_SCANCODE_SPACE:
+									case INPUT_BINDING_FAST_FORWARD:
 										// Toggle fast-forward
 										keyboard_input.fast_forward = pressed;
 										UpdateFastForwardStatus();
 										break;
 
 									#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-									case SDL_SCANCODE_R:
+									case INPUT_BINDING_REWIND:
 										keyboard_input.rewind = pressed;
 										UpdateRewindStatus();
 										break;
@@ -1282,6 +1331,7 @@ int main(int argc, char **argv)
 					                        || fm_status[4]
 					                        || fm_status[5]
 					                        || psg_status
+					                        || keyboard_bindings_menu
 					                        || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 					// Hide mouse when the user just wants a fullscreen display window
@@ -1590,6 +1640,8 @@ int main(int argc, char **argv)
 
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
 
+								ImGui::MenuItem("Keyboard Bindings...", NULL, &keyboard_bindings_menu);
+
 							#ifndef NDEBUG
 								ImGui::Separator();
 
@@ -1771,6 +1823,161 @@ int main(int argc, char **argv)
 
 					if (psg_status)
 						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
+
+					if (keyboard_bindings_menu)
+					{
+						if (ImGui::Begin("Keyboard Bindings", &keyboard_bindings_menu))
+						{
+							static bool sorted_scancodes_done;
+							static SDL_Scancode sorted_scancodes[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+
+							if (!sorted_scancodes_done)
+							{
+								sorted_scancodes_done = true;
+
+								for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+									sorted_scancodes[i] = (SDL_Scancode)i;
+
+								SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
+									[](const void* const a, const void* const b)
+									{
+										const SDL_Scancode* const binding_1 = (const SDL_Scancode*)a;
+										const SDL_Scancode* const binding_2 = (const SDL_Scancode*)b;
+
+										return keyboard_bindings[*binding_1] - keyboard_bindings[*binding_2];
+									}
+								);
+							}
+
+							if (ImGui::Button("Add Binding"))
+								ImGui::OpenPopup("Select Key");
+
+							ImGui::BeginChild("bindings", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+							static SDL_Scancode selected_scancode;
+
+							static const char* const binding_names[INPUT_BINDING__TOTAL] = {
+								"None",
+								"Control Pad - Up",
+								"Control Pad - Down",
+								"Control Pad - Left",
+								"Control Pad - Right",
+								"Control Pad - A",
+								"Control Pad - B",
+								"Control Pad - C",
+								"Control Pad - Start",
+								"Pause",
+								"Reset",
+								"Fast-Forward",
+								"Rewind",
+								"Quick Save State",
+								"Quick Load State",
+								"Toggle Full-Screen",
+								"Exit Full-Screen",
+								"Toggle Control Pad"
+							};
+
+							if (ImGui::BeginTable("bindings", 3))
+							{
+								ImGui::TableSetupColumn("Key");
+								ImGui::TableSetupColumn("Action");
+								ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+								ImGui::TableHeadersRow();
+								for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+								{
+									if (keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
+									{
+										ImGui::TableNextRow();
+
+										ImGui::TableSetColumnIndex(0);
+										ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
+
+										ImGui::TableSetColumnIndex(1);
+										ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
+
+										ImGui::TableSetColumnIndex(2);
+										ImGui::PushID(i);
+										if (ImGui::Button("X"))
+											keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
+										ImGui::PopID();
+									}
+								}
+								ImGui::EndTable();
+							}
+
+							ImGui::EndChild();
+
+							const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+							if (ImGui::BeginPopupModal("Select Key", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+							{
+								bool next_menu = false;
+
+								ImGui::Text("Press the key that you want to bind...");
+
+								int total_keys;
+								const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
+
+								for (int i = 0; i < total_keys; ++i)
+								{
+									if (keys_pressed[i])
+									{
+										next_menu = true;
+										ImGui::CloseCurrentPopup();
+										selected_scancode = (SDL_Scancode)i;
+										break;
+									}
+								}
+
+								if (ImGui::Button("Cancel"))
+									ImGui::CloseCurrentPopup();
+
+								ImGui::EndPopup();
+
+								if (next_menu)
+									ImGui::OpenPopup("Select Action");
+							}
+
+							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+							if (ImGui::BeginPopupModal("Select Action", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+							{
+								bool previous_menu = false;
+
+								if (ImGui::BeginListBox("##actions"))
+								{
+									for (unsigned int i = 1; i < CC_COUNT_OF(binding_names); ++i)
+									{
+										if (ImGui::Selectable(binding_names[i]))
+										{
+											ImGui::CloseCurrentPopup();
+											keyboard_bindings[selected_scancode] = (InputBinding)i;
+											sorted_scancodes_done = false;
+										}
+
+										// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+//												if (is_selected)
+//												ImGui::SetItemDefaultFocus();
+									}
+									ImGui::EndListBox();
+								}
+
+								if (ImGui::Button("Cancel"))
+								{
+									previous_menu = true;
+									ImGui::CloseCurrentPopup();
+								}
+
+								ImGui::EndPopup();
+
+								if (previous_menu)
+									ImGui::OpenPopup("Select Key");
+							}
+
+							ImGui::End();
+						}
+					}
 
 					SDL_RenderClear(renderer);
 
