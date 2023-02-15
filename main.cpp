@@ -1682,7 +1682,7 @@ int main(int argc, char **argv)
 								ImGui::MenuItem("Other", NULL, false, false);
 
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
-								DoToolTip("Creates a window to hold the display.");
+								DoToolTip("Moves the display to a small sub-window.");
 
 							#ifndef NDEBUG
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
