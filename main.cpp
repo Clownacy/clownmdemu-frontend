@@ -645,25 +645,18 @@ static int INICallback(void* const user, const char* const section, const char* 
 		errno = 0;
 		const SDL_Scancode scancode = (SDL_Scancode)strtoul(name, &string_end, 0);
 
-		if (errno == ERANGE || string_end - name < strlen(name))
-		{
-			return 0;
-		}
-		else
+		if (errno != ERANGE && string_end - name >= strlen(name) && scancode < SDL_NUM_SCANCODES)
 		{
 			errno = 0;
 			const InputBinding input_binding = (InputBinding)strtoul(value, &string_end, 0);
 
-			if (errno == ERANGE || string_end - value < strlen(value))
-				return 0;
-			else
+			if (errno != ERANGE && string_end - value >= strlen(value))
 				keyboard_bindings[scancode] = input_binding;
 		}
 
-		return 1;
 	}
 
-	return 0;
+	return 1;
 }
 
 static void LoadConfiguration(void)
