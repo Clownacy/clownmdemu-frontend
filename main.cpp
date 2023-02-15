@@ -654,32 +654,32 @@ static int INIParseCallback(void* const user, const char* const section, const c
 {
 	(void)user;
 
-	if (strcmp(section, "Miscellaneous") == 0)
+	if (SDL_strcmp(section, "Miscellaneous") == 0)
 	{
-		const bool state = strcmp(value, "on") == 0;
+		const bool state = SDL_strcmp(value, "on") == 0;
 
-		if (strcmp(name, "vsync") == 0)
+		if (SDL_strcmp(name, "vsync") == 0)
 			use_vsync = state;
-		else if (strcmp(name, "integer-screen-scaling") == 0)
+		else if (SDL_strcmp(name, "integer-screen-scaling") == 0)
 			integer_screen_scaling = state;
-		else if (strcmp(name, "tall-interlace-mode-2") == 0)
+		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
 			tall_double_resolution_mode = state;
-		else if (strcmp(name, "low-pass-filter") == 0)
+		else if (SDL_strcmp(name, "low-pass-filter") == 0)
 			low_pass_filter = state;
 	}
-	else if (strcmp(section, "Keyboard Bindings") == 0)
+	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
 	{
 		char *string_end;
 
 		errno = 0;
-		const SDL_Scancode scancode = (SDL_Scancode)strtoul(name, &string_end, 0);
+		const SDL_Scancode scancode = (SDL_Scancode)SDL_strtoul(name, &string_end, 0);
 
-		if (errno != ERANGE && string_end - name >= strlen(name) && scancode < SDL_NUM_SCANCODES)
+		if (errno != ERANGE && string_end - name >= SDL_strlen(name) && scancode < SDL_NUM_SCANCODES)
 		{
 			errno = 0;
-			const InputBinding input_binding = (InputBinding)strtoul(value, &string_end, 0);
+			const InputBinding input_binding = (InputBinding)SDL_strtoul(value, &string_end, 0);
 
-			if (errno != ERANGE && string_end - value >= strlen(value))
+			if (errno != ERANGE && string_end - value >= SDL_strlen(value))
 				keyboard_bindings[scancode] = input_binding;
 		}
 
@@ -781,7 +781,7 @@ static void SaveConfiguration(void)
 			{
 				char buffer[0x20];
 				SDL_snprintf(buffer, sizeof(buffer), "%d = %d\n", i, keyboard_bindings[i]);
-				SDL_RWwrite(file, buffer, strlen(buffer), 1);
+				SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
 			}
 		}
 
