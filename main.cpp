@@ -856,6 +856,11 @@ int main(int argc, char **argv)
 								if (event.key.repeat)
 									break;
 
+								// Prevent invalid memory accesses due to future API expansions.
+								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
+								if (event.key.keysym.sym >= CC_COUNT_OF(keyboard_bindings))
+									break;
+
 								// Special hotkeys that can be used even when not focussed on the emulation window.
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
