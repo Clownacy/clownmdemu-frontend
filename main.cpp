@@ -666,6 +666,10 @@ static int INIParseCallback(void* const user, const char* const section, const c
 			tall_double_resolution_mode = state;
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
 			low_pass_filter = state;
+		else if (SDL_strcmp(name, "pal") == 0)
+			clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
+		else if (SDL_strcmp(name, "japanese") == 0)
+			clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
 	}
 	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
 	{
@@ -710,6 +714,9 @@ static void LoadConfiguration(void)
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
 	low_pass_filter = true;
+
+	clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+	clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 
 	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
 
@@ -771,6 +778,8 @@ static void SaveConfiguration(void)
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", low_pass_filter);
+		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
 		// Save keyboard bindings.
 		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
@@ -850,8 +859,6 @@ int main(int argc, char **argv)
 				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
 				// Initialise the clownmdemu configuration struct.
-				clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
-				clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 				clownmdemu_configuration.vdp.sprites_disabled = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
@@ -902,7 +909,7 @@ int main(int argc, char **argv)
 				bool dac_status = false;
 				bool fm_status[6] = {false, false, false, false, false, false};
 				bool psg_status = false;
-				bool keyboard_bindings_menu = false;
+				bool options_menu = false;
 
 				bool dear_imgui_demo_window = false;
 
@@ -1489,7 +1496,7 @@ int main(int argc, char **argv)
 					                        || fm_status[4]
 					                        || fm_status[5]
 					                        || psg_status
-					                        || keyboard_bindings_menu
+					                        || options_menu
 					                        || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 					// Hide mouse when the user just wants a fullscreen display window
@@ -1551,42 +1558,6 @@ int main(int argc, char **argv)
 									emulator_paused = false;
 								}
 
-								ImGui::Separator();
-
-								if (ImGui::BeginMenu("Settings"))
-								{
-									ImGui::MenuItem("TV Standard", NULL, false, false);
-
-									if (ImGui::MenuItem("NTSC (59.94Hz)", NULL, clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
-									{
-										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
-										{
-											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-											SetAudioPALMode(false);
-										}
-									}
-
-									if (ImGui::MenuItem("PAL (50Hz)", NULL, clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
-									{
-										if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
-										{
-											clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-											SetAudioPALMode(true);
-										}
-									}
-
-									ImGui::Separator();
-
-									ImGui::MenuItem("Region", NULL, false, false);
-
-									if (ImGui::MenuItem("Domestic (Japan)", NULL, clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
-										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
-
-									if (ImGui::MenuItem("Overseas (Elsewhere)", NULL, clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
-										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
-
-									ImGui::EndMenu();
-								}
 								ImGui::EndMenu();
 							}
 
@@ -1777,63 +1748,19 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Misc."))
 							{
-								ImGui::MenuItem("Video", NULL, false, false);
+								ImGui::MenuItem("Options...", NULL, &options_menu);
 
 								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
-								DoToolTip("Makes this program occupy the entire screen.");
-
-								if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
-									if (!fast_forward_in_progress)
-										SDL_RenderSetVSync(renderer, use_vsync);
-								DoToolTip("Prevents screen tearing.");
-
-								if (ImGui::MenuItem("Integer Screen Scaling", NULL, &integer_screen_scaling) && integer_screen_scaling)
-								{
-									// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
-									SDL_DestroyTexture(framebuffer_texture_upscaled);
-									framebuffer_texture_upscaled = NULL;
-								}
-								DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
-
-								ImGui::MenuItem("Tall Interlace Mode 2", NULL, &tall_double_resolution_mode);
-								DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
-
-								ImGui::Separator();
-								ImGui::MenuItem("Audio", NULL, false, false);
-
-								if (ImGui::MenuItem("Low-Pass Filter", NULL, &low_pass_filter))
-									Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
-								DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
-
-								ImGui::Separator();
-								ImGui::MenuItem("Keyboard Input", NULL, false, false);
-
-								if (ImGui::MenuItem("Control Pad #1", NULL, keyboard_input.bound_joypad == 0))
-									keyboard_input.bound_joypad = 0;
-								DoToolTip("Binds the keyboard to Control Pad #1.");
-
-								if (ImGui::MenuItem("Control Pad #2", NULL, keyboard_input.bound_joypad == 1))
-									keyboard_input.bound_joypad = 1;
-								DoToolTip("Binds the keyboard to Control Pad #2.");
-
-								ImGui::MenuItem("Bindings...", NULL, &keyboard_bindings_menu);
-								DoToolTip("Configures keyboard input mappings.");
-
-								ImGui::Separator();
-								ImGui::MenuItem("Other", NULL, false, false);
 
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
-								DoToolTip("Moves the display to a small sub-window.");
 
 							#ifndef NDEBUG
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
-								DoToolTip("Shows a variety of Dear ImGui examples, which\nare useful for inspiration and code samples.");
 							#endif
 
 								if (ImGui::MenuItem("Exit"))
 									quit = true;
-								DoToolTip("Closes this program.");
 
 								ImGui::EndMenu();
 							}
@@ -2006,63 +1933,143 @@ int main(int argc, char **argv)
 					if (psg_status)
 						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
 
-					if (keyboard_bindings_menu)
+					if (options_menu)
 					{
-						ImGui::SetNextWindowSize(ImVec2(430, 430), ImGuiCond_FirstUseEver);
-
-						if (ImGui::Begin("Keyboard Bindings", &keyboard_bindings_menu))
+						if (ImGui::Begin("Options", &options_menu))
 						{
-							static bool sorted_scancodes_done;
-							static SDL_Scancode sorted_scancodes[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-
-							if (!sorted_scancodes_done)
+							if (ImGui::CollapsingHeader("Console", ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								sorted_scancodes_done = true;
+								if (ImGui::BeginTable("Console Options", 3))
+								{
+									ImGui::TableNextColumn();
+									ImGui::TextUnformatted("TV Standard:");
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("NTSC", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+										clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+									DoToolTip("60 FPS");
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("PAL", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
+										clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+									DoToolTip("50 FPS");
 
-								for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
-									sorted_scancodes[i] = (SDL_Scancode)i;
+									ImGui::TableNextColumn();
+									ImGui::TextUnformatted("Region:");
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("Japan", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
+										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("Elsewhere", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
+										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 
-								SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
-									[](const void* const a, const void* const b)
+									ImGui::EndTable();
+								}
+							}
+
+							if (ImGui::CollapsingHeader("Video", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("Video Options", 2))
+								{
+									ImGui::TableNextColumn();
+									if (ImGui::Checkbox("V-Sync", &use_vsync))
+										if (!fast_forward_in_progress)
+											SDL_RenderSetVSync(renderer, use_vsync);
+									DoToolTip("Prevents screen tearing.");
+
+									ImGui::TableNextColumn();
+									if (ImGui::Checkbox("Integer Screen Scaling", &integer_screen_scaling) && integer_screen_scaling)
+									{
+										// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
+										SDL_DestroyTexture(framebuffer_texture_upscaled);
+										framebuffer_texture_upscaled = NULL;
+									}
+									DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
+
+									ImGui::TableNextColumn();
+									ImGui::Checkbox("Tall Interlace Mode 2", &tall_double_resolution_mode);
+									DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
+
+									ImGui::EndTable();
+								}
+							}
+
+							if (ImGui::CollapsingHeader("Audio", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("Audio Options", 2))
+								{
+									ImGui::TableNextColumn();
+									if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
+										Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
+									DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+
+									ImGui::EndTable();
+								}
+							}
+
+							if (ImGui::CollapsingHeader("Keyboard Input", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("Keyboard Input Options", 2))
+								{
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("Control Pad #1", keyboard_input.bound_joypad == 0))
+										keyboard_input.bound_joypad = 0;
+									DoToolTip("Binds the keyboard to Control Pad #1.");
+
+
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("Control Pad #2", keyboard_input.bound_joypad == 1))
+										keyboard_input.bound_joypad = 1;
+									DoToolTip("Binds the keyboard to Control Pad #2.");
+
+									ImGui::EndTable();
+								}
+
+								static bool sorted_scancodes_done;
+								static SDL_Scancode sorted_scancodes[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+
+								if (!sorted_scancodes_done)
+								{
+									sorted_scancodes_done = true;
+
+									for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+										sorted_scancodes[i] = (SDL_Scancode)i;
+
+									SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
+										[](const void* const a, const void* const b)
 									{
 										const SDL_Scancode* const binding_1 = (const SDL_Scancode*)a;
 										const SDL_Scancode* const binding_2 = (const SDL_Scancode*)b;
 
 										return keyboard_bindings[*binding_1] - keyboard_bindings[*binding_2];
 									}
-								);
-							}
+									);
+								}
 
-							if (ImGui::Button("Add Binding"))
-								ImGui::OpenPopup("Select Key");
+								static SDL_Scancode selected_scancode;
 
-							ImGui::BeginChild("bindings");
+								static const char* const binding_names[INPUT_BINDING__TOTAL] = {
+									"None",
+									"Up",
+									"Down",
+									"Left",
+									"Right",
+									"A",
+									"B",
+									"C",
+									"Start",
+									"Pause",
+									"Reset",
+									"Fast-Forward",
+									"Rewind",
+									"Quick Save State",
+									"Quick Load State",
+									"Toggle Full-Screen",
+									"Toggle Control Pad"
+								};
 
-							static SDL_Scancode selected_scancode;
+								ImGui::Separator();
 
-							static const char* const binding_names[INPUT_BINDING__TOTAL] = {
-								"None",
-								"Up",
-								"Down",
-								"Left",
-								"Right",
-								"A",
-								"B",
-								"C",
-								"Start",
-								"Pause",
-								"Reset",
-								"Fast-Forward",
-								"Rewind",
-								"Quick Save State",
-								"Quick Load State",
-								"Toggle Full-Screen",
-								"Toggle Control Pad"
-							};
-
-							if (ImGui::CollapsingHeader("Control Pad", ImGuiTreeNodeFlags_DefaultOpen))
-							{
-								if (ImGui::BeginTable("control pad bindings", 3))
+								ImGui::TextUnformatted("Control Pad Bindings:");
+								if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
 								{
 									ImGui::TableSetupColumn("Key");
 									ImGui::TableSetupColumn("Action");
@@ -2089,11 +2096,14 @@ int main(int argc, char **argv)
 									}
 									ImGui::EndTable();
 								}
-							}
 
-							if (ImGui::CollapsingHeader("Other", ImGuiTreeNodeFlags_DefaultOpen))
-							{
-								if (ImGui::BeginTable("hoykey bindings", 3))
+								if (ImGui::Button("Add Binding"))
+									ImGui::OpenPopup("Select Key");
+
+								ImGui::Separator();
+
+								ImGui::TextUnformatted("Other Bindings:");
+								if (ImGui::BeginTable("hoykey bindings", 3, ImGuiTableFlags_Borders))
 								{
 									ImGui::TableSetupColumn("Key");
 									ImGui::TableSetupColumn("Action");
@@ -2119,95 +2129,100 @@ int main(int argc, char **argv)
 										}
 									}
 									ImGui::EndTable();
+
+									if (ImGui::Button("Add Binding"))
+										ImGui::OpenPopup("Select Key");
 								}
-							}
 
-							ImGui::EndChild();
+								const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+								ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-							const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-							if (ImGui::BeginPopupModal("Select Key", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-							{
-								bool next_menu = false;
-
-								ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
-								ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
-
-								int total_keys;
-								const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
-
-								for (int i = 0; i < total_keys; ++i)
+								if (ImGui::BeginPopupModal("Select Key", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 								{
-									if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
+									bool next_menu = false;
+
+									ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
+									ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
+
+									int total_keys;
+									const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
+
+									for (int i = 0; i < total_keys; ++i)
 									{
+										if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
+										{
+											ImGui::CloseCurrentPopup();
+
+											// The 'escape' key will exit the menu without binding.
+											if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
+											{
+												next_menu = true;
+												selected_scancode = (SDL_Scancode)i;
+											}
+											break;
+										}
+									}
+
+									if (ImGui::Button("Cancel"))
 										ImGui::CloseCurrentPopup();
 
-										// The 'escape' key will exit the menu without binding.
-										if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
-										{
-											next_menu = true;
-											selected_scancode = (SDL_Scancode)i;
-										}
-										break;
-									}
+									ImGui::EndPopup();
+
+									if (next_menu)
+										ImGui::OpenPopup("Select Action");
 								}
 
-								if (ImGui::Button("Cancel"))
-									ImGui::CloseCurrentPopup();
+								ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-								ImGui::EndPopup();
-
-								if (next_menu)
-									ImGui::OpenPopup("Select Action");
-							}
-
-							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-							if (ImGui::BeginPopupModal("Select Action", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-							{
-								bool previous_menu = false;
-
-								ImGui::TextUnformatted("Control Pad:");
-								if (ImGui::BeginListBox("##Control Pad"))
+								if (ImGui::BeginPopupModal("Select Action", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 								{
-									for (InputBinding i = INPUT_BINDING_CONTROL_PAD__BEGIN; i <= INPUT_BINDING_CONTROL_PAD__END; i = (InputBinding)(i + 1))
+									bool previous_menu = false;
+
+									ImGui::TextUnformatted("Control Pad:");
+									if (ImGui::BeginListBox("##Control Pad"))
 									{
-										if (ImGui::Selectable(binding_names[i]))
+										for (InputBinding i = INPUT_BINDING_CONTROL_PAD__BEGIN; i <= INPUT_BINDING_CONTROL_PAD__END; i = (InputBinding)(i + 1))
 										{
-											ImGui::CloseCurrentPopup();
-											keyboard_bindings[selected_scancode] = i;
-											sorted_scancodes_done = false;
+											if (ImGui::Selectable(binding_names[i]))
+											{
+												ImGui::CloseCurrentPopup();
+												keyboard_bindings[selected_scancode] = i;
+												sorted_scancodes_done = false;
+											}
 										}
+										ImGui::EndListBox();
 									}
-									ImGui::EndListBox();
-								}
 
-								ImGui::TextUnformatted("Other:");
-								if (ImGui::BeginListBox("##Other"))
-								{
-									for (InputBinding i = INPUT_BINDING_HOTKEYS__BEGIN; i <= INPUT_BINDING_HOTKEYS__END; i = (InputBinding)(i + 1))
+									ImGui::Separator();
+
+									ImGui::TextUnformatted("Other:");
+									if (ImGui::BeginListBox("##Other"))
 									{
-										if (ImGui::Selectable(binding_names[i]))
+										for (InputBinding i = INPUT_BINDING_HOTKEYS__BEGIN; i <= INPUT_BINDING_HOTKEYS__END; i = (InputBinding)(i + 1))
 										{
-											ImGui::CloseCurrentPopup();
-											keyboard_bindings[selected_scancode] = i;
-											sorted_scancodes_done = false;
+											if (ImGui::Selectable(binding_names[i]))
+											{
+												ImGui::CloseCurrentPopup();
+												keyboard_bindings[selected_scancode] = i;
+												sorted_scancodes_done = false;
+											}
 										}
+										ImGui::EndListBox();
 									}
-									ImGui::EndListBox();
+
+									ImGui::Separator();
+
+									if (ImGui::Button("Cancel"))
+									{
+										previous_menu = true;
+										ImGui::CloseCurrentPopup();
+									}
+
+									ImGui::EndPopup();
+
+									if (previous_menu)
+										ImGui::OpenPopup("Select Key");
 								}
-
-								if (ImGui::Button("Cancel"))
-								{
-									previous_menu = true;
-									ImGui::CloseCurrentPopup();
-								}
-
-								ImGui::EndPopup();
-
-								if (previous_menu)
-									ImGui::OpenPopup("Select Key");
 							}
 
 							ImGui::End();
