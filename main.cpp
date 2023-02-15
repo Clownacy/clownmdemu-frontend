@@ -983,7 +983,7 @@ int main(int argc, char **argv)
 								if (!emulator_on || !emulator_has_focus)
 									break;
 
-								if (event.key.keysym.scancode == SDLK_ESCAPE)
+								if (event.key.keysym.sym == SDLK_ESCAPE)
 								{
 									// Exit fullscreen
 									if (fullscreen)
