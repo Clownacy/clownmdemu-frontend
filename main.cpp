@@ -1943,6 +1943,7 @@ int main(int argc, char **argv)
 								{
 									ImGui::TableNextColumn();
 									ImGui::TextUnformatted("TV Standard:");
+									DoToolTip("Some games only work with a certain TV standard.");
 									ImGui::TableNextColumn();
 									if (ImGui::RadioButton("NTSC", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 										clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
@@ -1954,6 +1955,7 @@ int main(int argc, char **argv)
 
 									ImGui::TableNextColumn();
 									ImGui::TextUnformatted("Region:");
+									DoToolTip("Some games only work with a certain region.");
 									ImGui::TableNextColumn();
 									if (ImGui::RadioButton("Japan", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
 										clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
