@@ -605,6 +605,16 @@ static const char* SaveFileDialog(char const *aTitle, char const *aDefaultPathAn
 	return path;
 }
 
+static void DoToolTip(const char* const text)
+{
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted(text);
+		ImGui::EndTooltip();
+	}
+}
+
 int main(int argc, char **argv)
 {
 	InitError();
@@ -1629,10 +1639,12 @@ int main(int argc, char **argv)
 
 								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
+								DoToolTip("Makes the program occupy the entire screen.");
 
 								if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
 									if (!fast_forward_in_progress)
 										SDL_RenderSetVSync(renderer, use_vsync);
+								DoToolTip("Prevents screen tearing.");
 
 								if (ImGui::MenuItem("Integer Screen Scaling", NULL, &integer_screen_scaling) && integer_screen_scaling)
 								{
@@ -1640,37 +1652,46 @@ int main(int argc, char **argv)
 									SDL_DestroyTexture(framebuffer_texture_upscaled);
 									framebuffer_texture_upscaled = NULL;
 								}
+								DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
-								ImGui::MenuItem("Tall Double Resolution Mode", NULL, &tall_double_resolution_mode);
+								ImGui::MenuItem("Tall Double Resolution Mode", NULL, &tall_double_resolution_mode); // TODO: Rename to match the libretro frontend.
+								DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
 
 								ImGui::Separator();
 								ImGui::MenuItem("Audio", NULL, false, false);
 
 								if (ImGui::MenuItem("Low-Pass Filter", NULL, &low_pass_filter))
 									Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
+								DoToolTip("Makes the audio sound 'softer'.\nThis is what a real Mega Drive does.");
 
 								ImGui::Separator();
 								ImGui::MenuItem("Keyboard Input", NULL, false, false);
 
 								if (ImGui::MenuItem("Control Pad #1", NULL, keyboard_input.bound_joypad == 0))
 									keyboard_input.bound_joypad = 0;
+								DoToolTip("Binds the keyboard to Control Pad #1.");
 
 								if (ImGui::MenuItem("Control Pad #2", NULL, keyboard_input.bound_joypad == 1))
 									keyboard_input.bound_joypad = 1;
+								DoToolTip("Binds the keyboard to Control Pad #2.");
 
 								ImGui::MenuItem("Bindings...", NULL, &keyboard_bindings_menu);
+								DoToolTip("Configures keyboard input mappings.");
 
 								ImGui::Separator();
 								ImGui::MenuItem("Other", NULL, false, false);
 
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
+								DoToolTip("Creates a window to hold the display.");
 
 							#ifndef NDEBUG
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
+								DoToolTip("Shows a variety of Dear ImGui examples, which\nare useful for inspiration and code samples.");
 							#endif
 
 								if (ImGui::MenuItem("Exit"))
 									quit = true;
+								DoToolTip("Closes this program.");
 
 								ImGui::EndMenu();
 							}
