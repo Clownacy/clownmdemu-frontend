@@ -1650,9 +1650,15 @@ int main(int argc, char **argv)
 									Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 
 								ImGui::Separator();
-								ImGui::MenuItem("Input", NULL, false, false);
+								ImGui::MenuItem("Keyboard Input", NULL, false, false);
 
-								ImGui::MenuItem("Keyboard Bindings...", NULL, &keyboard_bindings_menu);
+								if (ImGui::MenuItem("Control Pad #1", NULL, keyboard_input.bound_joypad == 0))
+									keyboard_input.bound_joypad = 0;
+
+								if (ImGui::MenuItem("Control Pad #2", NULL, keyboard_input.bound_joypad == 1))
+									keyboard_input.bound_joypad = 1;
+
+								ImGui::MenuItem("Bindings...", NULL, &keyboard_bindings_menu);
 
 								ImGui::Separator();
 								ImGui::MenuItem("Other", NULL, false, false);
