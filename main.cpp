@@ -689,13 +689,13 @@ static void LoadConfiguration(void)
 		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
 			keyboard_bindings[i] = INPUT_BINDING_NONE;
 
-		keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
-		keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
-		keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_LEFT;
-		keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_RIGHT;
-		keyboard_bindings[SDL_SCANCODE_O] = INPUT_BINDING_CONTROLLER_A;
-		keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
-		keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
+		keyboard_bindings[SDL_SCANCODE_UP] = INPUT_BINDING_CONTROLLER_UP;
+		keyboard_bindings[SDL_SCANCODE_DOWN] = INPUT_BINDING_CONTROLLER_DOWN;
+		keyboard_bindings[SDL_SCANCODE_LEFT] = INPUT_BINDING_CONTROLLER_LEFT;
+		keyboard_bindings[SDL_SCANCODE_RIGHT] = INPUT_BINDING_CONTROLLER_RIGHT;
+		keyboard_bindings[SDL_SCANCODE_Z] = INPUT_BINDING_CONTROLLER_A;
+		keyboard_bindings[SDL_SCANCODE_X] = INPUT_BINDING_CONTROLLER_B;
+		keyboard_bindings[SDL_SCANCODE_C] = INPUT_BINDING_CONTROLLER_C;
 		keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
