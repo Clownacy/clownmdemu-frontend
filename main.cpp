@@ -70,7 +70,6 @@ typedef enum InputBinding
 	INPUT_BINDING_QUICK_SAVE_STATE,
 	INPUT_BINDING_QUICK_LOAD_STATE,
 	INPUT_BINDING_TOGGLE_FULLSCREEN,
-	INPUT_BINDING_EXIT_FULLSCREEN,
 	INPUT_BINDING_TOGGLE_CONTROL_PAD
 } InputBinding;
 
@@ -707,7 +706,6 @@ int main(int argc, char **argv)
 				keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
 				keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
 				keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_ESCAPE)] = INPUT_BINDING_EXIT_FULLSCREEN;
 				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
 				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
 				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
@@ -861,16 +859,6 @@ int main(int argc, char **argv)
 								// Special hotkeys that can be used even when not focussed on the emulation window.
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
-									case INPUT_BINDING_EXIT_FULLSCREEN:
-										// Exit fullscreen
-										if (fullscreen)
-										{
-											fullscreen = false;
-											SetFullscreen(fullscreen);
-										}
-
-										break;
-
 									case INPUT_BINDING_PAUSE:
 										emulator_paused = !emulator_paused;
 										break;
@@ -888,6 +876,16 @@ int main(int argc, char **argv)
 								// Don't use inputs that are for Dear ImGui
 								if (!emulator_on || !emulator_has_focus)
 									break;
+
+								if (event.key.keysym.sym == SDLK_ESCAPE)
+								{
+									// Exit fullscreen
+									if (fullscreen)
+									{
+										fullscreen = false;
+										SetFullscreen(fullscreen);
+									}
+								}
 
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
@@ -1873,7 +1871,6 @@ int main(int argc, char **argv)
 								"Quick Save State",
 								"Quick Load State",
 								"Toggle Full-Screen",
-								"Exit Full-Screen",
 								"Toggle Control Pad"
 							};
 
