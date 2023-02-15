@@ -1625,6 +1625,8 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Misc."))
 							{
+								ImGui::MenuItem("Video", NULL, false, false);
+
 								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
 
@@ -1641,20 +1643,25 @@ int main(int argc, char **argv)
 
 								ImGui::MenuItem("Tall Double Resolution Mode", NULL, &tall_double_resolution_mode);
 
+								ImGui::Separator();
+								ImGui::MenuItem("Audio", NULL, false, false);
+
 								if (ImGui::MenuItem("Low-Pass Filter", NULL, &low_pass_filter))
 									Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 
-								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
+								ImGui::Separator();
+								ImGui::MenuItem("Input", NULL, false, false);
 
 								ImGui::MenuItem("Keyboard Bindings...", NULL, &keyboard_bindings_menu);
 
-							#ifndef NDEBUG
 								ImGui::Separator();
+								ImGui::MenuItem("Other", NULL, false, false);
 
+								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
+
+							#ifndef NDEBUG
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 							#endif
-
-								ImGui::Separator();
 
 								if (ImGui::MenuItem("Exit"))
 									quit = true;
