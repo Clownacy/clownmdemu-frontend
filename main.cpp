@@ -2036,7 +2036,7 @@ int main(int argc, char **argv)
 							if (ImGui::Button("Add Binding"))
 								ImGui::OpenPopup("Select Key");
 
-							ImGui::BeginChild("bindings", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+							ImGui::BeginChild("bindings");
 
 							static SDL_Scancode selected_scancode;
 
