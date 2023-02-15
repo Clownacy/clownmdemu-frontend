@@ -2127,20 +2127,32 @@ int main(int argc, char **argv)
 							{
 								bool previous_menu = false;
 
-								if (ImGui::BeginListBox("##actions"))
+								ImGui::TextUnformatted("Control Pad:");
+								if (ImGui::BeginListBox("##Control Pad"))
 								{
-									for (unsigned int i = 1; i < CC_COUNT_OF(binding_names); ++i)
+									for (InputBinding i = INPUT_BINDING_CONTROL_PAD__BEGIN; i <= INPUT_BINDING_CONTROL_PAD__END; i = (InputBinding)(i + 1))
 									{
 										if (ImGui::Selectable(binding_names[i]))
 										{
 											ImGui::CloseCurrentPopup();
-											keyboard_bindings[selected_scancode] = (InputBinding)i;
+											keyboard_bindings[selected_scancode] = i;
 											sorted_scancodes_done = false;
 										}
+									}
+									ImGui::EndListBox();
+								}
 
-										// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-//												if (is_selected)
-//												ImGui::SetItemDefaultFocus();
+								ImGui::TextUnformatted("Other:");
+								if (ImGui::BeginListBox("##Other"))
+								{
+									for (InputBinding i = INPUT_BINDING_HOTKEYS__BEGIN; i <= INPUT_BINDING_HOTKEYS__END; i = (InputBinding)(i + 1))
+									{
+										if (ImGui::Selectable(binding_names[i]))
+										{
+											ImGui::CloseCurrentPopup();
+											keyboard_bindings[selected_scancode] = i;
+											sorted_scancodes_done = false;
+										}
 									}
 									ImGui::EndListBox();
 								}
