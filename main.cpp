@@ -1969,6 +1969,8 @@ int main(int argc, char **argv)
 
 					if (keyboard_bindings_menu)
 					{
+						ImGui::SetNextWindowSize(ImVec2(430, 430), ImGuiCond_FirstUseEver);
+
 						if (ImGui::Begin("Keyboard Bindings", &keyboard_bindings_menu))
 						{
 							static bool sorted_scancodes_done;

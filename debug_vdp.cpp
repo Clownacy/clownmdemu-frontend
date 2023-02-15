@@ -29,6 +29,8 @@ static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata *ti
 
 static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, bool plane_b)
 {
+	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
+
 	if (ImGui::Begin(plane_b ? "Plane B" : "Plane A", open))
 	{
 		static SDL_Texture *plane_textures[2];
@@ -164,6 +166,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 {
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data->dpi_scale, 100.0f * data->dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+
+	ImGui::SetNextWindowSize(ImVec2(825, 825), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("VRAM", open))
 	{

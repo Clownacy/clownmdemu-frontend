@@ -13,6 +13,8 @@ void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, c
 	const float width = style.ScrollbarSize + style.WindowPadding.x * 2 + ImGui::CalcTextSize("0000: 0001 0203 0405 0607 0809 0A0B 0C0D 0E0F").x;
 	ImGui::SetNextWindowSizeConstraints(ImVec2(width, 0), ImVec2(width, FLT_MAX));
 
+	ImGui::SetNextWindowSize(ImVec2(width, 500), ImGuiCond_FirstUseEver);
+
 	ImGui::PopFont();
 
 	if (ImGui::Begin(window_name, open))
