@@ -666,6 +666,90 @@ static int INICallback(void* const user, const char* const section, const char* 
 	return 0;
 }
 
+static void LoadConfiguration(void)
+{
+	// Set default settings.
+
+	// Default V-sync.
+	const int display_index = SDL_GetWindowDisplayIndex(window);
+
+	if (display_index >= 0)
+	{
+		SDL_DisplayMode display_mode;
+
+		if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
+		{
+			// Enable V-sync on displays with an FPS of a multiple of 60.
+			use_vsync = display_mode.refresh_rate % 60 == 0;
+		}
+	}
+
+	// Default other settings.
+	integer_screen_scaling = false;
+	tall_double_resolution_mode = false;
+	low_pass_filter = true;
+
+	// Load the configuration file, overwriting the above settings.
+	if (ini_parse(CONFIG_FILENAME, INICallback, NULL) != 0)
+	{
+		// Failed to read configuration file: set defaults key bindings.
+		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+			keyboard_bindings[i] = INPUT_BINDING_NONE;
+
+		keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
+		keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
+		keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_LEFT;
+		keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_RIGHT;
+		keyboard_bindings[SDL_SCANCODE_O] = INPUT_BINDING_CONTROLLER_A;
+		keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
+		keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
+		keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
+		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
+		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
+	}
+
+	// Apply the V-sync setting, now that it's been decided.
+	SDL_RenderSetVSync(renderer, use_vsync);
+}
+
+static void SaveConfiguration(void)
+{
+	// Save configuration file:
+	FILE *file = fopen(CONFIG_FILENAME, "w");
+
+	if (file == NULL)
+	{
+		PrintError("Could not open configuration file for writing.");
+	}
+	else
+	{
+		// Save keyboard bindings.
+		fputs("[Miscellaneous]\n", file);
+
+		fprintf(file, "vsync = %s\n", use_vsync ? "on" : "off");
+		fprintf(file, "integer-screen-scaling = %s\n", integer_screen_scaling ? "on" : "off");
+		fprintf(file, "tall-interlace-mode-2 = %s\n", tall_double_resolution_mode ? "on" : "off");
+		fprintf(file, "low-pass-filter = %s\n", low_pass_filter ? "on" : "off");
+
+		fputc('\n', file);
+
+		// Save keyboard bindings.
+		fputs("[Keyboard Bindings]\n", file);
+
+		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
+				fprintf(file, "%d = %d\n", i, keyboard_bindings[i]);
+
+		fclose(file);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	InitError();
@@ -685,54 +769,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			// Set default settings.
-
-			// Default V-sync.
-			const int display_index = SDL_GetWindowDisplayIndex(window);
-
-			if (display_index >= 0)
-			{
-				SDL_DisplayMode display_mode;
-
-				if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
-				{
-					// Enable V-sync on displays with an FPS of a multiple of 60.
-					use_vsync = display_mode.refresh_rate % 60 == 0;
-				}
-			}
-
-			// Default other settings.
-			integer_screen_scaling = false;
-			tall_double_resolution_mode = false;
-			low_pass_filter = true;
-
-			// Load the configuration file, overwriting the above settings.
-			if (ini_parse(CONFIG_FILENAME, INICallback, NULL) != 0)
-			{
-				// Failed to read configuration file: set defaults key bindings.
-				for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
-					keyboard_bindings[i] = INPUT_BINDING_NONE;
-
-				keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
-				keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
-				keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_LEFT;
-				keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_RIGHT;
-				keyboard_bindings[SDL_SCANCODE_O] = INPUT_BINDING_CONTROLLER_A;
-				keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
-				keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
-				keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
-				keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
-				keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
-			}
-
-			// Apply the V-sync setting, now that it's been decided.
-			SDL_RenderSetVSync(renderer, use_vsync);
+			LoadConfiguration();
 
 			if (!InitialiseFramebuffer())
 			{
@@ -2147,34 +2184,7 @@ int main(int argc, char **argv)
 				DeinitialiseFramebuffer();
 			}
 
-			// Save configuration file:
-			FILE *file = fopen(CONFIG_FILENAME, "w");
-
-			if (file == NULL)
-			{
-				PrintError("Could not open configuration file for writing.");
-			}
-			else
-			{
-				// Save keyboard bindings.
-				fputs("[Miscellaneous]\n", file);
-
-				fprintf(file, "vsync = %s\n", use_vsync ? "on" : "off");
-				fprintf(file, "integer-screen-scaling = %s\n", integer_screen_scaling ? "on" : "off");
-				fprintf(file, "tall-interlace-mode-2 = %s\n", tall_double_resolution_mode ? "on" : "off");
-				fprintf(file, "low-pass-filter = %s\n", low_pass_filter ? "on" : "off");
-
-				fputc('\n', file);
-
-				// Save keyboard bindings.
-				fputs("[Keyboard Bindings]\n", file);
-
-				for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
-					if (keyboard_bindings[i] != INPUT_BINDING_NONE)
-						fprintf(file, "%d = %d\n", i, keyboard_bindings[i]);
-
-				fclose(file);
-			}
+			SaveConfiguration();
 
 			DeinitialiseVideo();
 		}
