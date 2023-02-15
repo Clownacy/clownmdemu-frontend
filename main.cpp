@@ -1654,7 +1654,7 @@ int main(int argc, char **argv)
 								}
 								DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
-								ImGui::MenuItem("Tall Double Resolution Mode", NULL, &tall_double_resolution_mode); // TODO: Rename to match the libretro frontend.
+								ImGui::MenuItem("Tall Interlace Mode 2", NULL, &tall_double_resolution_mode);
 								DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
 
 								ImGui::Separator();
@@ -1662,7 +1662,7 @@ int main(int argc, char **argv)
 
 								if (ImGui::MenuItem("Low-Pass Filter", NULL, &low_pass_filter))
 									Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
-								DoToolTip("Makes the audio sound 'softer'.\nThis is what a real Mega Drive does.");
+								DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
 
 								ImGui::Separator();
 								ImGui::MenuItem("Keyboard Input", NULL, false, false);
