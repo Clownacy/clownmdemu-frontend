@@ -1389,9 +1389,9 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("Pause", "Pause", &emulator_paused, emulator_on);
+								ImGui::MenuItem("Pause", NULL, &emulator_paused, emulator_on);
 
-								if (ImGui::MenuItem("Reset", "Tab", false, emulator_on))
+								if (ImGui::MenuItem("Reset", NULL, false, emulator_on))
 								{
 									// Soft-reset console
 									ClownMDEmu_Reset(&clownmdemu, &callbacks);
@@ -1440,13 +1440,13 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Save States"))
 							{
-								if (ImGui::MenuItem("Quick Save", "F5", false, emulator_on))
+								if (ImGui::MenuItem("Quick Save", NULL, false, emulator_on))
 								{
 									quick_save_exists = true;
 									quick_save_state = *emulation_state;
 								}
 
-								if (ImGui::MenuItem("Quick Load", "F9", false, emulator_on && quick_save_exists))
+								if (ImGui::MenuItem("Quick Load", NULL, false, emulator_on && quick_save_exists))
 								{
 									ApplySaveState(&quick_save_state);
 
@@ -1625,7 +1625,7 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Misc."))
 							{
-								if (ImGui::MenuItem("Fullscreen", "F11", &fullscreen))
+								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
 
 								if (ImGui::MenuItem("V-Sync", NULL, &use_vsync))
