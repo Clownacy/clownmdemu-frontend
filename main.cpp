@@ -496,7 +496,7 @@ static void ApplySaveState(EmulationState *save_state)
 	*emulation_state = *save_state;
 }
 
-static void SetSoftware(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
+static void OpenSoftwareFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
 {
 	quick_save_exists = false;
 
@@ -514,7 +514,7 @@ static void SetSoftware(unsigned char *rom_buffer_parameter, size_t rom_buffer_s
 	ClownMDEmu_Reset(&clownmdemu, callbacks);
 }
 
-static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks)
+static void OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *callbacks)
 {
 	unsigned char *temp_rom_buffer;
 	size_t temp_rom_buffer_size;
@@ -532,7 +532,7 @@ static void OpenSoftware(const char *path, const ClownMDEmu_Callbacks *callbacks
 		// Unload the previous ROM in memory.
 		SDL_free(rom_buffer);
 
-		SetSoftware(temp_rom_buffer, temp_rom_buffer_size, callbacks);
+		OpenSoftwareFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
 	}
 }
 
@@ -695,9 +695,9 @@ int main(int argc, char **argv)
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
-					OpenSoftware(argv[1], &callbacks);
+					OpenSoftwareFromFile(argv[1], &callbacks);
 				else
-					SetSoftware(NULL, 0, &callbacks);
+					OpenSoftwareFromMemory(NULL, 0, &callbacks);
 
 				keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
 				keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
@@ -1246,7 +1246,7 @@ int main(int argc, char **argv)
 								break;
 
 							case SDL_DROPFILE:
-								OpenSoftware(event.drop.file, &callbacks);
+								OpenSoftwareFromFile(event.drop.file, &callbacks);
 								SDL_free(event.drop.file);
 
 								emulator_paused = false;
@@ -1366,7 +1366,7 @@ int main(int argc, char **argv)
 
 									if (rom_path != NULL)
 									{
-										OpenSoftware(rom_path, &callbacks);
+										OpenSoftwareFromFile(rom_path, &callbacks);
 
 										emulator_paused = false;
 									}
