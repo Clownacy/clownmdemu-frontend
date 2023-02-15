@@ -621,7 +621,36 @@ static void DoToolTip(const char* const text)
 	}
 }
 
-static int INICallback(void* const user, const char* const section, const char* const name, const char* const value)
+static char* INIReadCallback(char* const buffer, const int length, void* const user)
+{
+	SDL_RWops* const sdl_rwops = (SDL_RWops*)user;
+
+	int i = 0;
+
+	while (i < length - 1)
+	{
+		char character;
+		if (SDL_RWread(sdl_rwops, &character, 1, 1) == 0)
+		{
+			if (i == 0)
+				return 0;
+
+			break;
+		}
+
+		buffer[i] = character;
+
+		++i;
+
+		if (character == '\n')
+			break;
+	}
+
+	buffer[i] = '\0';
+	return buffer;
+}
+
+static int INIParseCallback(void* const user, const char* const section, const char* const name, const char* const value)
 {
 	(void)user;
 
@@ -682,8 +711,10 @@ static void LoadConfiguration(void)
 	tall_double_resolution_mode = false;
 	low_pass_filter = true;
 
+	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
+
 	// Load the configuration file, overwriting the above settings.
-	if (ini_parse(CONFIG_FILENAME, INICallback, NULL) != 0)
+	if (file == NULL || ini_parse_stream(INIReadCallback, file, INIParseCallback, NULL) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
@@ -707,6 +738,9 @@ static void LoadConfiguration(void)
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 	}
 
+	if (file != NULL)
+		SDL_RWclose(file);
+
 	// Apply the V-sync setting, now that it's been decided.
 	SDL_RenderSetVSync(renderer, use_vsync);
 }
@@ -714,7 +748,7 @@ static void LoadConfiguration(void)
 static void SaveConfiguration(void)
 {
 	// Save configuration file:
-	FILE *file = fopen(CONFIG_FILENAME, "w");
+	SDL_RWops *file = SDL_RWFromFile(CONFIG_FILENAME, "w");
 
 	if (file == NULL)
 	{
@@ -722,24 +756,36 @@ static void SaveConfiguration(void)
 	}
 	else
 	{
+	#define PRINT_STRING(FILE, STRING) SDL_RWwrite(FILE, STRING, sizeof(STRING) - 1, 1)
 		// Save keyboard bindings.
-		fputs("[Miscellaneous]\n", file);
+		PRINT_STRING(file, "[Miscellaneous]\n");
 
-		fprintf(file, "vsync = %s\n", use_vsync ? "on" : "off");
-		fprintf(file, "integer-screen-scaling = %s\n", integer_screen_scaling ? "on" : "off");
-		fprintf(file, "tall-interlace-mode-2 = %s\n", tall_double_resolution_mode ? "on" : "off");
-		fprintf(file, "low-pass-filter = %s\n", low_pass_filter ? "on" : "off");
+	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
+		PRINT_STRING(FILE, NAME " = "); \
+		if (VARIABLE) \
+			PRINT_STRING(FILE, "on\n"); \
+		else \
+			PRINT_STRING(FILE, "off\n");
 
-		fputc('\n', file);
+		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
+		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
+		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", low_pass_filter);
 
 		// Save keyboard bindings.
-		fputs("[Keyboard Bindings]\n", file);
+		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
 
 		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+		{
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
-				fprintf(file, "%d = %d\n", i, keyboard_bindings[i]);
+			{
+				char buffer[0x20];
+				SDL_snprintf(buffer, sizeof(buffer), "%d = %d\n", i, keyboard_bindings[i]);
+				SDL_RWwrite(file, buffer, strlen(buffer), 1);
+			}
+		}
 
-		fclose(file);
+		SDL_RWclose(file);
 	}
 }
 
