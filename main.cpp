@@ -12,6 +12,8 @@
 #include "libraries/imgui/backends/imgui_impl_sdl.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer.h"
 
+#include "libraries/inih/ini.h"
+
 #include "inconsolata_regular.h"
 #include "karla_regular.h"
 
@@ -25,6 +27,8 @@
 
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.c"
+
+#define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
 typedef struct Input
 {
@@ -615,6 +619,38 @@ static void DoToolTip(const char* const text)
 	}
 }
 
+static int INICallback(void* const user, const char* const section, const char* const name, const char* const value)
+{
+	(void)user;
+
+	if (strcmp(section, "Keyboard Bindings") == 0)
+	{
+		char *string_end;
+
+		errno = 0;
+		const SDL_Scancode scancode = (SDL_Scancode)strtoul(name, &string_end, 0);
+
+		if (errno == ERANGE || string_end - name < strlen(name))
+		{
+			return 0;
+		}
+		else
+		{
+			errno = 0;
+			const InputBinding input_binding = (InputBinding)strtoul(value, &string_end, 0);
+
+			if (errno == ERANGE || string_end - value < strlen(value))
+				return 0;
+			else
+				keyboard_bindings[scancode] = input_binding;
+		}
+
+		return 1;
+	}
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	InitError();
@@ -634,6 +670,30 @@ int main(int argc, char **argv)
 		}
 		else
 		{
+			if (ini_parse(CONFIG_FILENAME, INICallback, NULL) != 0)
+			{
+				// Failed to read configuration file: set defaults instead.
+				for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+					keyboard_bindings[i] = INPUT_BINDING_NONE;
+
+				keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
+				keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
+				keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_LEFT;
+				keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_RIGHT;
+				keyboard_bindings[SDL_SCANCODE_O] = INPUT_BINDING_CONTROLLER_A;
+				keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
+				keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
+				keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
+				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
+				keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
+				keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
+			}
+
 			if (!InitialiseFramebuffer())
 			{
 				PrintError("CreateFramebuffer failed");
@@ -717,23 +777,6 @@ int main(int argc, char **argv)
 					OpenSoftwareFromFile(argv[1], &callbacks);
 				else
 					OpenSoftwareFromMemory(NULL, 0, &callbacks);
-
-				keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_UP;
-				keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_DOWN;
-				keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_LEFT;
-				keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_RIGHT;
-				keyboard_bindings[SDL_SCANCODE_O] = INPUT_BINDING_CONTROLLER_A;
-				keyboard_bindings[SDL_SCANCODE_P] = INPUT_BINDING_CONTROLLER_B;
-				keyboard_bindings[SDL_SCANCODE_LEFTBRACKET] = INPUT_BINDING_CONTROLLER_C;
-				keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
-				keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
-				keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
-				keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 
 				// Manages whether the program exits or not.
 				bool quit = false;
@@ -2079,6 +2122,24 @@ int main(int argc, char **argv)
 				SDL_DestroyTexture(framebuffer_texture_upscaled);
 
 				DeinitialiseFramebuffer();
+			}
+
+			// Save configuration file:
+			FILE *file = fopen(CONFIG_FILENAME, "w");
+
+			if (file == NULL)
+			{
+				PrintError("Could not open configuration file for writing.");
+			}
+			else
+			{
+				fputs("[Keyboard Bindings]\n", file);
+
+				for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+					if (keyboard_bindings[i] != INPUT_BINDING_NONE)
+						fprintf(file, "%d = %d\n", i, keyboard_bindings[i]);
+
+				fclose(file);
 			}
 
 			DeinitialiseVideo();

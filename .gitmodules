@@ -20,3 +20,6 @@
 [submodule "clownmdemu-frontend-common"]
 	path = clownmdemu-frontend-common
 	url = https://github.com/Clownacy/clownmdemu-frontend-common
+[submodule "libraries/inih"]
+	path = libraries/inih
+	url = https://github.com/benhoyt/inih
