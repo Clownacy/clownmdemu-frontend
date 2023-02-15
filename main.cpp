@@ -993,7 +993,7 @@ int main(int argc, char **argv)
 							{
 								// Prevent invalid memory accesses due to future API expansions.
 								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-								if (event.key.keysym.sym >= CC_COUNT_OF(keyboard_bindings))
+								if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
 									break;
 
 								const bool pressed = event.key.state == SDL_PRESSED;
