@@ -179,6 +179,8 @@ static unsigned int current_screen_height;
 
 static bool use_vsync;
 static bool fullscreen;
+static bool integer_screen_scaling;
+static bool tall_double_resolution_mode;
 static float dpi_scale;
 
 static float GetNewDPIScale(void)
@@ -322,7 +324,7 @@ static SDL_AudioDeviceID audio_device;
 static Uint32 audio_device_buffer_size;
 static unsigned long audio_device_sample_rate;
 static bool pal_mode;
-static bool low_pass_filter = true;
+static bool low_pass_filter;
 
 static Mixer_Constant mixer_constant;
 static Mixer_State mixer_state;
@@ -623,7 +625,20 @@ static int INICallback(void* const user, const char* const section, const char* 
 {
 	(void)user;
 
-	if (strcmp(section, "Keyboard Bindings") == 0)
+	if (strcmp(section, "Miscellaneous") == 0)
+	{
+		const bool state = strcmp(value, "on") == 0;
+
+		if (strcmp(name, "vsync") == 0)
+			use_vsync = state;
+		else if (strcmp(name, "integer-screen-scaling") == 0)
+			integer_screen_scaling = state;
+		else if (strcmp(name, "tall-interlace-mode-2") == 0)
+			tall_double_resolution_mode = state;
+		else if (strcmp(name, "low-pass-filter") == 0)
+			low_pass_filter = state;
+	}
+	else if (strcmp(section, "Keyboard Bindings") == 0)
 	{
 		char *string_end;
 
@@ -670,9 +685,31 @@ int main(int argc, char **argv)
 		}
 		else
 		{
+			// Set default settings.
+
+			// Default V-sync.
+			const int display_index = SDL_GetWindowDisplayIndex(window);
+
+			if (display_index >= 0)
+			{
+				SDL_DisplayMode display_mode;
+
+				if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
+				{
+					// Enable V-sync on displays with an FPS of a multiple of 60.
+					use_vsync = display_mode.refresh_rate % 60 == 0;
+				}
+			}
+
+			// Default other settings.
+			integer_screen_scaling = false;
+			tall_double_resolution_mode = false;
+			low_pass_filter = true;
+
+			// Load the configuration file, overwriting the above settings.
 			if (ini_parse(CONFIG_FILENAME, INICallback, NULL) != 0)
 			{
-				// Failed to read configuration file: set defaults instead.
+				// Failed to read configuration file: set defaults key bindings.
 				for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
 					keyboard_bindings[i] = INPUT_BINDING_NONE;
 
@@ -694,6 +731,9 @@ int main(int argc, char **argv)
 				keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 			}
 
+			// Apply the V-sync setting, now that it's been decided.
+			SDL_RenderSetVSync(renderer, use_vsync);
+
 			if (!InitialiseFramebuffer())
 			{
 				PrintError("CreateFramebuffer failed");
@@ -701,20 +741,6 @@ int main(int argc, char **argv)
 			}
 			else
 			{
-				const int display_index = SDL_GetWindowDisplayIndex(window);
-
-				if (display_index >= 0)
-				{
-					SDL_DisplayMode display_mode;
-
-					if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
-					{
-						// Enable V-sync on displays with an FPS of a multiple of 60.
-						use_vsync = display_mode.refresh_rate % 60 == 0;
-						SDL_RenderSetVSync(renderer, use_vsync);
-					}
-				}
-
 				// Setup Dear ImGui context
 				IMGUI_CHECKVERSION();
 				ImGui::CreateContext();
@@ -788,9 +814,6 @@ int main(int argc, char **argv)
 				bool pop_out = false;
 
 				bool emulator_paused = false;
-
-				bool integer_screen_scaling = false;
-				bool tall_double_resolution_mode = false;
 
 				bool m68k_status = false;
 				bool z80_status = false;
@@ -2133,6 +2156,17 @@ int main(int argc, char **argv)
 			}
 			else
 			{
+				// Save keyboard bindings.
+				fputs("[Miscellaneous]\n", file);
+
+				fprintf(file, "vsync = %s\n", use_vsync ? "on" : "off");
+				fprintf(file, "integer-screen-scaling = %s\n", integer_screen_scaling ? "on" : "off");
+				fprintf(file, "tall-interlace-mode-2 = %s\n", tall_double_resolution_mode ? "on" : "off");
+				fprintf(file, "low-pass-filter = %s\n", low_pass_filter ? "on" : "off");
+
+				fputc('\n', file);
+
+				// Save keyboard bindings.
 				fputs("[Keyboard Bindings]\n", file);
 
 				for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
