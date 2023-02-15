@@ -856,28 +856,6 @@ int main(int argc, char **argv)
 								if (event.key.repeat)
 									break;
 
-								// Prevent invalid memory accesses due to future API expansions.
-								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-								if (event.key.keysym.sym >= CC_COUNT_OF(keyboard_bindings))
-									break;
-
-								// Special hotkeys that can be used even when not focussed on the emulation window.
-								switch (keyboard_bindings[event.key.keysym.scancode])
-								{
-									case INPUT_BINDING_PAUSE:
-										emulator_paused = !emulator_paused;
-										break;
-
-									case INPUT_BINDING_TOGGLE_FULLSCREEN:
-										// Toggle fullscreen
-										fullscreen = !fullscreen;
-										SetFullscreen(fullscreen);
-										break;
-
-									default:
-										break;
-								}
-
 								// Don't use inputs that are for Dear ImGui
 								if (!emulator_on || !emulator_has_focus)
 									break;
@@ -892,8 +870,23 @@ int main(int argc, char **argv)
 									}
 								}
 
+								// Prevent invalid memory accesses due to future API expansions.
+								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
+								if (event.key.keysym.sym >= CC_COUNT_OF(keyboard_bindings))
+									break;
+
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
+									case INPUT_BINDING_PAUSE:
+										emulator_paused = !emulator_paused;
+										break;
+
+									case INPUT_BINDING_TOGGLE_FULLSCREEN:
+										// Toggle fullscreen
+										fullscreen = !fullscreen;
+										SetFullscreen(fullscreen);
+										break;
+
 									case INPUT_BINDING_RESET:
 										// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows),
 										// and ALT+TAB (used by the OS for cycling its windows).
