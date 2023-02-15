@@ -55,7 +55,10 @@ typedef struct EmulationState
 typedef enum InputBinding
 {
 	INPUT_BINDING_NONE,
-	INPUT_BINDING_CONTROLLER_UP,
+
+	INPUT_BINDING_CONTROL_PAD__BEGIN,
+
+	INPUT_BINDING_CONTROLLER_UP = INPUT_BINDING_CONTROL_PAD__BEGIN,
 	INPUT_BINDING_CONTROLLER_DOWN,
 	INPUT_BINDING_CONTROLLER_LEFT,
 	INPUT_BINDING_CONTROLLER_RIGHT,
@@ -63,14 +66,21 @@ typedef enum InputBinding
 	INPUT_BINDING_CONTROLLER_B,
 	INPUT_BINDING_CONTROLLER_C,
 	INPUT_BINDING_CONTROLLER_START,
-	INPUT_BINDING_PAUSE,
+
+	INPUT_BINDING_CONTROL_PAD__END = INPUT_BINDING_CONTROLLER_START,
+
+	INPUT_BINDING_HOTKEYS__BEGIN,
+
+	INPUT_BINDING_PAUSE = INPUT_BINDING_HOTKEYS__BEGIN,
 	INPUT_BINDING_RESET,
 	INPUT_BINDING_FAST_FORWARD,
 	INPUT_BINDING_REWIND,
 	INPUT_BINDING_QUICK_SAVE_STATE,
 	INPUT_BINDING_QUICK_LOAD_STATE,
 	INPUT_BINDING_TOGGLE_FULLSCREEN,
-	INPUT_BINDING_TOGGLE_CONTROL_PAD
+	INPUT_BINDING_TOGGLE_CONTROL_PAD,
+
+	INPUT_BINDING_HOTKEYS__END = INPUT_BINDING_TOGGLE_CONTROL_PAD
 } InputBinding;
 
 #define INPUT_BINDING__TOTAL (INPUT_BINDING_TOGGLE_CONTROL_PAD + 1)
@@ -1854,14 +1864,14 @@ int main(int argc, char **argv)
 
 							static const char* const binding_names[INPUT_BINDING__TOTAL] = {
 								"None",
-								"Control Pad - Up",
-								"Control Pad - Down",
-								"Control Pad - Left",
-								"Control Pad - Right",
-								"Control Pad - A",
-								"Control Pad - B",
-								"Control Pad - C",
-								"Control Pad - Start",
+								"Up",
+								"Down",
+								"Left",
+								"Right",
+								"A",
+								"B",
+								"C",
+								"Start",
 								"Pause",
 								"Reset",
 								"Fast-Forward",
@@ -1872,32 +1882,66 @@ int main(int argc, char **argv)
 								"Toggle Control Pad"
 							};
 
-							if (ImGui::BeginTable("bindings", 3))
+							if (ImGui::CollapsingHeader("Control Pad", ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								ImGui::TableSetupColumn("Key");
-								ImGui::TableSetupColumn("Action");
-								ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-								ImGui::TableHeadersRow();
-								for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+								if (ImGui::BeginTable("control pad bindings", 3))
 								{
-									if (keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
+									ImGui::TableSetupColumn("Key");
+									ImGui::TableSetupColumn("Action");
+									ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+									ImGui::TableHeadersRow();
+									for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
 									{
-										ImGui::TableNextRow();
+										if (keyboard_bindings[sorted_scancodes[i]] >= INPUT_BINDING_CONTROL_PAD__BEGIN && keyboard_bindings[sorted_scancodes[i]] <= INPUT_BINDING_CONTROL_PAD__END)
+										{
+											ImGui::TableNextRow();
 
-										ImGui::TableSetColumnIndex(0);
-										ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
+											ImGui::TableSetColumnIndex(0);
+											ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
 
-										ImGui::TableSetColumnIndex(1);
-										ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
+											ImGui::TableSetColumnIndex(1);
+											ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
 
-										ImGui::TableSetColumnIndex(2);
-										ImGui::PushID(i);
-										if (ImGui::Button("X"))
-											keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
-										ImGui::PopID();
+											ImGui::TableSetColumnIndex(2);
+											ImGui::PushID(i);
+											if (ImGui::Button("X"))
+												keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
+											ImGui::PopID();
+										}
 									}
+									ImGui::EndTable();
 								}
-								ImGui::EndTable();
+							}
+
+							if (ImGui::CollapsingHeader("Other", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("hoykey bindings", 3))
+								{
+									ImGui::TableSetupColumn("Key");
+									ImGui::TableSetupColumn("Action");
+									ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+									ImGui::TableHeadersRow();
+									for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+									{
+										if (keyboard_bindings[sorted_scancodes[i]] >= INPUT_BINDING_HOTKEYS__BEGIN && keyboard_bindings[sorted_scancodes[i]] <= INPUT_BINDING_HOTKEYS__END)
+										{
+											ImGui::TableNextRow();
+
+											ImGui::TableSetColumnIndex(0);
+											ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
+
+											ImGui::TableSetColumnIndex(1);
+											ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
+
+											ImGui::TableSetColumnIndex(2);
+											ImGui::PushID(i);
+											if (ImGui::Button("X"))
+												keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
+											ImGui::PopID();
+										}
+									}
+									ImGui::EndTable();
+								}
 							}
 
 							ImGui::EndChild();
