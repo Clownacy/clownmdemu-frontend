@@ -2230,9 +2230,9 @@ int main(int argc, char **argv)
 										ImGui::OpenPopup("Select Key");
 								}
 							}
-
-							ImGui::End();
 						}
+
+						ImGui::End();
 					}
 
 					SDL_RenderClear(renderer);
