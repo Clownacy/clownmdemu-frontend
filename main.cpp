@@ -2271,15 +2271,13 @@ int main(int argc, char **argv)
 									{
 										if (keyboard_bindings[sorted_scancodes[i]] >= INPUT_BINDING_CONTROL_PAD__BEGIN && keyboard_bindings[sorted_scancodes[i]] <= INPUT_BINDING_CONTROL_PAD__END)
 										{
-											ImGui::TableNextRow();
-
-											ImGui::TableSetColumnIndex(0);
+											ImGui::TableNextColumn();
 											ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
 
-											ImGui::TableSetColumnIndex(1);
+											ImGui::TableNextColumn();
 											ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
 
-											ImGui::TableSetColumnIndex(2);
+											ImGui::TableNextColumn();
 											ImGui::PushID(i);
 											if (ImGui::Button("X"))
 												keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
@@ -2305,15 +2303,13 @@ int main(int argc, char **argv)
 									{
 										if (keyboard_bindings[sorted_scancodes[i]] >= INPUT_BINDING_HOTKEYS__BEGIN && keyboard_bindings[sorted_scancodes[i]] <= INPUT_BINDING_HOTKEYS__END)
 										{
-											ImGui::TableNextRow();
-
-											ImGui::TableSetColumnIndex(0);
+											ImGui::TableNextColumn();
 											ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
 
-											ImGui::TableSetColumnIndex(1);
+											ImGui::TableNextColumn();
 											ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
 
-											ImGui::TableSetColumnIndex(2);
+											ImGui::TableNextColumn();
 											ImGui::PushID(i);
 											if (ImGui::Button("X"))
 												keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
