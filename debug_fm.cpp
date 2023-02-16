@@ -16,7 +16,7 @@ void Debug_DAC_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospa
 		if (ImGui::BeginTable("Channel Table", 2, ImGuiTableFlags_Borders))
 		{
 			ImGui::TableSetupColumn("Register");
-			ImGui::TableSetupColumn("All Operators");
+			ImGui::TableSetupColumn("Value");
 			ImGui::TableHeadersRow();
 
 			ImGui::TableNextColumn();
