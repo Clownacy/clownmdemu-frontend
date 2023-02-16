@@ -2175,7 +2175,7 @@ int main(int argc, char **argv)
 									ImGui::EndTable();
 								}
 
-								if (ImGui::Button("Add Binding"))
+								if (ImGui::Button("Add Binding##1"))
 									ImGui::OpenPopup("Select Key");
 
 								ImGui::Separator();
@@ -2208,7 +2208,7 @@ int main(int argc, char **argv)
 									}
 									ImGui::EndTable();
 
-									if (ImGui::Button("Add Binding"))
+									if (ImGui::Button("Add Binding##2"))
 										ImGui::OpenPopup("Select Key");
 								}
 
