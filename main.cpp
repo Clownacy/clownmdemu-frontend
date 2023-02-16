@@ -909,6 +909,7 @@ int main(int argc, char **argv)
 				bool dac_status = false;
 				bool fm_status[6] = {false, false, false, false, false, false};
 				bool psg_status = false;
+				bool debugging_toggles_menu = false;
 				bool options_menu = false;
 
 				bool dear_imgui_demo_window = false;
@@ -1496,6 +1497,7 @@ int main(int argc, char **argv)
 					                        || fm_status[4]
 					                        || fm_status[5]
 					                        || psg_status
+											|| debugging_toggles_menu
 					                        || options_menu
 					                        || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
@@ -1713,17 +1715,6 @@ int main(int argc, char **argv)
 
 									ImGui::MenuItem("CRAM", NULL, &cram_viewer);
 
-									ImGui::Separator();
-
-									if (ImGui::MenuItem("Disable Sprite Plane", NULL, clownmdemu_configuration.vdp.sprites_disabled))
-										clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
-
-									if (ImGui::MenuItem("Disable Plane A", NULL, clownmdemu_configuration.vdp.planes_disabled[0]))
-										clownmdemu_configuration.vdp.planes_disabled[0] = !clownmdemu_configuration.vdp.planes_disabled[0];
-
-									if (ImGui::MenuItem("Disable Plane B", NULL, clownmdemu_configuration.vdp.planes_disabled[1]))
-										clownmdemu_configuration.vdp.planes_disabled[1] = !clownmdemu_configuration.vdp.planes_disabled[1];
-
 									ImGui::EndMenu();
 								}
 
@@ -1742,6 +1733,8 @@ int main(int argc, char **argv)
 								}
 
 								ImGui::MenuItem("PSG", NULL, &psg_status);
+
+								ImGui::MenuItem("Toggles...", NULL, &debugging_toggles_menu);
 
 								ImGui::EndMenu();
 							}
@@ -1934,6 +1927,82 @@ int main(int argc, char **argv)
 
 					if (psg_status)
 						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
+
+					if (debugging_toggles_menu)
+					{
+						if (ImGui::Begin("Debugging Toggles", &debugging_toggles_menu))
+						{
+							bool temp;
+
+							if (ImGui::CollapsingHeader("VDP", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("VDP Options", 2))
+								{
+									ImGui::TableNextColumn();
+									temp = !clownmdemu_configuration.vdp.sprites_disabled;
+									if (ImGui::Checkbox("Sprite Plane", &temp))
+										clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
+
+									ImGui::TableNextColumn();
+
+									ImGui::TableNextColumn();
+									temp = !clownmdemu_configuration.vdp.planes_disabled[0];
+									if (ImGui::Checkbox("Plane A", &temp))
+										clownmdemu_configuration.vdp.planes_disabled[0] = !clownmdemu_configuration.vdp.planes_disabled[0];
+
+									ImGui::TableNextColumn();
+									temp = !clownmdemu_configuration.vdp.planes_disabled[1];
+									if (ImGui::Checkbox("Plane B", &temp))
+										clownmdemu_configuration.vdp.planes_disabled[1] = !clownmdemu_configuration.vdp.planes_disabled[1];
+
+									ImGui::EndTable();
+								}
+							}
+
+							if (ImGui::CollapsingHeader("FM", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("FM Options", 2))
+								{
+									for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.channel_disabled); ++i)
+									{
+										ImGui::TableNextColumn();
+										temp = !clownmdemu_configuration.fm.channel_disabled[i];
+										char buffer[] = "FM1";
+										buffer[2] = '1' + i;
+										if (ImGui::Checkbox(i == 5 ? "FM6/DAC" : buffer, &temp))
+											clownmdemu_configuration.fm.channel_disabled[i] = !clownmdemu_configuration.fm.channel_disabled[i];
+									}
+
+									ImGui::EndTable();
+								}
+							}
+
+							if (ImGui::CollapsingHeader("PSG", ImGuiTreeNodeFlags_DefaultOpen))
+							{
+								if (ImGui::BeginTable("PSG Options", 2))
+								{
+									for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
+									{
+										ImGui::TableNextColumn();
+										temp = !clownmdemu_configuration.psg.tone_disabled[i];
+										char buffer[] = "PSG1";
+										buffer[3] = '1' + i;
+										if (ImGui::Checkbox(buffer, &temp))
+											clownmdemu_configuration.psg.tone_disabled[i] = !clownmdemu_configuration.psg.tone_disabled[i];
+									}
+
+									ImGui::TableNextColumn();
+									temp = !clownmdemu_configuration.psg.noise_disabled;
+									if (ImGui::Checkbox("PSG Noise", &temp))
+										clownmdemu_configuration.psg.noise_disabled = !clownmdemu_configuration.psg.noise_disabled;
+
+									ImGui::EndTable();
+								}
+							}
+						}
+
+						ImGui::End();
+					}
 
 					if (options_menu)
 					{
