@@ -1744,8 +1744,6 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Misc."))
 							{
-								ImGui::MenuItem("Options...", NULL, &options_menu);
-
 								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
 
@@ -1754,6 +1752,10 @@ int main(int argc, char **argv)
 							#ifndef NDEBUG
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 							#endif
+
+								ImGui::Separator();
+
+								ImGui::MenuItem("Options...", NULL, &options_menu);
 
 								ImGui::Separator();
 
