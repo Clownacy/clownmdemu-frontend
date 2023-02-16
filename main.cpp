@@ -9,7 +9,7 @@
 #include "libraries/tinyfiledialogs/tinyfiledialogs.h"
 
 #include "libraries/imgui/imgui.h"
-#include "libraries/imgui/backends/imgui_impl_sdl.h"
+#include "libraries/imgui/backends/imgui_impl_sdl2.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer.h"
 
 #include "libraries/inih/ini.h"
