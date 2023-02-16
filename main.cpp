@@ -1737,6 +1737,8 @@ int main(int argc, char **argv)
 
 								ImGui::MenuItem("PSG", NULL, &psg_status);
 
+								ImGui::Separator();
+
 								ImGui::MenuItem("Toggles...", NULL, &debugging_toggles_menu);
 
 								ImGui::EndMenu();
