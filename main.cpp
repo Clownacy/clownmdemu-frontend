@@ -1630,9 +1630,14 @@ int main(int argc, char **argv)
 
 											// Display only the filename.
 											const char* const forward_slash = SDL_strrchr(recent_software->path, '/');
+										#ifdef _WIN32
 											const char* const backward_slash = SDL_strrchr(recent_software->path, '\\');
+											const char* const filename = CC_MAX(CC_MAX(forward_slash, backward_slash) + 1, recent_software->path);
+										#else
+											const char* const filename = CC_MAX(forward_slash + 1, recent_software->path);
+										#endif
 
-											if (ImGui::MenuItem(CC_MAX(CC_MAX(forward_slash, backward_slash) + 1, recent_software->path)))
+											if (ImGui::MenuItem(filename))
 											{
 												OpenSoftwareFromFile(recent_software->path, &callbacks);
 
