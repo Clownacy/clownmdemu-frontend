@@ -296,6 +296,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 			// Extend the region down so that it's given a scroll bar.
 			ImGui::SetCursorScreenPos(ImVec2(canvas_position.x, canvas_position.y + vram_display_region_height));
+			ImGui::Dummy(ImVec2(0, 0));
 
 			// Draw the list of tiles.
 			ImDrawList *draw_list = ImGui::GetWindowDrawList();
