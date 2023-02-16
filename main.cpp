@@ -25,6 +25,10 @@
 #include "debug_vdp.h"
 #include "debug_z80.h"
 
+extern "C" {
+#include "doubly-linked-list.h"
+}
+
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.c"
 
@@ -55,6 +59,13 @@ typedef struct EmulationState
 	ClownMDEmu_State clownmdemu;
 	Uint32 colours[3 * 4 * 16];
 } EmulationState;
+
+typedef struct RecentSoftware
+{
+	DoublyLinkedList_Entry list;
+
+	char path[1];
+} RecentSoftware;
 
 typedef enum InputBinding
 {
@@ -94,6 +105,8 @@ static Input keyboard_input;
 static ControllerInput *controller_input_list_head;
 
 static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+
+static DoublyLinkedList recent_software_list;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
@@ -511,6 +524,46 @@ static void ApplySaveState(EmulationState *save_state)
 	*emulation_state = *save_state;
 }
 
+static void AddToRecentSoftware(const char* const path)
+{
+	// If the path already exists in the list, then move it to the start of the list.
+	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+	{
+		RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
+
+		if (SDL_strcmp(recent_software->path, path) == 0)
+		{
+			DoublyLinkedList_Remove(&recent_software_list, entry);
+			DoublyLinkedList_PushFront(&recent_software_list, entry);
+			return;
+		}
+	}
+
+	// If the list is 10 items long, then discard the last item before we add a new one.
+	unsigned int total_items = 0;
+
+	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+		++total_items;
+
+	if (total_items == 10)
+	{
+		RecentSoftware* const last_item = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.tail);
+
+		DoublyLinkedList_Remove(&recent_software_list, &last_item->list);
+		SDL_free(last_item);
+	}
+
+	// Add the file to the list of recent software.
+	const size_t path_length = SDL_strlen(path);
+	RecentSoftware* const new_entry = (RecentSoftware*)SDL_malloc(sizeof(RecentSoftware) + path_length);
+
+	if (new_entry != NULL)
+	{
+		SDL_memcpy(new_entry->path, path, path_length + 1);
+		DoublyLinkedList_PushFront(&recent_software_list, &new_entry->list);
+	}
+}
+
 static void OpenSoftwareFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
 {
 	quick_save_exists = false;
@@ -546,6 +599,8 @@ static void OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 	{
 		// Unload the previous ROM in memory.
 		SDL_free(rom_buffer);
+
+		AddToRecentSoftware(path);
 
 		OpenSoftwareFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
 	}
@@ -688,6 +743,12 @@ static int INIParseCallback(void* const user, const char* const section, const c
 		}
 
 	}
+	else if (SDL_strcmp(section, "Recent Software") == 0)
+	{
+		if (SDL_strcmp(name, "path") == 0)
+			if (value[0] != '\0')
+				AddToRecentSoftware(value);
+	}
 
 	return 1;
 }
@@ -794,6 +855,18 @@ static void SaveConfiguration(void)
 			}
 		}
 
+		// Save recent software paths.
+		PRINT_STRING(file, "\n[Recent Software]\n");
+
+		for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+		{
+			RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
+
+			PRINT_STRING(file, "path = ");
+			SDL_RWwrite(file, recent_software->path, 1, SDL_strlen(recent_software->path));
+			PRINT_STRING(file, "\n");
+		}
+
 		SDL_RWclose(file);
 	}
 }
@@ -817,6 +890,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
+			DoublyLinkedList_Initialise(&recent_software_list);
 			LoadConfiguration();
 
 			if (!InitialiseFramebuffer())
@@ -1540,6 +1614,30 @@ int main(int argc, char **argv)
 
 										emulator_paused = false;
 									}
+								}
+
+								if (ImGui::BeginMenu("Open Recent"))
+								{
+									if (recent_software_list.head == NULL)
+									{
+										ImGui::TextDisabled("Empty");
+									}
+									else
+									{
+										for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+										{
+											RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
+
+											if (ImGui::MenuItem(recent_software->path))
+											{
+												OpenSoftwareFromFile(recent_software->path, &callbacks);
+
+												emulator_paused = false;
+											}
+										}
+									}
+
+									ImGui::EndMenu();
 								}
 
 								if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
@@ -2335,6 +2433,15 @@ int main(int argc, char **argv)
 			}
 
 			SaveConfiguration();
+
+			// Free recent software list.
+			while (recent_software_list.head != NULL)
+			{
+				RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.head);
+
+				DoublyLinkedList_Remove(&recent_software_list, recent_software_list.head);
+				SDL_free(recent_software);
+			}
 
 			DeinitialiseVideo();
 		}

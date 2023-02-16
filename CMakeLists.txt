@@ -26,6 +26,8 @@ add_executable(clownmdemu-frontend WIN32
 	"debug_vdp.h"
 	"debug_z80.cpp"
 	"debug_z80.h"
+	"doubly-linked-list.c"
+	"doubly-linked-list.h"
 	"inconsolata_regular.h"
 	"karla_regular.h"
 	"libraries/tinyfiledialogs/tinyfiledialogs.c"
