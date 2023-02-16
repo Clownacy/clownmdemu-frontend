@@ -1030,6 +1030,10 @@ int main(int argc, char **argv)
 								if (!emulator_on || !emulator_has_focus)
 									break;
 
+								// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
+								if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
+									break;
+
 								if (event.key.keysym.sym == SDLK_ESCAPE)
 								{
 									// Exit fullscreen
@@ -1058,11 +1062,6 @@ int main(int argc, char **argv)
 										break;
 
 									case INPUT_BINDING_RESET:
-										// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows),
-										// and ALT+TAB (used by the OS for cycling its windows).
-										if (SDL_GetModState() != KMOD_NONE)
-											break;
-
 										// Soft-reset console
 										ClownMDEmu_Reset(&clownmdemu, &callbacks);
 
@@ -1098,6 +1097,10 @@ int main(int argc, char **argv)
 								// Fallthrough
 							case SDL_KEYUP:
 							{
+								// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
+								if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
+									break;
+
 								// Prevent invalid memory accesses due to future API expansions.
 								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
 								if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
