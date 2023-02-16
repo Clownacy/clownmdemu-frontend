@@ -1759,6 +1759,8 @@ int main(int argc, char **argv)
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 							#endif
 
+								ImGui::Separator();
+
 								if (ImGui::MenuItem("Exit"))
 									quit = true;
 
