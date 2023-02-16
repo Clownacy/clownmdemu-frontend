@@ -33,9 +33,9 @@
 typedef struct Input
 {
 	unsigned int bound_joypad;
-	bool buttons[CLOWNMDEMU_BUTTON_MAX];
-	bool fast_forward;
-	bool rewind;
+	unsigned char buttons[CLOWNMDEMU_BUTTON_MAX];
+	unsigned char fast_forward;
+	unsigned char rewind;
 } Input;
 
 typedef struct ControllerInput
@@ -482,12 +482,12 @@ static cc_bool ReadInputCallback(const void *user_data, cc_u16f player_id, Clown
 
 	// First, try to obtain the input from the keyboard.
 	if (keyboard_input.bound_joypad == player_id)
-		value |= keyboard_input.buttons[button_id] ? cc_true : cc_false;
+		value |= keyboard_input.buttons[button_id] != 0 ? cc_true : cc_false;
 
 	// Then, try to obtain the input from the controllers.
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
 		if (controller_input->input.bound_joypad == player_id)
-			value |= controller_input->input.buttons[button_id] ? cc_true : cc_false;
+			value |= controller_input->input.buttons[button_id] != 0 ? cc_true : cc_false;
 
 	return value;
 }
@@ -561,7 +561,7 @@ static void UpdateFastForwardStatus(void)
 	fast_forward_in_progress = keyboard_input.fast_forward;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
-		fast_forward_in_progress |= controller_input->input.fast_forward;
+		fast_forward_in_progress |= controller_input->input.fast_forward != 0;
 
 	if (previous_fast_forward_in_progress != fast_forward_in_progress)
 	{
@@ -579,7 +579,7 @@ static void UpdateRewindStatus(void)
 	rewind_in_progress = keyboard_input.rewind;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
-		rewind_in_progress |= controller_input->input.rewind;
+		rewind_in_progress |= controller_input->input.rewind != 0;
 }
 #endif
 
@@ -1106,11 +1106,11 @@ int main(int argc, char **argv)
 								if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
 									break;
 
-								const bool pressed = event.key.state == SDL_PRESSED;
+								const int pressed = event.key.state == SDL_PRESSED ? 1 : -1;
 
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
-									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] = pressed; break
+									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] += pressed; break
 
 									DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
 									DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
@@ -1125,13 +1125,13 @@ int main(int argc, char **argv)
 
 									case INPUT_BINDING_FAST_FORWARD:
 										// Toggle fast-forward
-										keyboard_input.fast_forward = pressed;
+										keyboard_input.fast_forward += pressed;
 										UpdateFastForwardStatus();
 										break;
 
 									#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 									case INPUT_BINDING_REWIND:
-										keyboard_input.rewind = pressed;
+										keyboard_input.rewind += pressed;
 										UpdateRewindStatus();
 										break;
 									#endif
@@ -1234,7 +1234,7 @@ int main(int argc, char **argv)
 								// Fallthrough
 							case SDL_CONTROLLERBUTTONUP:
 							{
-								const bool pressed = event.cbutton.state == SDL_PRESSED;
+								const int pressed = event.cbutton.state == SDL_PRESSED ? 1 : -1;
 
 								// Look for the controller that this event belongs to.
 								for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
@@ -1251,7 +1251,7 @@ int main(int argc, char **argv)
 									{
 										switch (event.cbutton.button)
 										{
-											#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break
+											#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] += pressed; break
 
 											DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
 											DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
