@@ -1616,7 +1616,7 @@ int main(int argc, char **argv)
 									}
 								}
 
-								if (ImGui::BeginMenu("Open Recent"))
+								if (ImGui::BeginMenu("Open Recent Software"))
 								{
 									if (recent_software_list.head == NULL)
 									{
@@ -1628,12 +1628,19 @@ int main(int argc, char **argv)
 										{
 											RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
 
-											if (ImGui::MenuItem(recent_software->path))
+											// Display only the filename.
+											const char* const forward_slash = SDL_strrchr(recent_software->path, '/');
+											const char* const backward_slash = SDL_strrchr(recent_software->path, '\\');
+
+											if (ImGui::MenuItem(CC_MAX(CC_MAX(forward_slash, backward_slash) + 1, recent_software->path)))
 											{
 												OpenSoftwareFromFile(recent_software->path, &callbacks);
 
 												emulator_paused = false;
 											}
+
+											// Show the full path as a tooltip.
+											DoToolTip(recent_software->path);
 										}
 									}
 
