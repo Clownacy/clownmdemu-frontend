@@ -1307,6 +1307,30 @@ int main(int argc, char **argv)
 								if (!emulator_on || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
 									break;
 
+								switch (event.cbutton.button)
+								{
+									case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+										// Load save state
+										if (quick_save_exists)
+										{
+											ApplySaveState(&quick_save_state);
+
+											emulator_paused = false;
+
+											SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF / 2, 0, 1000 / 8);
+										}
+
+										break;
+
+									case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+										// Save save state
+										quick_save_exists = true;
+										quick_save_state = *emulation_state;
+
+										SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
+										break;
+								}
+
 								// Fallthrough
 							case SDL_CONTROLLERBUTTONUP:
 							{
@@ -1382,18 +1406,6 @@ int main(int argc, char **argv)
 												if (pressed)
 													controller_input->input.bound_joypad ^= 1;
 
-												break;
-
-											#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-											case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-												controller_input->input.rewind = pressed;
-												UpdateRewindStatus();
-												break;
-											#endif
-
-											case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-												controller_input->input.fast_forward = pressed;
-												UpdateFastForwardStatus();
 												break;
 
 											default:
