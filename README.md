@@ -36,8 +36,8 @@ Controller:
 - A     = B
 - Start = Start
 - Back  = Toggle which Control Pad the controller controls
-- LB    = Rewind
-- RB    = Fast-forward
+- LT    = Rewind
+- RT    = Fast-forward
 - RSB   = Toggle menu controls (see http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
 Hotkeys:

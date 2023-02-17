@@ -49,6 +49,8 @@ typedef struct ControllerInput
 	Sint16 left_stick_y;
 	bool left_stick[4];
 	bool dpad[4];
+	bool left_trigger;
+	bool right_trigger;
 	Input input;
 
 	struct ControllerInput *next;
@@ -1473,6 +1475,39 @@ int main(int argc, char **argv)
 
 													// Combine D-pad and left stick values into final joypad D-pad inputs.
 													controller_input->input.buttons[buttons[i]] = controller_input->left_stick[i] || controller_input->dpad[i];
+												}
+
+												break;
+											}
+
+										#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+											case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+										#endif
+											case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+											{
+												const bool held = event.caxis.value > 0x7FFF / 8;
+
+											#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+												if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+												{
+													if (controller_input->left_trigger != held)
+													{
+														controller_input->input.rewind = held;
+														UpdateRewindStatus();
+													}
+
+													controller_input->left_trigger = held;
+												}
+												else
+											#endif
+												{
+													if (controller_input->right_trigger != held)
+													{
+														controller_input->input.fast_forward = held;
+														UpdateFastForwardStatus();
+													}
+
+													controller_input->right_trigger = held;
 												}
 
 												break;
