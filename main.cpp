@@ -526,7 +526,7 @@ static void ApplySaveState(EmulationState *save_state)
 	*emulation_state = *save_state;
 }
 
-static void AddToRecentSoftware(const char* const path)
+static void AddToRecentSoftware(const char* const path, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
 	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
@@ -562,7 +562,7 @@ static void AddToRecentSoftware(const char* const path)
 	if (new_entry != NULL)
 	{
 		SDL_memcpy(new_entry->path, path, path_length + 1);
-		DoublyLinkedList_PushFront(&recent_software_list, &new_entry->list);
+		(add_to_end ? DoublyLinkedList_PushBack : DoublyLinkedList_PushFront)(&recent_software_list, &new_entry->list);
 	}
 }
 
@@ -602,7 +602,7 @@ static void OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 		// Unload the previous ROM in memory.
 		SDL_free(rom_buffer);
 
-		AddToRecentSoftware(path);
+		AddToRecentSoftware(path, false);
 
 		OpenSoftwareFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
 	}
@@ -749,7 +749,7 @@ static int INIParseCallback(void* const user, const char* const section, const c
 	{
 		if (SDL_strcmp(name, "path") == 0)
 			if (value[0] != '\0')
-				AddToRecentSoftware(value);
+				AddToRecentSoftware(value, true);
 	}
 
 	return 1;
