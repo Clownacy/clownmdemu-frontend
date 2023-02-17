@@ -1679,42 +1679,6 @@ int main(int argc, char **argv)
 									}
 								}
 
-								if (ImGui::BeginMenu("Open Recent Software"))
-								{
-									if (recent_software_list.head == NULL)
-									{
-										ImGui::TextDisabled("Empty");
-									}
-									else
-									{
-										for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
-										{
-											RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
-
-											// Display only the filename.
-											const char* const forward_slash = SDL_strrchr(recent_software->path, '/');
-										#ifdef _WIN32
-											const char* const backward_slash = SDL_strrchr(recent_software->path, '\\');
-											const char* const filename = CC_MAX(CC_MAX(forward_slash, backward_slash) + 1, recent_software->path);
-										#else
-											const char* const filename = CC_MAX(forward_slash + 1, recent_software->path);
-										#endif
-
-											if (ImGui::MenuItem(filename))
-											{
-												OpenSoftwareFromFile(recent_software->path, &callbacks);
-
-												emulator_paused = false;
-											}
-
-											// Show the full path as a tooltip.
-											DoToolTip(recent_software->path);
-										}
-									}
-
-									ImGui::EndMenu();
-								}
-
 								if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
 								{
 									SDL_free(rom_buffer);
@@ -1734,6 +1698,39 @@ int main(int argc, char **argv)
 									ClownMDEmu_Reset(&clownmdemu, &callbacks);
 
 									emulator_paused = false;
+								}
+
+								ImGui::SeparatorText("Recent Software");
+
+								if (recent_software_list.head == NULL)
+								{
+									ImGui::TextDisabled("None");
+								}
+								else
+								{
+									for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+									{
+										RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
+
+										// Display only the filename.
+										const char* const forward_slash = SDL_strrchr(recent_software->path, '/');
+									#ifdef _WIN32
+										const char* const backward_slash = SDL_strrchr(recent_software->path, '\\');
+										const char* const filename = CC_MAX(CC_MAX(forward_slash, backward_slash) + 1, recent_software->path);
+									#else
+										const char* const filename = CC_MAX(forward_slash + 1, recent_software->path);
+									#endif
+
+										if (ImGui::MenuItem(filename))
+										{
+											OpenSoftwareFromFile(recent_software->path, &callbacks);
+
+											emulator_paused = false;
+										}
+
+										// Show the full path as a tooltip.
+										DoToolTip(recent_software->path);
+									}
 								}
 
 								ImGui::EndMenu();
