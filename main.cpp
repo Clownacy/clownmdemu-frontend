@@ -1704,7 +1704,7 @@ int main(int argc, char **argv)
 
 								if (recent_software_list.head == NULL)
 								{
-									ImGui::TextDisabled("None");
+									ImGui::MenuItem("None", NULL, false, false);
 								}
 								else
 								{
