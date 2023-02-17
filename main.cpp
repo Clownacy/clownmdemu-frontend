@@ -1367,10 +1367,10 @@ int main(int argc, char **argv)
 														break;
 												}
 
-												controller_input->dpad[direction] = pressed;
+												controller_input->dpad[direction] += pressed;
 
 												// Combine D-pad and left stick values into final joypad D-pad inputs.
-												controller_input->input.buttons[button] = controller_input->left_stick[direction] || controller_input->dpad[direction];
+												controller_input->input.buttons[button] = controller_input->left_stick[direction] != 0 || controller_input->dpad[direction] != 0;
 
 												break;
 											}
@@ -1384,13 +1384,13 @@ int main(int argc, char **argv)
 
 											#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 											case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-												controller_input->input.rewind = pressed;
+												controller_input->input.rewind += pressed;
 												UpdateRewindStatus();
 												break;
 											#endif
 
 											case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-												controller_input->input.fast_forward = pressed;
+												controller_input->input.fast_forward += pressed;
 												UpdateFastForwardStatus();
 												break;
 
