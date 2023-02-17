@@ -98,6 +98,9 @@ static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCAN
 
 static DoublyLinkedList recent_software_list;
 
+// Used for deciding when to pass inputs to the emulator.
+static bool emulator_has_focus;
+
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
 static size_t state_rewind_index;
@@ -483,14 +486,18 @@ static cc_bool ReadInputCallback(const void *user_data, cc_u16f player_id, Clown
 
 	cc_bool value = cc_false;
 
-	// First, try to obtain the input from the keyboard.
-	if (keyboard_input.bound_joypad == player_id)
-		value |= keyboard_input.buttons[button_id] != 0 ? cc_true : cc_false;
+	// Don't use inputs that are for Dear ImGui
+	if (emulator_has_focus)
+	{
+		// First, try to obtain the input from the keyboard.
+		if (keyboard_input.bound_joypad == player_id)
+			value |= keyboard_input.buttons[button_id] != 0 ? cc_true : cc_false;
 
-	// Then, try to obtain the input from the controllers.
-	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
-		if (controller_input->input.bound_joypad == player_id)
-			value |= controller_input->input.buttons[button_id] != 0 ? cc_true : cc_false;
+		// Then, try to obtain the input from the controllers.
+		for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+			if (controller_input->input.bound_joypad == player_id)
+				value |= controller_input->input.buttons[button_id] != 0 ? cc_true : cc_false;
+	}
 
 	return value;
 }
@@ -954,9 +961,6 @@ int main(int argc, char **argv)
 				// Manages whether the program exits or not.
 				bool quit = false;
 
-				// Used for deciding when to pass inputs to the emulator.
-				bool emulator_has_focus = false;
-
 				// Used for tracking when to pop the emulation display out into its own little window.
 				bool pop_out = false;
 
@@ -1088,10 +1092,6 @@ int main(int argc, char **argv)
 							case SDL_KEYDOWN:
 								// Ignore repeated key inputs caused by holding the key down
 								if (event.key.repeat)
-									break;
-
-								// Don't use inputs that are for Dear ImGui
-								if (!emulator_has_focus)
 									break;
 
 								// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
