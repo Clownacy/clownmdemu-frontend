@@ -2254,7 +2254,7 @@ int main(int argc, char **argv)
 									"Rewind",
 									"Quick Save State",
 									"Quick Load State",
-									"Toggle Full-Screen",
+									"Toggle Fullscreen",
 									"Toggle Control Pad"
 								};
 
