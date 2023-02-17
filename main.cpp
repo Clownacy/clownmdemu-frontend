@@ -1101,7 +1101,7 @@ int main(int argc, char **argv)
 									break;
 
 								// Don't use inputs that are for Dear ImGui
-								if (!emulator_on || !emulator_has_focus)
+								if (!emulator_has_focus)
 									break;
 
 								// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
@@ -1125,14 +1125,29 @@ int main(int argc, char **argv)
 
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
-									case INPUT_BINDING_PAUSE:
-										emulator_paused = !emulator_paused;
-										break;
-
 									case INPUT_BINDING_TOGGLE_FULLSCREEN:
 										// Toggle fullscreen
 										fullscreen = !fullscreen;
 										SetFullscreen(fullscreen);
+										break;
+
+									case INPUT_BINDING_TOGGLE_CONTROL_PAD:
+										// Toggle which joypad the keyboard controls
+										keyboard_input.bound_joypad ^= 1;
+										break;
+
+									default:
+										break;
+								}
+
+								// Most inputs should not be acted upon while the emulator is not running.
+								if (!emulator_on)
+									break;
+
+								switch (keyboard_bindings[event.key.keysym.scancode])
+								{
+									case INPUT_BINDING_PAUSE:
+										emulator_paused = !emulator_paused;
 										break;
 
 									case INPUT_BINDING_RESET:
@@ -1141,11 +1156,6 @@ int main(int argc, char **argv)
 
 										emulator_paused = false;
 
-										break;
-
-									case INPUT_BINDING_TOGGLE_CONTROL_PAD:
-										// Toggle which joypad the keyboard controls
-										keyboard_input.bound_joypad ^= 1;
 										break;
 
 									case INPUT_BINDING_QUICK_SAVE_STATE:
@@ -1890,9 +1900,10 @@ int main(int argc, char **argv)
 						const ImVec2 cursor = ImGui::GetCursorPos();
 						ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
 
+						emulator_has_focus = ImGui::IsItemFocused();
+
 						if (emulator_on)
 						{
-							emulator_has_focus = ImGui::IsItemFocused();
 							ImGui::SetCursorPos(cursor);
 
 							SDL_Texture *selected_framebuffer_texture = framebuffer_texture;
