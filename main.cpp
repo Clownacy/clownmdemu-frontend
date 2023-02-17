@@ -2062,70 +2062,67 @@ int main(int argc, char **argv)
 						{
 							bool temp;
 
-							if (ImGui::CollapsingHeader("VDP", ImGuiTreeNodeFlags_DefaultOpen))
+							ImGui::SeparatorText("VDP");
+
+							if (ImGui::BeginTable("VDP Options", 2))
 							{
-								if (ImGui::BeginTable("VDP Options", 2))
-								{
-									ImGui::TableNextColumn();
-									temp = !clownmdemu_configuration.vdp.sprites_disabled;
-									if (ImGui::Checkbox("Sprite Plane", &temp))
-										clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
+								ImGui::TableNextColumn();
+								temp = !clownmdemu_configuration.vdp.sprites_disabled;
+								if (ImGui::Checkbox("Sprite Plane", &temp))
+									clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
 
-									ImGui::TableNextColumn();
+								ImGui::TableNextColumn();
 
-									ImGui::TableNextColumn();
-									temp = !clownmdemu_configuration.vdp.planes_disabled[0];
-									if (ImGui::Checkbox("Plane A", &temp))
-										clownmdemu_configuration.vdp.planes_disabled[0] = !clownmdemu_configuration.vdp.planes_disabled[0];
+								ImGui::TableNextColumn();
+								temp = !clownmdemu_configuration.vdp.planes_disabled[0];
+								if (ImGui::Checkbox("Plane A", &temp))
+									clownmdemu_configuration.vdp.planes_disabled[0] = !clownmdemu_configuration.vdp.planes_disabled[0];
 
-									ImGui::TableNextColumn();
-									temp = !clownmdemu_configuration.vdp.planes_disabled[1];
-									if (ImGui::Checkbox("Plane B", &temp))
-										clownmdemu_configuration.vdp.planes_disabled[1] = !clownmdemu_configuration.vdp.planes_disabled[1];
+								ImGui::TableNextColumn();
+								temp = !clownmdemu_configuration.vdp.planes_disabled[1];
+								if (ImGui::Checkbox("Plane B", &temp))
+									clownmdemu_configuration.vdp.planes_disabled[1] = !clownmdemu_configuration.vdp.planes_disabled[1];
 
-									ImGui::EndTable();
-								}
+								ImGui::EndTable();
 							}
 
-							if (ImGui::CollapsingHeader("FM", ImGuiTreeNodeFlags_DefaultOpen))
-							{
-								if (ImGui::BeginTable("FM Options", 2))
-								{
-									for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.channel_disabled); ++i)
-									{
-										ImGui::TableNextColumn();
-										temp = !clownmdemu_configuration.fm.channel_disabled[i];
-										char buffer[] = "FM1";
-										buffer[2] = '1' + i;
-										if (ImGui::Checkbox(i == 5 ? "FM6/DAC" : buffer, &temp))
-											clownmdemu_configuration.fm.channel_disabled[i] = !clownmdemu_configuration.fm.channel_disabled[i];
-									}
+							ImGui::SeparatorText("FM");
 
-									ImGui::EndTable();
+							if (ImGui::BeginTable("FM Options", 2))
+							{
+								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.channel_disabled); ++i)
+								{
+									ImGui::TableNextColumn();
+									temp = !clownmdemu_configuration.fm.channel_disabled[i];
+									char buffer[] = "FM1";
+									buffer[2] = '1' + i;
+									if (ImGui::Checkbox(i == 5 ? "FM6/DAC" : buffer, &temp))
+										clownmdemu_configuration.fm.channel_disabled[i] = !clownmdemu_configuration.fm.channel_disabled[i];
 								}
+
+								ImGui::EndTable();
 							}
 
-							if (ImGui::CollapsingHeader("PSG", ImGuiTreeNodeFlags_DefaultOpen))
+							ImGui::SeparatorText("PSG");
+
+							if (ImGui::BeginTable("PSG Options", 2))
 							{
-								if (ImGui::BeginTable("PSG Options", 2))
+								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
 								{
-									for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
-									{
-										ImGui::TableNextColumn();
-										temp = !clownmdemu_configuration.psg.tone_disabled[i];
-										char buffer[] = "PSG1";
-										buffer[3] = '1' + i;
-										if (ImGui::Checkbox(buffer, &temp))
-											clownmdemu_configuration.psg.tone_disabled[i] = !clownmdemu_configuration.psg.tone_disabled[i];
-									}
-
 									ImGui::TableNextColumn();
-									temp = !clownmdemu_configuration.psg.noise_disabled;
-									if (ImGui::Checkbox("PSG Noise", &temp))
-										clownmdemu_configuration.psg.noise_disabled = !clownmdemu_configuration.psg.noise_disabled;
-
-									ImGui::EndTable();
+									temp = !clownmdemu_configuration.psg.tone_disabled[i];
+									char buffer[] = "PSG1";
+									buffer[3] = '1' + i;
+									if (ImGui::Checkbox(buffer, &temp))
+										clownmdemu_configuration.psg.tone_disabled[i] = !clownmdemu_configuration.psg.tone_disabled[i];
 								}
+
+								ImGui::TableNextColumn();
+								temp = !clownmdemu_configuration.psg.noise_disabled;
+								if (ImGui::Checkbox("PSG Noise", &temp))
+									clownmdemu_configuration.psg.noise_disabled = !clownmdemu_configuration.psg.noise_disabled;
+
+								ImGui::EndTable();
 							}
 						}
 
@@ -2210,22 +2207,6 @@ int main(int argc, char **argv)
 
 							if (ImGui::CollapsingHeader("Keyboard Input", ImGuiTreeNodeFlags_DefaultOpen))
 							{
-								if (ImGui::BeginTable("Keyboard Input Options", 2))
-								{
-									ImGui::TableNextColumn();
-									if (ImGui::RadioButton("Control Pad #1", keyboard_input.bound_joypad == 0))
-										keyboard_input.bound_joypad = 0;
-									DoToolTip("Binds the keyboard to Control Pad #1.");
-
-
-									ImGui::TableNextColumn();
-									if (ImGui::RadioButton("Control Pad #2", keyboard_input.bound_joypad == 1))
-										keyboard_input.bound_joypad = 1;
-									DoToolTip("Binds the keyboard to Control Pad #2.");
-
-									ImGui::EndTable();
-								}
-
 								static bool sorted_scancodes_done;
 								static SDL_Scancode sorted_scancodes[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
@@ -2269,9 +2250,24 @@ int main(int argc, char **argv)
 									"Toggle Control Pad"
 								};
 
-								ImGui::Separator();
+								ImGui::SeparatorText("Control Pad Bindings");
 
-								ImGui::TextUnformatted("Control Pad Bindings:");
+								if (ImGui::BeginTable("Keyboard Input Options", 2))
+								{
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("Control Pad #1", keyboard_input.bound_joypad == 0))
+										keyboard_input.bound_joypad = 0;
+									DoToolTip("Binds the keyboard to Control Pad #1.");
+
+
+									ImGui::TableNextColumn();
+									if (ImGui::RadioButton("Control Pad #2", keyboard_input.bound_joypad == 1))
+										keyboard_input.bound_joypad = 1;
+									DoToolTip("Binds the keyboard to Control Pad #2.");
+
+									ImGui::EndTable();
+								}
+
 								if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
 								{
 									ImGui::TableSetupColumn("Key");
@@ -2301,9 +2297,7 @@ int main(int argc, char **argv)
 								if (ImGui::Button("Add Binding##1"))
 									ImGui::OpenPopup("Select Key");
 
-								ImGui::Separator();
-
-								ImGui::TextUnformatted("Other Bindings:");
+								ImGui::SeparatorText("Other Bindings");
 								if (ImGui::BeginTable("hoykey bindings", 3, ImGuiTableFlags_Borders))
 								{
 									ImGui::TableSetupColumn("Key");
@@ -2377,7 +2371,7 @@ int main(int argc, char **argv)
 								{
 									bool previous_menu = false;
 
-									ImGui::TextUnformatted("Control Pad:");
+									ImGui::SeparatorText("Control Pad");
 									if (ImGui::BeginListBox("##Control Pad"))
 									{
 										for (InputBinding i = INPUT_BINDING_CONTROL_PAD__BEGIN; i <= INPUT_BINDING_CONTROL_PAD__END; i = (InputBinding)(i + 1))
@@ -2394,7 +2388,7 @@ int main(int argc, char **argv)
 
 									ImGui::Separator();
 
-									ImGui::TextUnformatted("Other:");
+									ImGui::SeparatorText("Other");
 									if (ImGui::BeginListBox("##Other"))
 									{
 										for (InputBinding i = INPUT_BINDING_HOTKEYS__BEGIN; i <= INPUT_BINDING_HOTKEYS__END; i = (InputBinding)(i + 1))
