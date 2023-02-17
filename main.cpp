@@ -494,7 +494,10 @@ static cc_bool ReadInputCallback(const void *user_data, cc_u16f player_id, Clown
 		// First, try to obtain the input from the keyboard.
 		if (keyboard_input.bound_joypad == player_id)
 			value |= keyboard_input.buttons[button_id] != 0 ? cc_true : cc_false;
+	}
 
+	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+	{
 		// Then, try to obtain the input from the controllers.
 		for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
 			if (controller_input->input.bound_joypad == player_id)
@@ -1136,39 +1139,42 @@ int main(int argc, char **argv)
 								if (!emulator_on)
 									break;
 
-								switch (keyboard_bindings[event.key.keysym.scancode])
+								if (emulator_has_focus)
 								{
-									case INPUT_BINDING_PAUSE:
-										emulator_paused = !emulator_paused;
-										break;
+									switch (keyboard_bindings[event.key.keysym.scancode])
+									{
+										case INPUT_BINDING_PAUSE:
+											emulator_paused = !emulator_paused;
+											break;
 
-									case INPUT_BINDING_RESET:
-										// Soft-reset console
-										ClownMDEmu_Reset(&clownmdemu, &callbacks);
-
-										emulator_paused = false;
-
-										break;
-
-									case INPUT_BINDING_QUICK_SAVE_STATE:
-										// Save save state
-										quick_save_exists = true;
-										quick_save_state = *emulation_state;
-										break;
-
-									case INPUT_BINDING_QUICK_LOAD_STATE:
-										// Load save state
-										if (quick_save_exists)
-										{
-											ApplySaveState(&quick_save_state);
+										case INPUT_BINDING_RESET:
+											// Soft-reset console
+											ClownMDEmu_Reset(&clownmdemu, &callbacks);
 
 											emulator_paused = false;
-										}
 
-										break;
+											break;
 
-									default:
-										break;
+										case INPUT_BINDING_QUICK_SAVE_STATE:
+											// Save save state
+											quick_save_exists = true;
+											quick_save_state = *emulation_state;
+											break;
+
+										case INPUT_BINDING_QUICK_LOAD_STATE:
+											// Load save state
+											if (quick_save_exists)
+											{
+												ApplySaveState(&quick_save_state);
+
+												emulator_paused = false;
+											}
+
+											break;
+
+										default:
+											break;
+									}
 								}
 								// Fallthrough
 							case SDL_KEYUP:
@@ -1200,15 +1206,21 @@ int main(int argc, char **argv)
 									#undef DO_KEY
 
 									case INPUT_BINDING_FAST_FORWARD:
-										// Toggle fast-forward
-										keyboard_input.fast_forward += pressed;
-										UpdateFastForwardStatus();
+										if (emulator_has_focus)
+										{
+											// Toggle fast-forward
+											keyboard_input.fast_forward += pressed;
+											UpdateFastForwardStatus();
+										}
 										break;
 
 									#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 									case INPUT_BINDING_REWIND:
-										keyboard_input.rewind += pressed;
-										UpdateRewindStatus();
+										if (emulator_has_focus)
+										{
+											keyboard_input.rewind += pressed;
+											UpdateRewindStatus();
+										}
 										break;
 									#endif
 
@@ -1303,8 +1315,8 @@ int main(int argc, char **argv)
 									io.ConfigFlags ^= ImGuiConfigFlags_NavEnableGamepad;
 								}
 
-								// Don't use inputs that are for Dear ImGui
-								if (!emulator_on || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
+								// Don't use inputs that are for Dear ImGui.
+								if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
 									break;
 
 								switch (event.cbutton.button)
@@ -1403,8 +1415,9 @@ int main(int argc, char **argv)
 
 											case SDL_CONTROLLER_BUTTON_BACK:
 												// Toggle which joypad the controller is bound to.
-												if (pressed)
-													controller_input->input.bound_joypad ^= 1;
+												if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+													if (pressed)
+														controller_input->input.bound_joypad ^= 1;
 
 												break;
 
@@ -1497,29 +1510,32 @@ int main(int argc, char **argv)
 										#endif
 											case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
 											{
-												const bool held = event.caxis.value > 0x7FFF / 8;
-
-											#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-												if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+												if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 												{
-													if (controller_input->left_trigger != held)
-													{
-														controller_input->input.rewind = held;
-														UpdateRewindStatus();
-													}
+													const bool held = event.caxis.value > 0x7FFF / 8;
 
-													controller_input->left_trigger = held;
-												}
-												else
-											#endif
-												{
-													if (controller_input->right_trigger != held)
+												#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+													if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
 													{
-														controller_input->input.fast_forward = held;
-														UpdateFastForwardStatus();
-													}
+														if (controller_input->left_trigger != held)
+														{
+															controller_input->input.rewind = held;
+															UpdateRewindStatus();
+														}
 
-													controller_input->right_trigger = held;
+														controller_input->left_trigger = held;
+													}
+													else
+												#endif
+													{
+														if (controller_input->right_trigger != held)
+														{
+															controller_input->input.fast_forward = held;
+															UpdateFastForwardStatus();
+														}
+
+														controller_input->right_trigger = held;
+													}
 												}
 
 												break;
