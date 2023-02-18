@@ -921,9 +921,6 @@ int main(int argc, char **argv)
 				const float menu_bar_size = (float)font_size + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
 				SDL_SetWindowSize(window, (int)(320.0f * 2.0f * dpi_scale), (int)(224.0f * 2.0f * dpi_scale + menu_bar_size));
 
-				// We are now ready to show the window
-				SDL_ShowWindow(window);
-
 				// Setup Platform/Renderer backends
 				ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
 				ImGui_ImplSDLRenderer_Init(renderer);
@@ -962,6 +959,9 @@ int main(int argc, char **argv)
 					OpenSoftwareFromFile(argv[1], &callbacks);
 				else
 					OpenSoftwareFromMemory(NULL, 0, &callbacks);
+
+				// We are now ready to show the window
+				SDL_ShowWindow(window);
 
 				// Manages whether the program exits or not.
 				bool quit = false;
