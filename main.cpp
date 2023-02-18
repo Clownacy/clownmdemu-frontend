@@ -979,8 +979,7 @@ int main(int argc, char **argv)
 				bool plane_b_viewer = false;
 				bool vram_viewer = false;
 				bool cram_viewer = false;
-				bool dac_status = false;
-				bool fm_status[6] = {false, false, false, false, false, false};
+				bool fm_status = false;
 				bool psg_status = false;
 				bool debugging_toggles_menu = false;
 				bool options_menu = false;
@@ -1629,13 +1628,7 @@ int main(int argc, char **argv)
 					                        || plane_b_viewer
 					                        || vram_viewer
 					                        || cram_viewer
-					                        || dac_status
-					                        || fm_status[0]
-					                        || fm_status[1]
-					                        || fm_status[2]
-					                        || fm_status[3]
-					                        || fm_status[4]
-					                        || fm_status[5]
+					                        || fm_status
 					                        || psg_status
 											|| debugging_toggles_menu
 					                        || options_menu
@@ -1891,19 +1884,7 @@ int main(int argc, char **argv)
 									ImGui::EndMenu();
 								}
 
-								if (ImGui::BeginMenu("FM"))
-								{
-									ImGui::MenuItem("DAC", NULL, &dac_status);
-
-									ImGui::MenuItem("Channel 1", NULL, &fm_status[0]);
-									ImGui::MenuItem("Channel 2", NULL, &fm_status[1]);
-									ImGui::MenuItem("Channel 3", NULL, &fm_status[2]);
-									ImGui::MenuItem("Channel 4", NULL, &fm_status[3]);
-									ImGui::MenuItem("Channel 5", NULL, &fm_status[4]);
-									ImGui::MenuItem("Channel 6", NULL, &fm_status[5]);
-
-									ImGui::EndMenu();
-								}
+								ImGui::MenuItem("FM", NULL, &fm_status);
 
 								ImGui::MenuItem("PSG", NULL, &psg_status);
 
@@ -2096,12 +2077,8 @@ int main(int argc, char **argv)
 					if (cram_viewer)
 						Debug_CRAM(&cram_viewer, &clownmdemu, &debug_vdp_data, monospace_font);
 
-					if (dac_status)
-						Debug_DAC_Channel(&dac_status, &clownmdemu, monospace_font);
-
-					for (unsigned int i = 0; i < 6; ++i)
-						if (fm_status[i])
-							Debug_FM_Channel(&fm_status[i], &clownmdemu, monospace_font, i);
+					if (fm_status)
+						Debug_FM(&fm_status, &clownmdemu, monospace_font);
 
 					if (psg_status)
 						Debug_PSG(&psg_status, &clownmdemu, monospace_font);

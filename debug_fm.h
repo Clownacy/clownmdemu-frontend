@@ -5,7 +5,6 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_DAC_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font);
-void Debug_FM_Channel(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font, cc_u16f channel_index);
+void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font);
 
 #endif /* DEBUG_FM_H */
