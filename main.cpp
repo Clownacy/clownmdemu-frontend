@@ -1748,7 +1748,7 @@ int main(int argc, char **argv)
 
 								static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
 
-								if (ImGui::MenuItem("Save To File...", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Save to File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
 									const char *save_state_path = SaveFileDialog("Create Save State", NULL, 0, NULL, NULL);
@@ -1784,7 +1784,7 @@ int main(int argc, char **argv)
 									}
 								}
 
-								if (ImGui::MenuItem("Load From File...", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Load from File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
 									const char *save_state_path = OpenFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
