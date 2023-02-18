@@ -2158,7 +2158,7 @@ int main(int argc, char **argv)
 
 					if (options_menu)
 					{
-						ImGui::SetNextWindowSize(ImVec2(550, 550), ImGuiCond_FirstUseEver);
+						ImGui::SetNextWindowSize(ImVec2(360.0f * dpi_scale, 360.0f * dpi_scale), ImGuiCond_FirstUseEver);
 
 						if (ImGui::Begin("Options", &options_menu))
 						{

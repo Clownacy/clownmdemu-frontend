@@ -164,10 +164,15 @@ void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data
 
 void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
-	// Don't let the window become too small, or we can get division by zero errors later on.
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data->dpi_scale, 100.0f * data->dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+	// Variables relating to the sizing and spacing of the tiles in the viewer.
+	const float tile_scale = SDL_roundf(3.0f * data->dpi_scale);
+	const float tile_spacing = SDL_roundf(5.0f * data->dpi_scale);
+	const float default_window_size = (8 * tile_scale * 0x10) + (tile_spacing * (0x10 - 1)) + 40.0f * data->dpi_scale; // Default to 16 tiles wide.
 
-	ImGui::SetNextWindowSize(ImVec2(825, 825), ImGuiCond_FirstUseEver);
+	// Don't let the window become too small, or we can get division by zero errors later on.
+	ImGui::SetNextWindowSizeConstraints(ImVec2(default_window_size, default_window_size), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+
+	ImGui::SetNextWindowSize(ImVec2(500.0f * data->dpi_scale, 500.0f * data->dpi_scale), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("VRAM", open))
 	{
@@ -278,17 +283,14 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			// Actually display the VRAM now.
 			ImGui::BeginChild("VRAM contents");
 
-			// Variables relating to the sizing and spacing of the tiles in the viewer.
-			const float dst_tile_scale = SDL_roundf(3.0f * data->dpi_scale);
 			const ImVec2 dst_tile_size(
-				tile_width  * dst_tile_scale,
-				tile_height * dst_tile_scale);
-			const float spacing = SDL_roundf(5.0f * data->dpi_scale);
+				tile_width  * tile_scale,
+				tile_height * tile_scale);
 
 			// Calculate the size of the VRAM display region.
 			// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
-			const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size.x + spacing);
-			const float vram_display_region_height = SDL_ceilf((float)size_of_vram_in_tiles * (dst_tile_size.x + spacing) / vram_display_region_width) * (dst_tile_size.y + spacing);
+			const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size.x + tile_spacing);
+			const float vram_display_region_height = SDL_ceilf((float)size_of_vram_in_tiles * (dst_tile_size.x + tile_spacing) / vram_display_region_width) * (dst_tile_size.y + tile_spacing);
 
 			const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
 			const bool window_is_hovered = ImGui::IsWindowHovered();
@@ -315,24 +317,24 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 					(float)(current_tile_src_y + tile_height) / (float)vram_texture_height);
 
 				// Figure out where the tile goes in the viewer.
-				const float current_tile_dst_x = SDL_fmodf((float)tile_index * (dst_tile_size.x + spacing), vram_display_region_width);
-				const float current_tile_dst_y = SDL_floorf((float)tile_index * (dst_tile_size.x + spacing) / vram_display_region_width) * (dst_tile_size.y + spacing);
+				const float current_tile_dst_x = SDL_fmodf((float)tile_index * (dst_tile_size.x + tile_spacing), vram_display_region_width);
+				const float current_tile_dst_y = SDL_floorf((float)tile_index * (dst_tile_size.x + tile_spacing) / vram_display_region_width) * (dst_tile_size.y + tile_spacing);
 
 				const ImVec2 tile_boundary_position_top_left(
 					canvas_position.x + current_tile_dst_x,
 					canvas_position.y + current_tile_dst_y);
 
 				const ImVec2 tile_boundary_position_bottom_right(
-					tile_boundary_position_top_left.x + dst_tile_size.x + spacing,
-					tile_boundary_position_top_left.y + dst_tile_size.y + spacing);
+					tile_boundary_position_top_left.x + dst_tile_size.x + tile_spacing,
+					tile_boundary_position_top_left.y + dst_tile_size.y + tile_spacing);
 
 				const ImVec2 tile_position_top_left(
-					tile_boundary_position_top_left.x + spacing * 0.5f,
-					tile_boundary_position_top_left.y + spacing * 0.5f);
+					tile_boundary_position_top_left.x + tile_spacing * 0.5f,
+					tile_boundary_position_top_left.y + tile_spacing * 0.5f);
 
 				const ImVec2 tile_position_bottom_right(
-					tile_boundary_position_bottom_right.x - spacing * 0.5f,
-					tile_boundary_position_bottom_right.y - spacing * 0.5f);
+					tile_boundary_position_bottom_right.x - tile_spacing * 0.5f,
+					tile_boundary_position_bottom_right.y - tile_spacing * 0.5f);
 
 				// Finally, display the tile.
 				draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
