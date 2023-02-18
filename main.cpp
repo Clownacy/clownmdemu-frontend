@@ -2085,7 +2085,7 @@ int main(int argc, char **argv)
 
 					if (debugging_toggles_menu)
 					{
-						if (ImGui::Begin("Debugging Toggles", &debugging_toggles_menu))
+						if (ImGui::Begin("Toggles", &debugging_toggles_menu))
 						{
 							bool temp;
 
