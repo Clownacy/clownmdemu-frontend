@@ -63,7 +63,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 			if (plane_scale < 1)
 				plane_scale = 1;
 
-			if (ImGui::BeginChild("Plane View"))
+			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
 				const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
 
