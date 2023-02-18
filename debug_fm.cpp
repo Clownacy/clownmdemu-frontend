@@ -99,7 +99,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						ImGui::EndTable();
 					}
 
-					if (ImGui::BeginTable("Operator Table", 5, ImGuiTableFlags_Borders))
+					if (ImGui::BeginTable("FM Operator Table", 5, ImGuiTableFlags_Borders))
 					{
 						ImGui::TableSetupColumn("Register");
 						ImGui::TableSetupColumn("Operator 1");
