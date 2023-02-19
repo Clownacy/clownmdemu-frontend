@@ -97,6 +97,7 @@ static Input keyboard_input;
 static ControllerInput *controller_input_list_head;
 
 static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static InputBinding keyboard_bindings_cached[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 static DoublyLinkedList recent_software_list;
 
@@ -1187,9 +1188,15 @@ int main(int argc, char **argv)
 								if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
 									break;
 
+								// When a key-down is processed, cache the binding so that the corresponding key-up
+								// affects the same input. This is to prevent phantom inputs when a key is unbinded
+								// whilst it is being held.
+								const InputBinding binding = (event.type == SDL_KEYUP ? keyboard_bindings_cached : keyboard_bindings)[event.key.keysym.scancode];
+								keyboard_bindings_cached[event.key.keysym.scancode] = keyboard_bindings[event.key.keysym.scancode];
+
 								const int pressed = event.key.state == SDL_PRESSED ? 1 : -1;
 
-								switch (keyboard_bindings[event.key.keysym.scancode])
+								switch (binding)
 								{
 									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] += pressed; break
 
