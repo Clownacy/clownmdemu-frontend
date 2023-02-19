@@ -366,13 +366,14 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 	{
 		static int brightness = 1;
 
-		ImGui::Text("Brightness");
+		ImGui::SeparatorText("Brightness");
 		ImGui::RadioButton("Shadow", &brightness, 0);
 		ImGui::SameLine();
 		ImGui::RadioButton("Normal", &brightness, 1);
 		ImGui::SameLine();
 		ImGui::RadioButton("Highlight", &brightness, 2);
-		ImGui::Separator();
+
+		ImGui::SeparatorText("Colours");
 
 		const cc_u16f length_of_palette_line = 16;
 		const cc_u16f length_of_palette = length_of_palette_line * 4;
