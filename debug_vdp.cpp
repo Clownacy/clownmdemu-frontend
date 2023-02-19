@@ -329,12 +329,12 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 					tile_boundary_position_top_left.y + dst_tile_size.y + tile_spacing);
 
 				const ImVec2 tile_position_top_left(
-					tile_boundary_position_top_left.x + tile_spacing * 0.5f,
-					tile_boundary_position_top_left.y + tile_spacing * 0.5f);
+					tile_boundary_position_top_left.x + SDL_floorf(tile_spacing * 0.5f),
+					tile_boundary_position_top_left.y + SDL_floorf(tile_spacing * 0.5f));
 
 				const ImVec2 tile_position_bottom_right(
-					tile_boundary_position_bottom_right.x - tile_spacing * 0.5f,
-					tile_boundary_position_bottom_right.y - tile_spacing * 0.5f);
+					tile_boundary_position_bottom_right.x - SDL_floorf(tile_spacing * 0.5f),
+					tile_boundary_position_bottom_right.y - SDL_floorf(tile_spacing * 0.5f));
 
 				// Finally, display the tile.
 				draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
