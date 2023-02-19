@@ -2319,6 +2319,14 @@ int main(int argc, char **argv)
 							if (ImGui::Button("Add Binding"))
 								ImGui::OpenPopup("Select Key");
 
+							static bool scroll_to_add_bindings_button;
+
+							if (scroll_to_add_bindings_button)
+							{
+								scroll_to_add_bindings_button = false;
+								ImGui::SetScrollHereY(1.0f);
+							}
+
 							const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
@@ -2372,10 +2380,13 @@ int main(int argc, char **argv)
 											ImGui::CloseCurrentPopup();
 											keyboard_bindings[selected_scancode] = i;
 											sorted_scancodes_done = false;
+											scroll_to_add_bindings_button = true;
 										}
 									}
 									ImGui::EndListBox();
 								}
+
+								ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
 
 								if (ImGui::Button("Cancel"))
 								{
