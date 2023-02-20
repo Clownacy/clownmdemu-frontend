@@ -922,7 +922,6 @@ int main(int argc, char **argv)
 				style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
 				style.TabRounding = 0.0f;
 				style.ScrollbarRounding = 0.0f;
-				style.Alpha = 1.0f;
 
 				ImVec4* colors = style.Colors;
 				colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
