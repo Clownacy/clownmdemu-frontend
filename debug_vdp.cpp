@@ -166,8 +166,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float tile_scale = SDL_roundf(3.0f * data->dpi_scale);
-	const float tile_spacing = SDL_roundf(5.0f * data->dpi_scale);
-	const float default_window_size = (8 * tile_scale * 0x10) + (tile_spacing * (0x10 - 1)) + 40.0f * data->dpi_scale; // Default to 16 tiles wide.
+	const float tile_spacing = SDL_roundf(2.0f * data->dpi_scale);
+	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * data->dpi_scale; // Default to 16 tiles wide.
 
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data->dpi_scale, 100.0f * data->dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
@@ -287,10 +287,14 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				tile_width  * tile_scale,
 				tile_height * tile_scale);
 
+			const ImVec2 dst_tile_size_and_padding(
+				dst_tile_size.x + tile_spacing * 2,
+				dst_tile_size.y + tile_spacing * 2);
+
 			// Calculate the size of the VRAM display region.
 			// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
-			const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size.x + tile_spacing);
-			const float vram_display_region_height = SDL_ceilf((float)size_of_vram_in_tiles * (dst_tile_size.x + tile_spacing) / vram_display_region_width) * (dst_tile_size.y + tile_spacing);
+			const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size_and_padding.x);
+			const size_t vram_display_region_width_in_tiles = SDL_floorf(vram_display_region_width / dst_tile_size_and_padding.x);
 
 			const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
 			const bool window_is_hovered = ImGui::IsWindowHovered();
@@ -298,18 +302,16 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			// Draw the list of tiles.
 			ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
-			const size_t length_of_row = SDL_floorf(vram_display_region_width / (dst_tile_size.x + tile_spacing));
-
 			// Here we use a clipper so that we only render the tiles that we can actually see.
 			ImGuiListClipper clipper;
-			clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, length_of_row), dst_tile_size.y + tile_spacing);
+			clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, vram_display_region_width_in_tiles), dst_tile_size_and_padding.y);
 			while (clipper.Step())
 			{
 				for (size_t y = clipper.DisplayStart; y < clipper.DisplayEnd; ++y)
 				{
-					for (size_t x = 0; x < CC_MIN(length_of_row, size_of_vram_in_tiles - (y * length_of_row)); ++x)
+					for (size_t x = 0; x < CC_MIN(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
 					{
-						const size_t tile_index = (y * length_of_row) + x;
+						const size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
 
 						// Obtain texture coordinates for the current tile.
 						const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
@@ -324,24 +326,24 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 							(float)(current_tile_src_y + tile_height) / (float)vram_texture_height);
 
 						// Figure out where the tile goes in the viewer.
-						const float current_tile_dst_x = (float)x * (dst_tile_size.x + tile_spacing);
-						const float current_tile_dst_y = (float)y * (dst_tile_size.y + tile_spacing);
+						const float current_tile_dst_x = (float)x * dst_tile_size_and_padding.x;
+						const float current_tile_dst_y = (float)y * dst_tile_size_and_padding.y;
 
 						const ImVec2 tile_boundary_position_top_left(
 							canvas_position.x + current_tile_dst_x,
 							canvas_position.y + current_tile_dst_y);
 
 						const ImVec2 tile_boundary_position_bottom_right(
-							tile_boundary_position_top_left.x + dst_tile_size.x + tile_spacing,
-							tile_boundary_position_top_left.y + dst_tile_size.y + tile_spacing);
+							tile_boundary_position_top_left.x + dst_tile_size_and_padding.x,
+							tile_boundary_position_top_left.y + dst_tile_size_and_padding.y);
 
 						const ImVec2 tile_position_top_left(
-							tile_boundary_position_top_left.x + SDL_floorf(tile_spacing * 0.5f),
-							tile_boundary_position_top_left.y + SDL_floorf(tile_spacing * 0.5f));
+							tile_boundary_position_top_left.x + tile_spacing,
+							tile_boundary_position_top_left.y + tile_spacing);
 
 						const ImVec2 tile_position_bottom_right(
-							tile_boundary_position_bottom_right.x - SDL_floorf(tile_spacing * 0.5f),
-							tile_boundary_position_bottom_right.y - SDL_floorf(tile_spacing * 0.5f));
+							tile_boundary_position_bottom_right.x - tile_spacing,
+							tile_boundary_position_bottom_right.y - tile_spacing);
 
 						// Finally, display the tile.
 						draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
