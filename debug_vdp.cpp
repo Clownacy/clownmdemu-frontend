@@ -295,61 +295,70 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
 			const bool window_is_hovered = ImGui::IsWindowHovered();
 
-			// Extend the region down so that it's given a scroll bar.
-			ImGui::SetCursorScreenPos(ImVec2(canvas_position.x, canvas_position.y + vram_display_region_height));
-			ImGui::Dummy(ImVec2(0, 0));
-
 			// Draw the list of tiles.
 			ImDrawList *draw_list = ImGui::GetWindowDrawList();
 
-			for (size_t tile_index = 0; tile_index < size_of_vram_in_tiles; ++tile_index)
+			const size_t length_of_row = SDL_floorf(vram_display_region_width / (dst_tile_size.x + tile_spacing));
+
+			// Here we use a clipper so that we only render the tiles that we can actually see.
+			ImGuiListClipper clipper;
+			clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, length_of_row), dst_tile_size.y + tile_spacing);
+			while (clipper.Step())
 			{
-				// Obtain texture coordinates for the current tile.
-				const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
-				const size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
-
-				const ImVec2 current_tile_uv0(
-					(float)current_tile_src_x / (float)vram_texture_width,
-					(float)current_tile_src_y / (float)vram_texture_height);
-
-				const ImVec2 current_tile_uv1(
-					(float)(current_tile_src_x + tile_width) / (float)vram_texture_width,
-					(float)(current_tile_src_y + tile_height) / (float)vram_texture_height);
-
-				// Figure out where the tile goes in the viewer.
-				const float current_tile_dst_x = SDL_fmodf((float)tile_index * (dst_tile_size.x + tile_spacing), vram_display_region_width);
-				const float current_tile_dst_y = SDL_floorf((float)tile_index * (dst_tile_size.x + tile_spacing) / vram_display_region_width) * (dst_tile_size.y + tile_spacing);
-
-				const ImVec2 tile_boundary_position_top_left(
-					canvas_position.x + current_tile_dst_x,
-					canvas_position.y + current_tile_dst_y);
-
-				const ImVec2 tile_boundary_position_bottom_right(
-					tile_boundary_position_top_left.x + dst_tile_size.x + tile_spacing,
-					tile_boundary_position_top_left.y + dst_tile_size.y + tile_spacing);
-
-				const ImVec2 tile_position_top_left(
-					tile_boundary_position_top_left.x + SDL_floorf(tile_spacing * 0.5f),
-					tile_boundary_position_top_left.y + SDL_floorf(tile_spacing * 0.5f));
-
-				const ImVec2 tile_position_bottom_right(
-					tile_boundary_position_bottom_right.x - SDL_floorf(tile_spacing * 0.5f),
-					tile_boundary_position_bottom_right.y - SDL_floorf(tile_spacing * 0.5f));
-
-				// Finally, display the tile.
-				draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
-
-				if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
+				for (size_t y = clipper.DisplayStart; y < clipper.DisplayEnd; ++y)
 				{
-					ImGui::BeginTooltip();
+					for (size_t x = 0; x < CC_MIN(length_of_row, size_of_vram_in_tiles - (y * length_of_row)); ++x)
+					{
+						const size_t tile_index = (y * length_of_row) + x;
 
-					// Display the tile's index.
-					ImGui::Text("%zd/0x%zX", tile_index, tile_index);
+						// Obtain texture coordinates for the current tile.
+						const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
+						const size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
 
-					// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-					ImGui::Image(vram_texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+						const ImVec2 current_tile_uv0(
+							(float)current_tile_src_x / (float)vram_texture_width,
+							(float)current_tile_src_y / (float)vram_texture_height);
 
-					ImGui::EndTooltip();
+						const ImVec2 current_tile_uv1(
+							(float)(current_tile_src_x + tile_width) / (float)vram_texture_width,
+							(float)(current_tile_src_y + tile_height) / (float)vram_texture_height);
+
+						// Figure out where the tile goes in the viewer.
+						const float current_tile_dst_x = (float)x * (dst_tile_size.x + tile_spacing);
+						const float current_tile_dst_y = (float)y * (dst_tile_size.y + tile_spacing);
+
+						const ImVec2 tile_boundary_position_top_left(
+							canvas_position.x + current_tile_dst_x,
+							canvas_position.y + current_tile_dst_y);
+
+						const ImVec2 tile_boundary_position_bottom_right(
+							tile_boundary_position_top_left.x + dst_tile_size.x + tile_spacing,
+							tile_boundary_position_top_left.y + dst_tile_size.y + tile_spacing);
+
+						const ImVec2 tile_position_top_left(
+							tile_boundary_position_top_left.x + SDL_floorf(tile_spacing * 0.5f),
+							tile_boundary_position_top_left.y + SDL_floorf(tile_spacing * 0.5f));
+
+						const ImVec2 tile_position_bottom_right(
+							tile_boundary_position_bottom_right.x - SDL_floorf(tile_spacing * 0.5f),
+							tile_boundary_position_bottom_right.y - SDL_floorf(tile_spacing * 0.5f));
+
+						// Finally, display the tile.
+						draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+
+						if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
+						{
+							ImGui::BeginTooltip();
+
+							// Display the tile's index.
+							ImGui::Text("%zd/0x%zX", tile_index, tile_index);
+
+							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
+							ImGui::Image(vram_texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+
+							ImGui::EndTooltip();
+						}
+					}
 				}
 			}
 
