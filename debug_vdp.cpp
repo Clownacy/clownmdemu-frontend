@@ -170,9 +170,9 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 	const float default_window_size = (8 * tile_scale * 0x10) + (tile_spacing * (0x10 - 1)) + 40.0f * data->dpi_scale; // Default to 16 tiles wide.
 
 	// Don't let the window become too small, or we can get division by zero errors later on.
-	ImGui::SetNextWindowSizeConstraints(ImVec2(default_window_size, default_window_size), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data->dpi_scale, 100.0f * data->dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
-	ImGui::SetNextWindowSize(ImVec2(500.0f * data->dpi_scale, 500.0f * data->dpi_scale), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("VRAM", open))
 	{
