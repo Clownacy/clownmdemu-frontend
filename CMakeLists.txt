@@ -66,12 +66,12 @@ endif()
 # Required language versions
 #
 
-# Only require C90 and C++98
+# Only require C90 and C++11
 set_target_properties(clownmdemu-frontend PROPERTIES
 	C_STANDARD 90
 	C_STANDARD_REQUIRED NO
 	C_EXTENSIONS OFF
-	CXX_STANDARD 98
+	CXX_STANDARD 11
 	CXX_STANDARD_REQUIRED NO
 	CXX_EXTENSIONS OFF
 )
@@ -104,9 +104,6 @@ endif()
 #
 # Dear ImGui stuff
 #
-
-# Dear ImGui requires some C++11 features
-target_compile_features(clownmdemu-frontend PRIVATE cxx_long_long_type cxx_static_assert)
 
 # Disable some deprecated junk in Dear ImGui
 target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
