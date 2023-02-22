@@ -22,7 +22,7 @@ int main(const int argc, char** const argv)
 			int character;
 
 			while ((character = fgetc(file)) != EOF)
-				fprintf(stdout, "%d,", character);
+				fprintf(stdout, "'\\x%02X',", character);
 
 			exit_code = EXIT_SUCCESS;
 
