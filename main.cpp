@@ -34,6 +34,8 @@ extern "C" {
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
+#define VERSION "v1.3.1"
+
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -212,7 +214,7 @@ static bool InitialiseVideo(void)
 	else
 	{
 		// Create window
-		window = SDL_CreateWindow("clownmdemu-frontend v0.3", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+		window = SDL_CreateWindow("clownmdemu-frontend " VERSION, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
 
 		if (window == NULL)
 		{
@@ -1020,6 +1022,7 @@ int main(int argc, char **argv)
 				bool psg_status = false;
 				bool debugging_toggles_menu = false;
 				bool options_menu = false;
+				bool about_menu = false;
 
 				bool dear_imgui_demo_window = false;
 
@@ -1675,6 +1678,7 @@ int main(int argc, char **argv)
 					                        || psg_status
 											|| debugging_toggles_menu
 					                        || options_menu
+					                        || about_menu
 					                        || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 					// Hide mouse when the user just wants a fullscreen display window
@@ -1952,6 +1956,10 @@ int main(int argc, char **argv)
 								ImGui::Separator();
 
 								ImGui::MenuItem("Options...", NULL, &options_menu);
+
+								ImGui::Separator();
+
+								ImGui::MenuItem("About...", NULL, &about_menu);
 
 								ImGui::Separator();
 
@@ -2441,6 +2449,112 @@ int main(int argc, char **argv)
 
 								if (previous_menu)
 									ImGui::OpenPopup("Select Key");
+							}
+						}
+
+						ImGui::End();
+					}
+
+					if (about_menu)
+					{
+						ImGui::SetNextWindowSize(ImVec2(605.0f * dpi_scale, 430.0f * dpi_scale), ImGuiCond_FirstUseEver);
+
+						if (ImGui::Begin("About", &about_menu))
+						{
+							static const char licence_clownmdemu[] = {
+								#include "licences/clownmdemu.h"
+							};
+							static const char licence_dear_imgui[] = {
+								#include "licences/dear-imgui.h"
+							};
+							static const char licence_freetype[] = {
+								#include "licences/freetype.h"
+							};
+							static const char licence_freetype_bdf[] = {
+								#include "licences/freetype-bdf.h"
+							};
+							static const char licence_freetype_pcf[] = {
+								#include "licences/freetype-pcf.h"
+							};
+							static const char licence_freetype_fthash[] = {
+								#include "licences/freetype-fthash.h"
+							};
+							static const char licence_freetype_ft_hb[] = {
+								#include "licences/freetype-ft-hb.h"
+							};
+							static const char licence_inih[] = {
+								#include "licences/inih.h"
+							};
+
+							ImGui::SeparatorText("clownmdemu-frontend " VERSION);
+
+							ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
+							ImGui::TextUnformatted("https://github.com/Clownacy/clownmdemu-frontend");
+
+							ImGui::SeparatorText("Licences");
+
+							if (ImGui::CollapsingHeader("clownmdemu"))
+							{
+								ImGui::PushFont(monospace_font);
+								ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
+								ImGui::PopFont();
+							}
+
+							if (ImGui::CollapsingHeader("Dear ImGui"))
+							{
+								ImGui::PushFont(monospace_font);
+								ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
+								ImGui::PopFont();
+							}
+
+							if (ImGui::CollapsingHeader("FreeType"))
+							{
+								if (ImGui::TreeNode("General"))
+								{
+									ImGui::PushFont(monospace_font);
+									ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
+									ImGui::PopFont();
+									ImGui::TreePop();
+								}
+
+								if (ImGui::TreeNode("BDF Driver"))
+								{
+									ImGui::PushFont(monospace_font);
+									ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
+									ImGui::PopFont();
+									ImGui::TreePop();
+								}
+
+								if (ImGui::TreeNode("PCF Driver"))
+								{
+									ImGui::PushFont(monospace_font);
+									ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
+									ImGui::PopFont();
+									ImGui::TreePop();
+								}
+
+								if (ImGui::TreeNode("fthash.c & fthash.h"))
+								{
+									ImGui::PushFont(monospace_font);
+									ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
+									ImGui::PopFont();
+									ImGui::TreePop();
+								}
+
+								if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
+								{
+									ImGui::PushFont(monospace_font);
+									ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
+									ImGui::PopFont();
+									ImGui::TreePop();
+								}
+							}
+
+							if (ImGui::CollapsingHeader("inih"))
+							{
+								ImGui::PushFont(monospace_font);
+								ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
+								ImGui::PopFont();
 							}
 						}
 
