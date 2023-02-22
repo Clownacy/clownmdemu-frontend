@@ -2485,6 +2485,12 @@ int main(int argc, char **argv)
 							static const char licence_inih[] = {
 								#include "licences/inih.h"
 							};
+							static const char licence_karla[] = {
+								#include "licences/karla.h"
+							};
+							static const char licence_inconsolata[] = {
+								#include "licences/inconsolata.h"
+							};
 
 							ImGui::SeparatorText("clownmdemu-frontend " VERSION);
 
@@ -2554,6 +2560,20 @@ int main(int argc, char **argv)
 							{
 								ImGui::PushFont(monospace_font);
 								ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
+								ImGui::PopFont();
+							}
+
+							if (ImGui::CollapsingHeader("Karla"))
+							{
+								ImGui::PushFont(monospace_font);
+								ImGui::TextUnformatted(licence_karla, licence_karla + sizeof(licence_karla));
+								ImGui::PopFont();
+							}
+
+							if (ImGui::CollapsingHeader("Inconsolata"))
+							{
+								ImGui::PushFont(monospace_font);
+								ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
 								ImGui::PopFont();
 							}
 						}
