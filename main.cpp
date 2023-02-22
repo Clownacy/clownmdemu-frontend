@@ -2168,12 +2168,13 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginTable("FM Options", 2))
 							{
+								char buffer[] = "FM1";
+
 								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.channel_disabled); ++i)
 								{
+									buffer[2] = '1' + i;
 									ImGui::TableNextColumn();
 									temp = !clownmdemu_configuration.fm.channel_disabled[i];
-									char buffer[] = "FM1";
-									buffer[2] = '1' + i;
 									if (ImGui::Checkbox(i == 5 ? "FM6/DAC" : buffer, &temp))
 										clownmdemu_configuration.fm.channel_disabled[i] = !clownmdemu_configuration.fm.channel_disabled[i];
 								}
@@ -2185,12 +2186,13 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginTable("PSG Options", 2))
 							{
+								char buffer[] = "PSG1";
+
 								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
 								{
+									buffer[3] = '1' + i;
 									ImGui::TableNextColumn();
 									temp = !clownmdemu_configuration.psg.tone_disabled[i];
-									char buffer[] = "PSG1";
-									buffer[3] = '1' + i;
 									if (ImGui::Checkbox(buffer, &temp))
 										clownmdemu_configuration.psg.tone_disabled[i] = !clownmdemu_configuration.psg.tone_disabled[i];
 								}
