@@ -27,14 +27,12 @@ static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata *ti
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, bool plane_b)
+static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
-	if (ImGui::Begin(plane_b ? "Plane B" : "Plane A", open))
+	if (ImGui::Begin(name, open))
 	{
-		static SDL_Texture *plane_textures[2];
-		SDL_Texture *&plane_texture = plane_textures[plane_b];
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
 
@@ -57,15 +55,13 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 		if (plane_texture != NULL)
 		{
-			static int plane_scales[2] = {1, 1};
-			int &plane_scale = plane_scales[plane_b];
 			ImGui::InputInt("Zoom", &plane_scale);
 			if (plane_scale < 1)
 				plane_scale = 1;
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
-				const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
+				const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_address];
 
 				const cc_u16f tile_width = 8;
 				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
@@ -131,7 +127,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					const cc_u16f tile_x = (cc_u16f)((mouse_position.x - image_position.x) / plane_scale / tile_width);
 					const cc_u16f tile_y = (cc_u16f)((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_b ? clownmdemu->state->vdp.plane_b_address : clownmdemu->state->vdp.plane_a_address];
+					const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_address];
 					const cc_u16f packed_tile_metadata = plane[tile_y * clownmdemu->state->vdp.plane_width + tile_x];
 
 					TileMetadata tile_metadata;
@@ -152,14 +148,25 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 	ImGui::End();
 }
 
+void Debug_WindowPlane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
+{
+	static int scale;
+	static SDL_Texture *texture;
+	Debug_Plane(open, clownmdemu, data, "Window Plane", scale, clownmdemu->vdp.state->window_address, texture);
+}
+
 void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
-	Debug_Plane(open, clownmdemu, data, false);
+	static int scale;
+	static SDL_Texture *texture;
+	Debug_Plane(open, clownmdemu, data, "Plane A", scale, clownmdemu->vdp.state->plane_a_address, texture);
 }
 
 void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
-	Debug_Plane(open, clownmdemu, data, true);
+	static int scale;
+	static SDL_Texture *texture;
+	Debug_Plane(open, clownmdemu, data, "Plane B", scale, clownmdemu->vdp.state->plane_b_address, texture);
 }
 
 void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)

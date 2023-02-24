@@ -13,6 +13,7 @@ struct Debug_VDP_Data
 	float dpi_scale;
 };
 
+void Debug_WindowPlane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
 void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
 void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
 void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
