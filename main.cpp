@@ -971,11 +971,20 @@ int main(int argc, char **argv)
 				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
 				// Initialise the clownmdemu configuration struct.
-				// TODO: Set the FM stuff here too!
 				clownmdemu_configuration.vdp.sprites_disabled = cc_false;
 				clownmdemu_configuration.vdp.window_disabled = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
+				clownmdemu_configuration.fm.channel_disabled[0] = cc_false;
+				clownmdemu_configuration.fm.channel_disabled[1] = cc_false;
+				clownmdemu_configuration.fm.channel_disabled[2] = cc_false;
+				clownmdemu_configuration.fm.channel_disabled[3] = cc_false;
+				clownmdemu_configuration.fm.channel_disabled[4] = cc_false;
+				clownmdemu_configuration.fm.channel_disabled[5] = cc_false;
+				clownmdemu_configuration.psg.tone_disabled[0] = cc_false;
+				clownmdemu_configuration.psg.tone_disabled[1] = cc_false;
+				clownmdemu_configuration.psg.tone_disabled[2] = cc_false;
+				clownmdemu_configuration.psg.noise_disabled = cc_false;
 
 				// Initialise persistent data such as lookup tables.
 				ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
