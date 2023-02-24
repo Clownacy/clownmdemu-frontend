@@ -971,7 +971,9 @@ int main(int argc, char **argv)
 				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
 
 				// Initialise the clownmdemu configuration struct.
+				// TODO: Set the FM stuff here too!
 				clownmdemu_configuration.vdp.sprites_disabled = cc_false;
+				clownmdemu_configuration.vdp.window_disabled = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
 
@@ -2157,6 +2159,9 @@ int main(int argc, char **argv)
 									clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
 
 								ImGui::TableNextColumn();
+								temp = !clownmdemu_configuration.vdp.window_disabled;
+								if (ImGui::Checkbox("Window Plane", &temp))
+									clownmdemu_configuration.vdp.window_disabled = !clownmdemu_configuration.vdp.window_disabled;
 
 								ImGui::TableNextColumn();
 								temp = !clownmdemu_configuration.vdp.planes_disabled[0];
