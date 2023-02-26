@@ -2163,13 +2163,13 @@ int main(int argc, char **argv)
 
 					if (debugging_toggles_menu)
 					{
-						if (ImGui::Begin("Toggles", &debugging_toggles_menu))
+						if (ImGui::Begin("Toggles", &debugging_toggles_menu, ImGuiWindowFlags_AlwaysAutoResize))
 						{
 							bool temp;
 
 							ImGui::SeparatorText("VDP");
 
-							if (ImGui::BeginTable("VDP Options", 2))
+							if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
 							{
 								ImGui::TableNextColumn();
 								temp = !clownmdemu_configuration.vdp.sprites_disabled;
@@ -2196,7 +2196,7 @@ int main(int argc, char **argv)
 
 							ImGui::SeparatorText("FM");
 
-							if (ImGui::BeginTable("FM Options", 2))
+							if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
 							{
 								char buffer[] = "FM1";
 
@@ -2214,7 +2214,7 @@ int main(int argc, char **argv)
 
 							ImGui::SeparatorText("PSG");
 
-							if (ImGui::BeginTable("PSG Options", 2))
+							if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
 							{
 								char buffer[] = "PSG1";
 
