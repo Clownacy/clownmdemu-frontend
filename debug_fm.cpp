@@ -11,34 +11,89 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
 	if (ImGui::Begin("FM", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		const char* const pannings[2][2] = {
+			{"Mute", "R"},
+			{"L", "L+R"}
+		};
+
 		const FM_State* const fm = &clownmdemu->state->fm;
 
-		ImGui::SeparatorText("DAC Channel");
+		ImGui::SeparatorText("FM Channels");
 
-		if (ImGui::BeginTable("DAC Register Table", 2, ImGuiTableFlags_Borders))
+		if (ImGui::BeginTable("FM Channel Table", 1 + CC_COUNT_OF(fm->channels), ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame))
 		{
-			ImGui::TableSetupColumn("Register");
-			ImGui::TableSetupColumn("Value");
+			ImGui::TableSetupColumn("Register", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("FM1");
+			ImGui::TableSetupColumn("FM2");
+			ImGui::TableSetupColumn("FM3");
+			ImGui::TableSetupColumn("FM4");
+			ImGui::TableSetupColumn("FM5");
+			ImGui::TableSetupColumn("FM6");
 			ImGui::TableHeadersRow();
 
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("DAC Enabled");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(fm->dac_enabled ? "Yes" : "No");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("DAC Sample");
+			ImGui::TextUnformatted("Frequency Cache");
 
 			ImGui::PushFont(monospace_font);
-			ImGui::TableNextColumn();
-			ImGui::Text("0x%02" CC_PRIXFAST16, (fm->dac_sample / (0x100 / FM_VOLUME_DIVIDER)) + 0x80);
+			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+			{
+				ImGui::TableNextColumn();
+				ImGui::Text("0x%02" CC_PRIXFAST16, fm->channels[i].cached_upper_frequency_bits);
+			}
 			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Frequency");
+
+			ImGui::PushFont(monospace_font);
+			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+			{
+				ImGui::TableNextColumn();
+				ImGui::Text("0x%04" CC_PRIXFAST16, fm->channels[i].state.operators[0].phase.f_number_and_block);
+			}
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Feedback");
+
+			ImGui::PushFont(monospace_font);
+			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+			{
+				ImGui::TableNextColumn();
+
+				cc_u16f bit_index = 0;
+
+				for (cc_u16f temp = fm->channels[i].state.feedback_divisor; temp != 1; temp >>= 1)
+					++bit_index;
+
+				ImGui::Text("%" CC_PRIuFAST16, 9 - bit_index);
+			}
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Algorithm");
+
+			ImGui::PushFont(monospace_font);
+			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+			{
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST16, fm->channels[i].state.algorithm);
+			}
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Panning");
+
+			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+			{
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(pannings[fm->channels[i].pan_left][fm->channels[i].pan_right]);
+			}
 
 			ImGui::EndTable();
 		}
 
-		ImGui::SeparatorText("FM Channels");
+		ImGui::SeparatorText("FM Operators");
 
 		char window_name_buffer[] = "FM1";
 
@@ -52,56 +107,9 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				{
 					const FM_ChannelMetadata* const channel = &fm->channels[i];
 
-					if (ImGui::BeginTable("FM Channel Table", 2, ImGuiTableFlags_Borders))
+					if (ImGui::BeginTable("FM Operator Table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame))
 					{
-						ImGui::TableSetupColumn("Register");
-						ImGui::TableSetupColumn("All Operators");
-						ImGui::TableHeadersRow();
-
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted("Cached Upper Frequency Bits");
-
-						ImGui::PushFont(monospace_font);
-						ImGui::TableNextColumn();
-						ImGui::Text("0x%02" CC_PRIXFAST16, channel->cached_upper_frequency_bits);
-						ImGui::PopFont();
-
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted("Frequency");
-
-						ImGui::PushFont(monospace_font);
-						ImGui::TableNextColumn();
-						ImGui::Text("0x%04" CC_PRIXFAST16, channel->state.operators[0].phase.f_number_and_block);
-						ImGui::PopFont();
-
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted("Feedback");
-
-						ImGui::PushFont(monospace_font);
-						ImGui::TableNextColumn();
-
-						cc_u16f bit_index = 0;
-
-						for (cc_u16f temp = channel->state.feedback_divisor; temp != 1; temp >>= 1)
-							++bit_index;
-
-						ImGui::Text("%" CC_PRIuFAST16, 9 - bit_index);
-						ImGui::PopFont();
-
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted("Algorithm");
-
-						ImGui::PushFont(monospace_font);
-						ImGui::TableNextColumn();
-						ImGui::Text("%" CC_PRIuFAST16, channel->state.algorithm);
-						ImGui::PopFont();
-
-						ImGui::EndTable();
-					}
-
-					if (ImGui::BeginTable("FM Operator Table", 5, ImGuiTableFlags_Borders))
-					{
-						ImGui::TableSetupColumn("Register");
+						ImGui::TableSetupColumn("Register", ImGuiTableColumnFlags_WidthFixed);
 						ImGui::TableSetupColumn("Operator 1");
 						ImGui::TableSetupColumn("Operator 2");
 						ImGui::TableSetupColumn("Operator 3");
@@ -237,6 +245,132 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 				ImGui::EndTabBar();
 			}
+		}
+
+		if (ImGui::BeginTable("Table Table", 2, ImGuiTableFlags_SizingStretchSame))
+		{
+			ImGui::TableNextColumn();
+			ImGui::SeparatorText("DAC Channel");
+
+			if (ImGui::BeginTable("DAC Register Table", 2, ImGuiTableFlags_Borders))
+			{
+				ImGui::TableSetupColumn("Register");
+				ImGui::TableSetupColumn("Value");
+				ImGui::TableHeadersRow();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Enabled");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(fm->dac_enabled ? "Yes" : "No");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Sample");
+
+				ImGui::PushFont(monospace_font);
+				ImGui::TableNextColumn();
+				ImGui::Text("0x%02" CC_PRIXFAST16, (fm->dac_sample / (0x100 / FM_VOLUME_DIVIDER)) + 0x80);
+				ImGui::PopFont();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Panning");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(pannings[fm->channels[5].pan_left][fm->channels[5].pan_right]);
+
+				ImGui::EndTable();
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::SeparatorText("Timers");
+
+			if (ImGui::BeginTable("Timer Table", 3, ImGuiTableFlags_Borders))
+			{
+				ImGui::TableSetupColumn("Property");
+				ImGui::TableSetupColumn("Timer A");
+				ImGui::TableSetupColumn("Timer B");
+				ImGui::TableHeadersRow();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Enabled");
+
+				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
+				{
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(fm->timers[i].enabled ? "Yes" : "No");
+				}
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Cached Counter");
+
+				ImGui::PushFont(monospace_font);
+				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
+				{
+					ImGui::TableNextColumn();
+					ImGui::Text("0x%03" CC_PRIXFAST32, fm->timers[i].value / FM_SAMPLE_RATE_DIVIDER);
+				}
+				ImGui::PopFont();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Active Counter");
+
+				ImGui::PushFont(monospace_font);
+				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
+				{
+					ImGui::TableNextColumn();
+					ImGui::Text("0x%03" CC_PRIXFAST32, fm->timers[i].counter / FM_SAMPLE_RATE_DIVIDER);
+				}
+				ImGui::PopFont();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Flag");
+
+				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
+				{
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted((fm->status & (1 << i)) != 0 ? "Set" : "Cleared");
+				}
+
+				ImGui::EndTable();
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::SeparatorText("Other");
+
+			if (ImGui::BeginTable("Other Table", 2, ImGuiTableFlags_Borders))
+			{
+				ImGui::TableSetupColumn("Property");
+				ImGui::TableSetupColumn("Value");
+				ImGui::TableHeadersRow();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Latched Address");
+
+				ImGui::PushFont(monospace_font);
+				ImGui::TableNextColumn();
+				ImGui::Text("0x%02" CC_PRIXFAST8, fm->address);
+				ImGui::PopFont();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Latched Port");
+
+				ImGui::PushFont(monospace_font);
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIXFAST8, fm->port / 3);
+				ImGui::PopFont();
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Status");
+
+				ImGui::PushFont(monospace_font);
+				ImGui::TableNextColumn();
+				ImGui::Text("0x%02" CC_PRIXFAST8, fm->status);
+				ImGui::PopFont();
+
+				ImGui::EndTable();
+			}
+
+			ImGui::EndTable();
 		}
 
 		ImGui::End();
