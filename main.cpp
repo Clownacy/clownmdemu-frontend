@@ -1958,7 +1958,7 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("Toggles...", NULL, &debugging_toggles_menu);
+								ImGui::MenuItem("Toggles", NULL, &debugging_toggles_menu);
 
 								ImGui::EndMenu();
 							}
@@ -1976,11 +1976,11 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("Options...", NULL, &options_menu);
+								ImGui::MenuItem("Options", NULL, &options_menu);
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("About...", NULL, &about_menu);
+								ImGui::MenuItem("About", NULL, &about_menu);
 
 								ImGui::Separator();
 
