@@ -975,12 +975,13 @@ int main(int argc, char **argv)
 				clownmdemu_configuration.vdp.window_disabled = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
 				clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
-				clownmdemu_configuration.fm.channel_disabled[0] = cc_false;
-				clownmdemu_configuration.fm.channel_disabled[1] = cc_false;
-				clownmdemu_configuration.fm.channel_disabled[2] = cc_false;
-				clownmdemu_configuration.fm.channel_disabled[3] = cc_false;
-				clownmdemu_configuration.fm.channel_disabled[4] = cc_false;
-				clownmdemu_configuration.fm.channel_disabled[5] = cc_false;
+				clownmdemu_configuration.fm.fm_channels_disabled[0] = cc_false;
+				clownmdemu_configuration.fm.fm_channels_disabled[1] = cc_false;
+				clownmdemu_configuration.fm.fm_channels_disabled[2] = cc_false;
+				clownmdemu_configuration.fm.fm_channels_disabled[3] = cc_false;
+				clownmdemu_configuration.fm.fm_channels_disabled[4] = cc_false;
+				clownmdemu_configuration.fm.fm_channels_disabled[5] = cc_false;
+				clownmdemu_configuration.fm.dac_channel_disabled = cc_false;
 				clownmdemu_configuration.psg.tone_disabled[0] = cc_false;
 				clownmdemu_configuration.psg.tone_disabled[1] = cc_false;
 				clownmdemu_configuration.psg.tone_disabled[2] = cc_false;
@@ -2200,14 +2201,19 @@ int main(int argc, char **argv)
 							{
 								char buffer[] = "FM1";
 
-								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.channel_disabled); ++i)
+								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.fm_channels_disabled); ++i)
 								{
 									buffer[2] = '1' + i;
 									ImGui::TableNextColumn();
-									temp = !clownmdemu_configuration.fm.channel_disabled[i];
-									if (ImGui::Checkbox(i == 5 ? "FM6/DAC" : buffer, &temp))
-										clownmdemu_configuration.fm.channel_disabled[i] = !clownmdemu_configuration.fm.channel_disabled[i];
+									temp = !clownmdemu_configuration.fm.fm_channels_disabled[i];
+									if (ImGui::Checkbox(buffer, &temp))
+										clownmdemu_configuration.fm.fm_channels_disabled[i] = !clownmdemu_configuration.fm.fm_channels_disabled[i];
 								}
+
+								ImGui::TableNextColumn();
+								temp = !clownmdemu_configuration.fm.dac_channel_disabled;
+								if (ImGui::Checkbox("DAC", &temp))
+									clownmdemu_configuration.fm.dac_channel_disabled = !clownmdemu_configuration.fm.dac_channel_disabled;
 
 								ImGui::EndTable();
 							}
