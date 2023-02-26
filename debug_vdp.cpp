@@ -315,7 +315,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, vram_display_region_width_in_tiles), dst_tile_size_and_padding.y);
 			while (clipper.Step())
 			{
-				for (size_t y = clipper.DisplayStart; y < clipper.DisplayEnd; ++y)
+				for (size_t y = (size_t)clipper.DisplayStart; y < (size_t)clipper.DisplayEnd; ++y)
 				{
 					for (size_t x = 0; x < CC_MIN(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
 					{
@@ -458,7 +458,7 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 	ImGui::End();
 }
 
-void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, ImFont *monospace_font)
+void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
 	if (ImGui::Begin("VDP Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

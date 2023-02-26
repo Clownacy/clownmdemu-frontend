@@ -738,12 +738,12 @@ static int INIParseCallback(void* const user, const char* const section, const c
 		errno = 0;
 		const SDL_Scancode scancode = (SDL_Scancode)SDL_strtoul(name, &string_end, 0);
 
-		if (errno != ERANGE && string_end - name >= SDL_strlen(name) && scancode < SDL_NUM_SCANCODES)
+		if (errno != ERANGE && string_end >= SDL_strchr(name, '\0') && scancode < SDL_NUM_SCANCODES)
 		{
 			errno = 0;
 			const InputBinding input_binding = (InputBinding)SDL_strtoul(value, &string_end, 0);
 
-			if (errno != ERANGE && string_end - value >= SDL_strlen(value))
+			if (errno != ERANGE && string_end >= SDL_strchr(name, '\0'))
 				keyboard_bindings[scancode] = input_binding;
 		}
 
@@ -855,7 +855,7 @@ static void SaveConfiguration(void)
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
 				char buffer[0x20];
-				SDL_snprintf(buffer, sizeof(buffer), "%d = %d\n", i, keyboard_bindings[i]);
+				SDL_snprintf(buffer, sizeof(buffer), "%zd = %d\n", i, keyboard_bindings[i]);
 				SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
 			}
 		}
@@ -2139,7 +2139,7 @@ int main(int argc, char **argv)
 					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, dpi_scale};
 
 					if (vdp_registers)
-						Debug_VDP(&vdp_registers, &clownmdemu, &debug_vdp_data, monospace_font);
+						Debug_VDP(&vdp_registers, &clownmdemu, monospace_font);
 
 					if (window_plane_viewer)
 						Debug_WindowPlane(&window_plane_viewer, &clownmdemu, &debug_vdp_data);
