@@ -1025,6 +1025,7 @@ int main(int argc, char **argv)
 				bool z80_status = false;
 				bool m68k_ram_viewer = false;
 				bool z80_ram_viewer = false;
+				bool vdp_registers = false;
 				bool window_plane_viewer = false;
 				bool plane_a_viewer = false;
 				bool plane_b_viewer = false;
@@ -1682,6 +1683,7 @@ int main(int argc, char **argv)
 					                        || z80_status
 					                        || m68k_ram_viewer
 					                        || z80_ram_viewer
+					                        || vdp_registers
 					                        || window_plane_viewer
 					                        || plane_a_viewer
 					                        || plane_b_viewer
@@ -1689,7 +1691,7 @@ int main(int argc, char **argv)
 					                        || cram_viewer
 					                        || fm_status
 					                        || psg_status
-											|| debugging_toggles_menu
+					                        || debugging_toggles_menu
 					                        || options_menu
 					                        || about_menu
 					                        || (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
@@ -1933,6 +1935,10 @@ int main(int argc, char **argv)
 
 								if (ImGui::BeginMenu("VDP"))
 								{
+									ImGui::MenuItem("Registers", NULL, &vdp_registers);
+
+									ImGui::SeparatorText("Visualisers");
+
 									ImGui::MenuItem("Window Plane", NULL, &window_plane_viewer);
 
 									ImGui::MenuItem("Plane A", NULL, &plane_a_viewer);
@@ -2130,6 +2136,9 @@ int main(int argc, char **argv)
 						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
 
 					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, dpi_scale};
+
+					if (vdp_registers)
+						Debug_VDP(&vdp_registers, &clownmdemu, &debug_vdp_data, monospace_font);
 
 					if (window_plane_viewer)
 						Debug_WindowPlane(&window_plane_viewer, &clownmdemu, &debug_vdp_data);

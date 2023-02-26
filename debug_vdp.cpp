@@ -457,3 +457,157 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 	ImGui::End();
 }
+
+void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, ImFont *monospace_font)
+{
+	if (ImGui::Begin("VDP Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		if (ImGui::BeginTable("VDP Registers", 2, ImGuiTableFlags_Borders))
+		{
+			const VDP_State* const vdp = &clownmdemu->state->vdp;
+
+			ImGui::TableSetupColumn("Property");
+			ImGui::TableSetupColumn("Value");
+			ImGui::TableHeadersRow();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Sprite Table Address");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->sprite_table_address);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Window Plane Address");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->window_address);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Plane A Address");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->plane_a_address);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Plane B Address");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->plane_b_address);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Horizontal Scroll Table Address");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->hscroll_address);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Window Plane Horizontal Boundary");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("%" CC_PRIdLEAST8, vdp->window_horizontal_boundary);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Window Plane Horizontal Alignment");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->window_aligned_right ? "Right" : "Left");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Window Plane Vertical Boundary");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("%" CC_PRIdLEAST8, vdp->window_vertical_boundary);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Window Plane Vertical Alignment");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->window_aligned_bottom ? "Bottom" : "Top");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Plane Width");
+			ImGui::TableNextColumn();
+			ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp->plane_width);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Plane Height");
+			ImGui::TableNextColumn();
+			ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp->plane_height);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Display Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->display_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("V-Int Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->v_int_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("H-Int Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->h_int_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("H40 Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->h40_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("V30 Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->v30_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Shadow/Highlight Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->shadow_highlight_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Double-Resolution Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->double_resolution_enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Background Colour");
+			ImGui::TableNextColumn();
+			ImGui::Text("Palette Line %d, Entry %d", vdp->background_colour / 16, vdp->background_colour % 16);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("H-Int Interval");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("%" CC_PRIdLEAST8, vdp->h_int_interval);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Horizontal Scrolling Mode");
+			ImGui::TableNextColumn();
+			const char* const horizontal_scrolling_modes[3] = {
+				"Whole Screen",
+				"1-Tile Rows",
+				"1-Pixel Rows"
+			};
+			ImGui::TextUnformatted(horizontal_scrolling_modes[vdp->hscroll_mode]);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Vertical Scrolling Mode");
+			ImGui::TableNextColumn();
+			const char* const vertical_scrolling_modes[2] = {
+				"Whole Screen",
+				"2-Tile Columns"
+			};
+			ImGui::TextUnformatted(vertical_scrolling_modes[vdp->vscroll_mode]);
+
+			ImGui::EndTable();
+		}
+	}
+
+	ImGui::End();
+}

@@ -18,5 +18,6 @@ void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data
 void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
 void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
 void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, ImFont *monospace_font);
+void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, ImFont *monospace_font);
 
 #endif /* DEBUG_VDP_H */
