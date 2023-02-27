@@ -8,9 +8,6 @@
 	path = libraries/imgui
 	url = https://github.com/Clownacy/imgui.git
 	branch = font-nonlinear
-[submodule "frontend/libraries/tinyfiledialogs"]
-	path = libraries/tinyfiledialogs
-	url = https://github.com/jfolker/tinyfiledialogs.git
 [submodule "clowncommon"]
 	path = clowncommon
 	url = https://github.com/Clownacy/clowncommon

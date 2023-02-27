@@ -30,8 +30,6 @@ add_executable(clownmdemu-frontend WIN32
 	"doubly-linked-list.h"
 	"inconsolata_regular.h"
 	"karla_regular.h"
-	"libraries/tinyfiledialogs/tinyfiledialogs.c"
-	"libraries/tinyfiledialogs/tinyfiledialogs.h"
 	"libraries/inih/ini.c"
 	"libraries/inih/ini.h"
 	"libraries/imgui/imconfig.h"

@@ -1,3 +1,4 @@
+#include <limits.h> // For INT_MAX.
 #include <stdarg.h>
 #include <stddef.h>
 
@@ -5,8 +6,6 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
-
-#include "libraries/tinyfiledialogs/tinyfiledialogs.h"
 
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
@@ -102,9 +101,10 @@ static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCAN
 static InputBinding keyboard_bindings_cached[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 static DoublyLinkedList recent_software_list;
+static char *drag_and_drop_filename;
 
-// Used for deciding when to pass inputs to the emulator.
-static bool emulator_has_focus;
+static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
+static bool emulator_paused;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
@@ -115,7 +115,7 @@ static EmulationState state_rewind_buffer[1];
 #endif
 static EmulationState *emulation_state = state_rewind_buffer;
 
-static bool quick_save_exists = false;
+static bool quick_save_exists;
 static EmulationState quick_save_state;
 
 static unsigned char *rom_buffer;
@@ -524,6 +524,9 @@ static void PSGAudioCallback(const void *user_data, size_t total_samples, void (
 	generate_psg_audio(&clownmdemu, Mixer_AllocatePSGSamples(&mixer, total_samples), total_samples);
 }
 
+// Construct our big list of callbacks for clownmdemu.
+static ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback};
+
 static void ApplySaveState(EmulationState *save_state)
 {
 	*emulation_state = *save_state;
@@ -587,7 +590,7 @@ static void OpenSoftwareFromMemory(unsigned char *rom_buffer_parameter, size_t r
 	ClownMDEmu_Reset(&clownmdemu, callbacks);
 }
 
-static void OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *callbacks)
+static bool OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *callbacks)
 {
 	unsigned char *temp_rom_buffer;
 	size_t temp_rom_buffer_size;
@@ -599,6 +602,7 @@ static void OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 	{
 		PrintError("Could not load the software");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the software.", window);
+		return false;
 	}
 	else
 	{
@@ -608,6 +612,7 @@ static void OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 		AddToRecentSoftware(path, false);
 
 		OpenSoftwareFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
+		return true;
 	}
 }
 
@@ -643,33 +648,152 @@ static void UpdateRewindStatus(void)
 }
 #endif
 
-static const char* OpenFileDialog(char const *aTitle, char const *aDefaultPathAndFile, int aNumOfFilterPatterns, const char* const *aFilterPatterns, char const *aSingleFilterDescription, int aAllowMultipleSelects)
+/////////////////
+// File Picker //
+/////////////////
+
+static const char *active_file_picker_popup;
+static bool (*popup_callback)(const char *path);
+static bool is_save_dialog;
+
+static void OpenFileDialog(char const* const title, bool (*callback)(const char *path))
 {
-	// A workaround to prevent the dialog being impossible to close in fullscreen (at least on Windows).
-	if (fullscreen)
-		SetFullscreen(false);
-
-	const char *path = tinyfd_openFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription, aAllowMultipleSelects);
-
-	if (fullscreen)
-		SetFullscreen(true);
-
-	return path;
+	active_file_picker_popup = title;
+	popup_callback = callback;
+	is_save_dialog = false;
 }
 
-static const char* SaveFileDialog(char const *aTitle, char const *aDefaultPathAndFile, int aNumOfFilterPatterns, const char* const *aFilterPatterns, char const *aSingleFilterDescription)
+static void SaveFileDialog(char const* const title, bool (*callback)(const char *path))
 {
-	// A workaround to prevent the dialog being impossible to close in fullscreen (at least on Windows).
-	if (fullscreen)
-		SetFullscreen(false);
-
-	const char *path = tinyfd_saveFileDialog(aTitle, aDefaultPathAndFile, aNumOfFilterPatterns, aFilterPatterns, aSingleFilterDescription);
-
-	if (fullscreen)
-		SetFullscreen(true);
-
-	return path;
+	active_file_picker_popup = title;
+	popup_callback = callback;
+	is_save_dialog = true;
 }
+
+static void DoFilePicker(void)
+{
+	if (active_file_picker_popup != NULL)
+	{
+		if (!ImGui::IsPopupOpen(active_file_picker_popup))
+			ImGui::OpenPopup(active_file_picker_popup);
+
+		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal(active_file_picker_popup, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			static size_t text_buffer_size;
+			static char *text_buffer = NULL;
+
+			if (text_buffer == NULL)
+			{
+				text_buffer_size = 0x40;
+				text_buffer = (char*)SDL_malloc(text_buffer_size);
+				text_buffer[0] = '\0';
+			}
+
+			const ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* const data)
+			{
+				if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+				{
+					if (data->BufSize > text_buffer_size)
+					{
+						int new_text_buffer_size = (INT_MAX >> 1) + 1; /* Largest power of 2. */
+
+						/* Find the first power of two that is larger than the requested buffer size. */
+						while (data->BufSize < new_text_buffer_size >> 1)
+							new_text_buffer_size >>= 1;
+
+						char* const new_text_buffer = (char*)SDL_realloc(text_buffer, new_text_buffer_size);
+
+						if (new_text_buffer != NULL)
+						{
+							data->BufSize = text_buffer_size = new_text_buffer_size;
+							data->Buf = text_buffer = new_text_buffer;
+						}
+					}
+				}
+
+				return 0;
+			};
+
+			/* Make it so that the text box is selected by default,
+			   so that the user doesn't have to click on it first.
+			   If a file is dropped onto the dialog, focus on the
+			   'open' button instead or else the text box won't show
+			   the dropped file's path. */
+			if (drag_and_drop_filename != NULL)
+				ImGui::SetKeyboardFocusHere(1);
+			else if (ImGui::IsWindowAppearing())
+				ImGui::SetKeyboardFocusHere();
+
+			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback);
+
+			// Set the text box's contents to the dropped file's path.
+			if (drag_and_drop_filename != NULL)
+			{
+				SDL_free(text_buffer);
+				text_buffer = drag_and_drop_filename;
+				drag_and_drop_filename = NULL;
+
+				text_buffer_size = SDL_strlen(text_buffer) + 1;
+			}
+
+			const bool ok_pressed = ImGui::Button(is_save_dialog ? "Save" : "Open");
+			ImGui::SameLine();
+			bool exit = ImGui::Button("Cancel");
+
+			bool submit = false;
+
+			if (enter_pressed || ok_pressed)
+			{
+				if (!is_save_dialog)
+					submit = true;
+				else
+				{
+					ImGui::OpenPopup("Overwrite");
+				}
+			}
+
+			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+			if (ImGui::BeginPopupModal("File Already Exists", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::TextUnformatted("A file with that name already exists. Overwrite it?");
+
+				if (ImGui::Button("Yes"))
+				{
+					submit = true;
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("No"))
+					ImGui::CloseCurrentPopup();
+
+				ImGui::EndPopup();
+			}
+
+			if (submit)
+				if (popup_callback(text_buffer))
+					exit = true;
+
+			if (exit)
+			{
+				ImGui::CloseCurrentPopup();
+				SDL_free(text_buffer);
+				text_buffer = NULL;
+				active_file_picker_popup = NULL;
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+}
+
+/////////////
+// Tooltip //
+/////////////
 
 static void DoToolTip(const char* const text)
 {
@@ -680,6 +804,10 @@ static void DoToolTip(const char* const text)
 		ImGui::EndTooltip();
 	}
 }
+
+/////////
+// INI //
+/////////
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
@@ -757,6 +885,10 @@ static int INIParseCallback(void* const user, const char* const section, const c
 
 	return 1;
 }
+
+///////////////////
+// Configuration //
+///////////////////
 
 static void LoadConfiguration(void)
 {
@@ -1002,9 +1134,6 @@ int main(int argc, char **argv)
 					SetAudioPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 				}
 
-				// Construct our big list of callbacks for clownmdemu.
-				ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback};
-
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
 					OpenSoftwareFromFile(argv[1], &callbacks);
@@ -1019,8 +1148,6 @@ int main(int argc, char **argv)
 
 				// Used for tracking when to pop the emulation display out into its own little window.
 				bool pop_out = false;
-
-				bool emulator_paused = false;
 
 				bool m68k_status = false;
 				bool z80_status = false;
@@ -1611,11 +1738,7 @@ int main(int argc, char **argv)
 								break;
 
 							case SDL_DROPFILE:
-								OpenSoftwareFromFile(event.drop.file, &callbacks);
-								SDL_free(event.drop.file);
-
-								emulator_paused = false;
-
+								drag_and_drop_filename = event.drop.file;
 								break;
 
 							default:
@@ -1662,6 +1785,16 @@ int main(int argc, char **argv)
 					ImGui_ImplSDLRenderer_NewFrame();
 					ImGui_ImplSDL2_NewFrame();
 					ImGui::NewFrame();
+
+					// Handle drag-and-drop event.
+					if (active_file_picker_popup == NULL && drag_and_drop_filename != NULL)
+					{
+						if (OpenSoftwareFromFile(drag_and_drop_filename, &callbacks))
+							emulator_paused = false;
+
+						SDL_free(drag_and_drop_filename);
+						drag_and_drop_filename = NULL;
+					}
 
 					if (dear_imgui_demo_window)
 						ImGui::ShowDemoWindow(&dear_imgui_demo_window);
@@ -1725,14 +1858,18 @@ int main(int argc, char **argv)
 							{
 								if (ImGui::MenuItem("Open Software..."))
 								{
-									const char *rom_path = OpenFileDialog("Select Mega Drive Software", NULL, 0, NULL, NULL, 0);
-
-									if (rom_path != NULL)
+									OpenFileDialog("Select Mega Drive Software", [](const char* const path)
 									{
-										OpenSoftwareFromFile(rom_path, &callbacks);
-
-										emulator_paused = false;
-									}
+										if (OpenSoftwareFromFile(path, &callbacks))
+										{
+											emulator_paused = false;
+											return true;
+										}
+										else
+										{
+											return false;
+										}
+									});
 								}
 
 								if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
@@ -1778,11 +1915,8 @@ int main(int argc, char **argv)
 									#endif
 
 										if (ImGui::MenuItem(filename))
-										{
-											OpenSoftwareFromFile(recent_software->path, &callbacks);
-
-											emulator_paused = false;
-										}
+											if (OpenSoftwareFromFile(recent_software->path, &callbacks))
+												emulator_paused = false;
 
 										// Show the full path as a tooltip.
 										DoToolTip(recent_software->path);
@@ -1814,10 +1948,10 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Save to File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
-									const char *save_state_path = SaveFileDialog("Create Save State", NULL, 0, NULL, NULL);
-
-									if (save_state_path != NULL)
+									SaveFileDialog("Create Save State", [](const char* const save_state_path)
 									{
+										bool success = false;
+
 										// Save the current state to the specified file.
 										SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
 
@@ -1840,20 +1974,25 @@ int main(int argc, char **argv)
 													PrintError("Could not write save state file");
 													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
 												}
+												else
+												{
+													success = true;
+												}
 											}
 
 											SDL_RWclose(file);
 										}
-									}
+
+										return success;
+									});
 								}
 
 								if (ImGui::MenuItem("Load from File...", NULL, false, emulator_on))
 								{
-									// Obtain a filename and path from the user.
-									const char *save_state_path = OpenFileDialog("Load Save State", NULL, 0, NULL, NULL, 0);
-
-									if (save_state_path != NULL)
+									OpenFileDialog("Load Save State", [](const char* const save_state_path)
 									{
+										bool success = false;
+
 										// Load the state from the specified file.
 										SDL_RWops *file = SDL_RWFromFile(save_state_path, "rb");
 
@@ -1901,6 +2040,8 @@ int main(int argc, char **argv)
 															ApplySaveState(save_state);
 
 															emulator_paused = false;
+
+															success = true;
 														}
 
 														SDL_free(save_state);
@@ -1910,7 +2051,9 @@ int main(int argc, char **argv)
 
 											SDL_RWclose(file);
 										}
-									}
+
+										return success;
+									});
 								}
 
 								ImGui::EndMenu();
@@ -2618,6 +2761,8 @@ int main(int argc, char **argv)
 
 						ImGui::End();
 					}
+
+					DoFilePicker();
 
 					SDL_RenderClear(renderer);
 
