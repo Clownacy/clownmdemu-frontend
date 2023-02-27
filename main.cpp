@@ -1206,7 +1206,9 @@ int main(int argc, char **argv)
 				bool options_menu = false;
 				bool about_menu = false;
 
+			#ifndef NDEBUG
 				bool dear_imgui_demo_window = false;
+			#endif
 
 				while (!quit)
 				{
@@ -1837,8 +1839,10 @@ int main(int argc, char **argv)
 						drag_and_drop_filename = NULL;
 					}
 
+				#ifndef NDEBUG
 					if (dear_imgui_demo_window)
 						ImGui::ShowDemoWindow(&dear_imgui_demo_window);
+				#endif
 
 					const ImGuiViewport *viewport = ImGui::GetMainViewport();
 
