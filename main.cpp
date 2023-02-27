@@ -2078,22 +2078,14 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1)
+											if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
 											{
 												PrintError("Could not write save state file");
 												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
 											}
 											else
 											{
-												if (SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
-												{
-													PrintError("Could not write save state file");
-													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
-												}
-												else
-												{
-													success = true;
-												}
+												success = true;
 											}
 
 											SDL_RWclose(file);
