@@ -1272,7 +1272,7 @@ int main(int argc, char **argv)
 				while (!quit)
 				{
 					const bool emulator_on = rom_buffer != NULL;
-					const bool emulator_running = emulator_on && !emulator_paused
+					const bool emulator_running = emulator_on && !emulator_paused && active_file_picker_popup == NULL
 					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 						&& !(rewind_in_progress && state_rewind_remaining == 0)
 					#endif
