@@ -2,10 +2,6 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -661,44 +657,52 @@ static bool (*popup_callback)(const char *path);
 static bool is_save_dialog;
 
 #ifdef _WIN32
+#include <windows.h>
 #include "SDL_syswm.h"
+
+static bool use_native_file_dialogs = true;
 #endif
 
 static void FileDialog(char const* const title, bool (*callback)(const char *path), bool save)
 {
 #ifdef _WIN32
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-
-	const HWND hwnd = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : NULL;
-
-	char path_buffer[MAX_PATH];
-	path_buffer[0] = '\0';
-
-	OPENFILENAME ofn = {0};
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = hwnd;
-	ofn.lpstrFile = path_buffer;
-	ofn.nMaxFile = CC_COUNT_OF(path_buffer);
-	ofn.lpstrTitle = title;
-
-	if (save)
+	if (use_native_file_dialogs)
 	{
-		ofn.Flags = OFN_OVERWRITEPROMPT;
-		if (GetSaveFileName(&ofn))
-			callback(path_buffer);
+		SDL_SysWMinfo info;
+		SDL_VERSION(&info.version);
+
+		const HWND hwnd = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : NULL;
+
+		char path_buffer[MAX_PATH];
+		path_buffer[0] = '\0';
+
+		OPENFILENAME ofn = {0};
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = hwnd;
+		ofn.lpstrFile = path_buffer;
+		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
+		ofn.lpstrTitle = title;
+
+		if (save)
+		{
+			ofn.Flags = OFN_OVERWRITEPROMPT;
+			if (GetSaveFileName(&ofn))
+				callback(path_buffer);
+		}
+		else
+		{
+			ofn.Flags = OFN_FILEMUSTEXIST;
+			if (GetOpenFileName(&ofn))
+				callback(path_buffer);
+		}
 	}
 	else
-	{
-		ofn.Flags = OFN_FILEMUSTEXIST;
-		if (GetOpenFileName(&ofn))
-			callback(path_buffer);
-	}
-#else
-	active_file_picker_popup = title;
-	popup_callback = callback;
-	is_save_dialog = save;
 #endif
+	{
+		active_file_picker_popup = title;
+		popup_callback = callback;
+		is_save_dialog = save;
+	}
 }
 
 static void OpenFileDialog(char const* const title, bool (*callback)(const char *path))
@@ -2160,7 +2164,11 @@ int main(int argc, char **argv)
 								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
 
 							#ifndef NDEBUG
+								ImGui::Separator();
+
 								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
+
+								ImGui::MenuItem("Use Native File Dialogs", NULL, &use_native_file_dialogs);
 							#endif
 
 								ImGui::Separator();
