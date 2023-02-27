@@ -2158,14 +2158,14 @@ int main(int argc, char **argv)
 								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
 									SetFullscreen(fullscreen);
 
-								ImGui::MenuItem("Pop-Out Display Window", NULL, &pop_out);
+								ImGui::MenuItem("Display Window", NULL, &pop_out);
 
 							#ifndef NDEBUG
 								ImGui::Separator();
 
-								ImGui::MenuItem("Show Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
+								ImGui::MenuItem("Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 
-								ImGui::MenuItem("Use Native File Dialogs", NULL, &use_native_file_dialogs);
+								ImGui::MenuItem("Native File Dialogs", NULL, &use_native_file_dialogs);
 							#endif
 
 								ImGui::Separator();
