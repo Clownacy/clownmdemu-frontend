@@ -1362,11 +1362,8 @@ int main(int argc, char **argv)
 										break;
 								}
 
-								// Most inputs should not be acted upon while the emulator is not running.
-								if (!emulator_on)
-									break;
-
-								if (emulator_has_focus)
+								// Many inputs should not be acted upon while the emulator is not running.
+								if (emulator_on && emulator_has_focus)
 								{
 									switch (keyboard_bindings[event.key.keysym.scancode])
 									{
