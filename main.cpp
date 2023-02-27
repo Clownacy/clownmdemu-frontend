@@ -2,6 +2,10 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -656,18 +660,55 @@ static const char *active_file_picker_popup;
 static bool (*popup_callback)(const char *path);
 static bool is_save_dialog;
 
-static void OpenFileDialog(char const* const title, bool (*callback)(const char *path))
+#ifdef _WIN32
+#include "SDL_syswm.h"
+#endif
+
+static void FileDialog(char const* const title, bool (*callback)(const char *path), bool save)
 {
+#ifdef _WIN32
+	SDL_SysWMinfo info;
+	SDL_VERSION(&info.version);
+
+	const HWND hwnd = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : NULL;
+
+	char path_buffer[MAX_PATH];
+	path_buffer[0] = '\0';
+
+	OPENFILENAME ofn = {0};
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hwnd;
+	ofn.lpstrFile = path_buffer;
+	ofn.nMaxFile = CC_COUNT_OF(path_buffer);
+	ofn.lpstrTitle = title;
+
+	if (save)
+	{
+		ofn.Flags = OFN_OVERWRITEPROMPT;
+		if (GetSaveFileName(&ofn))
+			callback(path_buffer);
+	}
+	else
+	{
+		ofn.Flags = OFN_FILEMUSTEXIST;
+		if (GetOpenFileName(&ofn))
+			callback(path_buffer);
+	}
+#else
 	active_file_picker_popup = title;
 	popup_callback = callback;
-	is_save_dialog = false;
+	is_save_dialog = save;
+#endif
+}
+
+static void OpenFileDialog(char const* const title, bool (*callback)(const char *path))
+{
+	FileDialog(title, callback, false);
 }
 
 static void SaveFileDialog(char const* const title, bool (*callback)(const char *path))
 {
-	active_file_picker_popup = title;
-	popup_callback = callback;
-	is_save_dialog = true;
+	FileDialog(title, callback, true);
 }
 
 static void DoFilePicker(void)
