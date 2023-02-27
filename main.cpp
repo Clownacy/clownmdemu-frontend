@@ -818,6 +818,7 @@ static void DoFilePicker(void)
 			else if (ImGui::IsWindowAppearing())
 				ImGui::SetKeyboardFocusHere();
 
+			ImGui::TextUnformatted("Filename:");
 			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback);
 
 			// Set the text box's contents to the dropped file's path.
@@ -830,6 +831,7 @@ static void DoFilePicker(void)
 				text_buffer_size = SDL_strlen(text_buffer) + 1;
 			}
 
+			ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x + (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x - ImGui::GetStyle().FramePadding.x * 4 - ImGui::CalcTextSize(is_save_dialog ? "Save" : "Open").x - ImGui::CalcTextSize("Cancel").x) / 2);
 			const bool ok_pressed = ImGui::Button(is_save_dialog ? "Save" : "Open");
 			ImGui::SameLine();
 			bool exit = ImGui::Button("Cancel");
@@ -841,9 +843,7 @@ static void DoFilePicker(void)
 				if (!is_save_dialog)
 					submit = true;
 				else
-				{
 					ImGui::OpenPopup("Overwrite");
-				}
 			}
 
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
@@ -1976,7 +1976,7 @@ int main(int argc, char **argv)
 							{
 								if (ImGui::MenuItem("Open Software..."))
 								{
-									OpenFileDialog("Select Mega Drive Software", [](const char* const path)
+									OpenFileDialog("Open Software", [](const char* const path)
 									{
 										if (OpenSoftwareFromFile(path, &callbacks))
 										{
