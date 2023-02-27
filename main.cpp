@@ -611,6 +611,46 @@ static bool OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 	}
 }
 
+static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
+
+static bool LoadSaveState(const char* const save_state_path)
+{
+	unsigned char *file_buffer;
+	size_t file_size;
+	LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
+
+	bool success = false;
+
+	if (file_buffer != NULL)
+	{
+		if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
+		{
+			PrintError("Invalid save state size");
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window);
+		}
+		else
+		{
+			if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
+			{
+				PrintError("Invalid save state magic");
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
+			}
+			else
+			{
+				SDL_memcpy(emulation_state, &file_buffer[sizeof(save_state_magic)], sizeof(EmulationState));
+
+				emulator_paused = false;
+
+				success = true;
+			}
+		}
+
+		SDL_free(file_buffer);
+	}
+
+	return success;
+}
+
 // Manages whether the emulator runs at a higher speed or not.
 static bool fast_forward_in_progress;
 
@@ -642,6 +682,7 @@ static void UpdateRewindStatus(void)
 		rewind_in_progress |= controller_input->input.rewind != 0;
 }
 #endif
+
 
 /////////////////
 // File Picker //
@@ -737,9 +778,9 @@ static void DoFilePicker(void)
 				{
 					if (data->BufSize > text_buffer_size)
 					{
-						int new_text_buffer_size = (INT_MAX >> 1) + 1; /* Largest power of 2. */
+						int new_text_buffer_size = (INT_MAX >> 1) + 1; // Largest power of 2.
 
-						/* Find the first power of two that is larger than the requested buffer size. */
+						// Find the first power of two that is larger than the requested buffer size.
 						while (data->BufSize < new_text_buffer_size >> 1)
 							new_text_buffer_size >>= 1;
 
@@ -831,6 +872,7 @@ static void DoFilePicker(void)
 	}
 }
 
+
 /////////////
 // Tooltip //
 /////////////
@@ -844,6 +886,7 @@ static void DoToolTip(const char* const text)
 		ImGui::EndTooltip();
 	}
 }
+
 
 /////////
 // INI //
@@ -925,6 +968,7 @@ static int INIParseCallback(void* const user, const char* const section, const c
 
 	return 1;
 }
+
 
 ///////////////////
 // Configuration //
@@ -1047,6 +1091,11 @@ static void SaveConfiguration(void)
 		SDL_RWclose(file);
 	}
 }
+
+
+///////////////////
+// Main function //
+///////////////////
 
 int main(int argc, char **argv)
 {
@@ -1828,8 +1877,27 @@ int main(int argc, char **argv)
 					// Handle drag-and-drop event.
 					if (active_file_picker_popup == NULL && drag_and_drop_filename != NULL)
 					{
-						if (OpenSoftwareFromFile(drag_and_drop_filename, &callbacks))
-							emulator_paused = false;
+						SDL_RWops *file = SDL_RWFromFile(drag_and_drop_filename, "rb");
+
+						if (file != NULL)
+						{
+							char save_state_magic_buffer[sizeof(save_state_magic)];
+
+							const bool read_successfully = SDL_RWread(file, save_state_magic_buffer, sizeof(save_state_magic_buffer), 1) == 1;
+
+							SDL_RWclose(file);
+
+							if (read_successfully && SDL_memcmp(save_state_magic_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
+							{
+								if (rom_buffer != NULL)
+									LoadSaveState(drag_and_drop_filename);
+							}
+							else
+							{
+								if (OpenSoftwareFromFile(drag_and_drop_filename, &callbacks))
+									emulator_paused = false;
+							}
+						}
 
 						SDL_free(drag_and_drop_filename);
 						drag_and_drop_filename = NULL;
@@ -1984,8 +2052,6 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
-
 								if (ImGui::MenuItem("Save to File...", NULL, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
@@ -2029,46 +2095,7 @@ int main(int argc, char **argv)
 								}
 
 								if (ImGui::MenuItem("Load from File...", NULL, false, emulator_on))
-								{
-									OpenFileDialog("Load Save State", [](const char* const save_state_path)
-									{
-										bool success = false;
-
-										unsigned char *file_buffer;
-										size_t file_size;
-										LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
-
-										if (file_buffer != NULL)
-										{
-											if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
-											{
-												PrintError("Invalid save state size");
-												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window);
-											}
-											else
-											{
-												if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
-												{
-													PrintError("Invalid save state magic");
-													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
-												}
-												else
-												{
-													SDL_memcpy(emulation_state, &file_buffer[sizeof(save_state_magic)], sizeof(EmulationState));
-
-													emulator_paused = false;
-
-													success = true;
-												}
-
-											}
-
-											SDL_free(file_buffer);
-										}
-
-										return success;
-									});
-								}
+									OpenFileDialog("Load Save State", LoadSaveState);
 
 								ImGui::EndMenu();
 							}
