@@ -2052,7 +2052,7 @@ int main(int argc, char **argv)
 											if (SDL_RWsize(file) != sizeof(save_state_magic) + sizeof(EmulationState))
 											{
 												PrintError("Invalid save state size");
-												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
+												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window);
 											}
 											else
 											{
