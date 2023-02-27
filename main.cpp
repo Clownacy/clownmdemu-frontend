@@ -527,11 +527,6 @@ static void PSGAudioCallback(const void *user_data, size_t total_samples, void (
 // Construct our big list of callbacks for clownmdemu.
 static ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback};
 
-static void ApplySaveState(EmulationState *save_state)
-{
-	*emulation_state = *save_state;
-}
-
 static void AddToRecentSoftware(const char* const path, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
@@ -1389,7 +1384,7 @@ int main(int argc, char **argv)
 											// Load save state
 											if (quick_save_exists)
 											{
-												ApplySaveState(&quick_save_state);
+												*emulation_state = quick_save_state;
 
 												emulator_paused = false;
 											}
@@ -1555,7 +1550,7 @@ int main(int argc, char **argv)
 										// Load save state
 										if (quick_save_exists)
 										{
-											ApplySaveState(&quick_save_state);
+											*emulation_state = quick_save_state;
 
 											emulator_paused = false;
 
@@ -1982,7 +1977,7 @@ int main(int argc, char **argv)
 
 								if (ImGui::MenuItem("Quick Load", NULL, false, emulator_on && quick_save_exists))
 								{
-									ApplySaveState(&quick_save_state);
+									*emulation_state = quick_save_state;
 
 									emulator_paused = false;
 								}
@@ -2039,63 +2034,36 @@ int main(int argc, char **argv)
 									{
 										bool success = false;
 
-										// Load the state from the specified file.
-										SDL_RWops *file = SDL_RWFromFile(save_state_path, "rb");
+										unsigned char *file_buffer;
+										size_t file_size;
+										LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
 
-										if (file == NULL)
+										if (file_buffer != NULL)
 										{
-											PrintError("Could not open save state file for reading");
-											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
-										}
-										else
-										{
-											if (SDL_RWsize(file) != sizeof(save_state_magic) + sizeof(EmulationState))
+											if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
 											{
 												PrintError("Invalid save state size");
 												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window);
 											}
 											else
 											{
-												char magic_buffer[sizeof(save_state_magic)];
-
-												if (SDL_RWread(file, magic_buffer, sizeof(magic_buffer), 1) != 1)
+												if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
 												{
-													PrintError("Could not read save state file");
-													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
+													PrintError("Invalid save state magic");
+													SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
 												}
 												else
 												{
-													if (SDL_memcmp(magic_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
-													{
-														PrintError("Invalid save state magic");
-														SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
-													}
-													else
-													{
-														EmulationState *save_state;
+													SDL_memcpy(emulation_state, &file_buffer[sizeof(save_state_magic)], sizeof(EmulationState));
 
-														save_state = (EmulationState*)SDL_malloc(sizeof(EmulationState));
+													emulator_paused = false;
 
-														if (save_state != NULL && SDL_RWread(file, save_state, sizeof(EmulationState), 1) != 1)
-														{
-															PrintError("Could not read save state file");
-															SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not load save state file.", window);
-														}
-														else
-														{
-															ApplySaveState(save_state);
-
-															emulator_paused = false;
-
-															success = true;
-														}
-
-														SDL_free(save_state);
-													}
+													success = true;
 												}
+
 											}
 
-											SDL_RWclose(file);
+											SDL_free(file_buffer);
 										}
 
 										return success;
