@@ -613,12 +613,8 @@ static bool OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 
 static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
 
-static bool LoadSaveState(const char* const save_state_path)
+static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, const size_t file_size)
 {
-	unsigned char *file_buffer;
-	size_t file_size;
-	LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
-
 	bool success = false;
 
 	if (file_buffer != NULL)
@@ -644,7 +640,22 @@ static bool LoadSaveState(const char* const save_state_path)
 				success = true;
 			}
 		}
+	}
 
+	return success;
+}
+
+static bool LoadSaveStateFromFile(const char* const save_state_path)
+{
+	unsigned char *file_buffer;
+	size_t file_size;
+	LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
+
+	bool success = false;
+
+	if (file_buffer != NULL)
+	{
+		success = LoadSaveStateFromMemory(file_buffer, file_size);
 		SDL_free(file_buffer);
 	}
 
@@ -1877,30 +1888,28 @@ int main(int argc, char **argv)
 					// Handle drag-and-drop event.
 					if (active_file_picker_popup == NULL && drag_and_drop_filename != NULL)
 					{
-						SDL_RWops *file = SDL_RWFromFile(drag_and_drop_filename, "rb");
-
-						if (file != NULL)
-						{
-							char save_state_magic_buffer[sizeof(save_state_magic)];
-
-							const bool read_successfully = SDL_RWread(file, save_state_magic_buffer, sizeof(save_state_magic_buffer), 1) == 1;
-
-							SDL_RWclose(file);
-
-							if (read_successfully && SDL_memcmp(save_state_magic_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
-							{
-								if (rom_buffer != NULL)
-									LoadSaveState(drag_and_drop_filename);
-							}
-							else
-							{
-								if (OpenSoftwareFromFile(drag_and_drop_filename, &callbacks))
-									emulator_paused = false;
-							}
-						}
+						unsigned char *file_buffer;
+						size_t file_size;
+						LoadFileToBuffer(drag_and_drop_filename, &file_buffer, &file_size);
 
 						SDL_free(drag_and_drop_filename);
 						drag_and_drop_filename = NULL;
+
+						if (file_buffer != NULL)
+						{
+							if (file_size >= sizeof(save_state_magic) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
+							{
+								if (rom_buffer != NULL)
+									LoadSaveStateFromMemory(file_buffer, file_size);
+
+								SDL_free(file_buffer);
+							}
+							else
+							{
+								OpenSoftwareFromMemory(file_buffer, file_size, &callbacks);
+								emulator_paused = false;
+							}
+						}
 					}
 
 				#ifndef NDEBUG
@@ -2095,7 +2104,7 @@ int main(int argc, char **argv)
 								}
 
 								if (ImGui::MenuItem("Load from File...", NULL, false, emulator_on))
-									OpenFileDialog("Load Save State", LoadSaveState);
+									OpenFileDialog("Load Save State", LoadSaveStateFromFile);
 
 								ImGui::EndMenu();
 							}
