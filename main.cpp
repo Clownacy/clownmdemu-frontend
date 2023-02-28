@@ -718,18 +718,33 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
 
-		const HWND hwnd = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : NULL;
-
 		char path_buffer[MAX_PATH];
 		path_buffer[0] = '\0';
 
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = hwnd;
+		ofn.hwndOwner = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : NULL;
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
 		ofn.lpstrTitle = title;
+
+		char *working_directory_buffer = NULL;
+		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, NULL);
+
+		if (working_directory_buffer_size != 0)
+		{
+			working_directory_buffer = (char*)SDL_malloc(working_directory_buffer_size);
+
+			if (working_directory_buffer != NULL)
+			{
+				if (GetCurrentDirectory(working_directory_buffer_size, working_directory_buffer) == 0)
+				{
+					SDL_free(working_directory_buffer);
+					working_directory_buffer = NULL;
+				}
+			}
+		}
 
 		if (save)
 		{
@@ -742,6 +757,12 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 			ofn.Flags = OFN_FILEMUSTEXIST;
 			if (GetOpenFileName(&ofn))
 				callback(path_buffer);
+		}
+
+		if (working_directory_buffer != NULL)
+		{
+			SetCurrentDirectory(working_directory_buffer);
+			SDL_free(working_directory_buffer);
 		}
 	}
 	else
