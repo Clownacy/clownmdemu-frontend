@@ -5,10 +5,9 @@ option(CLOWNMDEMU_FRONTEND_REWINDING "Enable the ability to rewind the emulator 
 
 project(clownmdemu-frontend LANGUAGES C CXX)
 
-
-#
-# Sources
-#
+###########
+# Sources #
+###########
 
 add_executable(clownmdemu-frontend WIN32
 	"main.cpp"
@@ -59,10 +58,9 @@ if(WIN32)
 	endif()
 endif()
 
-
-#
-# Required language versions
-#
+##############################
+# Required language versions #
+##############################
 
 # Only require C90 and C++11
 set_target_properties(clownmdemu-frontend PROPERTIES
@@ -74,10 +72,9 @@ set_target_properties(clownmdemu-frontend PROPERTIES
 	CXX_EXTENSIONS OFF
 )
 
-
-#
-# Handle options
-#
+##################
+# Handle options #
+##################
 
 # Handle selecting either FreeType or stb_truetype font rendering
 if(CLOWNMDEMU_FRONTEND_FREETYPE)
@@ -98,10 +95,9 @@ if(CLOWNMDEMU_FRONTEND_REWINDING)
 	target_compile_definitions(clownmdemu-frontend PRIVATE CLOWNMDEMU_FRONTEND_REWINDING)
 endif()
 
-
-#
-# Dear ImGui stuff
-#
+####################
+# Dear ImGui stuff #
+####################
 
 # Disable some deprecated junk in Dear ImGui
 target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
@@ -109,10 +105,9 @@ target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FU
 # Dear ImGui needs these directories in the include path
 target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
 
-
-#
-# Link libraries
-#
+##################
+# Link libraries #
+##################
 
 # Link clownmdemu core
 add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
