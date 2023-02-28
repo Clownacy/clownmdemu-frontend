@@ -307,7 +307,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
 				{
 					ImGui::TableNextColumn();
-					ImGui::Text("0x%03" CC_PRIXFAST32, fm->timers[i].value / FM_SAMPLE_RATE_DIVIDER);
+					ImGui::Text("0x%03" CC_PRIXFAST32, CC_DIVIDE_CEILING(fm->timers[i].value, FM_SAMPLE_RATE_DIVIDER) - 1);
 				}
 				ImGui::PopFont();
 
@@ -318,7 +318,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
 				{
 					ImGui::TableNextColumn();
-					ImGui::Text("0x%03" CC_PRIXFAST32, fm->timers[i].counter / FM_SAMPLE_RATE_DIVIDER);
+					ImGui::Text("0x%03" CC_PRIXFAST32, CC_DIVIDE_CEILING(fm->timers[i].counter, FM_SAMPLE_RATE_DIVIDER) - 1);
 				}
 				ImGui::PopFont();
 

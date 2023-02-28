@@ -61,7 +61,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
-				const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_address];
+				const cc_u8l *plane = &clownmdemu->state->vdp.vram[plane_address];
 
 				const cc_u16f tile_width = 8;
 				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
@@ -72,14 +72,15 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 				if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
 				{
-					const cc_u16l *plane_pointer = plane;
+					const cc_u8l *plane_pointer = plane;
 
 					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
 					{
 						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
 						{
 							TileMetadata tile_metadata;
-							DecomposeTileMetadata(*plane_pointer++, &tile_metadata);
+							DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], &tile_metadata);
+							plane_pointer += 2;
 
 							const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 							const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
@@ -88,7 +89,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 							const Uint32 *palette_line = &data->colours[palette_index];
 
-							const cc_u16l *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 4)];
+							const cc_u8l *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
 
 							for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 							{
@@ -96,7 +97,8 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 								for (cc_u16f i = 0; i < 2; ++i)
 								{
-									const cc_u16l tile_pixels = *tile_pointer++;
+									const cc_u16l tile_pixels = (tile_pointer[0] << 8) | tile_pointer[1];
+									tile_pointer += 2;
 
 									for (cc_u16f j = 0; j < 4; ++j)
 									{
@@ -127,8 +129,8 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					const cc_u16f tile_x = (cc_u16f)((mouse_position.x - image_position.x) / plane_scale / tile_width);
 					const cc_u16f tile_y = (cc_u16f)((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const cc_u16l *plane = &clownmdemu->state->vdp.vram[plane_address];
-					const cc_u16f packed_tile_metadata = plane[tile_y * clownmdemu->state->vdp.plane_width + tile_x];
+					const cc_u8l *plane_pointer = &clownmdemu->state->vdp.vram[plane_address + tile_y * clownmdemu->state->vdp.plane_width + tile_x];
+					const cc_u8f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
 
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, &tile_metadata);
@@ -191,13 +193,13 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 		const size_t tile_width = 8;
 		const size_t tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
-		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 4 / (tile_width * tile_height);
+		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
 		if (vram_texture == NULL)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-			const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 4;
+			const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2;
 			const size_t vram_texture_width_in_progress = (size_t)SDL_ceilf(SDL_sqrtf((float)size_of_vram_in_pixels));
 			const size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
 			const size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
@@ -262,7 +264,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
 			{
 				// Generate VRAM bitmap.
-				const cc_u16l *vram_pointer = clownmdemu->state->vdp.vram;
+				const cc_u8l *vram_pointer = clownmdemu->state->vdp.vram;
 
 				// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 				// instead of left-to-right then top-to-bottom.
@@ -274,7 +276,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 						for (cc_u16f i = 0; i < 2; ++i)
 						{
-							const cc_u16l tile_row = *vram_pointer++;
+							const cc_u16l tile_row = (vram_pointer[0] << 8) |  vram_pointer[1];
+							vram_pointer += 2;
 
 							for (cc_u16f j = 0; j < 4; ++j)
 							{
