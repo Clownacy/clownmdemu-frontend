@@ -465,10 +465,12 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 {
 	if (ImGui::Begin("VDP Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		const VDP_State* const vdp = &clownmdemu->state->vdp;
+
+		ImGui::SeparatorText("Miscellaneous");
+
 		if (ImGui::BeginTable("VDP Registers", 2, ImGuiTableFlags_Borders))
 		{
-			const VDP_State* const vdp = &clownmdemu->state->vdp;
-
 			ImGui::TableSetupColumn("Property");
 			ImGui::TableSetupColumn("Value");
 			ImGui::TableHeadersRow();
@@ -607,6 +609,113 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				"2-Tile Columns"
 			};
 			ImGui::TextUnformatted(vertical_scrolling_modes[vdp->vscroll_mode]);
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("DMA");
+
+		if (ImGui::BeginTable("DMA", 2, ImGuiTableFlags_Borders))
+		{
+			ImGui::TableSetupColumn("Property");
+			ImGui::TableSetupColumn("Value");
+			ImGui::TableHeadersRow();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Enabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->dma.enabled ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Pending");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->dma.pending ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Mode");
+			ImGui::TableNextColumn();
+			static const char* const dma_modes[] = {
+				"ROM/RAM to VRAM/CRAM/VSRAM",
+				"VRAM Fill",
+				"VRAM to VRAM"
+			};
+			ImGui::TextUnformatted(dma_modes[vdp->dma.mode]);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Source Address");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%06" CC_PRIXFAST32, ((cc_u32f)vdp->dma.source_address_high << 16) | vdp->dma.source_address_low);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Length");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->dma.length);
+			ImGui::PopFont();
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("Access");
+
+		if (ImGui::BeginTable("Access", 2, ImGuiTableFlags_Borders))
+		{
+			cc_bool write_pending;
+			cc_u16l cached_write;
+
+			VDP_Access selected_buffer;
+
+			cc_bool read_mode;
+			cc_u16l index;
+			cc_u16l increment;
+
+
+			ImGui::TableSetupColumn("Property");
+			ImGui::TableSetupColumn("Value");
+			ImGui::TableHeadersRow();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Write Pending");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->access.write_pending ? "Yes" : "No");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Cached Write");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXFAST16, vdp->access.cached_write);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Selected RAM");
+			ImGui::TableNextColumn();
+			static const char* const rams[] = {
+				"VRAM",
+				"CRAM",
+				"VSRAM"
+			};
+			ImGui::TextUnformatted(rams[vdp->access.selected_buffer]);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Mode");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(vdp->access.read_mode ? "Read" : "Write");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Index");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->access.index);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Increment");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->access.increment);
+			ImGui::PopFont();
 
 			ImGui::EndTable();
 		}
