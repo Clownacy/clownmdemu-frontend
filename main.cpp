@@ -723,7 +723,8 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 		char path_buffer[MAX_PATH];
 		path_buffer[0] = '\0';
 
-		OPENFILENAME ofn = {0};
+		OPENFILENAME ofn;
+		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = hwnd;
 		ofn.lpstrFile = path_buffer;
@@ -773,7 +774,7 @@ static void DoFilePicker(void)
 
 		if (ImGui::BeginPopupModal(active_file_picker_popup, NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			static size_t text_buffer_size;
+			static int text_buffer_size;
 			static char *text_buffer = NULL;
 
 			if (text_buffer == NULL)
@@ -1082,7 +1083,7 @@ static void SaveConfiguration(void)
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
 				char buffer[0x20];
-				SDL_snprintf(buffer, sizeof(buffer), "%zd = %d\n", i, keyboard_bindings[i]);
+				SDL_snprintf(buffer, sizeof(buffer), "%u = %u\n", (unsigned int)i, keyboard_bindings[i]);
 				SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
 			}
 		}
@@ -1225,7 +1226,7 @@ int main(int argc, char **argv)
 				// Intiialise audio if we can (but it's okay if it fails).
 				if (!InitialiseAudio())
 				{
-					PrintError("FM CreateAudioDevice failed");
+					PrintError("InitialiseAudio failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
 				}
 				else
