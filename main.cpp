@@ -1262,6 +1262,7 @@ int main(int argc, char **argv)
 				bool cram_viewer = false;
 				bool fm_status = false;
 				bool psg_status = false;
+				bool other_status = false;
 				bool debugging_toggles_menu = false;
 				bool options_menu = false;
 				bool about_menu = false;
@@ -1944,6 +1945,7 @@ int main(int argc, char **argv)
 					                        || cram_viewer
 					                        || fm_status
 					                        || psg_status
+					                        || other_status
 					                        || debugging_toggles_menu
 					                        || options_menu
 					                        || about_menu
@@ -2142,6 +2144,8 @@ int main(int argc, char **argv)
 								ImGui::MenuItem("FM", NULL, &fm_status);
 
 								ImGui::MenuItem("PSG", NULL, &psg_status);
+
+								ImGui::MenuItem("Other", NULL, &other_status);
 
 								ImGui::Separator();
 
@@ -2351,6 +2355,49 @@ int main(int argc, char **argv)
 
 					if (psg_status)
 						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
+
+					if (other_status)
+					{
+						if (ImGui::Begin("Other", &other_status, ImGuiWindowFlags_AlwaysAutoResize))
+						{
+							if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
+							{
+								ImGui::TableSetupColumn("Property");
+								ImGui::TableSetupColumn("Value");
+								ImGui::TableHeadersRow();
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Z80 Bank");
+								ImGui::TableNextColumn();
+								ImGui::PushFont(monospace_font);
+								ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu.state->z80_bank * 0x8000, (clownmdemu.state->z80_bank + 1) * 0x8000 - 1);
+								ImGui::PopFont();
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("68000 Has Z80 Bus");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->m68k_has_z80_bus ? "Yes" : "No");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Z80 Reset");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->m68k_has_z80_bus ? "Yes" : "No");
+
+/*								struct
+								{
+									cc_u8l control;
+									cc_u8l data;
+								} joypads[3];
+								cc_u16f z80_bank;
+								cc_bool m68k_has_z80_bus;
+								cc_bool z80_reset;
+								*/
+								ImGui::EndTable();
+							}
+						}
+
+						ImGui::End();
+					}
 
 					if (debugging_toggles_menu)
 					{
