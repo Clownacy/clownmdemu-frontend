@@ -2695,6 +2695,7 @@ int main(int argc, char **argv)
 							static const char licence_dear_imgui[] = {
 								#include "licences/dear-imgui.h"
 							};
+						#ifdef IMGUI_ENABLE_FREETYPE
 							static const char licence_freetype[] = {
 								#include "licences/freetype.h"
 							};
@@ -2710,6 +2711,7 @@ int main(int argc, char **argv)
 							static const char licence_freetype_ft_hb[] = {
 								#include "licences/freetype-ft-hb.h"
 							};
+						#endif
 							static const char licence_inih[] = {
 								#include "licences/inih.h"
 							};
@@ -2741,6 +2743,7 @@ int main(int argc, char **argv)
 								ImGui::PopFont();
 							}
 
+						#ifdef IMGUI_ENABLE_FREETYPE
 							if (ImGui::CollapsingHeader("FreeType"))
 							{
 								if (ImGui::TreeNode("General"))
@@ -2783,6 +2786,7 @@ int main(int argc, char **argv)
 									ImGui::TreePop();
 								}
 							}
+						#endif
 
 							if (ImGui::CollapsingHeader("inih"))
 							{
