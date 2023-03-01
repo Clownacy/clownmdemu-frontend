@@ -662,16 +662,6 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 		if (ImGui::BeginTable("Access", 2, ImGuiTableFlags_Borders))
 		{
-			cc_bool write_pending;
-			cc_u16l cached_write;
-
-			VDP_Access selected_buffer;
-
-			cc_bool read_mode;
-			cc_u16l index;
-			cc_u16l increment;
-
-
 			ImGui::TableSetupColumn("Property");
 			ImGui::TableSetupColumn("Value");
 			ImGui::TableHeadersRow();
