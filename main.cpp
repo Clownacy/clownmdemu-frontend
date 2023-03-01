@@ -2402,7 +2402,7 @@ int main(int argc, char **argv)
 								ImGui::TableNextColumn();
 								ImGui::TextUnformatted("Z80 Reset");
 								ImGui::TableNextColumn();
-								ImGui::TextUnformatted(clownmdemu.state->m68k_has_z80_bus ? "Yes" : "No");
+								ImGui::TextUnformatted(clownmdemu.state->z80_reset ? "Yes" : "No");
 
 /*								struct
 								{
