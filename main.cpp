@@ -2404,15 +2404,6 @@ int main(int argc, char **argv)
 								ImGui::TableNextColumn();
 								ImGui::TextUnformatted(clownmdemu.state->z80_reset ? "Yes" : "No");
 
-/*								struct
-								{
-									cc_u8l control;
-									cc_u8l data;
-								} joypads[3];
-								cc_u16f z80_bank;
-								cc_bool m68k_has_z80_bus;
-								cc_bool z80_reset;
-								*/
 								ImGui::EndTable();
 							}
 						}
