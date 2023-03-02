@@ -2509,11 +2509,23 @@ int main(int argc, char **argv)
 								DoToolTip("Some games only work with a certain TV standard.");
 								ImGui::TableNextColumn();
 								if (ImGui::RadioButton("NTSC", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
-									clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+								{
+									if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
+									{
+										clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+										SetAudioPALMode(false);
+									}
+								}
 								DoToolTip("60 FPS");
 								ImGui::TableNextColumn();
 								if (ImGui::RadioButton("PAL", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
-									clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+								{
+									if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
+									{
+										clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+										SetAudioPALMode(true);
+									}
+								}
 								DoToolTip("50 FPS");
 
 								ImGui::TableNextColumn();
