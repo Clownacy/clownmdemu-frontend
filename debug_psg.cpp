@@ -51,7 +51,7 @@ void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				ImGui::PushFont(monospace_font);
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%03" CC_PRIXFAST16 " (%6" CC_PRIuFAST32 "Hz)", clownmdemu->state->psg.tones[i].countdown_master, psg_clock / (clownmdemu->state->psg.tones[i].countdown_master + 1) / 2);
+				ImGui::Text("0x%03" CC_PRIXFAST16 " (%6" CC_PRIuFAST32 "Hz)", clownmdemu->state->psg.tones[i].countdown_master, psg_clock / CC_MAX(1, clownmdemu->state->psg.tones[i].countdown_master) / 2);
 
 				ImGui::TableNextColumn();
 				if (clownmdemu->state->psg.tones[i].attenuation == 15)
