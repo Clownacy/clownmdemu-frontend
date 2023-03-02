@@ -33,7 +33,7 @@ extern "C" {
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
-#define VERSION "v0.4"
+#define VERSION "v0.4.1"
 
 typedef struct Input
 {
