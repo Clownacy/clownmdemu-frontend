@@ -27,6 +27,7 @@ add_executable(clownmdemu-frontend WIN32
 	"debug_z80.h"
 	"doubly-linked-list.c"
 	"doubly-linked-list.h"
+	"clownmdemu-frontend-common/mixer.h"
 	"inconsolata_regular.h"
 	"karla_regular.h"
 	"libraries/inih/ini.c"

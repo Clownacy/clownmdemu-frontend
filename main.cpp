@@ -29,7 +29,7 @@ extern "C" {
 }
 
 #define MIXER_FORMAT Sint16
-#include "clownmdemu-frontend-common/mixer.c"
+#include "clownmdemu-frontend-common/mixer.h"
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
