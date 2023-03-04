@@ -15,7 +15,7 @@ void Debug_M68k(bool *open, Clown68000_State *m68k, ImFont *monospace_font)
 			if (i != 0 && i != 4)
 				ImGui::SameLine();
 
-			ImGui::Text("D%X:%08" CC_PRIXLEAST32, i, m68k->data_registers[i]);
+			ImGui::Text("D%" CC_PRIXFAST8 ":%08" CC_PRIXLEAST32, i, m68k->data_registers[i]);
 		}
 
 		ImGui::Separator();
@@ -25,7 +25,7 @@ void Debug_M68k(bool *open, Clown68000_State *m68k, ImFont *monospace_font)
 			if (i != 0 && i != 4)
 				ImGui::SameLine();
 
-			ImGui::Text("A%X:%08" CC_PRIXLEAST32, i, m68k->address_registers[i]);
+			ImGui::Text("A%" CC_PRIXFAST8 ":%08" CC_PRIXLEAST32, i, m68k->address_registers[i]);
 		}
 
 		ImGui::Separator();

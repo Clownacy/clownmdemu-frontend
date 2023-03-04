@@ -582,7 +582,7 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Background Colour");
 			ImGui::TableNextColumn();
-			ImGui::Text("Palette Line %d, Entry %d", vdp->background_colour / 16, vdp->background_colour % 16);
+			ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, (cc_u8f)vdp->background_colour / 16, (cc_u8f)vdp->background_colour % 16);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("H-Int Interval");
