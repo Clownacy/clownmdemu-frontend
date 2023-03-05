@@ -705,9 +705,26 @@ static bool (*popup_callback)(const char *path);
 static bool is_save_dialog;
 
 #ifdef _WIN32
-#include <windows.h>
-#include "SDL_syswm.h"
+ #include <windows.h>
+ #include "SDL_syswm.h"
+#elif __unix__
+ #include <unistd.h>
 
+ #if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
+  #define POSIX
+
+  #include <stdio.h>
+  #include <sys/wait.h>
+
+  static char *last_file_dialog_directory;
+ #endif
+#endif
+
+#if defined(_WIN32) || defined(POSIX)
+#define HAS_NATIVE_FILE_DIALOGS
+#endif
+
+#ifdef HAS_NATIVE_FILE_DIALOGS
 static bool use_native_file_dialogs = true;
 #endif
 
@@ -767,6 +784,103 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 		}
 	}
 	else
+#elif defined(POSIX)
+	bool use_fallback = true;
+
+	if (use_native_file_dialogs)
+	{
+		char *command;
+
+		// Construct the command to invoke Zenity.
+		if (SDL_asprintf(&command, "zenity --file-selection --title=\"%s\" %s --filename=\"%s\"",
+			title,
+			save ? "--save" : "",
+			last_file_dialog_directory == NULL ? "" : last_file_dialog_directory
+			) >= 0)
+		{
+			// Invoke Zenity.
+			FILE *path_stream = popen(command, "r");
+
+			SDL_free(command);
+
+			if (path_stream != NULL)
+			{
+			#define GROW_SIZE 0x100
+				// Read the whole path returned by Zenity.
+				// This is very complicated due to handling arbitrarily long paths.
+				size_t path_buffer_length = 0;
+				char *path_buffer = (char*)SDL_malloc(GROW_SIZE + 1); // '+1' for the null character.
+
+				if (path_buffer != NULL)
+				{
+					for (;;)
+					{
+						const size_t path_length = fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
+						path_buffer_length += path_length;
+
+						if (path_length != GROW_SIZE)
+							break;
+
+						char* const new_path_buffer = (char*)SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1);
+
+						if (new_path_buffer == NULL)
+						{
+							SDL_free(path_buffer);
+							path_buffer = NULL;
+							break;
+						}
+
+						path_buffer = new_path_buffer;
+					}
+				#undef GROW_SIZE
+
+					if (path_buffer != NULL)
+					{
+						// Handle Zenity's return value.
+						const int exit_status = pclose(path_stream);
+						path_stream = NULL;
+
+						if (exit_status != -1 && WIFEXITED(exit_status))
+						{
+							switch (WEXITSTATUS(exit_status))
+							{
+								case 0: // Success.
+								{
+									use_fallback = false;
+
+									path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
+									callback(path_buffer);
+
+									char* const directory_separator = SDL_strrchr(path_buffer, '/');
+
+									if (directory_separator == NULL)
+										path_buffer[0] = '\0';
+									else
+										directory_separator[1] = '\0';
+
+									if (last_file_dialog_directory != NULL)
+										SDL_free(last_file_dialog_directory);
+
+									last_file_dialog_directory = path_buffer;
+
+									break;
+								}
+
+								case 1: // No file selected.
+									use_fallback = false;
+									break;
+							}
+						}
+					}
+				}
+
+				if (path_stream != NULL)
+					pclose(path_stream);
+			}
+		}
+	}
+
+	if (use_fallback)
 #endif
 	{
 		active_file_picker_popup = title;
@@ -975,6 +1089,10 @@ static int INIParseCallback(void* const user, const char* const section, const c
 			clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
 		else if (SDL_strcmp(name, "japanese") == 0)
 			clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
+	#ifdef POSIX
+		else if (SDL_strcmp(name, "last-directory") == 0)
+			last_file_dialog_directory = SDL_strdup(value);
+	#endif
 	}
 	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
 	{
@@ -1096,6 +1214,15 @@ static void SaveConfiguration(void)
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", low_pass_filter);
 		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
+
+	#ifdef POSIX
+		if (last_file_dialog_directory != NULL)
+		{
+			PRINT_STRING(file, "last-directory = ");
+			SDL_RWwrite(file, last_file_dialog_directory, SDL_strlen(last_file_dialog_directory), 1);
+			PRINT_STRING(file, "\n");
+		}
+	#endif
 
 		// Save keyboard bindings.
 		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
@@ -2188,7 +2315,7 @@ int main(int argc, char **argv)
 
 								ImGui::MenuItem("Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 
-							#ifdef _WIN32
+							#ifdef HAS_NATIVE_FILE_DIALOGS
 								ImGui::MenuItem("Native File Dialogs", NULL, &use_native_file_dialogs);
 							#endif
 							#endif
@@ -2913,6 +3040,10 @@ int main(int argc, char **argv)
 			}
 
 			SaveConfiguration();
+
+		#ifdef POSIX
+			SDL_free(last_file_dialog_directory);
+		#endif
 
 			// Free recent software list.
 			while (recent_software_list.head != NULL)
