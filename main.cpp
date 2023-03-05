@@ -2188,7 +2188,9 @@ int main(int argc, char **argv)
 
 								ImGui::MenuItem("Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
 
+							#ifdef _WIN32
 								ImGui::MenuItem("Native File Dialogs", NULL, &use_native_file_dialogs);
+							#endif
 							#endif
 
 								ImGui::Separator();
