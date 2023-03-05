@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <limits.h> // For INT_MAX.
 #include <stdarg.h>
 #include <stddef.h>
