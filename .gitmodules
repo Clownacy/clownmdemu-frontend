@@ -8,12 +8,6 @@
 	path = libraries/imgui
 	url = https://github.com/Clownacy/imgui.git
 	branch = font-nonlinear
-[submodule "clowncommon"]
-	path = clowncommon
-	url = https://github.com/Clownacy/clowncommon
-[submodule "clown68000"]
-	path = clown68000
-	url = https://github.com/Clownacy/clown68000
 [submodule "clownmdemu-frontend-common"]
 	path = clownmdemu-frontend-common
 	url = https://github.com/Clownacy/clownmdemu-frontend-common
