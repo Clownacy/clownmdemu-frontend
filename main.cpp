@@ -785,102 +785,116 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 	}
 	else
 #elif defined(POSIX)
-	bool use_fallback = true;
+	bool done = false;
 
 	if (use_native_file_dialogs)
 	{
-		char *command;
-
-		// Construct the command to invoke Zenity.
-		if (SDL_asprintf(&command, "zenity --file-selection --title=\"%s\" %s --filename=\"%s\"",
-			title,
-			save ? "--save" : "",
-			last_file_dialog_directory == NULL ? "" : last_file_dialog_directory
-			) >= 0)
+		for (unsigned int i = 0; i < 2; ++i)
 		{
-			// Invoke Zenity.
-			FILE *path_stream = popen(command, "r");
-
-			SDL_free(command);
-
-			if (path_stream != NULL)
+			if (!done)
 			{
-			#define GROW_SIZE 0x100
-				// Read the whole path returned by Zenity.
-				// This is very complicated due to handling arbitrarily long paths.
-				size_t path_buffer_length = 0;
-				char *path_buffer = (char*)SDL_malloc(GROW_SIZE + 1); // '+1' for the null character.
+				char *command;
 
-				if (path_buffer != NULL)
+				// Construct the command to invoke Zenity/kdialog.
+				const int bytes_printed = i == 0 ?
+					SDL_asprintf(&command, "zenity --file-selection --title=\"%s\" %s --filename=\"%s\"",
+						title,
+						save ? "--save" : "",
+						last_file_dialog_directory == NULL ? "" : last_file_dialog_directory)
+					:
+					SDL_asprintf(&command, "kdialog --get%sfilename --title \"%s\" \"%s\"",
+						save ? "save" : "open",
+						title,
+						last_file_dialog_directory == NULL ? "" : last_file_dialog_directory)
+					;
+
+				if (bytes_printed >= 0)
 				{
-					for (;;)
+					// Invoke Zenity/kdialog.
+					FILE *path_stream = popen(command, "r");
+
+					SDL_free(command);
+
+					if (path_stream != NULL)
 					{
-						const size_t path_length = fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
-						path_buffer_length += path_length;
+					#define GROW_SIZE 0x100
+						// Read the whole path returned by Zenity/kdialog.
+						// This is very complicated due to handling arbitrarily long paths.
+						size_t path_buffer_length = 0;
+						char *path_buffer = (char*)SDL_malloc(GROW_SIZE + 1); // '+1' for the null character.
 
-						if (path_length != GROW_SIZE)
-							break;
-
-						char* const new_path_buffer = (char*)SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1);
-
-						if (new_path_buffer == NULL)
+						if (path_buffer != NULL)
 						{
-							SDL_free(path_buffer);
-							path_buffer = NULL;
-							break;
-						}
-
-						path_buffer = new_path_buffer;
-					}
-				#undef GROW_SIZE
-
-					if (path_buffer != NULL)
-					{
-						// Handle Zenity's return value.
-						const int exit_status = pclose(path_stream);
-						path_stream = NULL;
-
-						if (exit_status != -1 && WIFEXITED(exit_status))
-						{
-							switch (WEXITSTATUS(exit_status))
+							for (;;)
 							{
-								case 0: // Success.
+								const size_t path_length = fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
+								path_buffer_length += path_length;
+
+								if (path_length != GROW_SIZE)
+									break;
+
+								char* const new_path_buffer = (char*)SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1);
+
+								if (new_path_buffer == NULL)
 								{
-									use_fallback = false;
-
-									path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
-									callback(path_buffer);
-
-									char* const directory_separator = SDL_strrchr(path_buffer, '/');
-
-									if (directory_separator == NULL)
-										path_buffer[0] = '\0';
-									else
-										directory_separator[1] = '\0';
-
-									if (last_file_dialog_directory != NULL)
-										SDL_free(last_file_dialog_directory);
-
-									last_file_dialog_directory = path_buffer;
-
+									SDL_free(path_buffer);
+									path_buffer = NULL;
 									break;
 								}
 
-								case 1: // No file selected.
-									use_fallback = false;
-									break;
+								path_buffer = new_path_buffer;
+							}
+						#undef GROW_SIZE
+
+							if (path_buffer != NULL)
+							{
+								// Handle Zenity's/kdialog's return value.
+								const int exit_status = pclose(path_stream);
+								path_stream = NULL;
+
+								if (exit_status != -1 && WIFEXITED(exit_status))
+								{
+									switch (WEXITSTATUS(exit_status))
+									{
+										case 0: // Success.
+										{
+											done = true;
+
+											path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
+											callback(path_buffer);
+
+											char* const directory_separator = SDL_strrchr(path_buffer, '/');
+
+											if (directory_separator == NULL)
+												path_buffer[0] = '\0';
+											else
+												directory_separator[1] = '\0';
+
+											if (last_file_dialog_directory != NULL)
+												SDL_free(last_file_dialog_directory);
+
+											last_file_dialog_directory = path_buffer;
+
+											break;
+										}
+
+										case 1: // No file selected.
+											done = true;
+											break;
+									}
+								}
 							}
 						}
+
+						if (path_stream != NULL)
+							pclose(path_stream);
 					}
 				}
-
-				if (path_stream != NULL)
-					pclose(path_stream);
 			}
 		}
 	}
 
-	if (use_fallback)
+	if (!done)
 #endif
 	{
 		active_file_picker_popup = title;
