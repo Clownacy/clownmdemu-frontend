@@ -717,6 +717,7 @@ static bool is_save_dialog;
   #include <sys/wait.h>
 
   static char *last_file_dialog_directory;
+  static bool prefer_kdialog;
  #endif
 #endif
 
@@ -796,7 +797,7 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 				char *command;
 
 				// Construct the command to invoke Zenity/kdialog.
-				const int bytes_printed = i == 0 ?
+				const int bytes_printed = (i == 0) != prefer_kdialog ?
 					SDL_asprintf(&command, "zenity --file-selection --title=\"%s\" %s --filename=\"%s\"",
 						title,
 						save ? "--save" : "",
@@ -1106,6 +1107,8 @@ static int INIParseCallback(void* const user, const char* const section, const c
 	#ifdef POSIX
 		else if (SDL_strcmp(name, "last-directory") == 0)
 			last_file_dialog_directory = SDL_strdup(value);
+		else if (SDL_strcmp(name, "prefer-kdialog") == 0)
+			prefer_kdialog = state;
 	#endif
 	}
 	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
@@ -1236,6 +1239,7 @@ static void SaveConfiguration(void)
 			SDL_RWwrite(file, last_file_dialog_directory, SDL_strlen(last_file_dialog_directory), 1);
 			PRINT_STRING(file, "\n");
 		}
+		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", prefer_kdialog);
 	#endif
 
 		// Save keyboard bindings.
@@ -2722,6 +2726,25 @@ int main(int argc, char **argv)
 
 								ImGui::EndTable();
 							}
+
+						#ifdef POSIX
+							ImGui::SeparatorText("Preferred File Dialog");
+
+							if (ImGui::BeginTable("Preferred File Dialog", 2))
+							{
+								ImGui::TableNextColumn();
+
+								if (ImGui::RadioButton("Zenity (GTK)", !prefer_kdialog))
+									prefer_kdialog = false;
+
+								ImGui::TableNextColumn();
+
+								if (ImGui::RadioButton("kdialog (Qt)", prefer_kdialog))
+									prefer_kdialog = true;
+
+								ImGui::EndTable();
+							}
+						#endif
 
 							ImGui::SeparatorText("Keyboard Input");
 
