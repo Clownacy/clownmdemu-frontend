@@ -572,6 +572,9 @@ static void OpenSoftwareFromMemory(unsigned char *rom_buffer_parameter, size_t r
 {
 	quick_save_exists = false;
 
+	// Unload the previous ROM in memory.
+	SDL_free(rom_buffer);
+
 	rom_buffer = rom_buffer_parameter;
 	rom_buffer_size = rom_buffer_size_parameter;
 
@@ -602,9 +605,6 @@ static bool OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 	}
 	else
 	{
-		// Unload the previous ROM in memory.
-		SDL_free(rom_buffer);
-
 		AddToRecentSoftware(path, false);
 
 		OpenSoftwareFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
