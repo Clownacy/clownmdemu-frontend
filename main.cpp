@@ -875,6 +875,7 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 												SDL_free(last_file_dialog_directory);
 
 											last_file_dialog_directory = path_buffer;
+											path_buffer = NULL;
 
 											break;
 										}
@@ -885,6 +886,8 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 									}
 								}
 							}
+
+							SDL_free(path_buffer);
 						}
 
 						if (path_stream != NULL)
