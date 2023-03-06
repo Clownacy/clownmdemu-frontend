@@ -707,7 +707,7 @@ static bool is_save_dialog;
 #ifdef _WIN32
  #include <windows.h>
  #include "SDL_syswm.h"
-#elif __unix__
+#elif defined(__unix__)
  #include <unistd.h>
 
  #if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
