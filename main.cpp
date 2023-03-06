@@ -798,9 +798,9 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 
 				// Construct the command to invoke Zenity/kdialog.
 				const int bytes_printed = (i == 0) != prefer_kdialog ?
-					SDL_asprintf(&command, "zenity --file-selection --title=\"%s\" %s --filename=\"%s\"",
-						title,
+					SDL_asprintf(&command, "zenity --file-selection %s --title=\"%s\" --filename=\"%s\"",
 						save ? "--save" : "",
+						title,
 						last_file_dialog_directory == NULL ? "" : last_file_dialog_directory)
 					:
 					SDL_asprintf(&command, "kdialog --get%sfilename --title \"%s\" \"%s\"",
