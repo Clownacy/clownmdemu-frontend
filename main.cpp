@@ -398,7 +398,8 @@ static void AudioPushCallback(const void *user_data, Sint16 *audio_samples, size
 {
 	(void)user_data;
 
-	SDL_QueueAudio(audio_device, audio_samples, (Uint32)(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
+	if (audio_device != 0)
+		SDL_QueueAudio(audio_device, audio_samples, (Uint32)(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
 }
 
 
@@ -2031,8 +2032,7 @@ int main(int argc, char **argv)
 					if (emulator_running)
 					{
 						// Reset the audio buffers so that they can be mixed into.
-						if (audio_device != 0)
-							Mixer_Begin(&mixer);
+						Mixer_Begin(&mixer);
 
 						// Lock the texture so that we can write to its pixels later
 						if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
@@ -2048,7 +2048,7 @@ int main(int argc, char **argv)
 
 						// Resample, mix, and output the audio for this frame.
 						// If there's a lot of audio queued, then don't queue any more.
-						if (audio_device != 0 && SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
+						if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
 							Mixer_End(&mixer, AudioPushCallback, NULL);
 					}
 
