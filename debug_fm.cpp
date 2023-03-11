@@ -95,11 +95,11 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 		ImGui::SeparatorText("FM Operators");
 
-		char window_name_buffer[] = "FM1";
-
-		for (size_t i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+		if (ImGui::BeginTabBar("FM Channels Tab Bar"))
 		{
-			if (ImGui::BeginTabBar("FM Channels Tab Bar"))
+			char window_name_buffer[] = "FM1";
+
+			for (size_t i = 0; i < CC_COUNT_OF(fm->channels); ++i)
 			{
 				window_name_buffer[2] = '1' + i;
 
@@ -242,9 +242,9 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 					ImGui::EndTabItem();
 				}
-
-				ImGui::EndTabBar();
 			}
+
+			ImGui::EndTabBar();
 		}
 
 		if (ImGui::BeginTable("Table Table", 2, ImGuiTableFlags_SizingStretchSame))
