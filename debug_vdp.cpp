@@ -582,7 +582,7 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Background Colour");
 			ImGui::TableNextColumn();
-			ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, (cc_u8f)vdp->background_colour / 16, (cc_u8f)vdp->background_colour % 16);
+			ImGui::Text("Palette Line %" CC_PRIdLEAST8 ", Entry %" CC_PRIdLEAST8, (cc_u8f)vdp->background_colour / 16, (cc_u8f)vdp->background_colour % 16);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("H-Int Interval");
@@ -675,7 +675,7 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			ImGui::TextUnformatted("Cached Write");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXFAST16, vdp->access.cached_write);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->access.cached_write);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();

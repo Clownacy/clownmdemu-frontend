@@ -22,7 +22,7 @@ void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			if (clownmdemu->state->psg.latched_command.channel == 3)
 				ImGui::TextUnformatted("Noise");
 			else
-				ImGui::Text("Tone %" CC_PRIuFAST8, clownmdemu->state->psg.latched_command.channel + 1);
+				ImGui::Text("Tone %" CC_PRIuLEAST8, clownmdemu->state->psg.latched_command.channel + 1);
 
 			ImGui::TableNextColumn();
 
@@ -51,13 +51,13 @@ void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				ImGui::PushFont(monospace_font);
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%03" CC_PRIXFAST16 " (%6" CC_PRIuFAST32 "Hz)", clownmdemu->state->psg.tones[i].countdown_master, psg_clock / CC_MAX(1, clownmdemu->state->psg.tones[i].countdown_master) / 2);
+				ImGui::Text("0x%03" CC_PRIXLEAST16 " (%6" CC_PRIuFAST32 "Hz)", clownmdemu->state->psg.tones[i].countdown_master, psg_clock / CC_MAX(1, clownmdemu->state->psg.tones[i].countdown_master) / 2);
 
 				ImGui::TableNextColumn();
 				if (clownmdemu->state->psg.tones[i].attenuation == 15)
 					ImGui::TextUnformatted("0xF (Mute)");
 				else
-					ImGui::Text("0x%" CC_PRIXFAST8 " (%2" CC_PRIuFAST8 "db)", clownmdemu->state->psg.tones[i].attenuation, clownmdemu->state->psg.tones[i].attenuation * 2);
+					ImGui::Text("0x%" CC_PRIXLEAST8 " (%2" CC_PRIuLEAST8 "db)", clownmdemu->state->psg.tones[i].attenuation, clownmdemu->state->psg.tones[i].attenuation * 2);
 
 				ImGui::PopFont();
 			}
@@ -94,14 +94,14 @@ void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			if (clownmdemu->state->psg.noise.frequency_mode == 3)
 				ImGui::TextUnformatted("Tone 3");
 			else
-				ImGui::Text("%" CC_PRIdFAST8 " (%4" CC_PRIuFAST32 "Hz)", clownmdemu->state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu->state->psg.noise.frequency_mode) / 2);
+				ImGui::Text("%" CC_PRIdLEAST8 " (%4" CC_PRIuFAST32 "Hz)", clownmdemu->state->psg.noise.frequency_mode, psg_clock / (0x10 << clownmdemu->state->psg.noise.frequency_mode) / 2);
 
 			ImGui::TableNextColumn();
 
 			if (clownmdemu->state->psg.noise.attenuation == 15)
 				ImGui::TextUnformatted("0xF (Mute)");
 			else
-				ImGui::Text("0x%" CC_PRIXFAST8 " (%2" CC_PRIuFAST8 "db)", clownmdemu->state->psg.noise.attenuation, clownmdemu->state->psg.noise.attenuation * 2);
+				ImGui::Text("0x%" CC_PRIXLEAST8 " (%2" CC_PRIuLEAST8 "db)", clownmdemu->state->psg.noise.attenuation, clownmdemu->state->psg.noise.attenuation * 2);
 
 			ImGui::PopFont();
 

@@ -38,7 +38,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
 			{
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%02" CC_PRIXFAST16, fm->channels[i].cached_upper_frequency_bits);
+				ImGui::Text("0x%02" CC_PRIXLEAST8, fm->channels[i].cached_upper_frequency_bits);
 			}
 			ImGui::PopFont();
 
@@ -49,7 +49,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
 			{
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXFAST16, fm->channels[i].state.operators[0].phase.f_number_and_block);
+				ImGui::Text("0x%04" CC_PRIXLEAST16, fm->channels[i].state.operators[0].phase.f_number_and_block);
 			}
 			ImGui::PopFont();
 
@@ -77,7 +77,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			for (cc_u8f i = 0; i < CC_COUNT_OF(fm->channels); ++i)
 			{
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST16, fm->channels[i].state.algorithm);
+				ImGui::Text("%" CC_PRIuLEAST16, fm->channels[i].state.algorithm);
 			}
 			ImGui::PopFont();
 
@@ -135,7 +135,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("%" CC_PRIuFAST16, channel->state.operators[operator_index].phase.detune);
+							ImGui::Text("%" CC_PRIuLEAST16, channel->state.operators[operator_index].phase.detune);
 						}
 						ImGui::PopFont();
 
@@ -147,7 +147,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("%" CC_PRIuFAST16, channel->state.operators[operator_index].phase.multiplier / 2);
+							ImGui::Text("%" CC_PRIuLEAST16, channel->state.operators[operator_index].phase.multiplier / 2);
 						}
 						ImGui::PopFont();
 
@@ -159,7 +159,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXFAST16, channel->state.operators[operator_index].envelope.total_level >> 3);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel->state.operators[operator_index].envelope.total_level >> 3);
 						}
 						ImGui::PopFont();
 
@@ -170,10 +170,10 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						ImGui::PushFont(monospace_font);
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
-							static const cc_u16f decode[8] = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
+							static const cc_u8l decode[8] = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
 
 							ImGui::TableNextColumn();
-							ImGui::Text("%" CC_PRIuFAST16, decode[channel->state.operators[operator_index].envelope.key_scale - 1]);
+							ImGui::Text("%" CC_PRIuLEAST8, decode[channel->state.operators[operator_index].envelope.key_scale - 1]);
 						}
 						ImGui::PopFont();
 
@@ -185,7 +185,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXFAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_ATTACK]);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_ATTACK]);
 						}
 						ImGui::PopFont();
 
@@ -197,7 +197,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXFAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_DECAY]);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_DECAY]);
 						}
 						ImGui::PopFont();
 
@@ -209,7 +209,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXFAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_SUSTAIN]);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_SUSTAIN]);
 						}
 						ImGui::PopFont();
 
@@ -221,7 +221,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%" CC_PRIXFAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_RELEASE] >> 1);
+							ImGui::Text("0x%" CC_PRIXLEAST16, channel->state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_RELEASE] >> 1);
 						}
 						ImGui::PopFont();
 
@@ -233,7 +233,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel->state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%" CC_PRIXFAST16, (channel->state.operators[operator_index].envelope.sustain_level / 0x20) & 0xF);
+							ImGui::Text("0x%" CC_PRIXLEAST16, (channel->state.operators[operator_index].envelope.sustain_level / 0x20) & 0xF);
 						}
 						ImGui::PopFont();
 
@@ -269,7 +269,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 				ImGui::PushFont(monospace_font);
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%02" CC_PRIXFAST16, (fm->dac_sample / (0x100 / FM_VOLUME_DIVIDER)) + 0x80);
+				ImGui::Text("0x%02" CC_PRIXLEAST16, (fm->dac_sample / (0x100 / FM_VOLUME_DIVIDER)) + 0x80);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
@@ -307,7 +307,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
 				{
 					ImGui::TableNextColumn();
-					ImGui::Text("0x%03" CC_PRIXFAST32, CC_DIVIDE_CEILING(fm->timers[i].value, FM_SAMPLE_RATE_DIVIDER) - 1);
+					ImGui::Text("0x%03" CC_PRIXLEAST32, CC_DIVIDE_CEILING(fm->timers[i].value, FM_SAMPLE_RATE_DIVIDER) - 1);
 				}
 				ImGui::PopFont();
 
@@ -318,7 +318,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				for (cc_u8f i = 0; i < CC_COUNT_OF(fm->timers); ++i)
 				{
 					ImGui::TableNextColumn();
-					ImGui::Text("0x%03" CC_PRIXFAST32, CC_DIVIDE_CEILING(fm->timers[i].counter, FM_SAMPLE_RATE_DIVIDER) - 1);
+					ImGui::Text("0x%03" CC_PRIXLEAST32, CC_DIVIDE_CEILING(fm->timers[i].counter, FM_SAMPLE_RATE_DIVIDER) - 1);
 				}
 				ImGui::PopFont();
 
@@ -348,7 +348,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 				ImGui::PushFont(monospace_font);
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%02" CC_PRIXFAST8, fm->address);
+				ImGui::Text("0x%02" CC_PRIXLEAST8, fm->address);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
@@ -356,7 +356,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 				ImGui::PushFont(monospace_font);
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIXFAST8, fm->port / 3);
+				ImGui::Text("%" CC_PRIXLEAST8, fm->port / 3);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
@@ -364,7 +364,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 				ImGui::PushFont(monospace_font);
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%02" CC_PRIXFAST8, fm->status);
+				ImGui::Text("0x%02" CC_PRIXLEAST8, fm->status);
 				ImGui::PopFont();
 
 				ImGui::EndTable();
