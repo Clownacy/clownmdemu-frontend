@@ -107,7 +107,7 @@ void Debug_PSG(bool *open, ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 			ImGui::EndTable();
 		}
-
-		ImGui::End();
 	}
+
+	ImGui::End();
 }

@@ -44,7 +44,7 @@ void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, c
 		}
 		
 		ImGui::PopFont();
-
-		ImGui::End();
 	}
+
+	ImGui::End();
 }

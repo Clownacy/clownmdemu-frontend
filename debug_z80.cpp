@@ -17,7 +17,7 @@ void Debug_Z80(bool *open, Z80_State *z80, ImFont *monospace_font)
 		ImGui::Text("Other:  I:%02" CC_PRIXLEAST8 " R:%02" CC_PRIXLEAST8 " IX:%04" CC_PRIXFAST16 " IY:%04" CC_PRIXFAST16 " SP:%04" CC_PRIXLEAST16 " PC:%04" CC_PRIXLEAST16, z80->i, z80->r, ((cc_u16f)z80->ixh << 8) | z80->ixl, ((cc_u16f)z80->iyh << 8) | z80->iyl, z80->stack_pointer, z80->program_counter);
 
 		ImGui::PopFont();
-
-		ImGui::End();
 	}
+
+	ImGui::End();
 }

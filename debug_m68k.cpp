@@ -42,7 +42,7 @@ void Debug_M68k(bool *open, Clown68000_State *m68k, ImFont *monospace_font)
 			ImGui::Text("SSP:%08" CC_PRIXLEAST32, m68k->supervisor_stack_pointer);
 
 		ImGui::PopFont();
-
-		ImGui::End();
 	}
+
+	ImGui::End();
 }
