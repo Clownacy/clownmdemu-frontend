@@ -2928,7 +2928,7 @@ int main(int argc, char **argv)
 					{
 						ImGui::SetNextWindowSize(ImVec2(605.0f * dpi_scale, 430.0f * dpi_scale), ImGuiCond_FirstUseEver);
 
-						if (ImGui::Begin("About", &about_menu))
+						if (ImGui::Begin("About", &about_menu, ImGuiWindowFlags_HorizontalScrollbar))
 						{
 							static const char licence_clownmdemu[] = {
 								#include "licences/clownmdemu.h"
@@ -2966,7 +2966,9 @@ int main(int argc, char **argv)
 							ImGui::SeparatorText("clownmdemu-frontend " VERSION);
 
 							ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
-							ImGui::TextUnformatted("https://github.com/Clownacy/clownmdemu-frontend");
+							const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
+							if (ImGui::Button(url))
+								SDL_OpenURL(url);
 
 							ImGui::SeparatorText("Licences");
 
@@ -3048,6 +3050,41 @@ int main(int argc, char **argv)
 								ImGui::PushFont(monospace_font);
 								ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
 								ImGui::PopFont();
+							}
+
+							ImGui::SeparatorText("SDL2 Drivers");
+
+							if (ImGui::BeginTable("SDL2 Drivers", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
+							{
+								// Render
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Render");
+
+								ImGui::TableNextColumn();
+
+								SDL_RendererInfo info;
+								if (SDL_GetRendererInfo(renderer, &info) == 0)
+									ImGui::TextUnformatted(info.name);
+								else
+									ImGui::TextUnformatted("Unknown");
+
+								// Video
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Video");
+
+								ImGui::TableNextColumn();
+								const char* const audio_driver_name = SDL_GetCurrentVideoDriver();
+								ImGui::TextUnformatted(audio_driver_name != NULL ? audio_driver_name : "None");
+
+								// Audio
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Audio");
+
+								ImGui::TableNextColumn();
+								const char* const video_driver_name = SDL_GetCurrentAudioDriver();
+								ImGui::TextUnformatted(video_driver_name != NULL ? video_driver_name : "None");
+
+								ImGui::EndTable();
 							}
 						}
 
