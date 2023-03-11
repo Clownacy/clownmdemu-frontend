@@ -372,7 +372,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 
 			ImGui::EndTable();
 		}
-
-		ImGui::End();
 	}
+
+	ImGui::End();
 }
