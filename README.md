@@ -10,8 +10,7 @@ but many standard features of the Mega Drive are unemulated (see
 ![Debug](/screenshot-debug.png)
 
 The repository contains clownmdemu's standalone frontend; it is written in
-C++11 and leverages the SDL2, Dear ImGui, FreeType, tinyfiledialogs, and inih
-libraries.
+C++11 and leverages the SDL2, Dear ImGui, FreeType, and inih libraries.
 
 The default control scheme is as follows:
 
