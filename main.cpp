@@ -10,7 +10,7 @@
 
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
-#include "libraries/imgui/backends/imgui_impl_sdlrenderer.h"
+#include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 
 #include "libraries/inih/ini.h"
 
@@ -420,7 +420,7 @@ static void ReloadFonts(unsigned int font_size)
 	ImGuiIO &io = ImGui::GetIO();
 
 	io.Fonts->Clear();
-	ImGui_ImplSDLRenderer_DestroyFontsTexture();
+	ImGui_ImplSDLRenderer2_DestroyFontsTexture();
 
 	ImFontConfig font_cfg = ImFontConfig();
 	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %upx", font_size);
@@ -1366,7 +1366,7 @@ int main(int argc, char **argv)
 
 				// Setup Platform/Renderer backends
 				ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-				ImGui_ImplSDLRenderer_Init(renderer);
+				ImGui_ImplSDLRenderer2_Init(renderer);
 
 				// Load fonts
 				ReloadFonts(font_size);
@@ -2053,7 +2053,7 @@ int main(int argc, char **argv)
 					}
 
 					// Start the Dear ImGui frame
-					ImGui_ImplSDLRenderer_NewFrame();
+					ImGui_ImplSDLRenderer2_NewFrame();
 					ImGui_ImplSDL2_NewFrame();
 					ImGui::NewFrame();
 
@@ -3097,7 +3097,7 @@ int main(int argc, char **argv)
 
 					// Render Dear ImGui.
 					ImGui::Render();
-					ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 
 					// Finally display the rendered frame to the user.
 					SDL_RenderPresent(renderer);
@@ -3107,7 +3107,7 @@ int main(int argc, char **argv)
 
 				DeinitialiseAudio();
 
-				ImGui_ImplSDLRenderer_Shutdown();
+				ImGui_ImplSDLRenderer2_Shutdown();
 				ImGui_ImplSDL2_Shutdown();
 				ImGui::DestroyContext();
 

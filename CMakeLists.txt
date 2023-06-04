@@ -44,8 +44,8 @@ add_executable(clownmdemu-frontend WIN32
 	"libraries/imgui/imstb_textedit.h"
 	"libraries/imgui/backends/imgui_impl_sdl2.cpp"
 	"libraries/imgui/backends/imgui_impl_sdl2.h"
-	"libraries/imgui/backends/imgui_impl_sdlrenderer.cpp"
-	"libraries/imgui/backends/imgui_impl_sdlrenderer.h"
+	"libraries/imgui/backends/imgui_impl_sdlrenderer2.cpp"
+	"libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 )
 
 set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
