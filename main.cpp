@@ -1502,14 +1502,14 @@ int main(int argc, char **argv)
 						// (technically it's only required by the NTSC framerate: PAL doesn't need it).
 						#define MULTIPLIER 300
 
-						static Uint32 next_time;
-						const Uint32 current_time = SDL_GetTicks() * MULTIPLIER;
+						static Uint64 next_time;
+						const Uint64 current_time = SDL_GetTicks64() * MULTIPLIER;
 
 						int timeout = 0;
 
-						if (!SDL_TICKS_PASSED(current_time, next_time))
+						if (current_time < next_time)
 							timeout = (next_time - current_time) / MULTIPLIER;
-						else if (SDL_TICKS_PASSED(current_time, next_time + 100 * MULTIPLIER)) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+						else if (current_time > next_time + 100 * MULTIPLIER) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
 							next_time = current_time;
 
 						// Obtain an event
