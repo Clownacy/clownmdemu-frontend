@@ -129,7 +129,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					const cc_u16f tile_x = (cc_u16f)((mouse_position.x - image_position.x) / plane_scale / tile_width);
 					const cc_u16f tile_y = (cc_u16f)((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const cc_u8l *plane_pointer = &clownmdemu->state->vdp.vram[plane_address + tile_y * clownmdemu->state->vdp.plane_width + tile_x];
+					const cc_u8l *plane_pointer = &clownmdemu->state->vdp.vram[plane_address + (tile_y * clownmdemu->state->vdp.plane_width + tile_x) * 2];
 					const cc_u8f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
 
 					TileMetadata tile_metadata;
