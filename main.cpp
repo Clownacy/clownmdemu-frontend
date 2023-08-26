@@ -201,9 +201,12 @@ static float GetNewDPIScale(void)
 {
 	float dpi_scale = 1.0f;
 
+#ifdef _WIN32
+	/* This doesn't work right on Linux nor macOS. */
 	float ddpi;
 	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
 		dpi_scale = ddpi / 96.0f;
+#endif
 
 	return dpi_scale;
 }
@@ -217,7 +220,7 @@ static bool InitialiseVideo(void)
 	else
 	{
 		// Create window
-		window = SDL_CreateWindow("clownmdemu-frontend " VERSION, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+		window = SDL_CreateWindow("clownmdemu-frontend " VERSION, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
 
 		if (window == NULL)
 		{
