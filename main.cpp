@@ -128,6 +128,19 @@ static ClownMDEmu_Configuration clownmdemu_configuration;
 static ClownMDEmu_Constant clownmdemu_constant;
 static ClownMDEmu clownmdemu;
 
+static bool FileExists(const char *filename)
+{
+	SDL_RWops* const file = SDL_RWFromFile(filename, "rb");
+
+	if (file != NULL)
+	{
+		SDL_RWclose(file);
+		return true;
+	}
+
+	return false;
+}
+
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
 	*file_buffer = NULL;
@@ -1001,10 +1014,10 @@ static void DoFilePicker(void)
 
 			if (enter_pressed || ok_pressed)
 			{
-				if (!is_save_dialog)
+				if (!is_save_dialog || !FileExists(text_buffer))
 					submit = true;
 				else
-					ImGui::OpenPopup("Overwrite");
+					ImGui::OpenPopup("File Already Exists");
 			}
 
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
