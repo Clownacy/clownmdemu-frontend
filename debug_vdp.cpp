@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 
+#include <functional>
+
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -17,6 +19,9 @@ typedef struct TileMetadata
 	bool y_flip;
 	bool priority;
 } TileMetadata;
+
+void OpenFileDialog(char const* const title, const std::function<bool (const char *path)> callback);
+void SaveFileDialog(char const* const title, const std::function<bool (const char *path)> callback);
 
 static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata *tile_metadata)
 {
@@ -221,6 +226,40 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				if (SDL_SetTextureBlendMode(vram_texture, SDL_BLENDMODE_NONE) < 0)
 					PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
+		}
+
+
+		if (ImGui::Button("Save to File"))
+		{
+			SaveFileDialog("Create Save State", [data, clownmdemu](const char* const save_state_path)
+			{
+				bool success = false;
+
+				// Save the current state to the specified file.
+				SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
+
+				if (file == NULL)
+				{
+					PrintError("Could not open save state file for writing");
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data->window);
+				}
+				else
+				{
+					if (SDL_RWwrite(file, clownmdemu->vdp.state->vram, sizeof(clownmdemu->vdp.state->vram), 1) != 1)
+					{
+						PrintError("Could not write save state file");
+						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data->window);
+					}
+					else
+					{
+						success = true;
+					}
+
+					SDL_RWclose(file);
+				}
+
+				return success;
+			});
 		}
 
 		if (vram_texture != NULL)

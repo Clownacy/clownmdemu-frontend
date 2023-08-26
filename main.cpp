@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#include <functional>
+
 #include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -702,7 +704,7 @@ static void UpdateRewindStatus(void)
 /////////////////
 
 static const char *active_file_picker_popup;
-static bool (*popup_callback)(const char *path);
+static std::function<bool (const char *path)> popup_callback;
 static bool is_save_dialog;
 
 #ifdef _WIN32
@@ -730,7 +732,7 @@ static bool is_save_dialog;
 static bool use_native_file_dialogs = true;
 #endif
 
-static void FileDialog(char const* const title, bool (*callback)(const char *path), bool save)
+static void FileDialog(char const* const title, const std::function<bool (const char *path)> callback, bool save)
 {
 #ifdef _WIN32
 	if (use_native_file_dialogs)
@@ -908,12 +910,12 @@ static void FileDialog(char const* const title, bool (*callback)(const char *pat
 	}
 }
 
-static void OpenFileDialog(char const* const title, bool (*callback)(const char *path))
+void OpenFileDialog(char const* const title, const std::function<bool (const char *path)> callback)
 {
 	FileDialog(title, callback, false);
 }
 
-static void SaveFileDialog(char const* const title, bool (*callback)(const char *path))
+void SaveFileDialog(char const* const title, const std::function<bool (const char *path)> callback)
 {
 	FileDialog(title, callback, true);
 }
@@ -2502,7 +2504,7 @@ int main(int argc, char **argv)
 					if (z80_ram_viewer)
 						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
 
-					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, dpi_scale};
+					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, window, dpi_scale};
 
 					if (vdp_registers)
 						Debug_VDP(&vdp_registers, &clownmdemu, monospace_font);

@@ -10,6 +10,7 @@ struct Debug_VDP_Data
 {
 	const Uint32 *colours;
 	SDL_Renderer *renderer;
+	SDL_Window *window;
 	float dpi_scale;
 };
 
