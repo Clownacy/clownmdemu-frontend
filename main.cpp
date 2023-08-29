@@ -1566,7 +1566,7 @@ int main(int argc, char **argv)
 
 						#undef MULTIPLIER
 
-						ImGui_ImplSDL2_ProcessEvent(&event);
+						bool give_event_to_imgui = true;
 
 						// Process the event
 						switch (event.type)
@@ -1673,51 +1673,71 @@ int main(int argc, char **argv)
 								keyboard_bindings_cached[event.key.keysym.scancode] = keyboard_bindings[event.key.keysym.scancode];
 
 								const bool pressed = event.key.state == SDL_PRESSED;
-								const int delta = pressed ? 1 : -1;
 
-								switch (binding)
+								if (key_pressed[event.key.keysym.scancode] != pressed)
 								{
-									#define DO_KEY(state, code) \
-										case code: \
-											if (key_pressed[state] != pressed) \
-											{ \
-												keyboard_input.buttons[state] += delta; \
-												key_pressed[state] = pressed; \
-											} \
-											break
+									key_pressed[event.key.keysym.scancode] = pressed;
 
-									DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
-									DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
-									DO_KEY(CLOWNMDEMU_BUTTON_LEFT, INPUT_BINDING_CONTROLLER_LEFT);
-									DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, INPUT_BINDING_CONTROLLER_RIGHT);
-									DO_KEY(CLOWNMDEMU_BUTTON_A, INPUT_BINDING_CONTROLLER_A);
-									DO_KEY(CLOWNMDEMU_BUTTON_B, INPUT_BINDING_CONTROLLER_B);
-									DO_KEY(CLOWNMDEMU_BUTTON_C, INPUT_BINDING_CONTROLLER_C);
-									DO_KEY(CLOWNMDEMU_BUTTON_START, INPUT_BINDING_CONTROLLER_START);
+									// This chunk of code prevents ALT-ENTER from causing ImGui to enter the menu bar.
+									// TODO: Remove this when Dear ImGui stops being dumb.
+									static bool anything_pressed_during_alt;
 
-									#undef DO_KEY
-
-									case INPUT_BINDING_FAST_FORWARD:
-										if (emulator_has_focus)
+									if (event.key.keysym.scancode == SDL_SCANCODE_LALT)
+									{
+										if (pressed)
 										{
-											// Toggle fast-forward
-											keyboard_input.fast_forward += delta;
-											UpdateFastForwardStatus();
+											anything_pressed_during_alt = false;
 										}
-										break;
-
-									#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-									case INPUT_BINDING_REWIND:
-										if (emulator_has_focus)
+										else
 										{
-											keyboard_input.rewind += delta;
-											UpdateRewindStatus();
+											if (anything_pressed_during_alt)
+												give_event_to_imgui = false;
 										}
-										break;
-									#endif
+									}
+									else
+									{
+										anything_pressed_during_alt |= pressed;
+									}
 
-									default:
-										break;
+									const int delta = pressed ? 1 : -1;
+
+									switch (binding)
+									{
+										#define DO_KEY(state, code) case code: keyboard_input.buttons[state] += delta; break
+
+										DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
+										DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
+										DO_KEY(CLOWNMDEMU_BUTTON_LEFT, INPUT_BINDING_CONTROLLER_LEFT);
+										DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, INPUT_BINDING_CONTROLLER_RIGHT);
+										DO_KEY(CLOWNMDEMU_BUTTON_A, INPUT_BINDING_CONTROLLER_A);
+										DO_KEY(CLOWNMDEMU_BUTTON_B, INPUT_BINDING_CONTROLLER_B);
+										DO_KEY(CLOWNMDEMU_BUTTON_C, INPUT_BINDING_CONTROLLER_C);
+										DO_KEY(CLOWNMDEMU_BUTTON_START, INPUT_BINDING_CONTROLLER_START);
+
+										#undef DO_KEY
+
+										case INPUT_BINDING_FAST_FORWARD:
+											if (emulator_has_focus)
+											{
+												// Toggle fast-forward
+												keyboard_input.fast_forward += delta;
+												UpdateFastForwardStatus();
+											}
+											break;
+
+										#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+										case INPUT_BINDING_REWIND:
+											if (emulator_has_focus)
+											{
+												keyboard_input.rewind += delta;
+												UpdateRewindStatus();
+											}
+											break;
+										#endif
+
+										default:
+											break;
+									}
 								}
 
 								break;
@@ -2050,6 +2070,9 @@ int main(int argc, char **argv)
 							default:
 								break;
 						}
+
+						if (give_event_to_imgui)
+							ImGui_ImplSDL2_ProcessEvent(&event);
 					}
 
 					// Handle dynamic DPI support
