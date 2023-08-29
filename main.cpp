@@ -288,6 +288,12 @@ static void SetFullscreen(bool enabled)
 	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
+static void ToggleFullscreen(void)
+{
+	fullscreen = !fullscreen;
+	SetFullscreen(fullscreen);
+}
+
 static bool InitialiseFramebuffer(void)
 {
 	// Create framebuffer texture
@@ -1577,6 +1583,12 @@ int main(int argc, char **argv)
 								if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
 									break;
 
+								if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & KMOD_ALT) != 0)
+								{
+									ToggleFullscreen();
+									break;
+								}
+
 								if (event.key.keysym.sym == SDLK_ESCAPE)
 								{
 									// Exit fullscreen
@@ -1595,9 +1607,7 @@ int main(int argc, char **argv)
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
 									case INPUT_BINDING_TOGGLE_FULLSCREEN:
-										// Toggle fullscreen
-										fullscreen = !fullscreen;
-										SetFullscreen(fullscreen);
+										ToggleFullscreen();
 										break;
 
 									case INPUT_BINDING_TOGGLE_CONTROL_PAD:
