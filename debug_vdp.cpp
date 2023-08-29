@@ -66,56 +66,65 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
-				const cc_u8l *plane = &clownmdemu->state->vdp.vram[plane_address];
+				static unsigned int cache_frame_counter;
 
 				const cc_u16f tile_width = 8;
 				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
-				// Lock texture so that we can write into it.
-				Uint8 *plane_texture_pixels;
-				int plane_texture_pitch;
-
-				if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
+				// Only update the texture if we know that the frame has changed.
+				// This prevents constant texture generation even when the emulator is paused.
+				if (cache_frame_counter != data->frame_counter)
 				{
-					const cc_u8l *plane_pointer = plane;
+					cache_frame_counter = data->frame_counter;
 
-					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
+					const cc_u8l *plane = &clownmdemu->state->vdp.vram[plane_address];
+
+					// Lock texture so that we can write into it.
+					Uint8 *plane_texture_pixels;
+					int plane_texture_pitch;
+
+					if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
 					{
-						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
+						const cc_u8l *plane_pointer = plane;
+
+						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
 						{
-							TileMetadata tile_metadata;
-							DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], &tile_metadata);
-							plane_pointer += 2;
-
-							const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
-							const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
-
-							const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
-
-							const Uint32 *palette_line = &data->colours[palette_index];
-
-							const cc_u8l *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
-
-							for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
+							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
 							{
-								Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * plane_texture_pitch];
+								TileMetadata tile_metadata;
+								DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], &tile_metadata);
+								plane_pointer += 2;
 
-								for (cc_u16f i = 0; i < 2; ++i)
+								const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
+								const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
+
+								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+
+								const Uint32 *palette_line = &data->colours[palette_index];
+
+								const cc_u8l *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
+
+								for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 								{
-									const cc_u16l tile_pixels = (tile_pointer[0] << 8) | tile_pointer[1];
-									tile_pointer += 2;
+									Uint32 *plane_texture_pixels_row = (Uint32*)&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * plane_texture_pitch];
 
-									for (cc_u16f j = 0; j < 4; ++j)
+									for (cc_u16f i = 0; i < 2; ++i)
 									{
-										const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
-										plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = palette_line[colour_index];
+										const cc_u16l tile_pixels = (tile_pointer[0] << 8) | tile_pointer[1];
+										tile_pointer += 2;
+
+										for (cc_u16f j = 0; j < 4; ++j)
+										{
+											const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
+											plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = palette_line[colour_index];
+										}
 									}
 								}
 							}
 						}
-					}
 
-					SDL_UnlockTexture(plane_texture);
+						SDL_UnlockTexture(plane_texture);
+					}
 				}
 
 				const float plane_width_in_pixels = (float)(clownmdemu->state->vdp.plane_width * tile_width);
@@ -289,45 +298,54 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 			ImGui::SeparatorText("Tiles");
 
-			// Select the correct palette line.
-			const Uint32 *selected_palette = &data->colours[brightness_index + palette_line];
-
 			// Set up some variables that we're going to need soon.
 			const size_t vram_texture_width_in_tiles = vram_texture_width / tile_width;
 			const size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
 
-			// Lock texture so that we can write into it.
-			Uint8 *vram_texture_pixels;
-			int vram_texture_pitch;
+			static unsigned int cache_frame_counter;
 
-			if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
+			// Only update the texture if we know that the frame has changed.
+			// This prevents constant texture generation even when the emulator is paused.
+			if (cache_frame_counter != data->frame_counter)
 			{
-				// Generate VRAM bitmap.
-				const cc_u8l *vram_pointer = clownmdemu->state->vdp.vram;
+				cache_frame_counter = data->frame_counter;
 
-				// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
-				// instead of left-to-right then top-to-bottom.
-				for (size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+				// Select the correct palette line.
+				const Uint32 *selected_palette = &data->colours[brightness_index + palette_line];
+
+				// Lock texture so that we can write into it.
+				Uint8 *vram_texture_pixels;
+				int vram_texture_pitch;
+
+				if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
 				{
-					for (size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
+					// Generate VRAM bitmap.
+					const cc_u8l *vram_pointer = clownmdemu->state->vdp.vram;
+
+					// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
+					// instead of left-to-right then top-to-bottom.
+					for (size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 					{
-						Uint32 *pixels_pointer = (Uint32*)(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
-
-						for (cc_u16f i = 0; i < 2; ++i)
+						for (size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
 						{
-							const cc_u16l tile_row = (vram_pointer[0] << 8) |  vram_pointer[1];
-							vram_pointer += 2;
+							Uint32 *pixels_pointer = (Uint32*)(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
 
-							for (cc_u16f j = 0; j < 4; ++j)
+							for (cc_u16f i = 0; i < 2; ++i)
 							{
-								const cc_u16f colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
-								*pixels_pointer++ = selected_palette[colour_index];
+								const cc_u16l tile_row = (vram_pointer[0] << 8) |  vram_pointer[1];
+								vram_pointer += 2;
+
+								for (cc_u16f j = 0; j < 4; ++j)
+								{
+									const cc_u16f colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
+									*pixels_pointer++ = selected_palette[colour_index];
+								}
 							}
 						}
 					}
-				}
 
-				SDL_UnlockTexture(vram_texture);
+					SDL_UnlockTexture(vram_texture);
+				}
 			}
 
 			// Actually display the VRAM now.

@@ -209,6 +209,7 @@ static bool fullscreen;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 static float dpi_scale;
+static unsigned int frame_counter;
 
 static float GetNewDPIScale(void)
 {
@@ -2068,6 +2069,8 @@ int main(int argc, char **argv)
 						// If there's a lot of audio queued, then don't queue any more.
 						if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
 							Mixer_End(&mixer, AudioPushCallback, NULL);
+
+						++frame_counter;
 					}
 
 					// Start the Dear ImGui frame
@@ -2521,7 +2524,7 @@ int main(int argc, char **argv)
 					if (z80_ram_viewer)
 						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
 
-					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, window, dpi_scale};
+					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, window, dpi_scale, frame_counter};
 
 					if (vdp_registers)
 						Debug_VDP(&vdp_registers, &clownmdemu, monospace_font);

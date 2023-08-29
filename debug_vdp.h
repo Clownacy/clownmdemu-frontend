@@ -12,6 +12,7 @@ struct Debug_VDP_Data
 	SDL_Renderer *renderer;
 	SDL_Window *window;
 	float dpi_scale;
+	unsigned int frame_counter;
 };
 
 void Debug_WindowPlane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data);
