@@ -2082,9 +2082,6 @@ int main(int argc, char **argv)
 						size_t file_size;
 						LoadFileToBuffer(drag_and_drop_filename, &file_buffer, &file_size);
 
-						SDL_free(drag_and_drop_filename);
-						drag_and_drop_filename = NULL;
-
 						if (file_buffer != NULL)
 						{
 							if (file_size >= sizeof(save_state_magic) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
@@ -2096,10 +2093,14 @@ int main(int argc, char **argv)
 							}
 							else
 							{
+								AddToRecentSoftware(drag_and_drop_filename, false);
 								OpenSoftwareFromMemory(file_buffer, file_size, &callbacks);
 								emulator_paused = false;
 							}
 						}
+
+						SDL_free(drag_and_drop_filename);
+						drag_and_drop_filename = NULL;
 					}
 
 				#ifndef NDEBUG
