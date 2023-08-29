@@ -102,6 +102,7 @@ static ControllerInput *controller_input_list_head;
 
 static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 static InputBinding keyboard_bindings_cached[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static bool key_pressed[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 static DoublyLinkedList recent_software_list;
 static char *drag_and_drop_filename;
@@ -1660,10 +1661,6 @@ int main(int argc, char **argv)
 								// Fallthrough
 							case SDL_KEYUP:
 							{
-								// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
-								if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
-									break;
-
 								// Prevent invalid memory accesses due to future API expansions.
 								// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
 								if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
@@ -1675,11 +1672,19 @@ int main(int argc, char **argv)
 								const InputBinding binding = (event.type == SDL_KEYUP ? keyboard_bindings_cached : keyboard_bindings)[event.key.keysym.scancode];
 								keyboard_bindings_cached[event.key.keysym.scancode] = keyboard_bindings[event.key.keysym.scancode];
 
-								const int pressed = event.key.state == SDL_PRESSED ? 1 : -1;
+								const bool pressed = event.key.state == SDL_PRESSED;
+								const int delta = pressed ? 1 : -1;
 
 								switch (binding)
 								{
-									#define DO_KEY(state, code) case code: keyboard_input.buttons[state] += pressed; break
+									#define DO_KEY(state, code) \
+										case code: \
+											if (key_pressed[state] != pressed) \
+											{ \
+												keyboard_input.buttons[state] += delta; \
+												key_pressed[state] = pressed; \
+											} \
+											break
 
 									DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
 									DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
@@ -1696,7 +1701,7 @@ int main(int argc, char **argv)
 										if (emulator_has_focus)
 										{
 											// Toggle fast-forward
-											keyboard_input.fast_forward += pressed;
+											keyboard_input.fast_forward += delta;
 											UpdateFastForwardStatus();
 										}
 										break;
@@ -1705,7 +1710,7 @@ int main(int argc, char **argv)
 									case INPUT_BINDING_REWIND:
 										if (emulator_has_focus)
 										{
-											keyboard_input.rewind += pressed;
+											keyboard_input.rewind += delta;
 											UpdateRewindStatus();
 										}
 										break;
