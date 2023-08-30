@@ -1567,6 +1567,7 @@ int main(int argc, char **argv)
 						#undef MULTIPLIER
 
 						bool give_event_to_imgui = true;
+						static bool anything_pressed_during_alt;
 
 						// Process the event
 						switch (event.type)
@@ -1579,6 +1580,8 @@ int main(int argc, char **argv)
 								// Ignore repeated key inputs caused by holding the key down
 								if (event.key.repeat)
 									break;
+
+								anything_pressed_during_alt = true;
 
 								// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
 								if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
@@ -1680,8 +1683,6 @@ int main(int argc, char **argv)
 
 									// This chunk of code prevents ALT-ENTER from causing ImGui to enter the menu bar.
 									// TODO: Remove this when Dear ImGui stops being dumb.
-									static bool anything_pressed_during_alt;
-
 									if (event.key.keysym.scancode == SDL_SCANCODE_LALT)
 									{
 										if (pressed)
@@ -1693,10 +1694,6 @@ int main(int argc, char **argv)
 											if (anything_pressed_during_alt)
 												give_event_to_imgui = false;
 										}
-									}
-									else
-									{
-										anything_pressed_during_alt |= pressed;
 									}
 
 									const int delta = pressed ? 1 : -1;
