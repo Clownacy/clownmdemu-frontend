@@ -273,6 +273,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 		if (vram_texture != NULL)
 		{
+			bool options_changed = false;
+
 			// Handle VRAM viewing options.
 			static int brightness_index;
 			static int palette_line;
@@ -281,20 +283,20 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			const int length_of_palette = length_of_palette_line * 4;
 
 			ImGui::SeparatorText("Brightness");
-			ImGui::RadioButton("Shadow", &brightness_index, length_of_palette * 1);
+			options_changed |= ImGui::RadioButton("Shadow", &brightness_index, length_of_palette * 1);
 			ImGui::SameLine();
-			ImGui::RadioButton("Normal", &brightness_index, length_of_palette * 0);
+			options_changed |= ImGui::RadioButton("Normal", &brightness_index, length_of_palette * 0);
 			ImGui::SameLine();
-			ImGui::RadioButton("Highlight", &brightness_index, length_of_palette * 2);
+			options_changed |= ImGui::RadioButton("Highlight", &brightness_index, length_of_palette * 2);
 
 			ImGui::SeparatorText("Palette Line");
-			ImGui::RadioButton("0", &palette_line, length_of_palette_line * 0);
+			options_changed |= ImGui::RadioButton("0", &palette_line, length_of_palette_line * 0);
 			ImGui::SameLine();
-			ImGui::RadioButton("1", &palette_line, length_of_palette_line * 1);
+			options_changed |= ImGui::RadioButton("1", &palette_line, length_of_palette_line * 1);
 			ImGui::SameLine();
-			ImGui::RadioButton("2", &palette_line, length_of_palette_line * 2);
+			options_changed |= ImGui::RadioButton("2", &palette_line, length_of_palette_line * 2);
 			ImGui::SameLine();
-			ImGui::RadioButton("3", &palette_line, length_of_palette_line * 3);
+			options_changed |= ImGui::RadioButton("3", &palette_line, length_of_palette_line * 3);
 
 			ImGui::SeparatorText("Tiles");
 
@@ -306,7 +308,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 			// Only update the texture if we know that the frame has changed.
 			// This prevents constant texture generation even when the emulator is paused.
-			if (cache_frame_counter != data->frame_counter)
+			if (cache_frame_counter != data->frame_counter || options_changed)
 			{
 				cache_frame_counter = data->frame_counter;
 
