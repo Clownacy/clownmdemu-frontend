@@ -52,10 +52,10 @@ set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
 
 # Link a manifest file that enables Hi-DPI support on Windows
 if(WIN32)
+	target_sources(clownmdemu-frontend PRIVATE "clownmdemu-frontend.rc")
+
 	if (MSVC)
 		target_sources(clownmdemu-frontend PRIVATE "clownmdemu-frontend.manifest")
-	elseif (MINGW)
-		target_sources(clownmdemu-frontend PRIVATE "clownmdemu-frontend.rc")
 	endif()
 endif()
 

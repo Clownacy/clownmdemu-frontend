@@ -1,3 +1,7 @@
 #include "winuser.rh"
 
+IDI_ICON1 ICON "assets/icon.ico"
+
+#ifdef __MINGW32__
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "clownmdemu-frontend.manifest"
+#endif

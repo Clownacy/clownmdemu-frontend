@@ -1,3 +1,5 @@
+![Logo](/assets/logo.png)
+
 # Overview
 
 This is clownmdemu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
@@ -6,8 +8,8 @@ It is currently in the very early stages of development: it can run some games,
 but many standard features of the Mega Drive are unemulated (see
 `clownmdemu-frontend-common/clownmdemu/TODO.md` for more information).
 
-![Minimal](/screenshot-minimal.png)
-![Debug](/screenshot-debug.png)
+![Minimal](/assets/screenshot-minimal.png)
+![Debug](/assets/screenshot-debug.png)
 
 The repository contains clownmdemu's standalone frontend; it is written in
 C++11 and leverages the SDL2, Dear ImGui, FreeType, and inih libraries. On
