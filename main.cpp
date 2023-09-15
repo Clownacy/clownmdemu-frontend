@@ -1714,21 +1714,21 @@ int main(int argc, char **argv)
 										#undef DO_KEY
 
 										case INPUT_BINDING_FAST_FORWARD:
-											if (emulator_has_focus)
-											{
-												// Toggle fast-forward
-												keyboard_input.fast_forward += delta;
+											// Toggle fast-forward
+											keyboard_input.fast_forward += delta;
+
+											if (emulator_has_focus || !pressed)
 												UpdateFastForwardStatus();
-											}
+
 											break;
 
 										#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 										case INPUT_BINDING_REWIND:
-											if (emulator_has_focus)
-											{
-												keyboard_input.rewind += delta;
+											keyboard_input.rewind += delta;
+
+											if (emulator_has_focus || !pressed)
 												UpdateRewindStatus();
-											}
+
 											break;
 										#endif
 
