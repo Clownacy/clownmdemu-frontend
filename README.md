@@ -46,7 +46,8 @@ Controller:
 - RSB   = Toggle menu controls (see http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
 Hotkeys:
-- Space = Fast-forward
+- Pause = Pause
+- Space = Fast-forward (unpaused), frame-advance (paused)
 - R     = Rewind
 - Tab   = Soft reset
 - F1    = Toggle which Control Pad the keyboard controls

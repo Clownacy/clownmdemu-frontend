@@ -109,6 +109,7 @@ static char *drag_and_drop_filename;
 
 static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
 static bool emulator_paused;
+static bool emulator_frame_advance;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly ten seconds of rewinding at 60FPS
@@ -1471,11 +1472,13 @@ int main(int argc, char **argv)
 				while (!quit)
 				{
 					const bool emulator_on = rom_buffer != NULL;
-					const bool emulator_running = emulator_on && !emulator_paused && active_file_picker_popup == NULL
+					const bool emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && active_file_picker_popup == NULL
 					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 						&& !(rewind_in_progress && state_rewind_remaining == 0)
 					#endif
 						;
+
+					emulator_frame_advance = false;
 
 				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 					// Handle rewinding.
@@ -1717,8 +1720,11 @@ int main(int argc, char **argv)
 											// Toggle fast-forward
 											keyboard_input.fast_forward += delta;
 
-											if (emulator_has_focus || !pressed)
+											if ((!emulator_paused && emulator_has_focus) || !pressed)
 												UpdateFastForwardStatus();
+
+											if (pressed && emulator_paused)
+												emulator_frame_advance = true;
 
 											break;
 
