@@ -20,9 +20,9 @@
 #include "karla_regular.h"
 
 #include "error.h"
+#include "debug_fm.h"
 #include "debug_m68k.h"
 #include "debug_memory.h"
-#include "debug_fm.h"
 #include "debug_psg.h"
 #include "debug_vdp.h"
 #include "debug_z80.h"
@@ -1442,12 +1442,15 @@ int main(int argc, char **argv)
 				// We are now ready to show the window
 				SDL_ShowWindow(window);
 
+				debug_log.ForceConsoleOutput(false);
+
 				// Manages whether the program exits or not.
 				bool quit = false;
 
 				// Used for tracking when to pop the emulation display out into its own little window.
 				bool pop_out = false;
 
+				bool debug_log_active = false;
 				bool m68k_status = false;
 				bool z80_status = false;
 				bool m68k_ram_viewer = false;
@@ -2166,6 +2169,7 @@ int main(int argc, char **argv)
 
 					const bool show_menu_bar = !fullscreen
 					                        || pop_out
+					                        || debug_log_active
 					                        || m68k_status
 					                        || z80_status
 					                        || m68k_ram_viewer
@@ -2339,6 +2343,12 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Debugging"))
 							{
+								ImGui::MenuItem("Log", NULL, &debug_log_active);
+
+								ImGui::MenuItem("Toggles", NULL, &debugging_toggles_menu);
+
+								ImGui::Separator();
+
 								if (ImGui::BeginMenu("68000"))
 								{
 									ImGui::MenuItem("Registers", NULL, &m68k_status);
@@ -2379,10 +2389,6 @@ int main(int argc, char **argv)
 								ImGui::MenuItem("PSG", NULL, &psg_status);
 
 								ImGui::MenuItem("Other", NULL, &other_status);
-
-								ImGui::Separator();
-
-								ImGui::MenuItem("Toggles", NULL, &debugging_toggles_menu);
 
 								ImGui::EndMenu();
 							}
@@ -2552,6 +2558,9 @@ int main(int argc, char **argv)
 					}
 
 					ImGui::End();
+
+					if (debug_log_active)
+						debug_log.Display(&debug_log_active, monospace_font);
 
 					if (m68k_status)
 						Debug_M68k(&m68k_status, &clownmdemu.state->m68k, monospace_font);
@@ -3165,6 +3174,8 @@ int main(int argc, char **argv)
 					// Finally display the rendered frame to the user.
 					SDL_RenderPresent(renderer);
 				}
+
+				debug_log.ForceConsoleOutput(true);
 
 				SDL_free(rom_buffer);
 

@@ -1,21 +1,23 @@
 #include "error.h"
 
-#include "SDL.h"
+DebugLog debug_log;
+
+// TODO: This whole file is just a shim now: get rid of it.
 
 void InitError(void)
 {
-	SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
+	
 }
 
-void PrintErrorInternal(const char *format, va_list args)
+void PrintErrorInternal(const char *format, std::va_list args)
 {
-	SDL_LogMessageV(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, format, args);
+	debug_log.Log(format, args);
 }
 
 void PrintError(const char *format, ...)
 {
-	va_list args;
+	std::va_list args;
 	va_start(args, format);
-	PrintErrorInternal(format, args);
+	debug_log.Log(format, args);
 	va_end(args);
 }

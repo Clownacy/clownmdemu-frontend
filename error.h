@@ -1,12 +1,16 @@
 #ifndef ERROR_H
 #define ERROR_H
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
+#include "debug_log.h"
+
+extern DebugLog debug_log;
+
 void InitError(void);
-void PrintErrorInternal(const char *format, va_list args);
+void PrintErrorInternal(const char *format, std::va_list args);
 CC_ATTRIBUTE_PRINTF(1, 2) void PrintError(const char *format, ...);
 
 #endif /* ERROR_H */
