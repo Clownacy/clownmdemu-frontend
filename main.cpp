@@ -112,7 +112,7 @@ static bool emulator_paused;
 static bool emulator_frame_advance;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-static EmulationState state_rewind_buffer[60 * 30]; // Roughly 30 seconds of rewinding at 60FPS
+static EmulationState state_rewind_buffer[60 * 10]; // Roughly 30 seconds of rewinding at 60FPS
 static size_t state_rewind_index;
 static size_t state_rewind_remaining;
 #else
