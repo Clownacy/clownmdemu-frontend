@@ -32,7 +32,7 @@ static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata *ti
 	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture)
+static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
@@ -66,8 +66,6 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
-				static unsigned int cache_frame_counter;
-
 				const cc_u16f tile_width = 8;
 				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
@@ -168,21 +166,24 @@ void Debug_WindowPlane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP
 {
 	static int scale;
 	static SDL_Texture *texture;
-	Debug_Plane(open, clownmdemu, data, "Window Plane", scale, clownmdemu->vdp.state->window_address, texture);
+	static unsigned int cache_frame_counter;
+	Debug_Plane(open, clownmdemu, data, "Window Plane", scale, clownmdemu->vdp.state->window_address, texture, cache_frame_counter);
 }
 
 void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
 	static int scale;
 	static SDL_Texture *texture;
-	Debug_Plane(open, clownmdemu, data, "Plane A", scale, clownmdemu->vdp.state->plane_a_address, texture);
+	static unsigned int cache_frame_counter;
+	Debug_Plane(open, clownmdemu, data, "Plane A", scale, clownmdemu->vdp.state->plane_a_address, texture, cache_frame_counter);
 }
 
 void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
 {
 	static int scale;
 	static SDL_Texture *texture;
-	Debug_Plane(open, clownmdemu, data, "Plane B", scale, clownmdemu->vdp.state->plane_b_address, texture);
+	static unsigned int cache_frame_counter;
+	Debug_Plane(open, clownmdemu, data, "Plane B", scale, clownmdemu->vdp.state->plane_b_address, texture, cache_frame_counter);
 }
 
 void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
