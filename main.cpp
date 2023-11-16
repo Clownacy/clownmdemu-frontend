@@ -145,10 +145,10 @@ static bool FileExists(const char *filename)
 	return false;
 }
 
-static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, std::size_t *file_size)
+static void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size)
 {
-	*file_buffer = nullptr;
-	*file_size = 0;
+	file_buffer = nullptr;
+	file_size = 0;
 
 	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
 
@@ -168,17 +168,17 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 		{
 			const std::size_t size = static_cast<std::size_t>(size_s64);
 
-			*file_buffer = static_cast<unsigned char*>(SDL_malloc(size));
+			file_buffer = static_cast<unsigned char*>(SDL_malloc(size));
 
-			if (*file_buffer == nullptr)
+			if (file_buffer == nullptr)
 			{
 				PrintError("Could not allocate memory for file");
 			}
 			else
 			{
-				*file_size = size;
+				file_size = size;
 
-				SDL_RWread(file, *file_buffer, 1, size);
+				SDL_RWread(file, file_buffer, 1, size);
 			}
 		}
 
@@ -647,7 +647,7 @@ static bool LoadCartridgeFileFromFile(const char *path)
 	std::size_t temp_rom_buffer_size;
 
 	// Load ROM to memory.
-	LoadFileToBuffer(path, &temp_rom_buffer, &temp_rom_buffer_size);
+	LoadFileToBuffer(path, temp_rom_buffer, temp_rom_buffer_size);
 
 	if (temp_rom_buffer == nullptr)
 	{
@@ -734,7 +734,7 @@ static bool LoadSaveStateFromFile(const char* const save_state_path)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
-	LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
+	LoadFileToBuffer(save_state_path, file_buffer, file_size);
 
 	bool success = false;
 
@@ -2197,7 +2197,7 @@ int main(int argc, char **argv)
 					{
 						unsigned char *file_buffer;
 						std::size_t file_size;
-						LoadFileToBuffer(drag_and_drop_filename, &file_buffer, &file_size);
+						LoadFileToBuffer(drag_and_drop_filename, file_buffer, file_size);
 
 						if (file_buffer != nullptr)
 						{
@@ -2668,54 +2668,54 @@ int main(int argc, char **argv)
 					ImGui::End();
 
 					if (debug_log_active)
-						debug_log.Display(&debug_log_active, monospace_font);
+						debug_log.Display(debug_log_active, monospace_font);
 
 					if (m68k_status)
-						Debug_M68k(&m68k_status, "Main 68000 Registers", &clownmdemu.state->m68k, monospace_font);
+						Debug_M68k(m68k_status, "Main 68000 Registers", clownmdemu.state->m68k, monospace_font);
 
 					if (mcd_m68k_status)
-						Debug_M68k(&mcd_m68k_status, "Sub 68000 Registers", &clownmdemu.state->mcd_m68k, monospace_font);
+						Debug_M68k(mcd_m68k_status, "Sub 68000 Registers", clownmdemu.state->mcd_m68k, monospace_font);
 
 					if (z80_status)
-						Debug_Z80(&z80_status, &clownmdemu.state->z80, monospace_font);
+						Debug_Z80(z80_status, clownmdemu.state->z80, monospace_font);
 
 					if (m68k_ram_viewer)
-						Debug_Memory(&m68k_ram_viewer, monospace_font, "WORK-RAM", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
+						Debug_Memory(m68k_ram_viewer, monospace_font, "WORK-RAM", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
 
 					if (z80_ram_viewer)
-						Debug_Memory(&z80_ram_viewer, monospace_font, "SOUND-RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
+						Debug_Memory(z80_ram_viewer, monospace_font, "SOUND-RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
 
 					if (prg_ram_viewer)
-						Debug_Memory(&prg_ram_viewer, monospace_font, "PRG-RAM", clownmdemu.state->prg_ram, CC_COUNT_OF(clownmdemu.state->prg_ram));
+						Debug_Memory(prg_ram_viewer, monospace_font, "PRG-RAM", clownmdemu.state->prg_ram, CC_COUNT_OF(clownmdemu.state->prg_ram));
 
 					if (word_ram_viewer)
-						Debug_Memory(&word_ram_viewer, monospace_font, "WORD-RAM", clownmdemu.state->word_ram, CC_COUNT_OF(clownmdemu.state->word_ram));
+						Debug_Memory(word_ram_viewer, monospace_font, "WORD-RAM", clownmdemu.state->word_ram, CC_COUNT_OF(clownmdemu.state->word_ram));
 
 					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, window, dpi_scale, frame_counter};
 
 					if (vdp_registers)
-						Debug_VDP(&vdp_registers, &clownmdemu, monospace_font);
+						Debug_VDP(vdp_registers, clownmdemu, monospace_font);
 
 					if (window_plane_viewer)
-						Debug_WindowPlane(&window_plane_viewer, &clownmdemu, &debug_vdp_data);
+						Debug_WindowPlane(window_plane_viewer, clownmdemu, debug_vdp_data);
 
 					if (plane_a_viewer)
-						Debug_PlaneA(&plane_a_viewer, &clownmdemu, &debug_vdp_data);
+						Debug_PlaneA(plane_a_viewer, clownmdemu, debug_vdp_data);
 
 					if (plane_b_viewer)
-						Debug_PlaneB(&plane_b_viewer, &clownmdemu, &debug_vdp_data);
+						Debug_PlaneB(plane_b_viewer, clownmdemu, debug_vdp_data);
 
 					if (vram_viewer)
-						Debug_VRAM(&vram_viewer, &clownmdemu, &debug_vdp_data);
+						Debug_VRAM(vram_viewer, clownmdemu, debug_vdp_data);
 
 					if (cram_viewer)
-						Debug_CRAM(&cram_viewer, &clownmdemu, &debug_vdp_data, monospace_font);
+						Debug_CRAM(cram_viewer, clownmdemu, debug_vdp_data, monospace_font);
 
 					if (fm_status)
-						Debug_FM(&fm_status, &clownmdemu, monospace_font);
+						Debug_FM(fm_status, clownmdemu, monospace_font);
 
 					if (psg_status)
-						Debug_PSG(&psg_status, &clownmdemu, monospace_font);
+						Debug_PSG(psg_status, clownmdemu, monospace_font);
 
 					if (other_status)
 					{

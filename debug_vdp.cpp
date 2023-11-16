@@ -22,20 +22,20 @@ typedef struct TileMetadata
 void OpenFileDialog(char const* const title, const std::function<bool (const char *path)> callback);
 void SaveFileDialog(char const* const title, const std::function<bool (const char *path)> callback);
 
-static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata *tile_metadata)
+static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &tile_metadata)
 {
-	tile_metadata->tile_index = packed_tile_metadata & 0x7FF;
-	tile_metadata->palette_line = (packed_tile_metadata >> 13) & 3;
-	tile_metadata->x_flip = (packed_tile_metadata & 0x800) != 0;
-	tile_metadata->y_flip = (packed_tile_metadata & 0x1000) != 0;
-	tile_metadata->priority = (packed_tile_metadata & 0x8000) != 0;
+	tile_metadata.tile_index = packed_tile_metadata & 0x7FF;
+	tile_metadata.palette_line = (packed_tile_metadata >> 13) & 3;
+	tile_metadata.x_flip = (packed_tile_metadata & 0x800) != 0;
+	tile_metadata.y_flip = (packed_tile_metadata & 0x1000) != 0;
+	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
+static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
-	if (ImGui::Begin(name, open))
+	if (ImGui::Begin(name, &open))
 	{
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
@@ -43,7 +43,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 		if (plane_texture == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_texture = SDL_CreateTexture(data->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
 			if (plane_texture == nullptr)
 			{
@@ -66,15 +66,15 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
 				const cc_u16f tile_width = 8;
-				const cc_u16f tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
+				const cc_u16f tile_height = clownmdemu.state->vdp.double_resolution_enabled ? 16 : 8;
 
 				// Only update the texture if we know that the frame has changed.
 				// This prevents constant texture generation even when the emulator is paused.
-				if (cache_frame_counter != data->frame_counter)
+				if (cache_frame_counter != data.frame_counter)
 				{
-					cache_frame_counter = data->frame_counter;
+					cache_frame_counter = data.frame_counter;
 
-					const cc_u8l *plane = &clownmdemu->state->vdp.vram[plane_address];
+					const cc_u8l *plane = &clownmdemu.state->vdp.vram[plane_address];
 
 					// Lock texture so that we can write into it.
 					Uint8 *plane_texture_pixels;
@@ -84,22 +84,22 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					{
 						const cc_u8l *plane_pointer = plane;
 
-						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu->state->vdp.plane_height; ++tile_y_in_plane)
+						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu.state->vdp.plane_height; ++tile_y_in_plane)
 						{
-							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu->state->vdp.plane_width; ++tile_x_in_plane)
+							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu.state->vdp.plane_width; ++tile_x_in_plane)
 							{
 								TileMetadata tile_metadata;
-								DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], &tile_metadata);
+								DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], tile_metadata);
 								plane_pointer += 2;
 
 								const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 								const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu->state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu.state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
-								const Uint32 *palette_line = &data->colours[palette_index];
+								const Uint32 *palette_line = &data.colours[palette_index];
 
-								const cc_u8l *tile_pointer = &clownmdemu->state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
+								const cc_u8l *tile_pointer = &clownmdemu.state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
 
 								for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 								{
@@ -124,8 +124,8 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					}
 				}
 
-				const float plane_width_in_pixels = static_cast<float>(clownmdemu->state->vdp.plane_width * tile_width);
-				const float plane_height_in_pixels = static_cast<float>(clownmdemu->state->vdp.plane_height * tile_height);
+				const float plane_width_in_pixels = static_cast<float>(clownmdemu.state->vdp.plane_width * tile_width);
+				const float plane_height_in_pixels = static_cast<float>(clownmdemu.state->vdp.plane_height * tile_height);
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
@@ -140,13 +140,13 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_scale / tile_width);
 					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const cc_u8l *plane_pointer = &clownmdemu->state->vdp.vram[plane_address + (tile_y * clownmdemu->state->vdp.plane_width + tile_x) * 2];
-					const cc_u8f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
+					const cc_u8l *plane_pointer = &clownmdemu.state->vdp.vram[plane_address + (tile_y * clownmdemu.state->vdp.plane_width + tile_x) * 2];
+					const cc_u16f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
 
 					TileMetadata tile_metadata;
-					DecomposeTileMetadata(packed_tile_metadata, &tile_metadata);
+					DecomposeTileMetadata(packed_tile_metadata, tile_metadata);
 
-					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * data->dpi_scale), tile_height * SDL_roundf(9.0f * data->dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
+					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * data.dpi_scale), tile_height * SDL_roundf(9.0f * data.dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -161,59 +161,59 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 	ImGui::End();
 }
 
-void Debug_WindowPlane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
+void Debug_WindowPlane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, clownmdemu, data, "Window Plane", scale, clownmdemu->vdp.state->window_address, texture, cache_frame_counter);
+	Debug_Plane(open, clownmdemu, data, "Window Plane", scale, clownmdemu.vdp.state->window_address, texture, cache_frame_counter);
 }
 
-void Debug_PlaneA(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
+void Debug_PlaneA(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, clownmdemu, data, "Plane A", scale, clownmdemu->vdp.state->plane_a_address, texture, cache_frame_counter);
+	Debug_Plane(open, clownmdemu, data, "Plane A", scale, clownmdemu.vdp.state->plane_a_address, texture, cache_frame_counter);
 }
 
-void Debug_PlaneB(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
+void Debug_PlaneB(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, clownmdemu, data, "Plane B", scale, clownmdemu->vdp.state->plane_b_address, texture, cache_frame_counter);
+	Debug_Plane(open, clownmdemu, data, "Plane B", scale, clownmdemu.vdp.state->plane_b_address, texture, cache_frame_counter);
 }
 
-void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data)
+void Debug_VRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
-	const float tile_scale = SDL_roundf(3.0f * data->dpi_scale);
-	const float tile_spacing = SDL_roundf(2.0f * data->dpi_scale);
+	const float tile_scale = SDL_roundf(3.0f * data.dpi_scale);
+	const float tile_spacing = SDL_roundf(2.0f * data.dpi_scale);
 
 	// Don't let the window become too small, or we can get division by zero errors later on.
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data->dpi_scale, 100.0f * data->dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data.dpi_scale, 100.0f * data.dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
 	// Give the window a default size of 16 tiles wide.
-	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * data->dpi_scale;
+	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * data.dpi_scale;
 	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
 
-	if (ImGui::Begin("VRAM", open))
+	if (ImGui::Begin("VRAM", &open))
 	{
 		static SDL_Texture *vram_texture;
 		static std::size_t vram_texture_width;
 		static std::size_t vram_texture_height;
 
 		const std::size_t tile_width = 8;
-		const std::size_t tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
+		const std::size_t tile_height = clownmdemu.state->vdp.double_resolution_enabled ? 16 : 8;
 
-		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2 / (tile_width * tile_height);
+		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu.state->vdp.vram) * 2 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
 		if (vram_texture == nullptr)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2;
+			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu.state->vdp.vram) * 2;
 			const std::size_t vram_texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(size_of_vram_in_pixels))));
 			const std::size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
 			const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
@@ -223,7 +223,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			vram_texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_texture = SDL_CreateTexture(data->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
+			vram_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
 
 			if (vram_texture == nullptr)
 			{
@@ -250,14 +250,14 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				if (file == nullptr)
 				{
 					PrintError("Could not open save state file for writing");
-					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data->window);
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data.window);
 				}
 				else
 				{
-					if (SDL_RWwrite(file, clownmdemu->vdp.state->vram, sizeof(clownmdemu->vdp.state->vram), 1) != 1)
+					if (SDL_RWwrite(file, clownmdemu.vdp.state->vram, sizeof(clownmdemu.vdp.state->vram), 1) != 1)
 					{
 						PrintError("Could not write save state file");
-						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data->window);
+						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data.window);
 					}
 					else
 					{
@@ -308,12 +308,12 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 			// Only update the texture if we know that the frame has changed.
 			// This prevents constant texture generation even when the emulator is paused.
-			if (cache_frame_counter != data->frame_counter || options_changed)
+			if (cache_frame_counter != data.frame_counter || options_changed)
 			{
-				cache_frame_counter = data->frame_counter;
+				cache_frame_counter = data.frame_counter;
 
 				// Select the correct palette line.
-				const Uint32 *selected_palette = &data->colours[brightness_index + palette_line];
+				const Uint32 *selected_palette = &data.colours[brightness_index + palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
@@ -322,7 +322,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				if (SDL_LockTexture(vram_texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
-					const cc_u8l *vram_pointer = clownmdemu->state->vdp.vram;
+					const cc_u8l *vram_pointer = clownmdemu.state->vdp.vram;
 
 					// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 					// instead of left-to-right then top-to-bottom.
@@ -441,9 +441,9 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 	ImGui::End();
 }
 
-void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *data, ImFont *monospace_font)
+void Debug_CRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data, ImFont *monospace_font)
 {
-	if (ImGui::Begin("CRAM", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		static int brightness = 1;
 
@@ -463,7 +463,7 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 		{
 			ImGui::PushID(j);
 
-			const cc_u16f value = clownmdemu->state->vdp.cram[j];
+			const cc_u16f value = clownmdemu.state->vdp.cram[j];
 			const cc_u16f blue = (value >> 9) & 7;
 			const cc_u16f green = (value >> 5) & 7;
 			const cc_u16f red = (value >> 1) & 7;
@@ -495,7 +495,7 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				ImGui::SameLine();
 			}
 
-			ImGui::ColorButton("", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * data->dpi_scale, 20.0f * data->dpi_scale));
+			ImGui::ColorButton("", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * data.dpi_scale, 20.0f * data.dpi_scale));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -520,11 +520,11 @@ void Debug_CRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 	ImGui::End();
 }
 
-void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
+void Debug_VDP(bool &open, const ClownMDEmu &clownmdemu, ImFont *monospace_font)
 {
-	if (ImGui::Begin("VDP Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const VDP_State* const vdp = &clownmdemu->state->vdp;
+		const VDP_State &vdp = clownmdemu.state->vdp;
 
 		ImGui::SeparatorText("Miscellaneous");
 
@@ -538,116 +538,116 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			ImGui::TextUnformatted("Sprite Table Address");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->sprite_table_address);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.sprite_table_address);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Address");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->window_address);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.window_address);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Plane A Address");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->plane_a_address);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_a_address);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Plane B Address");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->plane_b_address);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_b_address);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Horizontal Scroll Table Address");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->hscroll_address);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.hscroll_address);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Horizontal Boundary");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST8, vdp->window_horizontal_boundary);
+			ImGui::Text("%" CC_PRIdLEAST8, vdp.window_horizontal_boundary);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Horizontal Alignment");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->window_aligned_right ? "Right" : "Left");
+			ImGui::TextUnformatted(vdp.window_aligned_right ? "Right" : "Left");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Vertical Boundary");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST8, vdp->window_vertical_boundary);
+			ImGui::Text("%" CC_PRIdLEAST8, vdp.window_vertical_boundary);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Vertical Alignment");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->window_aligned_bottom ? "Bottom" : "Top");
+			ImGui::TextUnformatted(vdp.window_aligned_bottom ? "Bottom" : "Top");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Plane Width");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp->plane_width);
+			ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_width);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Plane Height");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp->plane_height);
+			ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_height);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Display Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->display_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.display_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("V-Int Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->v_int_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.v_int_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("H-Int Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->h_int_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.h_int_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("H40 Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->h40_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.h40_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("V30 Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->v30_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.v30_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Shadow/Highlight Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->shadow_highlight_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.shadow_highlight_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Double-Resolution Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->double_resolution_enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.double_resolution_enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Background Colour");
 			ImGui::TableNextColumn();
-			ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, static_cast<cc_u8f>(vdp->background_colour / 16), static_cast<cc_u8f>(vdp->background_colour % 16));
+			ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, static_cast<cc_u8f>(vdp.background_colour / 16), static_cast<cc_u8f>(vdp.background_colour % 16));
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("H-Int Interval");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST8, vdp->h_int_interval);
+			ImGui::Text("%" CC_PRIdLEAST8, vdp.h_int_interval);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -658,7 +658,7 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				"1-Tile Rows",
 				"1-Pixel Rows"
 			};
-			ImGui::TextUnformatted(horizontal_scrolling_modes[vdp->hscroll_mode]);
+			ImGui::TextUnformatted(horizontal_scrolling_modes[vdp.hscroll_mode]);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Vertical Scrolling Mode");
@@ -667,7 +667,7 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				"Whole Screen",
 				"2-Tile Columns"
 			};
-			ImGui::TextUnformatted(vertical_scrolling_modes[vdp->vscroll_mode]);
+			ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
 
 			ImGui::EndTable();
 		}
@@ -683,12 +683,12 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Enabled");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->dma.enabled ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.dma.enabled ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Pending");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->dma.pending ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.dma.pending ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Mode");
@@ -698,20 +698,20 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				"VRAM Fill",
 				"VRAM to VRAM"
 			};
-			ImGui::TextUnformatted(dma_modes[vdp->dma.mode]);
+			ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Source Address");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%06" CC_PRIXFAST32, static_cast<cc_u32f>((static_cast<cc_u32f>(vdp->dma.source_address_high) << 16) | vdp->dma.source_address_low));
+			ImGui::Text("0x%06" CC_PRIXFAST32, static_cast<cc_u32f>((static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low));
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Length");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->dma.length);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.dma.length);
 			ImGui::PopFont();
 
 			ImGui::EndTable();
@@ -728,13 +728,13 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Write Pending");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->access.write_pending ? "Yes" : "No");
+			ImGui::TextUnformatted(vdp.access.write_pending ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Cached Write");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->access.cached_write);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.cached_write);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -745,25 +745,25 @@ void Debug_VDP(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 				"CRAM",
 				"VSRAM"
 			};
-			ImGui::TextUnformatted(rams[vdp->access.selected_buffer]);
+			ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Mode");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp->access.read_mode ? "Read" : "Write");
+			ImGui::TextUnformatted(vdp.access.read_mode ? "Read" : "Write");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Index");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->access.index);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.index);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Increment");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp->access.increment);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.increment);
 			ImGui::PopFont();
 
 			ImGui::EndTable();

@@ -25,9 +25,9 @@ void DebugLog::Log(const char* const message, std::va_list args)
 	}
 }
 
-void DebugLog::Display(bool* const open, ImFont* const monospace_font)
+void DebugLog::Display(bool &open, ImFont* const monospace_font)
 {
-	if (ImGui::Begin("Log", open))
+	if (ImGui::Begin("Log", &open))
 	{
 		ImGui::Checkbox("Enable Logging", &logging_enabled);
 		ImGui::SameLine();
