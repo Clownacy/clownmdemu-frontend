@@ -126,6 +126,9 @@ static EmulationState quick_save_state;
 static unsigned char *rom_buffer;
 static size_t rom_buffer_size;
 
+static SDL_RWops *cd_file;
+static bool sector_size_2352;
+
 static ClownMDEmu_Configuration clownmdemu_configuration;
 static ClownMDEmu_Constant clownmdemu_constant;
 static ClownMDEmu clownmdemu;
@@ -553,8 +556,53 @@ static void PSGAudioCallback(const void *user_data, size_t total_samples, void (
 	generate_psg_audio(&clownmdemu, Mixer_AllocatePSGSamples(&mixer, total_samples), total_samples);
 }
 
+static void CDSeekCallback(const void *user_data, cc_u32f sector_index)
+{
+	(void)user_data;
+
+	if (cd_file != NULL)
+		SDL_RWseek(cd_file, sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
+}
+
+static const cc_u8l* CDSectorReadCallback(const void *user_data)
+{
+	static cc_u8l sector_buffer[2048];
+
+	(void)user_data;
+
+	if (cd_file != NULL)
+		SDL_RWread(cd_file, sector_buffer, 2048, 1);
+
+	if (sector_size_2352)
+		SDL_RWseek(cd_file, 2352 - 2048, SEEK_CUR);
+
+	return sector_buffer;
+}
+
 // Construct our big list of callbacks for clownmdemu.
-static ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback};
+static ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
+
+static bool IsCartridgeFileLoaded(void)
+{
+	return rom_buffer != NULL;
+}
+
+static bool IsCDFileLoaded(void)
+{
+	return cd_file != NULL;
+}
+
+static void SoftResetConsole(void)
+{
+	ClownMDEmu_Reset(&clownmdemu, &callbacks, !IsCartridgeFileLoaded());
+}
+
+static void HardResetConsole(void)
+{
+	ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
+	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
+	SoftResetConsole();
+}
 
 static void AddToRecentSoftware(const char* const path, const bool add_to_end)
 {
@@ -596,7 +644,7 @@ static void AddToRecentSoftware(const char* const path, const bool add_to_end)
 	}
 }
 
-static void OpenSoftwareFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
+static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
 {
 	quick_save_exists = false;
 
@@ -612,12 +660,10 @@ static void OpenSoftwareFromMemory(unsigned char *rom_buffer_parameter, size_t r
 #endif
 	emulation_state = &state_rewind_buffer[0];
 
-	ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
-	ClownMDEmu_Reset(&clownmdemu, callbacks);
+	HardResetConsole();
 }
 
-static bool OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *callbacks)
+static bool LoadCartridgeFileFromFile(const char *path, const ClownMDEmu_Callbacks *callbacks)
 {
 	unsigned char *temp_rom_buffer;
 	size_t temp_rom_buffer_size;
@@ -635,7 +681,7 @@ static bool OpenSoftwareFromFile(const char *path, const ClownMDEmu_Callbacks *c
 	{
 		AddToRecentSoftware(path, false);
 
-		OpenSoftwareFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
+		LoadCartridgeFileFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
 		return true;
 	}
 }
@@ -1435,9 +1481,9 @@ int main(int argc, char **argv)
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
-					OpenSoftwareFromFile(argv[1], &callbacks);
+					LoadCartridgeFileFromFile(argv[1], &callbacks);
 				else
-					OpenSoftwareFromMemory(NULL, 0, &callbacks);
+					LoadCartridgeFileFromMemory(NULL, 0, &callbacks);
 
 				// We are now ready to show the window
 				SDL_ShowWindow(window);
@@ -1452,9 +1498,12 @@ int main(int argc, char **argv)
 
 				bool debug_log_active = false;
 				bool m68k_status = false;
+				bool mcd_m68k_status = false;
 				bool z80_status = false;
 				bool m68k_ram_viewer = false;
 				bool z80_ram_viewer = false;
+				bool word_ram_viewer = false;
+				bool prg_ram_viewer = false;
 				bool vdp_registers = false;
 				bool window_plane_viewer = false;
 				bool plane_a_viewer = false;
@@ -1474,7 +1523,7 @@ int main(int argc, char **argv)
 
 				while (!quit)
 				{
-					const bool emulator_on = rom_buffer != NULL;
+					const bool emulator_on = IsCartridgeFileLoaded() || IsCDFileLoaded();
 					const bool emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && active_file_picker_popup == NULL
 					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 						&& !(rewind_in_progress && state_rewind_remaining == 0)
@@ -1640,10 +1689,8 @@ int main(int argc, char **argv)
 
 										case INPUT_BINDING_RESET:
 											// Soft-reset console
-											ClownMDEmu_Reset(&clownmdemu, &callbacks);
-
+											SoftResetConsole();
 											emulator_paused = false;
-
 											break;
 
 										case INPUT_BINDING_QUICK_SAVE_STATE:
@@ -2133,7 +2180,7 @@ int main(int argc, char **argv)
 						{
 							if (file_size >= sizeof(save_state_magic) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
 							{
-								if (rom_buffer != NULL)
+								if (emulator_on)
 									LoadSaveStateFromMemory(file_buffer, file_size);
 
 								SDL_free(file_buffer);
@@ -2141,7 +2188,7 @@ int main(int argc, char **argv)
 							else
 							{
 								AddToRecentSoftware(drag_and_drop_filename, false);
-								OpenSoftwareFromMemory(file_buffer, file_size, &callbacks);
+								LoadCartridgeFileFromMemory(file_buffer, file_size, &callbacks);
 								emulator_paused = false;
 							}
 						}
@@ -2171,9 +2218,12 @@ int main(int argc, char **argv)
 					                        || pop_out
 					                        || debug_log_active
 					                        || m68k_status
+					                        || mcd_m68k_status
 					                        || z80_status
 					                        || m68k_ram_viewer
 					                        || z80_ram_viewer
+					                        || prg_ram_viewer
+					                        || word_ram_viewer
 					                        || vdp_registers
 					                        || window_plane_viewer
 					                        || plane_a_viewer
@@ -2212,13 +2262,13 @@ int main(int argc, char **argv)
 					{
 						if (show_menu_bar && ImGui::BeginMenuBar())
 						{
-							if (ImGui::BeginMenu("Console"))
+							if (ImGui::BeginMenu("Software"))
 							{
-								if (ImGui::MenuItem("Open Software..."))
+								if (ImGui::MenuItem("Load Cartridge File..."))
 								{
-									OpenFileDialog("Open Software", [](const char* const path)
+									OpenFileDialog("Load Cartridge File", [](const char* const path)
 									{
-										if (OpenSoftwareFromFile(path, &callbacks))
+										if (LoadCartridgeFileFromFile(path, &callbacks))
 										{
 											emulator_paused = false;
 											return true;
@@ -2230,11 +2280,58 @@ int main(int argc, char **argv)
 									});
 								}
 
-								if (ImGui::MenuItem("Close Software", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Unload Cartridge File", NULL, false, IsCartridgeFileLoaded()))
 								{
 									SDL_free(rom_buffer);
 									rom_buffer = NULL;
 									rom_buffer_size = 0;
+
+									if (IsCDFileLoaded())
+										HardResetConsole();
+
+									emulator_paused = false;
+								}
+
+								ImGui::Separator();
+
+								if (ImGui::MenuItem("Load CD File..."))
+								{
+									OpenFileDialog("Load CD File", [](const char* const path)
+									{
+										cd_file = SDL_RWFromFile(path, "rb");
+
+										if (cd_file != NULL)
+										{
+											// Detect if the sector size is 2048 bytes or 2352 bytes.
+											sector_size_2352 = false;
+
+											unsigned char buffer[0x10];
+											if (SDL_RWread(cd_file, buffer, sizeof(buffer), 1) == 1)
+											{
+												static const unsigned char sector_header[0x10] = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
+
+												if (SDL_memcmp(buffer, sector_header, sizeof(sector_header)) == 0)
+													sector_size_2352 = true;
+											}
+
+											HardResetConsole();
+											emulator_paused = false;
+											return true;
+										}
+										else
+										{
+											return false;
+										}
+									});
+								}
+
+								if (ImGui::MenuItem("Unload CD File", NULL, false, IsCDFileLoaded()))
+								{
+									SDL_RWclose(cd_file);
+									cd_file = NULL;
+
+									if (IsCartridgeFileLoaded())
+										HardResetConsole();
 
 									emulator_paused = false;
 								}
@@ -2245,9 +2342,7 @@ int main(int argc, char **argv)
 
 								if (ImGui::MenuItem("Reset", NULL, false, emulator_on))
 								{
-									// Soft-reset console
-									ClownMDEmu_Reset(&clownmdemu, &callbacks);
-
+									SoftResetConsole();
 									emulator_paused = false;
 								}
 
@@ -2273,7 +2368,7 @@ int main(int argc, char **argv)
 									#endif
 
 										if (ImGui::MenuItem(filename))
-											if (OpenSoftwareFromFile(recent_software->path, &callbacks))
+											if (LoadCartridgeFileFromFile(recent_software->path, &callbacks))
 												emulator_paused = false;
 
 										// Show the full path as a tooltip.
@@ -2349,38 +2444,32 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								if (ImGui::BeginMenu("68000"))
+								if (ImGui::BeginMenu("CPU Registers"))
 								{
-									ImGui::MenuItem("Registers", NULL, &m68k_status);
-									ImGui::MenuItem("RAM", NULL, &m68k_ram_viewer);
-
+									ImGui::MenuItem("Main 68000", NULL, &m68k_status);
+									ImGui::MenuItem("Sub 68000", NULL, &mcd_m68k_status);
+									ImGui::MenuItem("Z80", NULL, &z80_status);
 									ImGui::EndMenu();
 								}
 
-								if (ImGui::BeginMenu("Z80"))
+								if (ImGui::BeginMenu("CPU RAM"))
 								{
-									ImGui::MenuItem("Registers", NULL, &z80_status);
-									ImGui::MenuItem("RAM", NULL, &z80_ram_viewer);
-
+									ImGui::MenuItem("WORK-RAM", NULL, &m68k_ram_viewer);
+									ImGui::MenuItem("PRG-RAM", NULL, &prg_ram_viewer);
+									ImGui::MenuItem("WORD-RAM", NULL, &word_ram_viewer);
+									ImGui::MenuItem("SOUND-RAM", NULL, &z80_ram_viewer);
 									ImGui::EndMenu();
 								}
 
 								if (ImGui::BeginMenu("VDP"))
 								{
 									ImGui::MenuItem("Registers", NULL, &vdp_registers);
-
 									ImGui::SeparatorText("Visualisers");
-
 									ImGui::MenuItem("Window Plane", NULL, &window_plane_viewer);
-
 									ImGui::MenuItem("Plane A", NULL, &plane_a_viewer);
-
 									ImGui::MenuItem("Plane B", NULL, &plane_b_viewer);
-
 									ImGui::MenuItem("VRAM", NULL, &vram_viewer);
-
 									ImGui::MenuItem("CRAM", NULL, &cram_viewer);
-
 									ImGui::EndMenu();
 								}
 
@@ -2563,16 +2652,25 @@ int main(int argc, char **argv)
 						debug_log.Display(&debug_log_active, monospace_font);
 
 					if (m68k_status)
-						Debug_M68k(&m68k_status, &clownmdemu.state->m68k, monospace_font);
+						Debug_M68k(&m68k_status, "Main 68000 Registers", &clownmdemu.state->m68k, monospace_font);
+
+					if (mcd_m68k_status)
+						Debug_M68k(&mcd_m68k_status, "Sub 68000 Registers", &clownmdemu.state->mcd_m68k, monospace_font);
 
 					if (z80_status)
 						Debug_Z80(&z80_status, &clownmdemu.state->z80, monospace_font);
 
 					if (m68k_ram_viewer)
-						Debug_Memory(&m68k_ram_viewer, monospace_font, "68000 RAM", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
+						Debug_Memory(&m68k_ram_viewer, monospace_font, "WORK-RAM", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
 
 					if (z80_ram_viewer)
-						Debug_Memory(&z80_ram_viewer, monospace_font, "Z80 RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
+						Debug_Memory(&z80_ram_viewer, monospace_font, "SOUND-RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
+
+					if (prg_ram_viewer)
+						Debug_Memory(&prg_ram_viewer, monospace_font, "PRG-RAM", clownmdemu.state->prg_ram, CC_COUNT_OF(clownmdemu.state->prg_ram));
+
+					if (word_ram_viewer)
+						Debug_Memory(&word_ram_viewer, monospace_font, "WORD-RAM", clownmdemu.state->word_ram, CC_COUNT_OF(clownmdemu.state->word_ram));
 
 					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, window, dpi_scale, frame_counter};
 
@@ -2606,6 +2704,8 @@ int main(int argc, char **argv)
 						{
 							if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
 							{
+								cc_u8f i;
+
 								ImGui::TableSetupColumn("Property");
 								ImGui::TableSetupColumn("Value");
 								ImGui::TableHeadersRow();
@@ -2618,7 +2718,7 @@ int main(int argc, char **argv)
 								ImGui::PopFont();
 
 								ImGui::TableNextColumn();
-								ImGui::TextUnformatted("68000 Has Z80 Bus");
+								ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
 								ImGui::TableNextColumn();
 								ImGui::TextUnformatted(clownmdemu.state->m68k_has_z80_bus ? "Yes" : "No");
 
@@ -2626,6 +2726,76 @@ int main(int argc, char **argv)
 								ImGui::TextUnformatted("Z80 Reset");
 								ImGui::TableNextColumn();
 								ImGui::TextUnformatted(clownmdemu.state->z80_reset ? "Yes" : "No");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->m68k_has_mcd_m68k_bus ? "Yes" : "No");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Sub 68000 Reset");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->mcd_m68k_reset ? "Yes" : "No");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("PRG-RAM Bank");
+								ImGui::TableNextColumn();
+								ImGui::PushFont(monospace_font);
+								ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu.state->prg_ram_bank * 0x20000, (clownmdemu.state->prg_ram_bank + 1) * 0x20000 - 1);
+								ImGui::PopFont();
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("WORD-RAM Mode");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->word_ram_1m_mode ? "1M" : "2M");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("DMNA Bit");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->word_ram_dmna ? "Set" : "Clear");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("RET Bit");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->word_ram_ret ? "Set" : "Clear");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("Boot Mode");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->cd_boot ? "CD" : "Cartridge");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("68000 Communication Flag");
+								ImGui::TableNextColumn();
+								ImGui::PushFont(monospace_font);
+								ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu.state->mcd_communication_flag);
+								ImGui::PopFont();
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("68000 Communication Command");
+								ImGui::TableNextColumn();
+								ImGui::PushFont(monospace_font);
+								for (i = 0; i < CC_COUNT_OF(clownmdemu.state->mcd_communication_command); i += 2)
+									ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu.state->mcd_communication_command[i + 0], clownmdemu.state->mcd_communication_command[i + 1]);
+								ImGui::PopFont();
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("68000 Communication Status");
+								ImGui::TableNextColumn();
+								ImGui::PushFont(monospace_font);
+								for (i = 0; i < CC_COUNT_OF(clownmdemu.state->mcd_communication_status); i += 2)
+									ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu.state->mcd_communication_status[i + 0], clownmdemu.state->mcd_communication_status[i + 1]);
+								ImGui::PopFont();
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("SUB-CPU Waiting for V-Int");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->mcd_waiting_for_vint ? "True" : "False");
+
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted("SUB-CPU V-Int Enabled");
+								ImGui::TableNextColumn();
+								ImGui::TextUnformatted(clownmdemu.state->mcd_vint_enabled ? "True" : "False");
 
 								ImGui::EndTable();
 							}
@@ -3178,6 +3348,9 @@ int main(int argc, char **argv)
 				debug_log.ForceConsoleOutput(true);
 
 				SDL_free(rom_buffer);
+
+				if (cd_file != NULL)
+					SDL_RWclose(cd_file);
 
 				DeinitialiseAudio();
 

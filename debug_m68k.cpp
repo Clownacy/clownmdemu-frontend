@@ -4,9 +4,9 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_M68k(bool *open, Clown68000_State *m68k, ImFont *monospace_font)
+void Debug_M68k(bool *open, const char* const name, Clown68000_State *m68k, ImFont *monospace_font)
 {
-	if (ImGui::Begin("68000 Registers", open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin(name, open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::PushFont(monospace_font);
 
