@@ -646,7 +646,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 	}
 }
 
-static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter, const ClownMDEmu_Callbacks *callbacks)
+static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter)
 {
 	quick_save_exists = false;
 
@@ -665,7 +665,7 @@ static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, siz
 	HardResetConsole();
 }
 
-static bool LoadCartridgeFileFromFile(const char *path, const ClownMDEmu_Callbacks *callbacks)
+static bool LoadCartridgeFileFromFile(const char *path)
 {
 	unsigned char *temp_rom_buffer;
 	size_t temp_rom_buffer_size;
@@ -683,7 +683,7 @@ static bool LoadCartridgeFileFromFile(const char *path, const ClownMDEmu_Callbac
 	{
 		AddToRecentSoftware(path, false, false);
 
-		LoadCartridgeFileFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
+		LoadCartridgeFileFromMemory(temp_rom_buffer, temp_rom_buffer_size);
 		return true;
 	}
 }
@@ -1529,9 +1529,9 @@ int main(int argc, char **argv)
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
 				if (argc > 1)
-					LoadCartridgeFileFromFile(argv[1], &callbacks);
+					LoadCartridgeFileFromFile(argv[1]);
 				else
-					LoadCartridgeFileFromMemory(nullptr, 0, &callbacks);
+					LoadCartridgeFileFromMemory(nullptr, 0);
 
 				// We are now ready to show the window
 				SDL_ShowWindow(window);
@@ -2237,7 +2237,7 @@ int main(int argc, char **argv)
 							{
 								// TODO: Handle dropping a CD file here.
 								AddToRecentSoftware(drag_and_drop_filename, false, false);
-								LoadCartridgeFileFromMemory(file_buffer, file_size, &callbacks);
+								LoadCartridgeFileFromMemory(file_buffer, file_size);
 								emulator_paused = false;
 							}
 						}
@@ -2317,7 +2317,7 @@ int main(int argc, char **argv)
 								{
 									OpenFileDialog("Load Cartridge File", [](const char* const path)
 									{
-										if (LoadCartridgeFileFromFile(path, &callbacks))
+										if (LoadCartridgeFileFromFile(path))
 										{
 											emulator_paused = false;
 											return true;
@@ -2410,7 +2410,7 @@ int main(int argc, char **argv)
 											}
 											else
 											{
-												if (LoadCartridgeFileFromFile(recent_software->path, &callbacks))
+												if (LoadCartridgeFileFromFile(recent_software->path))
 													emulator_paused = false;
 											}
 										}
