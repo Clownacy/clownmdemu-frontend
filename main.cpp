@@ -557,7 +557,7 @@ static const cc_u8l* CDSectorReadCallback(const void */*user_data*/)
 }
 
 // Construct our big list of callbacks for clownmdemu.
-static ClownMDEmu_Callbacks callbacks = {nullptr, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
+static const ClownMDEmu_Callbacks callbacks = {nullptr, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
 
 static bool IsCartridgeFileLoaded()
 {
