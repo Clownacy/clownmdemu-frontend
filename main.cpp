@@ -1528,6 +1528,7 @@ int main(int argc, char **argv)
 				}
 
 				// If the user passed the path to the software on the command line, then load it here, automatically.
+				// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
 				if (argc > 1)
 					LoadCartridgeFileFromFile(argv[1]);
 				else
