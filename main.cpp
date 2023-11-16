@@ -166,9 +166,9 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 		}
 		else
 		{
-			const std::size_t size = (std::size_t)size_s64;
+			const std::size_t size = static_cast<std::size_t>(size_s64);
 
-			*file_buffer = (unsigned char*)SDL_malloc(size);
+			*file_buffer = static_cast<unsigned char*>(SDL_malloc(size));
 
 			if (*file_buffer == nullptr)
 			{
@@ -394,7 +394,7 @@ static bool InitialiseAudio()
 	else
 	{
 		audio_device_buffer_size = have.size;
-		audio_device_sample_rate = (unsigned long)have.freq;
+		audio_device_sample_rate = static_cast<unsigned long>(have.freq);
 
 		// Initialise the mixer.
 		Mixer_Constant_Initialise(&mixer_constant);
@@ -423,12 +423,10 @@ static void SetAudioPALMode(bool enabled)
 		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 }
 
-static void AudioPushCallback(const void *user_data, Sint16 *audio_samples, std::size_t total_frames)
+static void AudioPushCallback(const void */*user_data*/, Sint16 *audio_samples, std::size_t total_frames)
 {
-	(void)user_data;
-
 	if (audio_device != 0)
-		SDL_QueueAudio(audio_device, audio_samples, (Uint32)(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
+		SDL_QueueAudio(audio_device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
 }
 
 
@@ -441,7 +439,7 @@ static ImFont *monospace_font;
 static unsigned int CalculateFontSize()
 {
 	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
-	return (unsigned int)(15.0f * dpi_scale);
+	return static_cast<unsigned int>(15.0f * dpi_scale);
 }
 
 static void ReloadFonts(unsigned int font_size)
@@ -453,9 +451,9 @@ static void ReloadFonts(unsigned int font_size)
 
 	ImFontConfig font_cfg = ImFontConfig();
 	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %upx", font_size);
-	io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, (float)font_size, &font_cfg);
+	io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
 	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
-	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, (float)font_size, &font_cfg);
+	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
 }
 
 
@@ -463,23 +461,17 @@ static void ReloadFonts(unsigned int font_size)
 // Emulator Functionality //
 ////////////////////////////
 
-static cc_u8f CartridgeReadCallback(const void *user_data, cc_u32f address)
+static cc_u8f CartridgeReadCallback(const void */*user_data*/, cc_u32f address)
 {
-	(void)user_data;
-
 	if (address >= rom_buffer_size)
 		return 0;
 
 	return rom_buffer[address];
 }
 
-static void CartridgeWrittenCallback(const void *user_data, cc_u32f address, cc_u8f value)
+static void CartridgeWrittenCallback(const void */*user_data*/, cc_u32f /*address*/, cc_u8f /*value*/)
 {
-	(void)user_data;
-
 	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
-	(void)address;
-	(void)value;
 
 	/*
 	if (address >= rom_buffer_size)
@@ -489,23 +481,19 @@ static void CartridgeWrittenCallback(const void *user_data, cc_u32f address, cc_
 	*/
 }
 
-static void ColourUpdatedCallback(const void *user_data, cc_u16f index, cc_u16f colour)
+static void ColourUpdatedCallback(const void */*user_data*/, cc_u16f index, cc_u16f colour)
 {
-	(void)user_data;
-
 	// Decompose XBGR4444 into individual colour channels
 	const cc_u32f red = (colour >> 4 * 0) & 0xF;
 	const cc_u32f green = (colour >> 4 * 1) & 0xF;
 	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	emulation_state->colours[index] = (Uint32)((blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
+	emulation_state->colours[index] = static_cast<Uint32>((blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
-static void ScanlineRenderedCallback(const void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height)
+static void ScanlineRenderedCallback(const void */*user_data*/, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height)
 {
-	(void)user_data;
-
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
 
@@ -514,10 +502,8 @@ static void ScanlineRenderedCallback(const void *user_data, cc_u16f scanline, co
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
-static cc_bool ReadInputCallback(const void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id)
+static cc_bool ReadInputCallback(const void */*user_data*/, cc_u8f player_id, ClownMDEmu_Button button_id)
 {
-	(void)user_data;
-
 	SDL_assert(player_id < 2);
 
 	cc_bool value = cc_false;
@@ -541,33 +527,25 @@ static cc_bool ReadInputCallback(const void *user_data, cc_u8f player_id, ClownM
 	return value;
 }
 
-static void FMAudioCallback(const void *user_data, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+static void FMAudioCallback(const void */*user_data*/, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	(void)user_data;
-
 	generate_fm_audio(&clownmdemu, Mixer_AllocateFMSamples(&mixer, total_frames), total_frames);
 }
 
-static void PSGAudioCallback(const void *user_data, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
+static void PSGAudioCallback(const void */*user_data*/, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
 {
-	(void)user_data;
-
 	generate_psg_audio(&clownmdemu, Mixer_AllocatePSGSamples(&mixer, total_samples), total_samples);
 }
 
-static void CDSeekCallback(const void *user_data, cc_u32f sector_index)
+static void CDSeekCallback(const void */*user_data*/, cc_u32f sector_index)
 {
-	(void)user_data;
-
 	if (cd_file != nullptr)
 		SDL_RWseek(cd_file, sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
 }
 
-static const cc_u8l* CDSectorReadCallback(const void *user_data)
+static const cc_u8l* CDSectorReadCallback(const void */*user_data*/)
 {
 	static cc_u8l sector_buffer[2048];
-
-	(void)user_data;
 
 	if (cd_file != nullptr)
 		SDL_RWread(cd_file, sector_buffer, 2048, 1);
@@ -634,7 +612,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 
 	// Add the file to the list of recent software.
 	const std::size_t path_length = SDL_strlen(path);
-	RecentSoftware* const new_entry = (RecentSoftware*)SDL_malloc(sizeof(RecentSoftware) + path_length);
+	RecentSoftware* const new_entry = static_cast<RecentSoftware*>(SDL_malloc(sizeof(RecentSoftware) + path_length));
 
 	if (new_entry != nullptr)
 	{
@@ -859,7 +837,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 
 		if (working_directory_buffer_size != 0)
 		{
-			working_directory_buffer = (char*)SDL_malloc(working_directory_buffer_size);
+			working_directory_buffer = static_cast<char*>(SDL_malloc(working_directory_buffer_size));
 
 			if (working_directory_buffer != nullptr)
 			{
@@ -928,7 +906,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 						// Read the whole path returned by Zenity/kdialog.
 						// This is very complicated due to handling arbitrarily long paths.
 						std::size_t path_buffer_length = 0;
-						char *path_buffer = (char*)SDL_malloc(GROW_SIZE + 1); // '+1' for the null character.
+						char *path_buffer = static_cast<char*>(SDL_malloc(GROW_SIZE + 1)); // '+1' for the null character.
 
 						if (path_buffer != nullptr)
 						{
@@ -940,7 +918,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 								if (path_length != GROW_SIZE)
 									break;
 
-								char* const new_path_buffer = (char*)SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1);
+								char* const new_path_buffer = static_cast<char*>(SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1));
 
 								if (new_path_buffer == nullptr)
 								{
@@ -1040,7 +1018,7 @@ static void DoFilePicker()
 			if (text_buffer == nullptr)
 			{
 				text_buffer_size = 0x40;
-				text_buffer = (char*)SDL_malloc(text_buffer_size);
+				text_buffer = static_cast<char*>(SDL_malloc(text_buffer_size));
 				text_buffer[0] = '\0';
 			}
 
@@ -1056,7 +1034,7 @@ static void DoFilePicker()
 						while (data->BufSize < new_text_buffer_size >> 1)
 							new_text_buffer_size >>= 1;
 
-						char* const new_text_buffer = (char*)SDL_realloc(text_buffer, new_text_buffer_size);
+						char* const new_text_buffer = static_cast<char*>(SDL_realloc(text_buffer, new_text_buffer_size));
 
 						if (new_text_buffer != nullptr)
 						{
@@ -1166,7 +1144,7 @@ static void DoToolTip(const char* const text)
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
-	SDL_RWops* const sdl_rwops = (SDL_RWops*)user;
+	SDL_RWops* const sdl_rwops = static_cast<SDL_RWops*>(user);
 
 	int i = 0;
 
@@ -1193,10 +1171,8 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 	return buffer;
 }
 
-static int INIParseCallback(void* const user, const char* const section, const char* const name, const char* const value)
+static int INIParseCallback(void* const /*user*/, const char* const section, const char* const name, const char* const value)
 {
-	(void)user;
-
 	if (SDL_strcmp(section, "Miscellaneous") == 0)
 	{
 		const bool state = SDL_strcmp(value, "on") == 0;
@@ -1225,12 +1201,12 @@ static int INIParseCallback(void* const user, const char* const section, const c
 		char *string_end;
 
 		errno = 0;
-		const SDL_Scancode scancode = (SDL_Scancode)SDL_strtoul(name, &string_end, 0);
+		const SDL_Scancode scancode = static_cast<SDL_Scancode>(SDL_strtoul(name, &string_end, 0));
 
 		if (errno != ERANGE && string_end >= SDL_strchr(name, '\0') && scancode < SDL_NUM_SCANCODES)
 		{
 			errno = 0;
-			const InputBinding input_binding = (InputBinding)SDL_strtoul(value, &string_end, 0);
+			const InputBinding input_binding = static_cast<InputBinding>(SDL_strtoul(value, &string_end, 0));
 
 			if (errno != ERANGE && string_end >= SDL_strchr(name, '\0'))
 				keyboard_bindings[scancode] = input_binding;
@@ -1367,7 +1343,7 @@ static void SaveConfiguration()
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
 				char buffer[0x20];
-				SDL_snprintf(buffer, sizeof(buffer), "%u = %u\n", (unsigned int)i, keyboard_bindings[i]);
+				SDL_snprintf(buffer, sizeof(buffer), "%u = %u\n", static_cast<unsigned int>(i), keyboard_bindings[i]);
 				SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
 			}
 		}
@@ -1480,8 +1456,8 @@ int main(int argc, char **argv)
 				// Apply DPI scale (also resize the window so that there's room for the menu bar).
 				style.ScaleAllSizes(dpi_scale);
 				const unsigned int font_size = CalculateFontSize();
-				const float menu_bar_size = (float)font_size + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-				SDL_SetWindowSize(window, (int)(320.0f * 2.0f * dpi_scale), (int)(224.0f * 2.0f * dpi_scale + menu_bar_size));
+				const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
+				SDL_SetWindowSize(window, static_cast<int>(320.0f * 2.0f * dpi_scale), static_cast<int>(224.0f * 2.0f * dpi_scale + menu_bar_size));
 
 				// Setup Platform/Renderer backends
 				ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
@@ -1862,7 +1838,7 @@ int main(int argc, char **argv)
 									}
 									else
 									{
-										ControllerInput *controller_input = (ControllerInput*)SDL_calloc(sizeof(ControllerInput), 1);
+										ControllerInput *controller_input = static_cast<ControllerInput*>(SDL_calloc(sizeof(ControllerInput), 1));
 
 										if (controller_input == nullptr)
 										{
@@ -2071,7 +2047,7 @@ int main(int argc, char **argv)
 												// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
 
 												// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
-												const float magnitude = SDL_sqrtf((float)(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y));
+												const float magnitude = SDL_sqrtf(static_cast<float>(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y));
 
 												const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
 												const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
@@ -2100,7 +2076,7 @@ int main(int argc, char **argv)
 														const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
 
 														// If the stick is within 67.5 degrees of the specified direction, then this will be true.
-														controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * ((float)CC_PI / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
+														controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (static_cast<float>(CC_PI) / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
 													}
 
 													static const unsigned int buttons[4] = {
@@ -2192,7 +2168,7 @@ int main(int argc, char **argv)
 						Mixer_Begin(&mixer);
 
 						// Lock the texture so that we can write to its pixels later
-						if (SDL_LockTexture(framebuffer_texture, nullptr, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+						if (SDL_LockTexture(framebuffer_texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
 							framebuffer_texture_pixels = nullptr;
 
 						framebuffer_texture_pitch /= sizeof(Uint32);
@@ -2579,8 +2555,8 @@ int main(int argc, char **argv)
 
 							SDL_Texture *selected_framebuffer_texture = framebuffer_texture;
 
-							const unsigned int work_width = (unsigned int)size_of_display_region.x;
-							const unsigned int work_height = (unsigned int)size_of_display_region.y;
+							const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
+							const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
 
 							unsigned int destination_width;
 							unsigned int destination_height;
@@ -2614,7 +2590,7 @@ int main(int argc, char **argv)
 							unsigned int destination_width_scaled;
 							unsigned int destination_height_scaled;
 
-							ImVec2 uv1 = {(float)current_screen_width / (float)FRAMEBUFFER_WIDTH, (float)current_screen_height / (float)FRAMEBUFFER_HEIGHT};
+							ImVec2 uv1 = {static_cast<float>(current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
 
 							if (integer_screen_scaling)
 							{
@@ -2675,17 +2651,17 @@ int main(int argc, char **argv)
 									SDL_SetRenderTarget(renderer, nullptr);
 
 									// Update the texture UV to suit the upscaled framebuffer.
-									uv1.x = (float)upscaled_framebuffer_rect.w / (float)framebuffer_texture_upscaled_width;
-									uv1.y = (float)upscaled_framebuffer_rect.h / (float)framebuffer_texture_upscaled_height;
+									uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
+									uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
 								}
 							}
 
 							// Center the framebuffer in the available region.
-							ImGui::SetCursorPosX((float)((int)ImGui::GetCursorPosX() + ((int)size_of_display_region.x - destination_width_scaled) / 2));
-							ImGui::SetCursorPosY((float)((int)ImGui::GetCursorPosY() + ((int)size_of_display_region.y - destination_height_scaled) / 2));
+							ImGui::SetCursorPosX(static_cast<float>(static_cast<int>(ImGui::GetCursorPosX()) + (static_cast<int>(size_of_display_region.x) - destination_width_scaled) / 2));
+							ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
 							// Draw the upscaled framebuffer in the window.
-							ImGui::Image(selected_framebuffer_texture, ImVec2((float)destination_width_scaled, (float)destination_height_scaled), ImVec2(0, 0), uv1);
+							ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 						}
 					}
 
@@ -3044,13 +3020,13 @@ int main(int argc, char **argv)
 								sorted_scancodes_done = true;
 
 								for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
-									sorted_scancodes[i] = (SDL_Scancode)i;
+									sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
 
 								SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
 									[](const void* const a, const void* const b)
 								{
-									const SDL_Scancode* const binding_1 = (const SDL_Scancode*)a;
-									const SDL_Scancode* const binding_2 = (const SDL_Scancode*)b;
+									const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
+									const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
 
 									return keyboard_bindings[*binding_1] - keyboard_bindings[*binding_2];
 								}
@@ -3106,7 +3082,7 @@ int main(int argc, char **argv)
 									if (keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
 									{
 										ImGui::TableNextColumn();
-										ImGui::TextUnformatted(SDL_GetScancodeName((SDL_Scancode)sorted_scancodes[i]));
+										ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(sorted_scancodes[i])));
 
 										ImGui::TableNextColumn();
 										ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
@@ -3155,7 +3131,7 @@ int main(int argc, char **argv)
 										if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
 										{
 											next_menu = true;
-											selected_scancode = (SDL_Scancode)i;
+											selected_scancode = static_cast<SDL_Scancode>(i);
 										}
 										break;
 									}
@@ -3178,7 +3154,7 @@ int main(int argc, char **argv)
 
 								if (ImGui::BeginListBox("##Actions"))
 								{
-									for (InputBinding i = (InputBinding)(INPUT_BINDING_NONE + 1); i < INPUT_BINDING__TOTAL; i = (InputBinding)(i + 1))
+									for (InputBinding i = static_cast<InputBinding>(INPUT_BINDING_NONE + 1); i < INPUT_BINDING__TOTAL; i = static_cast<InputBinding>(i + 1))
 									{
 										if (ImGui::Selectable(binding_names[i]))
 										{
