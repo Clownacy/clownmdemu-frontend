@@ -138,7 +138,7 @@ static bool FileExists(const char *filename)
 {
 	SDL_RWops* const file = SDL_RWFromFile(filename, "rb");
 
-	if (file != NULL)
+	if (file != nullptr)
 	{
 		SDL_RWclose(file);
 		return true;
@@ -149,12 +149,12 @@ static bool FileExists(const char *filename)
 
 static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
 {
-	*file_buffer = NULL;
+	*file_buffer = nullptr;
 	*file_size = 0;
 
 	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
 
-	if (file == NULL)
+	if (file == nullptr)
 	{
 		PrintError("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
 	}
@@ -172,7 +172,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 
 			*file_buffer = (unsigned char*)SDL_malloc(size);
 
-			if (*file_buffer == NULL)
+			if (*file_buffer == nullptr)
 			{
 				PrintError("Could not allocate memory for file");
 			}
@@ -224,7 +224,7 @@ static float GetNewDPIScale(void)
 #ifdef _WIN32
 	/* This doesn't work right on Linux nor macOS. */
 	float ddpi;
-	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, NULL, NULL) == 0)
+	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, nullptr, nullptr) == 0)
 		dpi_scale = ddpi / 96.0f;
 #endif
 
@@ -242,7 +242,7 @@ static bool InitialiseVideo(void)
 		// Create window
 		window = SDL_CreateWindow("clownmdemu-frontend " VERSION, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
 
-		if (window == NULL)
+		if (window == nullptr)
 		{
 			PrintError("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
 		}
@@ -262,7 +262,7 @@ static bool InitialiseVideo(void)
 			// Create renderer
 			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
 
-			if (renderer == NULL)
+			if (renderer == nullptr)
 			{
 				PrintError("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
 			}
@@ -307,7 +307,7 @@ static bool InitialiseFramebuffer(void)
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 	framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
 
-	if (framebuffer_texture == NULL)
+	if (framebuffer_texture == nullptr)
 	{
 		PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 	}
@@ -334,18 +334,18 @@ static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int
 
 	const unsigned int framebuffer_size_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
 
-	if (framebuffer_texture_upscaled == NULL || framebuffer_size_factor != previous_framebuffer_size_factor)
+	if (framebuffer_texture_upscaled == nullptr || framebuffer_size_factor != previous_framebuffer_size_factor)
 	{
 		previous_framebuffer_size_factor = framebuffer_size_factor;
 
 		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
 		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
 
-		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass NULL to this
+		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 		framebuffer_texture_upscaled = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
 
-		if (framebuffer_texture_upscaled == NULL)
+		if (framebuffer_texture_upscaled == nullptr)
 		{
 			PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 		}
@@ -385,9 +385,9 @@ static bool InitialiseAudio(void)
 	want.samples = 1;
 	while (want.samples < (want.freq * want.channels) / (1000 / 10))
 		want.samples <<= 1;
-	want.callback = NULL;
+	want.callback = nullptr;
 
-	audio_device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
+	audio_device = SDL_OpenAudioDevice(nullptr, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
 
 	if (audio_device == 0)
 	{
@@ -511,7 +511,7 @@ static void ScanlineRenderedCallback(const void *user_data, cc_u16f scanline, co
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
 
-	if (framebuffer_texture_pixels != NULL)
+	if (framebuffer_texture_pixels != nullptr)
 		for (cc_u16f i = 0; i < screen_width; ++i)
 			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
@@ -535,7 +535,7 @@ static cc_bool ReadInputCallback(const void *user_data, cc_u8f player_id, ClownM
 	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 	{
 		// Then, try to obtain the input from the controllers.
-		for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+		for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
 			if (controller_input->input.bound_joypad == player_id)
 				value |= controller_input->input.buttons[button_id] != 0 ? cc_true : cc_false;
 	}
@@ -561,7 +561,7 @@ static void CDSeekCallback(const void *user_data, cc_u32f sector_index)
 {
 	(void)user_data;
 
-	if (cd_file != NULL)
+	if (cd_file != nullptr)
 		SDL_RWseek(cd_file, sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
 }
 
@@ -571,7 +571,7 @@ static const cc_u8l* CDSectorReadCallback(const void *user_data)
 
 	(void)user_data;
 
-	if (cd_file != NULL)
+	if (cd_file != nullptr)
 		SDL_RWread(cd_file, sector_buffer, 2048, 1);
 
 	if (sector_size_2352)
@@ -581,16 +581,16 @@ static const cc_u8l* CDSectorReadCallback(const void *user_data)
 }
 
 // Construct our big list of callbacks for clownmdemu.
-static ClownMDEmu_Callbacks callbacks = {NULL, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
+static ClownMDEmu_Callbacks callbacks = {nullptr, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
 
 static bool IsCartridgeFileLoaded(void)
 {
-	return rom_buffer != NULL;
+	return rom_buffer != nullptr;
 }
 
 static bool IsCDFileLoaded(void)
 {
-	return cd_file != NULL;
+	return cd_file != nullptr;
 }
 
 static void SoftResetConsole(void)
@@ -608,7 +608,7 @@ static void HardResetConsole(void)
 static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
-	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
 	{
 		RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
 
@@ -623,7 +623,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 	// If the list is 10 items long, then discard the last item before we add a new one.
 	unsigned int total_items = 0;
 
-	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
 		++total_items;
 
 	if (total_items == 10)
@@ -638,7 +638,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 	const size_t path_length = SDL_strlen(path);
 	RecentSoftware* const new_entry = (RecentSoftware*)SDL_malloc(sizeof(RecentSoftware) + path_length);
 
-	if (new_entry != NULL)
+	if (new_entry != nullptr)
 	{
 		new_entry->is_cd_file = is_cd_file;
 		SDL_memcpy(new_entry->path, path, path_length + 1);
@@ -673,7 +673,7 @@ static bool LoadCartridgeFileFromFile(const char *path, const ClownMDEmu_Callbac
 	// Load ROM to memory.
 	LoadFileToBuffer(path, &temp_rom_buffer, &temp_rom_buffer_size);
 
-	if (temp_rom_buffer == NULL)
+	if (temp_rom_buffer == nullptr)
 	{
 		PrintError("Could not load the cartridge file");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the cartridge file.", window);
@@ -692,7 +692,7 @@ static bool LoadCDFile(const char* const path)
 {
 	cd_file = SDL_RWFromFile(path, "rb");
 
-	if (cd_file == NULL)
+	if (cd_file == nullptr)
 	{
 		PrintError("Could not load the CD file");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the CD file.", window);
@@ -726,7 +726,7 @@ static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, cons
 {
 	bool success = false;
 
-	if (file_buffer != NULL)
+	if (file_buffer != nullptr)
 	{
 		if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
 		{
@@ -762,7 +762,7 @@ static bool LoadSaveStateFromFile(const char* const save_state_path)
 
 	bool success = false;
 
-	if (file_buffer != NULL)
+	if (file_buffer != nullptr)
 	{
 		success = LoadSaveStateFromMemory(file_buffer, file_size);
 		SDL_free(file_buffer);
@@ -780,7 +780,7 @@ static void UpdateFastForwardStatus(void)
 
 	fast_forward_in_progress = keyboard_input.fast_forward;
 
-	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
 		fast_forward_in_progress |= controller_input->input.fast_forward != 0;
 
 	if (previous_fast_forward_in_progress != fast_forward_in_progress)
@@ -798,7 +798,7 @@ static void UpdateRewindStatus(void)
 {
 	rewind_in_progress = keyboard_input.rewind;
 
-	for (ControllerInput *controller_input = controller_input_list_head; controller_input != NULL; controller_input = controller_input->next)
+	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
 		rewind_in_progress |= controller_input->input.rewind != 0;
 }
 #endif
@@ -851,24 +851,24 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : NULL;
+		ofn.hwndOwner = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : nullptr;
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
 		ofn.lpstrTitle = title;
 
-		char *working_directory_buffer = NULL;
-		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, NULL);
+		char *working_directory_buffer = nullptr;
+		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, nullptr);
 
 		if (working_directory_buffer_size != 0)
 		{
 			working_directory_buffer = (char*)SDL_malloc(working_directory_buffer_size);
 
-			if (working_directory_buffer != NULL)
+			if (working_directory_buffer != nullptr)
 			{
 				if (GetCurrentDirectory(working_directory_buffer_size, working_directory_buffer) == 0)
 				{
 					SDL_free(working_directory_buffer);
-					working_directory_buffer = NULL;
+					working_directory_buffer = nullptr;
 				}
 			}
 		}
@@ -886,7 +886,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 				callback(path_buffer);
 		}
 
-		if (working_directory_buffer != NULL)
+		if (working_directory_buffer != nullptr)
 		{
 			SetCurrentDirectory(working_directory_buffer);
 			SDL_free(working_directory_buffer);
@@ -909,12 +909,12 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 					SDL_asprintf(&command, "zenity --file-selection %s --title=\"%s\" --filename=\"%s\"",
 						save ? "--save" : "",
 						title,
-						last_file_dialog_directory == NULL ? "" : last_file_dialog_directory)
+						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
 					:
 					SDL_asprintf(&command, "kdialog --get%sfilename --title \"%s\" \"%s\"",
 						save ? "save" : "open",
 						title,
-						last_file_dialog_directory == NULL ? "" : last_file_dialog_directory)
+						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
 					;
 
 				if (bytes_printed >= 0)
@@ -924,7 +924,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 
 					SDL_free(command);
 
-					if (path_stream != NULL)
+					if (path_stream != nullptr)
 					{
 					#define GROW_SIZE 0x100
 						// Read the whole path returned by Zenity/kdialog.
@@ -932,7 +932,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 						size_t path_buffer_length = 0;
 						char *path_buffer = (char*)SDL_malloc(GROW_SIZE + 1); // '+1' for the null character.
 
-						if (path_buffer != NULL)
+						if (path_buffer != nullptr)
 						{
 							for (;;)
 							{
@@ -944,10 +944,10 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 
 								char* const new_path_buffer = (char*)SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1);
 
-								if (new_path_buffer == NULL)
+								if (new_path_buffer == nullptr)
 								{
 									SDL_free(path_buffer);
-									path_buffer = NULL;
+									path_buffer = nullptr;
 									break;
 								}
 
@@ -955,11 +955,11 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 							}
 						#undef GROW_SIZE
 
-							if (path_buffer != NULL)
+							if (path_buffer != nullptr)
 							{
 								// Handle Zenity's/kdialog's return value.
 								const int exit_status = pclose(path_stream);
-								path_stream = NULL;
+								path_stream = nullptr;
 
 								if (exit_status != -1 && WIFEXITED(exit_status))
 								{
@@ -974,16 +974,16 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 
 											char* const directory_separator = SDL_strrchr(path_buffer, '/');
 
-											if (directory_separator == NULL)
+											if (directory_separator == nullptr)
 												path_buffer[0] = '\0';
 											else
 												directory_separator[1] = '\0';
 
-											if (last_file_dialog_directory != NULL)
+											if (last_file_dialog_directory != nullptr)
 												SDL_free(last_file_dialog_directory);
 
 											last_file_dialog_directory = path_buffer;
-											path_buffer = NULL;
+											path_buffer = nullptr;
 
 											break;
 										}
@@ -998,7 +998,7 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 							SDL_free(path_buffer);
 						}
 
-						if (path_stream != NULL)
+						if (path_stream != nullptr)
 							pclose(path_stream);
 					}
 				}
@@ -1027,19 +1027,19 @@ void SaveFileDialog(char const* const title, const std::function<bool (const cha
 
 static void DoFilePicker(void)
 {
-	if (active_file_picker_popup != NULL)
+	if (active_file_picker_popup != nullptr)
 	{
 		if (!ImGui::IsPopupOpen(active_file_picker_popup))
 			ImGui::OpenPopup(active_file_picker_popup);
 
 		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-		if (ImGui::BeginPopupModal(active_file_picker_popup, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(active_file_picker_popup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			static int text_buffer_size;
-			static char *text_buffer = NULL;
+			static char *text_buffer = nullptr;
 
-			if (text_buffer == NULL)
+			if (text_buffer == nullptr)
 			{
 				text_buffer_size = 0x40;
 				text_buffer = (char*)SDL_malloc(text_buffer_size);
@@ -1060,7 +1060,7 @@ static void DoFilePicker(void)
 
 						char* const new_text_buffer = (char*)SDL_realloc(text_buffer, new_text_buffer_size);
 
-						if (new_text_buffer != NULL)
+						if (new_text_buffer != nullptr)
 						{
 							data->BufSize = text_buffer_size = new_text_buffer_size;
 							data->Buf = text_buffer = new_text_buffer;
@@ -1076,7 +1076,7 @@ static void DoFilePicker(void)
 			   If a file is dropped onto the dialog, focus on the
 			   'open' button instead or else the text box won't show
 			   the dropped file's path. */
-			if (drag_and_drop_filename != NULL)
+			if (drag_and_drop_filename != nullptr)
 				ImGui::SetKeyboardFocusHere(1);
 			else if (ImGui::IsWindowAppearing())
 				ImGui::SetKeyboardFocusHere();
@@ -1085,11 +1085,11 @@ static void DoFilePicker(void)
 			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback);
 
 			// Set the text box's contents to the dropped file's path.
-			if (drag_and_drop_filename != NULL)
+			if (drag_and_drop_filename != nullptr)
 			{
 				SDL_free(text_buffer);
 				text_buffer = drag_and_drop_filename;
-				drag_and_drop_filename = NULL;
+				drag_and_drop_filename = nullptr;
 
 				text_buffer_size = SDL_strlen(text_buffer) + 1;
 			}
@@ -1111,7 +1111,7 @@ static void DoFilePicker(void)
 
 			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-			if (ImGui::BeginPopupModal("File Already Exists", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			if (ImGui::BeginPopupModal("File Already Exists", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
 				ImGui::TextUnformatted("A file with that name already exists. Overwrite it?");
 
@@ -1137,8 +1137,8 @@ static void DoFilePicker(void)
 			{
 				ImGui::CloseCurrentPopup();
 				SDL_free(text_buffer);
-				text_buffer = NULL;
-				active_file_picker_popup = NULL;
+				text_buffer = nullptr;
+				active_file_picker_popup = nullptr;
 			}
 
 			ImGui::EndPopup();
@@ -1291,7 +1291,7 @@ static void LoadConfiguration(void)
 	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (file == NULL || ini_parse_stream(INIReadCallback, file, INIParseCallback, NULL) != 0)
+	if (file == nullptr || ini_parse_stream(INIReadCallback, file, INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
@@ -1315,7 +1315,7 @@ static void LoadConfiguration(void)
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 	}
 
-	if (file != NULL)
+	if (file != nullptr)
 		SDL_RWclose(file);
 
 	// Apply the V-sync setting, now that it's been decided.
@@ -1327,7 +1327,7 @@ static void SaveConfiguration(void)
 	// Save configuration file:
 	SDL_RWops *file = SDL_RWFromFile(CONFIG_FILENAME, "w");
 
-	if (file == NULL)
+	if (file == nullptr)
 	{
 		PrintError("Could not open configuration file for writing.");
 	}
@@ -1352,7 +1352,7 @@ static void SaveConfiguration(void)
 		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
 	#ifdef POSIX
-		if (last_file_dialog_directory != NULL)
+		if (last_file_dialog_directory != nullptr)
 		{
 			PRINT_STRING(file, "last-directory = ");
 			SDL_RWwrite(file, last_file_dialog_directory, SDL_strlen(last_file_dialog_directory), 1);
@@ -1377,7 +1377,7 @@ static void SaveConfiguration(void)
 		// Save recent software paths.
 		PRINT_STRING(file, "\n[Recent Software]\n");
 
-		for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+		for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
 		{
 			RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
 
@@ -1409,14 +1409,14 @@ int main(int argc, char **argv)
 	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", NULL);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
 	}
 	else
 	{
 		if (!InitialiseVideo())
 		{
 			PrintError("InitVideo failed");
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", NULL);
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
 		}
 		else
 		{
@@ -1426,7 +1426,7 @@ int main(int argc, char **argv)
 			if (!InitialiseFramebuffer())
 			{
 				PrintError("CreateFramebuffer failed");
-				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise framebuffer. The program will now close.", NULL);
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise framebuffer. The program will now close.", nullptr);
 			}
 			else
 			{
@@ -1531,7 +1531,7 @@ int main(int argc, char **argv)
 				if (argc > 1)
 					LoadCartridgeFileFromFile(argv[1], &callbacks);
 				else
-					LoadCartridgeFileFromMemory(NULL, 0, &callbacks);
+					LoadCartridgeFileFromMemory(nullptr, 0, &callbacks);
 
 				// We are now ready to show the window
 				SDL_ShowWindow(window);
@@ -1572,7 +1572,7 @@ int main(int argc, char **argv)
 				while (!quit)
 				{
 					const bool emulator_on = IsCartridgeFileLoaded() || IsCDFileLoaded();
-					const bool emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && active_file_picker_popup == NULL
+					const bool emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && active_file_picker_popup == nullptr
 					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 						&& !(rewind_in_progress && state_rewind_remaining == 0)
 					#endif
@@ -1849,7 +1849,7 @@ int main(int argc, char **argv)
 								// Open the controller, and create an entry for it in the controller list.
 								SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
 
-								if (controller == NULL)
+								if (controller == nullptr)
 								{
 									PrintError("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
 								}
@@ -1865,7 +1865,7 @@ int main(int argc, char **argv)
 									{
 										ControllerInput *controller_input = (ControllerInput*)SDL_calloc(sizeof(ControllerInput), 1);
 
-										if (controller_input == NULL)
+										if (controller_input == nullptr)
 										{
 											PrintError("Could not allocate memory for the new ControllerInput struct");
 										}
@@ -1891,7 +1891,7 @@ int main(int argc, char **argv)
 								// Close the controller, and remove it from the controller list.
 								SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
 
-								if (controller == NULL)
+								if (controller == nullptr)
 								{
 									PrintError("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
 								}
@@ -1902,7 +1902,7 @@ int main(int argc, char **argv)
 
 								for (ControllerInput **controller_input_pointer = &controller_input_list_head; ; controller_input_pointer = &(*controller_input_pointer)->next)
 								{
-									if ((*controller_input_pointer) == NULL)
+									if ((*controller_input_pointer) == nullptr)
 									{
 										PrintError("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
 										break;
@@ -1965,7 +1965,7 @@ int main(int argc, char **argv)
 								for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
 								{
 									// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
-									if (controller_input == NULL)
+									if (controller_input == nullptr)
 									{
 										PrintError("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
 										break;
@@ -2050,7 +2050,7 @@ int main(int argc, char **argv)
 								for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
 								{
 									// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
-									if (controller_input == NULL)
+									if (controller_input == nullptr)
 									{
 										PrintError("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
 										break;
@@ -2193,8 +2193,8 @@ int main(int argc, char **argv)
 						Mixer_Begin(&mixer);
 
 						// Lock the texture so that we can write to its pixels later
-						if (SDL_LockTexture(framebuffer_texture, NULL, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
-							framebuffer_texture_pixels = NULL;
+						if (SDL_LockTexture(framebuffer_texture, nullptr, (void**)&framebuffer_texture_pixels, &framebuffer_texture_pitch) < 0)
+							framebuffer_texture_pixels = nullptr;
 
 						framebuffer_texture_pitch /= sizeof(Uint32);
 
@@ -2207,7 +2207,7 @@ int main(int argc, char **argv)
 						// Resample, mix, and output the audio for this frame.
 						// If there's a lot of audio queued, then don't queue any more.
 						if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
-							Mixer_End(&mixer, AudioPushCallback, NULL);
+							Mixer_End(&mixer, AudioPushCallback, nullptr);
 
 						++frame_counter;
 					}
@@ -2218,13 +2218,13 @@ int main(int argc, char **argv)
 					ImGui::NewFrame();
 
 					// Handle drag-and-drop event.
-					if (active_file_picker_popup == NULL && drag_and_drop_filename != NULL)
+					if (active_file_picker_popup == nullptr && drag_and_drop_filename != nullptr)
 					{
 						unsigned char *file_buffer;
 						size_t file_size;
 						LoadFileToBuffer(drag_and_drop_filename, &file_buffer, &file_size);
 
-						if (file_buffer != NULL)
+						if (file_buffer != nullptr)
 						{
 							if (file_size >= sizeof(save_state_magic) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
 							{
@@ -2243,7 +2243,7 @@ int main(int argc, char **argv)
 						}
 
 						SDL_free(drag_and_drop_filename);
-						drag_and_drop_filename = NULL;
+						drag_and_drop_filename = nullptr;
 					}
 
 				#ifndef NDEBUG
@@ -2304,7 +2304,7 @@ int main(int argc, char **argv)
 
 					// Tweak the style so that the display fill the window.
 					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-					const bool not_collapsed = ImGui::Begin("Display", NULL, window_flags);
+					const bool not_collapsed = ImGui::Begin("Display", nullptr, window_flags);
 					ImGui::PopStyleVar();
 
 					if (not_collapsed)
@@ -2329,10 +2329,10 @@ int main(int argc, char **argv)
 									});
 								}
 
-								if (ImGui::MenuItem("Unload Cartridge File", NULL, false, IsCartridgeFileLoaded()))
+								if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, IsCartridgeFileLoaded()))
 								{
 									SDL_free(rom_buffer);
-									rom_buffer = NULL;
+									rom_buffer = nullptr;
 									rom_buffer_size = 0;
 
 									if (IsCDFileLoaded())
@@ -2359,10 +2359,10 @@ int main(int argc, char **argv)
 									});
 								}
 
-								if (ImGui::MenuItem("Unload CD File", NULL, false, IsCDFileLoaded()))
+								if (ImGui::MenuItem("Unload CD File", nullptr, false, IsCDFileLoaded()))
 								{
 									SDL_RWclose(cd_file);
-									cd_file = NULL;
+									cd_file = nullptr;
 
 									if (IsCartridgeFileLoaded())
 										HardResetConsole();
@@ -2372,9 +2372,9 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("Pause", NULL, &emulator_paused, emulator_on);
+								ImGui::MenuItem("Pause", nullptr, &emulator_paused, emulator_on);
 
-								if (ImGui::MenuItem("Reset", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Reset", nullptr, false, emulator_on))
 								{
 									SoftResetConsole();
 									emulator_paused = false;
@@ -2382,13 +2382,13 @@ int main(int argc, char **argv)
 
 								ImGui::SeparatorText("Recent Software");
 
-								if (recent_software_list.head == NULL)
+								if (recent_software_list.head == nullptr)
 								{
-									ImGui::MenuItem("None", NULL, false, false);
+									ImGui::MenuItem("None", nullptr, false, false);
 								}
 								else
 								{
-									for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
+									for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
 									{
 										RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
 
@@ -2425,13 +2425,13 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Save States"))
 							{
-								if (ImGui::MenuItem("Quick Save", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 								{
 									quick_save_exists = true;
 									quick_save_state = *emulation_state;
 								}
 
-								if (ImGui::MenuItem("Quick Load", NULL, false, emulator_on && quick_save_exists))
+								if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_exists))
 								{
 									*emulation_state = quick_save_state;
 
@@ -2440,7 +2440,7 @@ int main(int argc, char **argv)
 
 								ImGui::Separator();
 
-								if (ImGui::MenuItem("Save to File...", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 								{
 									// Obtain a filename and path from the user.
 									SaveFileDialog("Create Save State", [](const char* const save_state_path)
@@ -2450,7 +2450,7 @@ int main(int argc, char **argv)
 										// Save the current state to the specified file.
 										SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
 
-										if (file == NULL)
+										if (file == nullptr)
 										{
 											PrintError("Could not open save state file for writing");
 											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
@@ -2474,7 +2474,7 @@ int main(int argc, char **argv)
 									});
 								}
 
-								if (ImGui::MenuItem("Load from File...", NULL, false, emulator_on))
+								if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
 									OpenFileDialog("Load Save State", LoadSaveStateFromFile);
 
 								ImGui::EndMenu();
@@ -2482,74 +2482,74 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Debugging"))
 							{
-								ImGui::MenuItem("Log", NULL, &debug_log_active);
+								ImGui::MenuItem("Log", nullptr, &debug_log_active);
 
-								ImGui::MenuItem("Toggles", NULL, &debugging_toggles_menu);
+								ImGui::MenuItem("Toggles", nullptr, &debugging_toggles_menu);
 
 								ImGui::Separator();
 
 								if (ImGui::BeginMenu("CPU Registers"))
 								{
-									ImGui::MenuItem("Main 68000", NULL, &m68k_status);
-									ImGui::MenuItem("Sub 68000", NULL, &mcd_m68k_status);
-									ImGui::MenuItem("Z80", NULL, &z80_status);
+									ImGui::MenuItem("Main 68000", nullptr, &m68k_status);
+									ImGui::MenuItem("Sub 68000", nullptr, &mcd_m68k_status);
+									ImGui::MenuItem("Z80", nullptr, &z80_status);
 									ImGui::EndMenu();
 								}
 
 								if (ImGui::BeginMenu("CPU RAM"))
 								{
-									ImGui::MenuItem("WORK-RAM", NULL, &m68k_ram_viewer);
-									ImGui::MenuItem("PRG-RAM", NULL, &prg_ram_viewer);
-									ImGui::MenuItem("WORD-RAM", NULL, &word_ram_viewer);
-									ImGui::MenuItem("SOUND-RAM", NULL, &z80_ram_viewer);
+									ImGui::MenuItem("WORK-RAM", nullptr, &m68k_ram_viewer);
+									ImGui::MenuItem("PRG-RAM", nullptr, &prg_ram_viewer);
+									ImGui::MenuItem("WORD-RAM", nullptr, &word_ram_viewer);
+									ImGui::MenuItem("SOUND-RAM", nullptr, &z80_ram_viewer);
 									ImGui::EndMenu();
 								}
 
 								if (ImGui::BeginMenu("VDP"))
 								{
-									ImGui::MenuItem("Registers", NULL, &vdp_registers);
+									ImGui::MenuItem("Registers", nullptr, &vdp_registers);
 									ImGui::SeparatorText("Visualisers");
-									ImGui::MenuItem("Window Plane", NULL, &window_plane_viewer);
-									ImGui::MenuItem("Plane A", NULL, &plane_a_viewer);
-									ImGui::MenuItem("Plane B", NULL, &plane_b_viewer);
-									ImGui::MenuItem("VRAM", NULL, &vram_viewer);
-									ImGui::MenuItem("CRAM", NULL, &cram_viewer);
+									ImGui::MenuItem("Window Plane", nullptr, &window_plane_viewer);
+									ImGui::MenuItem("Plane A", nullptr, &plane_a_viewer);
+									ImGui::MenuItem("Plane B", nullptr, &plane_b_viewer);
+									ImGui::MenuItem("VRAM", nullptr, &vram_viewer);
+									ImGui::MenuItem("CRAM", nullptr, &cram_viewer);
 									ImGui::EndMenu();
 								}
 
-								ImGui::MenuItem("FM", NULL, &fm_status);
+								ImGui::MenuItem("FM", nullptr, &fm_status);
 
-								ImGui::MenuItem("PSG", NULL, &psg_status);
+								ImGui::MenuItem("PSG", nullptr, &psg_status);
 
-								ImGui::MenuItem("Other", NULL, &other_status);
+								ImGui::MenuItem("Other", nullptr, &other_status);
 
 								ImGui::EndMenu();
 							}
 
 							if (ImGui::BeginMenu("Misc."))
 							{
-								if (ImGui::MenuItem("Fullscreen", NULL, &fullscreen))
+								if (ImGui::MenuItem("Fullscreen", nullptr, &fullscreen))
 									SetFullscreen(fullscreen);
 
-								ImGui::MenuItem("Display Window", NULL, &pop_out);
+								ImGui::MenuItem("Display Window", nullptr, &pop_out);
 
 							#ifndef NDEBUG
 								ImGui::Separator();
 
-								ImGui::MenuItem("Dear ImGui Demo Window", NULL, &dear_imgui_demo_window);
+								ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
 
 							#ifdef HAS_NATIVE_FILE_DIALOGS
-								ImGui::MenuItem("Native File Dialogs", NULL, &use_native_file_dialogs);
+								ImGui::MenuItem("Native File Dialogs", nullptr, &use_native_file_dialogs);
 							#endif
 							#endif
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("Options", NULL, &options_menu);
+								ImGui::MenuItem("Options", nullptr, &options_menu);
 
 								ImGui::Separator();
 
-								ImGui::MenuItem("About", NULL, &about_menu);
+								ImGui::MenuItem("About", nullptr, &about_menu);
 
 								ImGui::Separator();
 
@@ -2648,7 +2648,7 @@ int main(int argc, char **argv)
 								// Avoid blurring if...
 								// 1. The upscale texture failed to be created.
 								// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple.
-								if (framebuffer_texture_upscaled != NULL && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
+								if (framebuffer_texture_upscaled != nullptr && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
 								{
 									// Render the upscaled framebuffer to the screen.
 									selected_framebuffer_texture = framebuffer_texture_upscaled;
@@ -2673,7 +2673,7 @@ int main(int argc, char **argv)
 									SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
 
 									// Switch back to actually rendering to the screen.
-									SDL_SetRenderTarget(renderer, NULL);
+									SDL_SetRenderTarget(renderer, nullptr);
 
 									// Update the texture UV to suit the upscaled framebuffer.
 									uv1.x = (float)upscaled_framebuffer_rect.w / (float)framebuffer_texture_upscaled_width;
@@ -2993,7 +2993,7 @@ int main(int argc, char **argv)
 								{
 									// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
 									SDL_DestroyTexture(framebuffer_texture_upscaled);
-									framebuffer_texture_upscaled = NULL;
+									framebuffer_texture_upscaled = nullptr;
 								}
 								DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
@@ -3136,7 +3136,7 @@ int main(int argc, char **argv)
 							const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-							if (ImGui::BeginPopupModal("Select Key", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+							if (ImGui::BeginPopupModal("Select Key", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 							{
 								bool next_menu = false;
 
@@ -3173,7 +3173,7 @@ int main(int argc, char **argv)
 
 							ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-							if (ImGui::BeginPopupModal("Select Action", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+							if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 							{
 								bool previous_menu = false;
 
@@ -3360,7 +3360,7 @@ int main(int argc, char **argv)
 
 								ImGui::TableNextColumn();
 								const char* const audio_driver_name = SDL_GetCurrentVideoDriver();
-								ImGui::TextUnformatted(audio_driver_name != NULL ? audio_driver_name : "None");
+								ImGui::TextUnformatted(audio_driver_name != nullptr ? audio_driver_name : "None");
 
 								// Audio
 								ImGui::TableNextColumn();
@@ -3368,7 +3368,7 @@ int main(int argc, char **argv)
 
 								ImGui::TableNextColumn();
 								const char* const video_driver_name = SDL_GetCurrentAudioDriver();
-								ImGui::TextUnformatted(video_driver_name != NULL ? video_driver_name : "None");
+								ImGui::TextUnformatted(video_driver_name != nullptr ? video_driver_name : "None");
 
 								ImGui::EndTable();
 							}
@@ -3393,7 +3393,7 @@ int main(int argc, char **argv)
 
 				SDL_free(rom_buffer);
 
-				if (cd_file != NULL)
+				if (cd_file != nullptr)
 					SDL_RWclose(cd_file);
 
 				DeinitialiseAudio();
@@ -3414,7 +3414,7 @@ int main(int argc, char **argv)
 		#endif
 
 			// Free recent software list.
-			while (recent_software_list.head != NULL)
+			while (recent_software_list.head != nullptr)
 			{
 				RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.head);
 

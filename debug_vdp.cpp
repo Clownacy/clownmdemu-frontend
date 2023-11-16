@@ -41,12 +41,12 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
 
-		if (plane_texture == NULL)
+		if (plane_texture == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 			plane_texture = SDL_CreateTexture(data->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
-			if (plane_texture == NULL)
+			if (plane_texture == nullptr)
 			{
 				PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
@@ -58,7 +58,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 			}
 		}
 
-		if (plane_texture != NULL)
+		if (plane_texture != nullptr)
 		{
 			ImGui::InputInt("Zoom", &plane_scale);
 			if (plane_scale < 1)
@@ -83,7 +83,7 @@ static void Debug_Plane(bool *open, const ClownMDEmu *clownmdemu, const Debug_VD
 					Uint8 *plane_texture_pixels;
 					int plane_texture_pitch;
 
-					if (SDL_LockTexture(plane_texture, NULL, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
+					if (SDL_LockTexture(plane_texture, nullptr, (void**)&plane_texture_pixels, &plane_texture_pitch) == 0)
 					{
 						const cc_u8l *plane_pointer = plane;
 
@@ -210,7 +210,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
-		if (vram_texture == NULL)
+		if (vram_texture == nullptr)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
 			const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2;
@@ -225,7 +225,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 			vram_texture = SDL_CreateTexture(data->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, (int)vram_texture_width, (int)vram_texture_height);
 
-			if (vram_texture == NULL)
+			if (vram_texture == nullptr)
 			{
 				PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
@@ -247,7 +247,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				// Save the current state to the specified file.
 				SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
 
-				if (file == NULL)
+				if (file == nullptr)
 				{
 					PrintError("Could not open save state file for writing");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data->window);
@@ -271,7 +271,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			});
 		}
 
-		if (vram_texture != NULL)
+		if (vram_texture != nullptr)
 		{
 			bool options_changed = false;
 
@@ -319,7 +319,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 				Uint8 *vram_texture_pixels;
 				int vram_texture_pitch;
 
-				if (SDL_LockTexture(vram_texture, NULL, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
+				if (SDL_LockTexture(vram_texture, nullptr, (void**)&vram_texture_pixels, &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
 					const cc_u8l *vram_pointer = clownmdemu->state->vdp.vram;
