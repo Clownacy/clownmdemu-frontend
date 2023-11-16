@@ -70,6 +70,7 @@ typedef struct RecentSoftware
 {
 	DoublyLinkedList_Entry list;
 
+	bool is_cd_file;
 	char path[1];
 } RecentSoftware;
 
@@ -604,7 +605,7 @@ static void HardResetConsole(void)
 	SoftResetConsole();
 }
 
-static void AddToRecentSoftware(const char* const path, const bool add_to_end)
+static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
 	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
@@ -639,6 +640,7 @@ static void AddToRecentSoftware(const char* const path, const bool add_to_end)
 
 	if (new_entry != NULL)
 	{
+		new_entry->is_cd_file = is_cd_file;
 		SDL_memcpy(new_entry->path, path, path_length + 1);
 		(add_to_end ? DoublyLinkedList_PushBack : DoublyLinkedList_PushFront)(&recent_software_list, &new_entry->list);
 	}
@@ -673,15 +675,47 @@ static bool LoadCartridgeFileFromFile(const char *path, const ClownMDEmu_Callbac
 
 	if (temp_rom_buffer == NULL)
 	{
-		PrintError("Could not load the software");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the software.", window);
+		PrintError("Could not load the cartridge file");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the cartridge file.", window);
 		return false;
 	}
 	else
 	{
-		AddToRecentSoftware(path, false);
+		AddToRecentSoftware(path, false, false);
 
 		LoadCartridgeFileFromMemory(temp_rom_buffer, temp_rom_buffer_size, callbacks);
+		return true;
+	}
+}
+
+static bool LoadCDFile(const char* const path)
+{
+	cd_file = SDL_RWFromFile(path, "rb");
+
+	if (cd_file == NULL)
+	{
+		PrintError("Could not load the CD file");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the CD file.", window);
+		return false;
+	}
+	else
+	{
+		AddToRecentSoftware(path, true, false);
+
+		// Detect if the sector size is 2048 bytes or 2352 bytes.
+		sector_size_2352 = false;
+
+		unsigned char buffer[0x10];
+		if (SDL_RWread(cd_file, buffer, sizeof(buffer), 1) == 1)
+		{
+			static const unsigned char sector_header[0x10] = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
+
+			if (SDL_memcmp(buffer, sector_header, sizeof(sector_header)) == 0)
+				sector_size_2352 = true;
+		}
+
+		HardResetConsole();
+
 		return true;
 	}
 }
@@ -1207,9 +1241,17 @@ static int INIParseCallback(void* const user, const char* const section, const c
 	}
 	else if (SDL_strcmp(section, "Recent Software") == 0)
 	{
-		if (SDL_strcmp(name, "path") == 0)
+		static bool is_cd_file = false;
+
+		if (SDL_strcmp(name, "cd") == 0)
+		{
+			is_cd_file = SDL_strcmp(value, "true") == 0;
+		}
+		else if (SDL_strcmp(name, "path") == 0)
+		{
 			if (value[0] != '\0')
-				AddToRecentSoftware(value, true);
+				AddToRecentSoftware(value, is_cd_file, true);
+		}
 	}
 
 	return 1;
@@ -1338,6 +1380,12 @@ static void SaveConfiguration(void)
 		for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != NULL; entry = entry->next)
 		{
 			RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
+
+			PRINT_STRING(file, "cd = ");
+			if (recent_software->is_cd_file)
+				PRINT_STRING(file, "true\n");
+			else
+				PRINT_STRING(file, "false\n");
 
 			PRINT_STRING(file, "path = ");
 			SDL_RWwrite(file, recent_software->path, 1, SDL_strlen(recent_software->path));
@@ -2187,7 +2235,7 @@ int main(int argc, char **argv)
 							}
 							else
 							{
-								AddToRecentSoftware(drag_and_drop_filename, false);
+								AddToRecentSoftware(drag_and_drop_filename, false, false);
 								LoadCartridgeFileFromMemory(file_buffer, file_size, &callbacks);
 								emulator_paused = false;
 							}
@@ -2298,23 +2346,8 @@ int main(int argc, char **argv)
 								{
 									OpenFileDialog("Load CD File", [](const char* const path)
 									{
-										cd_file = SDL_RWFromFile(path, "rb");
-
-										if (cd_file != NULL)
+										if (LoadCDFile(path))
 										{
-											// Detect if the sector size is 2048 bytes or 2352 bytes.
-											sector_size_2352 = false;
-
-											unsigned char buffer[0x10];
-											if (SDL_RWread(cd_file, buffer, sizeof(buffer), 1) == 1)
-											{
-												static const unsigned char sector_header[0x10] = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
-
-												if (SDL_memcmp(buffer, sector_header, sizeof(sector_header)) == 0)
-													sector_size_2352 = true;
-											}
-
-											HardResetConsole();
 											emulator_paused = false;
 											return true;
 										}
@@ -2368,8 +2401,18 @@ int main(int argc, char **argv)
 									#endif
 
 										if (ImGui::MenuItem(filename))
-											if (LoadCartridgeFileFromFile(recent_software->path, &callbacks))
-												emulator_paused = false;
+										{
+											if (recent_software->is_cd_file)
+											{
+												if (LoadCDFile(recent_software->path))
+													emulator_paused = false;
+											}
+											else
+											{
+												if (LoadCartridgeFileFromFile(recent_software->path, &callbacks))
+													emulator_paused = false;
+											}
+										}
 
 										// Show the full path as a tooltip.
 										DoToolTip(recent_software->path);
