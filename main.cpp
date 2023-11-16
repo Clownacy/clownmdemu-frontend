@@ -2235,6 +2235,7 @@ int main(int argc, char **argv)
 							}
 							else
 							{
+								// TODO: Handle dropping a CD file here.
 								AddToRecentSoftware(drag_and_drop_filename, false, false);
 								LoadCartridgeFileFromMemory(file_buffer, file_size, &callbacks);
 								emulator_paused = false;
