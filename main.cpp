@@ -217,7 +217,7 @@ static bool tall_double_resolution_mode;
 static float dpi_scale;
 static unsigned int frame_counter;
 
-static float GetNewDPIScale(void)
+static float GetNewDPIScale()
 {
 	float dpi_scale = 1.0f;
 
@@ -231,7 +231,7 @@ static float GetNewDPIScale(void)
 	return dpi_scale;
 }
 
-static bool InitialiseVideo(void)
+static bool InitialiseVideo()
 {
 	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
 	{
@@ -282,7 +282,7 @@ static bool InitialiseVideo(void)
 	return false;
 }
 
-static void DeinitialiseVideo(void)
+static void DeinitialiseVideo()
 {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
@@ -294,13 +294,13 @@ static void SetFullscreen(bool enabled)
 	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
-static void ToggleFullscreen(void)
+static void ToggleFullscreen()
 {
 	fullscreen = !fullscreen;
 	SetFullscreen(fullscreen);
 }
 
-static bool InitialiseFramebuffer(void)
+static bool InitialiseFramebuffer()
 {
 	// Create framebuffer texture
 	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
@@ -323,7 +323,7 @@ static bool InitialiseFramebuffer(void)
 	return false;
 }
 
-static void DeinitialiseFramebuffer(void)
+static void DeinitialiseFramebuffer()
 {
 	SDL_DestroyTexture(framebuffer_texture);
 }
@@ -373,7 +373,7 @@ static Mixer_Constant mixer_constant;
 static Mixer_State mixer_state;
 static const Mixer mixer = {&mixer_constant, &mixer_state};
 
-static bool InitialiseAudio(void)
+static bool InitialiseAudio()
 {
 	SDL_AudioSpec want, have;
 
@@ -411,7 +411,7 @@ static bool InitialiseAudio(void)
 	return false;
 }
 
-static void DeinitialiseAudio(void)
+static void DeinitialiseAudio()
 {
 	if (audio_device != 0)
 		SDL_CloseAudioDevice(audio_device);
@@ -440,7 +440,7 @@ static void AudioPushCallback(const void *user_data, Sint16 *audio_samples, size
 
 static ImFont *monospace_font;
 
-static unsigned int CalculateFontSize(void)
+static unsigned int CalculateFontSize()
 {
 	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
 	return (unsigned int)(15.0f * dpi_scale);
@@ -583,22 +583,22 @@ static const cc_u8l* CDSectorReadCallback(const void *user_data)
 // Construct our big list of callbacks for clownmdemu.
 static ClownMDEmu_Callbacks callbacks = {nullptr, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
 
-static bool IsCartridgeFileLoaded(void)
+static bool IsCartridgeFileLoaded()
 {
 	return rom_buffer != nullptr;
 }
 
-static bool IsCDFileLoaded(void)
+static bool IsCDFileLoaded()
 {
 	return cd_file != nullptr;
 }
 
-static void SoftResetConsole(void)
+static void SoftResetConsole()
 {
 	ClownMDEmu_Reset(&clownmdemu, &callbacks, !IsCartridgeFileLoaded());
 }
 
-static void HardResetConsole(void)
+static void HardResetConsole()
 {
 	ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
@@ -774,7 +774,7 @@ static bool LoadSaveStateFromFile(const char* const save_state_path)
 // Manages whether the emulator runs at a higher speed or not.
 static bool fast_forward_in_progress;
 
-static void UpdateFastForwardStatus(void)
+static void UpdateFastForwardStatus()
 {
 	const bool previous_fast_forward_in_progress = fast_forward_in_progress;
 
@@ -794,7 +794,7 @@ static void UpdateFastForwardStatus(void)
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static bool rewind_in_progress;
 
-static void UpdateRewindStatus(void)
+static void UpdateRewindStatus()
 {
 	rewind_in_progress = keyboard_input.rewind;
 
@@ -1025,7 +1025,7 @@ void SaveFileDialog(char const* const title, const std::function<bool (const cha
 	FileDialog(title, callback, true);
 }
 
-static void DoFilePicker(void)
+static void DoFilePicker()
 {
 	if (active_file_picker_popup != nullptr)
 	{
@@ -1262,7 +1262,7 @@ static int INIParseCallback(void* const user, const char* const section, const c
 // Configuration //
 ///////////////////
 
-static void LoadConfiguration(void)
+static void LoadConfiguration()
 {
 	// Set default settings.
 
@@ -1322,7 +1322,7 @@ static void LoadConfiguration(void)
 	SDL_RenderSetVSync(renderer, use_vsync);
 }
 
-static void SaveConfiguration(void)
+static void SaveConfiguration()
 {
 	// Save configuration file:
 	SDL_RWops *file = SDL_RWFromFile(CONFIG_FILENAME, "w");
