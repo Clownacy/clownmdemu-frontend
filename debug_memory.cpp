@@ -4,7 +4,7 @@
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const cc_u8l *buffer, size_t buffer_length)
+void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const cc_u8l *buffer, std::size_t buffer_length)
 {
 	ImGui::PushFont(monospace_font);
 
@@ -49,7 +49,7 @@ void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, c
 	ImGui::End();
 }
 
-void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const cc_u16l *buffer, size_t buffer_length)
+void Debug_Memory(bool *open, ImFont *monospace_font, const char *window_name, const cc_u16l *buffer, std::size_t buffer_length)
 {
 	ImGui::PushFont(monospace_font);
 

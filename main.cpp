@@ -1,8 +1,6 @@
-#include <errno.h>
-#include <limits.h> // For INT_MAX.
-#include <stdarg.h>
-#include <stddef.h>
-
+#include <cerrno>
+#include <climits> // For INT_MAX.
+#include <cstddef>
 #include <functional>
 
 #include "SDL.h"
@@ -114,8 +112,8 @@ static bool emulator_frame_advance;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static EmulationState state_rewind_buffer[60 * 10]; // Roughly 30 seconds of rewinding at 60FPS
-static size_t state_rewind_index;
-static size_t state_rewind_remaining;
+static std::size_t state_rewind_index;
+static std::size_t state_rewind_remaining;
 #else
 static EmulationState state_rewind_buffer[1];
 #endif
@@ -125,7 +123,7 @@ static bool quick_save_exists;
 static EmulationState quick_save_state;
 
 static unsigned char *rom_buffer;
-static size_t rom_buffer_size;
+static std::size_t rom_buffer_size;
 
 static SDL_RWops *cd_file;
 static bool sector_size_2352;
@@ -147,7 +145,7 @@ static bool FileExists(const char *filename)
 	return false;
 }
 
-static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, size_t *file_size)
+static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, std::size_t *file_size)
 {
 	*file_buffer = nullptr;
 	*file_size = 0;
@@ -168,7 +166,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char **file_buffer, 
 		}
 		else
 		{
-			const size_t size = (size_t)size_s64;
+			const std::size_t size = (std::size_t)size_s64;
 
 			*file_buffer = (unsigned char*)SDL_malloc(size);
 
@@ -425,7 +423,7 @@ static void SetAudioPALMode(bool enabled)
 		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 }
 
-static void AudioPushCallback(const void *user_data, Sint16 *audio_samples, size_t total_frames)
+static void AudioPushCallback(const void *user_data, Sint16 *audio_samples, std::size_t total_frames)
 {
 	(void)user_data;
 
@@ -543,14 +541,14 @@ static cc_bool ReadInputCallback(const void *user_data, cc_u8f player_id, ClownM
 	return value;
 }
 
-static void FMAudioCallback(const void *user_data, size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, size_t total_frames))
+static void FMAudioCallback(const void *user_data, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	(void)user_data;
 
 	generate_fm_audio(&clownmdemu, Mixer_AllocateFMSamples(&mixer, total_frames), total_frames);
 }
 
-static void PSGAudioCallback(const void *user_data, size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, size_t total_samples))
+static void PSGAudioCallback(const void *user_data, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
 {
 	(void)user_data;
 
@@ -635,7 +633,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 	}
 
 	// Add the file to the list of recent software.
-	const size_t path_length = SDL_strlen(path);
+	const std::size_t path_length = SDL_strlen(path);
 	RecentSoftware* const new_entry = (RecentSoftware*)SDL_malloc(sizeof(RecentSoftware) + path_length);
 
 	if (new_entry != nullptr)
@@ -646,7 +644,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 	}
 }
 
-static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, size_t rom_buffer_size_parameter)
+static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, std::size_t rom_buffer_size_parameter)
 {
 	quick_save_exists = false;
 
@@ -668,7 +666,7 @@ static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, siz
 static bool LoadCartridgeFileFromFile(const char *path)
 {
 	unsigned char *temp_rom_buffer;
-	size_t temp_rom_buffer_size;
+	std::size_t temp_rom_buffer_size;
 
 	// Load ROM to memory.
 	LoadFileToBuffer(path, &temp_rom_buffer, &temp_rom_buffer_size);
@@ -722,7 +720,7 @@ static bool LoadCDFile(const char* const path)
 
 static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
 
-static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, const size_t file_size)
+static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, const std::size_t file_size)
 {
 	bool success = false;
 
@@ -757,7 +755,7 @@ static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, cons
 static bool LoadSaveStateFromFile(const char* const save_state_path)
 {
 	unsigned char *file_buffer;
-	size_t file_size;
+	std::size_t file_size;
 	LoadFileToBuffer(save_state_path, &file_buffer, &file_size);
 
 	bool success = false;
@@ -929,14 +927,14 @@ static void FileDialog(char const* const title, const std::function<bool (const 
 					#define GROW_SIZE 0x100
 						// Read the whole path returned by Zenity/kdialog.
 						// This is very complicated due to handling arbitrarily long paths.
-						size_t path_buffer_length = 0;
+						std::size_t path_buffer_length = 0;
 						char *path_buffer = (char*)SDL_malloc(GROW_SIZE + 1); // '+1' for the null character.
 
 						if (path_buffer != nullptr)
 						{
 							for (;;)
 							{
-								const size_t path_length = fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
+								const std::size_t path_length = fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
 								path_buffer_length += path_length;
 
 								if (path_length != GROW_SIZE)
@@ -1294,7 +1292,7 @@ static void LoadConfiguration()
 	if (file == nullptr || ini_parse_stream(INIReadCallback, file, INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
-		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+		for (std::size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
 			keyboard_bindings[i] = INPUT_BINDING_NONE;
 
 		keyboard_bindings[SDL_SCANCODE_UP] = INPUT_BINDING_CONTROLLER_UP;
@@ -1364,7 +1362,7 @@ static void SaveConfiguration()
 		// Save keyboard bindings.
 		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
 
-		for (size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+		for (std::size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
 		{
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
@@ -1588,7 +1586,7 @@ int main(int argc, char **argv)
 						// We maintain a ring buffer of emulator states:
 						// when rewinding, we go backwards through this buffer,
 						// and when not rewinding, we go forwards through it.
-						size_t from_index, to_index;
+						std::size_t from_index, to_index;
 
 						if (rewind_in_progress)
 						{
@@ -2222,7 +2220,7 @@ int main(int argc, char **argv)
 					if (active_file_picker_popup == nullptr && drag_and_drop_filename != nullptr)
 					{
 						unsigned char *file_buffer;
-						size_t file_size;
+						std::size_t file_size;
 						LoadFileToBuffer(drag_and_drop_filename, &file_buffer, &file_size);
 
 						if (file_buffer != nullptr)
@@ -2888,7 +2886,7 @@ int main(int argc, char **argv)
 							{
 								char buffer[] = "FM1";
 
-								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.fm_channels_disabled); ++i)
+								for (std::size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.fm_channels_disabled); ++i)
 								{
 									buffer[2] = '1' + i;
 									ImGui::TableNextColumn();
@@ -2911,7 +2909,7 @@ int main(int argc, char **argv)
 							{
 								char buffer[] = "PSG1";
 
-								for (size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
+								for (std::size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
 								{
 									buffer[3] = '1' + i;
 									ImGui::TableNextColumn();
@@ -3045,7 +3043,7 @@ int main(int argc, char **argv)
 							{
 								sorted_scancodes_done = true;
 
-								for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+								for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
 									sorted_scancodes[i] = (SDL_Scancode)i;
 
 								SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
@@ -3103,7 +3101,7 @@ int main(int argc, char **argv)
 								ImGui::TableSetupColumn("Action");
 								ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
 								ImGui::TableHeadersRow();
-								for (size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+								for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
 								{
 									if (keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
 									{

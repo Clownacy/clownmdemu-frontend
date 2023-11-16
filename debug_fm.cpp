@@ -1,6 +1,6 @@
 #include "debug_fm.h"
 
-#include <stddef.h>
+#include <cstddef>
 
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"
@@ -99,7 +99,7 @@ void Debug_FM(bool *open, const ClownMDEmu *clownmdemu, ImFont *monospace_font)
 		{
 			char window_name_buffer[] = "FM1";
 
-			for (size_t i = 0; i < CC_COUNT_OF(fm->channels); ++i)
+			for (std::size_t i = 0; i < CC_COUNT_OF(fm->channels); ++i)
 			{
 				window_name_buffer[2] = '1' + i;
 

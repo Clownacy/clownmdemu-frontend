@@ -1,7 +1,6 @@
 #include "debug_vdp.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <functional>
 
 #include "SDL.h"
@@ -202,23 +201,23 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 	if (ImGui::Begin("VRAM", open))
 	{
 		static SDL_Texture *vram_texture;
-		static size_t vram_texture_width;
-		static size_t vram_texture_height;
+		static std::size_t vram_texture_width;
+		static std::size_t vram_texture_height;
 
-		const size_t tile_width = 8;
-		const size_t tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
+		const std::size_t tile_width = 8;
+		const std::size_t tile_height = clownmdemu->state->vdp.double_resolution_enabled ? 16 : 8;
 
-		const size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2 / (tile_width * tile_height);
+		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
 		if (vram_texture == nullptr)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-			const size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2;
-			const size_t vram_texture_width_in_progress = (size_t)SDL_ceilf(SDL_sqrtf((float)size_of_vram_in_pixels));
-			const size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
-			const size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
-			const size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
+			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu->state->vdp.vram) * 2;
+			const std::size_t vram_texture_width_in_progress = (std::size_t)SDL_ceilf(SDL_sqrtf((float)size_of_vram_in_pixels));
+			const std::size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
+			const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
+			const std::size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
 
 			vram_texture_width = vram_texture_width_rounded_up_to_8;
 			vram_texture_height = vram_texture_height_rounded_up_to_16;
@@ -302,8 +301,8 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			ImGui::SeparatorText("Tiles");
 
 			// Set up some variables that we're going to need soon.
-			const size_t vram_texture_width_in_tiles = vram_texture_width / tile_width;
-			const size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
+			const std::size_t vram_texture_width_in_tiles = vram_texture_width / tile_width;
+			const std::size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
 
 			static unsigned int cache_frame_counter;
 
@@ -327,9 +326,9 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 
 					// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 					// instead of left-to-right then top-to-bottom.
-					for (size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+					for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 					{
-						for (size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
+						for (std::size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
 						{
 							Uint32 *pixels_pointer = (Uint32*)(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
 
@@ -365,7 +364,7 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			// Calculate the size of the VRAM display region.
 			// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
 			const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size_and_padding.x);
-			const size_t vram_display_region_width_in_tiles = SDL_floorf(vram_display_region_width / dst_tile_size_and_padding.x);
+			const std::size_t vram_display_region_width_in_tiles = SDL_floorf(vram_display_region_width / dst_tile_size_and_padding.x);
 
 			const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
 			const bool window_is_hovered = ImGui::IsWindowHovered();
@@ -378,15 +377,15 @@ void Debug_VRAM(bool *open, const ClownMDEmu *clownmdemu, const Debug_VDP_Data *
 			clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, vram_display_region_width_in_tiles), dst_tile_size_and_padding.y);
 			while (clipper.Step())
 			{
-				for (size_t y = (size_t)clipper.DisplayStart; y < (size_t)clipper.DisplayEnd; ++y)
+				for (std::size_t y = (std::size_t)clipper.DisplayStart; y < (std::size_t)clipper.DisplayEnd; ++y)
 				{
-					for (size_t x = 0; x < CC_MIN(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
+					for (std::size_t x = 0; x < CC_MIN(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
 					{
-						const size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
+						const std::size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
 
 						// Obtain texture coordinates for the current tile.
-						const size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
-						const size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
+						const std::size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
+						const std::size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
 
 						const ImVec2 current_tile_uv0(
 							(float)current_tile_src_x / (float)vram_texture_width,
