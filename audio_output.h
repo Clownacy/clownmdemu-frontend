@@ -19,9 +19,9 @@ private:
 	static bool mixer_constant_initialised;
 
 	DebugLog &debug_log;
-	SDL_AudioDeviceID audio_device;
-	Uint32 audio_device_buffer_size;
-	unsigned long audio_device_sample_rate;
+	SDL_AudioDeviceID device;
+	Uint32 buffer_size;
+	unsigned long sample_rate;
 	bool pal_mode;
 	bool low_pass_filter = true;
 

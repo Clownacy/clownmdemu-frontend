@@ -21,16 +21,16 @@ bool AudioOutput::Initialise()
 		want.samples <<= 1;
 	want.callback = nullptr;
 
-	audio_device = SDL_OpenAudioDevice(nullptr, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
+	device = SDL_OpenAudioDevice(nullptr, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
 
-	if (audio_device == 0)
+	if (device == 0)
 	{
 		debug_log.Log("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
-		audio_device_buffer_size = have.size;
-		audio_device_sample_rate = static_cast<unsigned long>(have.freq);
+		buffer_size = have.size;
+		sample_rate = static_cast<unsigned long>(have.freq);
 
 		// Initialise the mixer.
 		if (!mixer_constant_initialised)
@@ -38,10 +38,10 @@ bool AudioOutput::Initialise()
 			mixer_constant_initialised = true;
 			Mixer_Constant_Initialise(&mixer_constant);
 		}
-		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
+		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
 
 		// Unpause audio device, so that playback can begin.
-		SDL_PauseAudioDevice(audio_device, 0);
+		SDL_PauseAudioDevice(device, 0);
 
 		return true;
 	}
@@ -51,8 +51,8 @@ bool AudioOutput::Initialise()
 
 void AudioOutput::Deinitialise()
 {
-	if (audio_device != 0)
-		SDL_CloseAudioDevice(audio_device);
+	if (device != 0)
+		SDL_CloseAudioDevice(device);
 }
 
 void AudioOutput::MixerBegin()
@@ -63,14 +63,14 @@ void AudioOutput::MixerBegin()
 void AudioOutput::MixerEnd()
 {
 	// If there's a lot of audio queued, then don't queue any more.
-	if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
+	if (SDL_GetQueuedAudioSize(device) < buffer_size * 4)
 	{
 		const auto callback = [](const void* const user_data, Sint16* const audio_samples, const size_t total_frames)
 		{
 			const AudioOutput *audio_output = reinterpret_cast<const AudioOutput*>(user_data);
 
-			if (audio_output->audio_device != 0)
-				SDL_QueueAudio(audio_output->audio_device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
+			if (audio_output->device != 0)
+				SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
 		};
 
 		Mixer_End(&mixer, callback, this);
@@ -91,14 +91,14 @@ void AudioOutput::SetPALMode(const bool enabled)
 {
 	pal_mode = enabled;
 
-	if (audio_device != 0)
-		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
+	if (device != 0)
+		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
 }
 
 void AudioOutput::SetLowPassFilter(const bool enabled)
 {
 	low_pass_filter = enabled;
 
-	if (audio_device != 0)
-		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
+	if (device != 0)
+		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
 }
