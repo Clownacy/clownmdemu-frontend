@@ -12,15 +12,12 @@
 
 #include "debug_log.h"
 
-namespace AudioStatic
-{
-	extern Mixer_Constant mixer_constant;
-	extern bool mixer_constant_initialised;
-}
-
 class Audio
 {
 private:
+	static Mixer_Constant mixer_constant;
+	static bool mixer_constant_initialised;
+
 	DebugLog &debug_log;
 	SDL_AudioDeviceID audio_device;
 	Uint32 audio_device_buffer_size;
@@ -29,7 +26,7 @@ private:
 	bool low_pass_filter = true;
 
 	Mixer_State mixer_state;
-	const Mixer mixer = {&AudioStatic::mixer_constant, &mixer_state};
+	const Mixer mixer = {&mixer_constant, &mixer_state};
 
 public:
 

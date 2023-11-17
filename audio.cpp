@@ -4,8 +4,8 @@
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.h"
 
-Mixer_Constant AudioStatic::mixer_constant;
-bool AudioStatic::mixer_constant_initialised;
+Mixer_Constant Audio::mixer_constant;
+bool Audio::mixer_constant_initialised;
 
 bool Audio::Initialise()
 {
@@ -33,10 +33,10 @@ bool Audio::Initialise()
 		audio_device_sample_rate = static_cast<unsigned long>(have.freq);
 
 		// Initialise the mixer.
-		if (!AudioStatic::mixer_constant_initialised)
+		if (!mixer_constant_initialised)
 		{
-			AudioStatic::mixer_constant_initialised = true;
-			Mixer_Constant_Initialise(&AudioStatic::mixer_constant);
+			mixer_constant_initialised = true;
+			Mixer_Constant_Initialise(&mixer_constant);
 		}
 		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 
