@@ -1,4 +1,4 @@
-#include "file_picker.h"
+#include "file-picker.h"
 
 #ifdef _WIN32
 #include <windows.h>

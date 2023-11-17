@@ -10,7 +10,7 @@
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.h"
 
-#include "debug_log.h"
+#include "debug-log.h"
 
 class AudioOutput
 {

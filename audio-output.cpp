@@ -1,4 +1,4 @@
-#include "audio_output.h"
+#include "audio-output.h"
 
 #define MIXER_IMPLEMENTATION
 #define MIXER_FORMAT Sint16

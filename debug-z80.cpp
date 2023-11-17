@@ -1,4 +1,4 @@
-#include "debug_z80.h"
+#include "debug-z80.h"
 
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"

@@ -1,4 +1,4 @@
-#include "debug_memory.h"
+#include "debug-memory.h"
 
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"

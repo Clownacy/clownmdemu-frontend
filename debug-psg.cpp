@@ -1,4 +1,4 @@
-#include "debug_psg.h"
+#include "debug-psg.h"
 
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"

@@ -3,7 +3,7 @@
 
 #include "SDL.h"
 
-#include "debug_log.h"
+#include "debug-log.h"
 
 class Window
 {

@@ -1,4 +1,4 @@
-#include "debug_m68k.h"
+#include "debug-m68k.h"
 
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"

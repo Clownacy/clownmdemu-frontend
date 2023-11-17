@@ -4,8 +4,8 @@
 #include "SDL.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-#include "debug_log.h"
-#include "file_picker.h"
+#include "debug-log.h"
+#include "file-picker.h"
 #include "window.h"
 
 typedef struct EmulationState
