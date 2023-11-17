@@ -5,6 +5,7 @@
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 #include "debug_log.h"
+#include "file_picker.h"
 
 typedef struct EmulationState
 {
@@ -20,5 +21,6 @@ extern unsigned int frame_counter;
 extern DebugLog debug_log;
 extern ClownMDEmu clownmdemu;
 extern ImFont *monospace_font;
+extern FilePicker file_picker;
 
 #endif /* COMMON_H */

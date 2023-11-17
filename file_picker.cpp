@@ -1,0 +1,326 @@
+#include "file_picker.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#include "SDL_syswm.h"
+#elif defined(FILE_PICKER_POSIX)
+#include <cstdio>
+#include <sys/wait.h>
+#endif
+
+#include "SDL.h"
+
+#include "libraries/imgui/imgui.h"
+
+#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+
+#include "utilities.h"
+
+void FilePicker::CreateFileDialog(char const* const title, const std::function<bool(const char *path)> callback, bool save)
+{
+#ifdef _WIN32
+	if (use_native_file_dialogs)
+	{
+		SDL_SysWMinfo info;
+		SDL_VERSION(&info.version);
+
+		char path_buffer[MAX_PATH];
+		path_buffer[0] = '\0';
+
+		OPENFILENAME ofn;
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : nullptr;
+		ofn.lpstrFile = path_buffer;
+		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
+		ofn.lpstrTitle = title;
+
+		char *working_directory_buffer = nullptr;
+		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, nullptr);
+
+		if (working_directory_buffer_size != 0)
+		{
+			working_directory_buffer = static_cast<char*>(SDL_malloc(working_directory_buffer_size));
+
+			if (working_directory_buffer != nullptr)
+			{
+				if (GetCurrentDirectory(working_directory_buffer_size, working_directory_buffer) == 0)
+				{
+					SDL_free(working_directory_buffer);
+					working_directory_buffer = nullptr;
+				}
+			}
+		}
+
+		if (save)
+		{
+			ofn.Flags = OFN_OVERWRITEPROMPT;
+			if (GetSaveFileName(&ofn))
+				callback(path_buffer);
+		}
+		else
+		{
+			ofn.Flags = OFN_FILEMUSTEXIST;
+			if (GetOpenFileName(&ofn))
+				callback(path_buffer);
+		}
+
+		if (working_directory_buffer != nullptr)
+		{
+			SetCurrentDirectory(working_directory_buffer);
+			SDL_free(working_directory_buffer);
+		}
+	}
+	else
+	#elif defined(POSIX)
+	bool done = false;
+
+	if (use_native_file_dialogs)
+	{
+		for (unsigned int i = 0; i < 2; ++i)
+		{
+			if (!done)
+			{
+				char *command;
+
+				// Construct the command to invoke Zenity/kdialog.
+				const int bytes_printed = (i == 0) != prefer_kdialog ?
+					SDL_asprintf(&command, "zenity --file-selection %s --title=\"%s\" --filename=\"%s\"",
+						save ? "--save" : "",
+						title,
+						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
+					:
+					SDL_asprintf(&command, "kdialog --get%sfilename --title \"%s\" \"%s\"",
+						save ? "save" : "open",
+						title,
+						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
+					;
+
+				if (bytes_printed >= 0)
+				{
+					// Invoke Zenity/kdialog.
+					FILE *path_stream = popen(command, "r");
+
+					SDL_free(command);
+
+					if (path_stream != nullptr)
+					{
+					#define GROW_SIZE 0x100
+						// Read the whole path returned by Zenity/kdialog.
+						// This is very complicated due to handling arbitrarily long paths.
+						std::size_t path_buffer_length = 0;
+						char *path_buffer = static_cast<char*>(SDL_malloc(GROW_SIZE + 1)); // '+1' for the null character.
+
+						if (path_buffer != nullptr)
+						{
+							for (;;)
+							{
+								const std::size_t path_length = std::fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
+								path_buffer_length += path_length;
+
+								if (path_length != GROW_SIZE)
+									break;
+
+								char* const new_path_buffer = static_cast<char*>(SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1));
+
+								if (new_path_buffer == nullptr)
+								{
+									SDL_free(path_buffer);
+									path_buffer = nullptr;
+									break;
+								}
+
+								path_buffer = new_path_buffer;
+							}
+						#undef GROW_SIZE
+
+							if (path_buffer != nullptr)
+							{
+								// Handle Zenity's/kdialog's return value.
+								const int exit_status = pclose(path_stream);
+								path_stream = nullptr;
+
+								if (exit_status != -1 && WIFEXITED(exit_status))
+								{
+									switch (WEXITSTATUS(exit_status))
+									{
+										case 0: // Success.
+										{
+											done = true;
+
+											path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
+											callback(path_buffer);
+
+											char* const directory_separator = SDL_strrchr(path_buffer, '/');
+
+											if (directory_separator == nullptr)
+												path_buffer[0] = '\0';
+											else
+												directory_separator[1] = '\0';
+
+											if (last_file_dialog_directory != nullptr)
+												SDL_free(last_file_dialog_directory);
+
+											last_file_dialog_directory = path_buffer;
+											path_buffer = nullptr;
+
+											break;
+										}
+
+										case 1: // No file selected.
+											done = true;
+											break;
+									}
+								}
+							}
+
+							SDL_free(path_buffer);
+						}
+
+						if (path_stream != nullptr)
+							pclose(path_stream);
+					}
+				}
+			}
+		}
+	}
+
+	if (!done)
+	#endif
+	{
+		active_file_picker_popup = title;
+		popup_callback = callback;
+		is_save_dialog = save;
+	}
+}
+
+void FilePicker::CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback)
+{
+	CreateFileDialog(title, callback, false);
+}
+
+void FilePicker::CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback)
+{
+	CreateFileDialog(title, callback, true);
+}
+
+void FilePicker::Update(char *&drag_and_drop_filename)
+{
+	if (active_file_picker_popup != nullptr)
+	{
+		if (!ImGui::IsPopupOpen(active_file_picker_popup))
+			ImGui::OpenPopup(active_file_picker_popup);
+
+		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal(active_file_picker_popup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			static int text_buffer_size;
+			static char *text_buffer = nullptr;
+
+			if (text_buffer == nullptr)
+			{
+				text_buffer_size = 0x40;
+				text_buffer = static_cast<char*>(SDL_malloc(text_buffer_size));
+				text_buffer[0] = '\0';
+			}
+
+			const ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* const data)
+			{
+				if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+				{
+					if (data->BufSize > text_buffer_size)
+					{
+						int new_text_buffer_size = (INT_MAX >> 1) + 1; // Largest power of 2.
+
+						// Find the first power of two that is larger than the requested buffer size.
+						while (data->BufSize < new_text_buffer_size >> 1)
+							new_text_buffer_size >>= 1;
+
+						char* const new_text_buffer = static_cast<char*>(SDL_realloc(text_buffer, new_text_buffer_size));
+
+						if (new_text_buffer != nullptr)
+						{
+							data->BufSize = text_buffer_size = new_text_buffer_size;
+							data->Buf = text_buffer = new_text_buffer;
+						}
+					}
+				}
+
+				return 0;
+			};
+
+			/* Make it so that the text box is selected by default,
+			   so that the user doesn't have to click on it first.
+			   If a file is dropped onto the dialog, focus on the
+			   'open' button instead or else the text box won't show
+			   the dropped file's path. */
+			if (drag_and_drop_filename != nullptr)
+				ImGui::SetKeyboardFocusHere(1);
+			else if (ImGui::IsWindowAppearing())
+				ImGui::SetKeyboardFocusHere();
+
+			ImGui::TextUnformatted("Filename:");
+			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback);
+
+			// Set the text box's contents to the dropped file's path.
+			if (drag_and_drop_filename != nullptr)
+			{
+				SDL_free(text_buffer);
+				text_buffer = drag_and_drop_filename;
+				drag_and_drop_filename = nullptr;
+
+				text_buffer_size = SDL_strlen(text_buffer) + 1;
+			}
+
+			ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x + (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x - ImGui::GetStyle().FramePadding.x * 4 - ImGui::CalcTextSize(is_save_dialog ? "Save" : "Open").x - ImGui::CalcTextSize("Cancel").x) / 2);
+			const bool ok_pressed = ImGui::Button(is_save_dialog ? "Save" : "Open");
+			ImGui::SameLine();
+			bool exit = ImGui::Button("Cancel");
+
+			bool submit = false;
+
+			if (enter_pressed || ok_pressed)
+			{
+				if (!is_save_dialog || !Utilities::FileExists(text_buffer))
+					submit = true;
+				else
+					ImGui::OpenPopup("File Already Exists");
+			}
+
+			ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+			if (ImGui::BeginPopupModal("File Already Exists", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::TextUnformatted("A file with that name already exists. Overwrite it?");
+
+				if (ImGui::Button("Yes"))
+				{
+					submit = true;
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("No"))
+					ImGui::CloseCurrentPopup();
+
+				ImGui::EndPopup();
+			}
+
+			if (submit)
+				if (popup_callback(text_buffer))
+					exit = true;
+
+			if (exit)
+			{
+				ImGui::CloseCurrentPopup();
+				SDL_free(text_buffer);
+				text_buffer = nullptr;
+				active_file_picker_popup = nullptr;
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+}

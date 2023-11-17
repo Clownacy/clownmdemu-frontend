@@ -19,9 +19,6 @@ typedef struct TileMetadata
 	bool priority;
 } TileMetadata;
 
-void OpenFileDialog(char const* const title, const std::function<bool (const char *path)> callback);
-void SaveFileDialog(char const* const title, const std::function<bool (const char *path)> callback);
-
 static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &tile_metadata)
 {
 	tile_metadata.tile_index = packed_tile_metadata & 0x7FF;
@@ -240,7 +237,7 @@ void Debug_VRAM(bool &open)
 
 		if (ImGui::Button("Save to File"))
 		{
-			SaveFileDialog("Create Save State", [](const char* const save_state_path)
+			file_picker.CreateSaveFileDialog("Create Save State", [](const char* const save_state_path)
 			{
 				bool success = false;
 

@@ -8,3 +8,4 @@ unsigned int frame_counter;
 DebugLog debug_log;
 ClownMDEmu clownmdemu;
 ImFont *monospace_font;
+FilePicker file_picker(window);
