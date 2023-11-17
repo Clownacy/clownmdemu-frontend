@@ -13,6 +13,9 @@ class Window
 private:
 	DebugLog &debug_log;
 
+	bool InitialiseFramebuffer();
+	void DeinitialiseFramebuffer();
+
 public:
 	SDL_Window *sdl; // TODO: Make private
 	SDL_Renderer *renderer;
@@ -38,8 +41,6 @@ public:
 	void Deinitialise();
 	void SetFullscreen(bool enabled);
 	void ToggleFullscreen();
-	bool InitialiseFramebuffer();
-	void DeinitialiseFramebuffer();
 	void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height);
 };
 

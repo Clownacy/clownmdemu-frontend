@@ -48,7 +48,7 @@ bool Window::Initialise(const char* const window_title)
 
 			if (renderer == nullptr)
 				debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
-			else
+			else if (InitialiseFramebuffer())
 				return true;
 
 			SDL_DestroyWindow(sdl);
@@ -62,6 +62,7 @@ bool Window::Initialise(const char* const window_title)
 
 void Window::Deinitialise()
 {
+	DeinitialiseFramebuffer();
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(sdl);
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
