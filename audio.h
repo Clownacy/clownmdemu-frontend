@@ -39,7 +39,7 @@ public:
 	void SetPALMode(bool enabled);
 	bool GetPALMode() const { return pal_mode; }
 	void SetLowPassFilter(bool enabled);
-	bool GetLowPassfilter() const { return low_pass_filter; }
+	bool GetLowPassFilter() const { return low_pass_filter; }
 };
 
 #endif /* AUDIO_H */

@@ -684,7 +684,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio.GetLowPassfilter());
+		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio.GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
@@ -2332,7 +2332,7 @@ int main(int argc, char **argv)
 						if (ImGui::BeginTable("Audio Options", 2))
 						{
 							ImGui::TableNextColumn();
-							bool low_pass_filter = audio.GetLowPassfilter();
+							bool low_pass_filter = audio.GetLowPassFilter();
 							if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
 								audio.SetLowPassFilter(low_pass_filter);
 							DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
