@@ -115,3 +115,18 @@ void Window::RecreateUpscaledFramebuffer(unsigned int display_width, unsigned in
 	}
 }
 
+void Window::ShowWarningMessageBox(const char* const message) const
+{
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", message, sdl);
+}
+
+void Window::ShowErrorMessageBox(const char* const message) const
+{
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message, sdl);
+}
+
+void Window::ShowFatalMessageBox(const char* const message) const
+{
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message, sdl);
+
+}

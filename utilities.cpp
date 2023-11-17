@@ -58,5 +58,3 @@ void Utilities::LoadFileToBuffer(const char *filename, unsigned char *&file_buff
 			debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
 	}
 }
-
-

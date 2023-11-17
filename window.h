@@ -35,6 +35,9 @@ public:
 	bool GetFullscreen() const { return fullscreen; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height);
+	void ShowWarningMessageBox(const char *message) const;
+	void ShowErrorMessageBox(const char *message) const;
+	void ShowFatalMessageBox(const char *message) const;
 };
 
 #endif /* WINDOW_H */

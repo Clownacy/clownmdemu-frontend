@@ -358,7 +358,7 @@ static bool LoadCartridgeFileFromFile(const char *path)
 	if (temp_rom_buffer == nullptr)
 	{
 		debug_log.Log("Could not load the cartridge file");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the cartridge file.", window.sdl);
+		window.ShowErrorMessageBox("Failed to load the cartridge file.");
 		return false;
 	}
 	else
@@ -377,7 +377,7 @@ static bool LoadCDFile(const char* const path)
 	if (cd_file == nullptr)
 	{
 		debug_log.Log("Could not load the CD file");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the CD file.", window.sdl);
+		window.ShowErrorMessageBox("Failed to load the CD file.");
 		return false;
 	}
 	else
@@ -413,14 +413,14 @@ static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, cons
 		if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
 		{
 			debug_log.Log("Invalid save state size");
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window.sdl);
+			window.ShowErrorMessageBox("Save state file is incompatible.");
 		}
 		else
 		{
 			if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
 			{
 				debug_log.Log("Invalid save state magic");
-				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window.sdl);
+				window.ShowErrorMessageBox("The file was not a valid save state.");
 			}
 			else
 			{
@@ -705,9 +705,12 @@ static void SaveConfiguration()
 		{
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
-				char buffer[0x20];
-				SDL_snprintf(buffer, sizeof(buffer), "%u = %u\n", static_cast<unsigned int>(i), keyboard_bindings[i]);
-				SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
+				char *buffer;
+				if (SDL_asprintf(&buffer, "%u = %u\n", static_cast<unsigned int>(i), keyboard_bindings[i]) != -1);
+				{
+					SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
+					SDL_free(buffer);
+				}
 			}
 		}
 
@@ -849,7 +852,7 @@ int main(int argc, char **argv)
 			if (!audio_output.Initialise())
 			{
 				debug_log.Log("InitialiseAudio failed");
-				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window.sdl);
+				window.ShowWarningMessageBox("Unable to initialise audio subsystem: the program will not output audio!");
 			}
 			else
 			{
@@ -1778,14 +1781,14 @@ int main(int argc, char **argv)
 									if (file == nullptr)
 									{
 										debug_log.Log("Could not open save state file for writing");
-										SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window.sdl);
+										window.ShowErrorMessageBox("Could not create save state file.");
 									}
 									else
 									{
 										if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
 										{
 											debug_log.Log("Could not write save state file");
-											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window.sdl);
+											window.ShowErrorMessageBox("Could not create save state file.");
 										}
 										else
 										{
