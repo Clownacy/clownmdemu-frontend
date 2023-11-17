@@ -11,6 +11,8 @@ project(clownmdemu-frontend LANGUAGES C CXX)
 
 add_executable(clownmdemu-frontend WIN32
 	"main.cpp"
+	"audio.cpp"
+	"audio.h"
 	"common.cpp"
 	"common.h"
 	"debug_m68k.cpp"

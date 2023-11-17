@@ -16,7 +16,7 @@
 
 #include "utilities.h"
 
-void FilePicker::CreateFileDialog(char const* const title, const std::function<bool(const char *path)> callback, bool save)
+void FilePicker::CreateFileDialog(char const* const title, const std::function<bool(const char *path)> callback, const bool save)
 {
 #ifdef _WIN32
 	if (use_native_file_dialogs)

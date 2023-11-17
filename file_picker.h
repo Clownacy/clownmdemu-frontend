@@ -36,11 +36,7 @@ public:
 	bool use_native_file_dialogs = true;
 #endif
 
-	FilePicker(SDL_Window* const window)
-	{
-		this->window = window;
-	}
-
+	FilePicker(SDL_Window* const window) : window(window) {}
 	void CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void Update(char *&drag_and_drop_filename);
