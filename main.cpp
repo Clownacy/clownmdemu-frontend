@@ -131,9 +131,6 @@ static Audio audio(debug_log);
 #define FRAMEBUFFER_WIDTH 320
 #define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
 
-static SDL_Window *window;
-static SDL_Renderer *renderer;
-
 static SDL_Texture *framebuffer_texture;
 static Uint32 *framebuffer_texture_pixels;
 static int framebuffer_texture_pitch;
@@ -148,8 +145,6 @@ static bool use_vsync;
 static bool fullscreen;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
-static float dpi_scale;
-static unsigned int frame_counter;
 
 static float GetNewDPIScale()
 {
