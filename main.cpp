@@ -217,7 +217,7 @@ static float GetNewDPIScale()
 	float dpi_scale = 1.0f;
 
 #ifdef _WIN32
-	/* This doesn't work right on Linux nor macOS. */
+	// This doesn't work right on Linux nor macOS.
 	float ddpi;
 	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, nullptr, nullptr) == 0)
 		dpi_scale = ddpi / 96.0f;
