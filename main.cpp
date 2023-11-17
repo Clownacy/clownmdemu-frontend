@@ -17,7 +17,7 @@
 #include "inconsolata_regular.h"
 #include "karla_regular.h"
 
-#include "audio.h"
+#include "audio_output.h"
 #include "common.h"
 #include "debug_fm.h"
 #include "debug_log.h"
@@ -125,7 +125,7 @@ static bool sector_size_2352;
 static ClownMDEmu_Configuration clownmdemu_configuration;
 static ClownMDEmu_Constant clownmdemu_constant;
 
-static Audio audio(debug_log);
+static AudioOutput audio_output(debug_log);
 
 static bool use_vsync;
 static bool integer_screen_scaling;
@@ -235,12 +235,12 @@ static cc_bool ReadInputCallback(const void */*user_data*/, cc_u8f player_id, Cl
 
 static void FMAudioCallback(const void */*user_data*/, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	generate_fm_audio(&clownmdemu, audio.MixerAllocateFMSamples(total_frames), total_frames);
+	generate_fm_audio(&clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
 }
 
 static void PSGAudioCallback(const void */*user_data*/, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
 {
-	generate_psg_audio(&clownmdemu, audio.MixerAllocatePSGSamples(total_samples), total_samples);
+	generate_psg_audio(&clownmdemu, audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
 }
 
 static void CDSeekCallback(const void */*user_data*/, cc_u32f sector_index)
@@ -547,7 +547,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
 			tall_double_resolution_mode = state;
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
-			audio.SetLowPassFilter(state);
+			audio_output.SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
 			clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
 		else if (SDL_strcmp(name, "japanese") == 0)
@@ -618,7 +618,7 @@ static void LoadConfiguration()
 	}
 
 	// Default other settings.
-	audio.SetLowPassFilter(true);
+	audio_output.SetLowPassFilter(true);
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
 
@@ -684,7 +684,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio.GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio_output.GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
@@ -846,7 +846,7 @@ int main(int argc, char **argv)
 			ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
 
 			// Intiialise audio if we can (but it's okay if it fails).
-			if (!audio.Initialise())
+			if (!audio_output.Initialise())
 			{
 				debug_log.Log("InitialiseAudio failed");
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window.sdl);
@@ -854,7 +854,7 @@ int main(int argc, char **argv)
 			else
 			{
 				// Initialise resamplers.
-				audio.SetPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+				audio_output.SetPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 			}
 
 			// If the user passed the path to the software on the command line, then load it here, automatically.
@@ -1517,7 +1517,7 @@ int main(int argc, char **argv)
 				if (emulator_running)
 				{
 					// Reset the audio buffers so that they can be mixed into.
-					audio.MixerBegin();
+					audio_output.MixerBegin();
 
 					// Lock the texture so that we can write to its pixels later
 					if (SDL_LockTexture(window.framebuffer_texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
@@ -1532,7 +1532,7 @@ int main(int argc, char **argv)
 					SDL_UnlockTexture(window.framebuffer_texture);
 
 					// Resample, mix, and output the audio for this frame.
-					audio.MixerEnd();
+					audio_output.MixerEnd();
 
 					++frame_counter;
 				}
@@ -2273,7 +2273,7 @@ int main(int argc, char **argv)
 								if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 								{
 									clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-									audio.SetPALMode(false);
+									audio_output.SetPALMode(false);
 								}
 							}
 							DoToolTip("60 FPS");
@@ -2283,7 +2283,7 @@ int main(int argc, char **argv)
 								if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 								{
 									clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-									audio.SetPALMode(true);
+									audio_output.SetPALMode(true);
 								}
 							}
 							DoToolTip("50 FPS");
@@ -2332,9 +2332,9 @@ int main(int argc, char **argv)
 						if (ImGui::BeginTable("Audio Options", 2))
 						{
 							ImGui::TableNextColumn();
-							bool low_pass_filter = audio.GetLowPassFilter();
+							bool low_pass_filter = audio_output.GetLowPassFilter();
 							if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
-								audio.SetLowPassFilter(low_pass_filter);
+								audio_output.SetLowPassFilter(low_pass_filter);
 							DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
 
 							ImGui::EndTable();
@@ -2720,7 +2720,7 @@ int main(int argc, char **argv)
 			if (cd_file != nullptr)
 				SDL_RWclose(cd_file);
 
-			audio.Deinitialise();
+			audio_output.Deinitialise();
 
 			ImGui_ImplSDLRenderer2_Shutdown();
 			ImGui_ImplSDL2_Shutdown();

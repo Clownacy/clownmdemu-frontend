@@ -1,13 +1,13 @@
-#include "audio.h"
+#include "audio_output.h"
 
 #define MIXER_IMPLEMENTATION
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.h"
 
-Mixer_Constant Audio::mixer_constant;
-bool Audio::mixer_constant_initialised;
+Mixer_Constant AudioOutput::mixer_constant;
+bool AudioOutput::mixer_constant_initialised;
 
-bool Audio::Initialise()
+bool AudioOutput::Initialise()
 {
 	SDL_AudioSpec want, have;
 
@@ -49,45 +49,45 @@ bool Audio::Initialise()
 	return false;
 }
 
-void Audio::Deinitialise()
+void AudioOutput::Deinitialise()
 {
 	if (audio_device != 0)
 		SDL_CloseAudioDevice(audio_device);
 }
 
-void Audio::MixerBegin()
+void AudioOutput::MixerBegin()
 {
 	Mixer_Begin(&mixer);
 }
 
-void Audio::MixerEnd()
+void AudioOutput::MixerEnd()
 {
 	// If there's a lot of audio queued, then don't queue any more.
 	if (SDL_GetQueuedAudioSize(audio_device) < audio_device_buffer_size * 4)
 	{
 		const auto callback = [](const void* const user_data, Sint16* const audio_samples, const size_t total_frames)
 		{
-			const Audio *audio = reinterpret_cast<const Audio*>(user_data);
+			const AudioOutput *audio_output = reinterpret_cast<const AudioOutput*>(user_data);
 
-			if (audio->audio_device != 0)
-				SDL_QueueAudio(audio->audio_device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
+			if (audio_output->audio_device != 0)
+				SDL_QueueAudio(audio_output->audio_device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
 		};
 
 		Mixer_End(&mixer, callback, this);
 	}
 }
 
-cc_s16l* Audio::MixerAllocateFMSamples(const std::size_t total_samples)
+cc_s16l* AudioOutput::MixerAllocateFMSamples(const std::size_t total_samples)
 {
 	return Mixer_AllocateFMSamples(&mixer, total_samples);
 }
 
-cc_s16l* Audio::MixerAllocatePSGSamples(const std::size_t total_samples)
+cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_samples)
 {
 	return Mixer_AllocatePSGSamples(&mixer, total_samples);
 }
 
-void Audio::SetPALMode(const bool enabled)
+void AudioOutput::SetPALMode(const bool enabled)
 {
 	pal_mode = enabled;
 
@@ -95,7 +95,7 @@ void Audio::SetPALMode(const bool enabled)
 		Mixer_State_Initialise(&mixer_state, audio_device_sample_rate, pal_mode, low_pass_filter);
 }
 
-void Audio::SetLowPassFilter(const bool enabled)
+void AudioOutput::SetLowPassFilter(const bool enabled)
 {
 	low_pass_filter = enabled;
 

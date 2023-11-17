@@ -1,5 +1,5 @@
-#ifndef AUDIO_H
-#define AUDIO_H
+#ifndef AUDIO_OUTPUT_H
+#define AUDIO_OUTPUT_H
 
 #include <cstddef>
 
@@ -12,7 +12,7 @@
 
 #include "debug_log.h"
 
-class Audio
+class AudioOutput
 {
 private:
 	static Mixer_Constant mixer_constant;
@@ -29,7 +29,7 @@ private:
 	const Mixer mixer = {&mixer_constant, &mixer_state};
 
 public:
-	Audio(DebugLog &debug_log) : debug_log(debug_log) {}
+	AudioOutput(DebugLog &debug_log) : debug_log(debug_log) {}
 	bool Initialise();
 	void Deinitialise();
 	void MixerBegin();
@@ -42,4 +42,4 @@ public:
 	bool GetLowPassFilter() const { return low_pass_filter; }
 };
 
-#endif /* AUDIO_H */
+#endif /* AUDIO_OUTPUT_H */
