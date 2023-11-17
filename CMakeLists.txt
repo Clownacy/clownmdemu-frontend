@@ -11,8 +11,8 @@ project(clownmdemu-frontend LANGUAGES C CXX)
 
 add_executable(clownmdemu-frontend WIN32
 	"main.cpp"
-	"error.cpp"
-	"error.h"
+	"common.cpp"
+	"common.h"
 	"debug_m68k.cpp"
 	"debug_m68k.h"
 	"debug_memory.cpp"

@@ -25,7 +25,8 @@ public:
 	{
 		force_console_output = forced;
 	}
-	void Log(const char *message, std::va_list args);
+	void Log(const char *format, std::va_list args);
+	void Log(const char *format, ...);
 	void Display(bool &open, ImFont *monospace_font);
 };
 

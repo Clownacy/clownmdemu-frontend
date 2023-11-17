@@ -1,6 +1,5 @@
 #include "error.h"
 
-DebugLog debug_log;
 
 // TODO: This whole file is just a shim now: get rid of it.
 

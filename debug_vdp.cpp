@@ -8,7 +8,7 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-#include "error.h"
+#include "common.h"
 
 typedef struct TileMetadata
 {
@@ -31,7 +31,7 @@ static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &ti
 	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
+static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
@@ -43,17 +43,17 @@ static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VD
 		if (plane_texture == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
 			if (plane_texture == nullptr)
 			{
-				PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
 				if (SDL_SetTextureBlendMode(plane_texture, SDL_BLENDMODE_NONE) < 0)
-					PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
@@ -70,9 +70,9 @@ static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VD
 
 				// Only update the texture if we know that the frame has changed.
 				// This prevents constant texture generation even when the emulator is paused.
-				if (cache_frame_counter != data.frame_counter)
+				if (cache_frame_counter != frame_counter)
 				{
-					cache_frame_counter = data.frame_counter;
+					cache_frame_counter = frame_counter;
 
 					const cc_u8l *plane = &clownmdemu.state->vdp.vram[plane_address];
 
@@ -97,7 +97,7 @@ static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VD
 
 								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu.state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
-								const Uint32 *palette_line = &data.colours[palette_index];
+								const Uint32 *palette_line = &emulation_state->colours[palette_index];
 
 								const cc_u8l *tile_pointer = &clownmdemu.state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
 
@@ -146,7 +146,7 @@ static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VD
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, tile_metadata);
 
-					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * data.dpi_scale), tile_height * SDL_roundf(9.0f * data.dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
+					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -161,41 +161,41 @@ static void Debug_Plane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VD
 	ImGui::End();
 }
 
-void Debug_WindowPlane(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
+void Debug_WindowPlane(bool &open)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, clownmdemu, data, "Window Plane", scale, clownmdemu.vdp.state->window_address, texture, cache_frame_counter);
+	Debug_Plane(open, "Window Plane", scale, clownmdemu.vdp.state->window_address, texture, cache_frame_counter);
 }
 
-void Debug_PlaneA(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
+void Debug_PlaneA(bool &open)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, clownmdemu, data, "Plane A", scale, clownmdemu.vdp.state->plane_a_address, texture, cache_frame_counter);
+	Debug_Plane(open, "Plane A", scale, clownmdemu.vdp.state->plane_a_address, texture, cache_frame_counter);
 }
 
-void Debug_PlaneB(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
+void Debug_PlaneB(bool &open)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, clownmdemu, data, "Plane B", scale, clownmdemu.vdp.state->plane_b_address, texture, cache_frame_counter);
+	Debug_Plane(open, "Plane B", scale, clownmdemu.vdp.state->plane_b_address, texture, cache_frame_counter);
 }
 
-void Debug_VRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data)
+void Debug_VRAM(bool &open)
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
-	const float tile_scale = SDL_roundf(3.0f * data.dpi_scale);
-	const float tile_spacing = SDL_roundf(2.0f * data.dpi_scale);
+	const float tile_scale = SDL_roundf(3.0f * dpi_scale);
+	const float tile_spacing = SDL_roundf(2.0f * dpi_scale);
 
 	// Don't let the window become too small, or we can get division by zero errors later on.
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * data.dpi_scale, 100.0f * data.dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
 	// Give the window a default size of 16 tiles wide.
-	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * data.dpi_scale;
+	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * dpi_scale;
 	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("VRAM", &open))
@@ -223,24 +223,24 @@ void Debug_VRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &
 			vram_texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_texture = SDL_CreateTexture(data.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
+			vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
 
 			if (vram_texture == nullptr)
 			{
-				PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
 				if (SDL_SetTextureBlendMode(vram_texture, SDL_BLENDMODE_NONE) < 0)
-					PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
 
 		if (ImGui::Button("Save to File"))
 		{
-			SaveFileDialog("Create Save State", [data, clownmdemu](const char* const save_state_path)
+			SaveFileDialog("Create Save State", [](const char* const save_state_path)
 			{
 				bool success = false;
 
@@ -249,15 +249,15 @@ void Debug_VRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &
 
 				if (file == nullptr)
 				{
-					PrintError("Could not open save state file for writing");
-					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data.window);
+					debug_log.Log("Could not open save state file for writing");
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window);
 				}
 				else
 				{
 					if (SDL_RWwrite(file, clownmdemu.vdp.state->vram, sizeof(clownmdemu.vdp.state->vram), 1) != 1)
 					{
-						PrintError("Could not write save state file");
-						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", data.window);
+						debug_log.Log("Could not write save state file");
+						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window);
 					}
 					else
 					{
@@ -308,12 +308,12 @@ void Debug_VRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &
 
 			// Only update the texture if we know that the frame has changed.
 			// This prevents constant texture generation even when the emulator is paused.
-			if (cache_frame_counter != data.frame_counter || options_changed)
+			if (cache_frame_counter != frame_counter || options_changed)
 			{
-				cache_frame_counter = data.frame_counter;
+				cache_frame_counter = frame_counter;
 
 				// Select the correct palette line.
-				const Uint32 *selected_palette = &data.colours[brightness_index + palette_line];
+				const Uint32 *selected_palette = &emulation_state->colours[brightness_index + palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
@@ -441,7 +441,7 @@ void Debug_VRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &
 	ImGui::End();
 }
 
-void Debug_CRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &data, ImFont *monospace_font)
+void Debug_CRAM(bool &open)
 {
 	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -495,7 +495,7 @@ void Debug_CRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &
 				ImGui::SameLine();
 			}
 
-			ImGui::ColorButton("", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * data.dpi_scale, 20.0f * data.dpi_scale));
+			ImGui::ColorButton("", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -520,7 +520,7 @@ void Debug_CRAM(bool &open, const ClownMDEmu &clownmdemu, const Debug_VDP_Data &
 	ImGui::End();
 }
 
-void Debug_VDP(bool &open, const ClownMDEmu &clownmdemu, ImFont *monospace_font)
+void Debug_VDP(bool &open)
 {
 	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

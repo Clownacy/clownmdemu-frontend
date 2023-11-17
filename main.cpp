@@ -17,8 +17,9 @@
 #include "inconsolata_regular.h"
 #include "karla_regular.h"
 
-#include "error.h"
+#include "common.h"
 #include "debug_fm.h"
+#include "debug_log.h"
 #include "debug_m68k.h"
 #include "debug_memory.h"
 #include "debug_psg.h"
@@ -54,12 +55,6 @@ typedef struct ControllerInput
 
 	struct ControllerInput *next;
 } ControllerInput;
-
-typedef struct EmulationState
-{
-	ClownMDEmu_State clownmdemu;
-	Uint32 colours[3 * 4 * 16];
-} EmulationState;
 
 typedef struct RecentSoftware
 {
@@ -114,7 +109,6 @@ static std::size_t state_rewind_remaining;
 #else
 static EmulationState state_rewind_buffer[1];
 #endif
-static EmulationState *emulation_state = state_rewind_buffer;
 
 static bool quick_save_exists;
 static EmulationState quick_save_state;
@@ -127,7 +121,6 @@ static bool sector_size_2352;
 
 static ClownMDEmu_Configuration clownmdemu_configuration;
 static ClownMDEmu_Constant clownmdemu_constant;
-static ClownMDEmu clownmdemu;
 
 static bool FileExists(const char *filename)
 {
@@ -151,7 +144,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, 
 
 	if (file == nullptr)
 	{
-		PrintError("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
@@ -159,7 +152,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, 
 
 		if (size_s64 < 0)
 		{
-			PrintError("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
+			debug_log.Log("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
@@ -169,7 +162,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, 
 
 			if (file_buffer == nullptr)
 			{
-				PrintError("Could not allocate memory for file");
+				debug_log.Log("Could not allocate memory for file");
 			}
 			else
 			{
@@ -180,7 +173,7 @@ static void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, 
 		}
 
 		if (SDL_RWclose(file) < 0)
-			PrintError("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
+			debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
 	}
 }
 
@@ -230,7 +223,7 @@ static bool InitialiseVideo()
 {
 	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
 	{
-		PrintError("SDL_InitSubSystem(SDL_INIT_VIDEO) failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_InitSubSystem(SDL_INIT_VIDEO) failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
@@ -239,7 +232,7 @@ static bool InitialiseVideo()
 
 		if (window == nullptr)
 		{
-			PrintError("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
+			debug_log.Log("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
@@ -259,7 +252,7 @@ static bool InitialiseVideo()
 
 			if (renderer == nullptr)
 			{
-				PrintError("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
+				debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
@@ -304,13 +297,13 @@ static bool InitialiseFramebuffer()
 
 	if (framebuffer_texture == nullptr)
 	{
-		PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
 		// Disable blending, since we don't need it
 		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
-			PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
 		return true;
 	}
@@ -342,13 +335,13 @@ static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int
 
 		if (framebuffer_texture_upscaled == nullptr)
 		{
-			PrintError("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
 			// Disable blending, since we don't need it
 			if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
-				PrintError("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 		}
 	}
 }
@@ -386,7 +379,7 @@ static bool InitialiseAudio()
 
 	if (audio_device == 0)
 	{
-		PrintError("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
@@ -430,8 +423,6 @@ static void AudioPushCallback(const void */*user_data*/, Sint16 *audio_samples, 
 ///////////
 // Fonts //
 ///////////
-
-static ImFont *monospace_font;
 
 static unsigned int CalculateFontSize()
 {
@@ -648,7 +639,7 @@ static bool LoadCartridgeFileFromFile(const char *path)
 
 	if (temp_rom_buffer == nullptr)
 	{
-		PrintError("Could not load the cartridge file");
+		debug_log.Log("Could not load the cartridge file");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the cartridge file.", window);
 		return false;
 	}
@@ -667,7 +658,7 @@ static bool LoadCDFile(const char* const path)
 
 	if (cd_file == nullptr)
 	{
-		PrintError("Could not load the CD file");
+		debug_log.Log("Could not load the CD file");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the CD file.", window);
 		return false;
 	}
@@ -703,14 +694,14 @@ static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, cons
 	{
 		if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
 		{
-			PrintError("Invalid save state size");
+			debug_log.Log("Invalid save state size");
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window);
 		}
 		else
 		{
 			if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
 			{
-				PrintError("Invalid save state magic");
+				debug_log.Log("Invalid save state magic");
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
 			}
 			else
@@ -1300,7 +1291,7 @@ static void SaveConfiguration()
 
 	if (file == nullptr)
 	{
-		PrintError("Could not open configuration file for writing.");
+		debug_log.Log("Could not open configuration file for writing.");
 	}
 	else
 	{
@@ -1374,19 +1365,17 @@ static void SaveConfiguration()
 
 int main(int argc, char **argv)
 {
-	InitError();
-
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
-		PrintError("SDL_Init failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
 	}
 	else
 	{
 		if (!InitialiseVideo())
 		{
-			PrintError("InitVideo failed");
+			debug_log.Log("InitVideo failed");
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
 		}
 		else
@@ -1396,7 +1385,7 @@ int main(int argc, char **argv)
 
 			if (!InitialiseFramebuffer())
 			{
-				PrintError("CreateFramebuffer failed");
+				debug_log.Log("CreateFramebuffer failed");
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise framebuffer. The program will now close.", nullptr);
 			}
 			else
@@ -1464,7 +1453,7 @@ int main(int argc, char **argv)
 				ReloadFonts(font_size);
 
 				// This should be called before any other clownmdemu functions are called!
-				ClownMDEmu_SetErrorCallback(PrintErrorInternal);
+				ClownMDEmu_SetErrorCallback([](const char* const format, va_list args) {debug_log.Log(format, args); });
 
 				// Initialise the clownmdemu configuration struct.
 				clownmdemu_configuration.vdp.sprites_disabled = cc_false;
@@ -1489,7 +1478,7 @@ int main(int argc, char **argv)
 				// Intiialise audio if we can (but it's okay if it fails).
 				if (!InitialiseAudio())
 				{
-					PrintError("InitialiseAudio failed");
+					debug_log.Log("InitialiseAudio failed");
 					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
 				}
 				else
@@ -1823,7 +1812,7 @@ int main(int argc, char **argv)
 
 								if (controller == nullptr)
 								{
-									PrintError("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
+									debug_log.Log("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
 								}
 								else
 								{
@@ -1831,7 +1820,7 @@ int main(int argc, char **argv)
 
 									if (joystick_instance_id < 0)
 									{
-										PrintError("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
+										debug_log.Log("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
 									}
 									else
 									{
@@ -1839,7 +1828,7 @@ int main(int argc, char **argv)
 
 										if (controller_input == nullptr)
 										{
-											PrintError("Could not allocate memory for the new ControllerInput struct");
+											debug_log.Log("Could not allocate memory for the new ControllerInput struct");
 										}
 										else
 										{
@@ -1865,7 +1854,7 @@ int main(int argc, char **argv)
 
 								if (controller == nullptr)
 								{
-									PrintError("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
+									debug_log.Log("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
 								}
 								else
 								{
@@ -1876,7 +1865,7 @@ int main(int argc, char **argv)
 								{
 									if ((*controller_input_pointer) == nullptr)
 									{
-										PrintError("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
+										debug_log.Log("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
 										break;
 									}
 
@@ -1939,7 +1928,7 @@ int main(int argc, char **argv)
 									// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
 									if (controller_input == nullptr)
 									{
-										PrintError("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
+										debug_log.Log("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
 										break;
 									}
 
@@ -2024,7 +2013,7 @@ int main(int argc, char **argv)
 									// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
 									if (controller_input == nullptr)
 									{
-										PrintError("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
+										debug_log.Log("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
 										break;
 									}
 
@@ -2424,14 +2413,14 @@ int main(int argc, char **argv)
 
 										if (file == nullptr)
 										{
-											PrintError("Could not open save state file for writing");
+											debug_log.Log("Could not open save state file for writing");
 											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
 										}
 										else
 										{
 											if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
 											{
-												PrintError("Could not write save state file");
+												debug_log.Log("Could not write save state file");
 												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
 											}
 											else
@@ -2688,25 +2677,23 @@ int main(int argc, char **argv)
 					if (word_ram_viewer)
 						Debug_Memory(word_ram_viewer, monospace_font, "WORD-RAM", clownmdemu.state->word_ram, CC_COUNT_OF(clownmdemu.state->word_ram));
 
-					const Debug_VDP_Data debug_vdp_data = {emulation_state->colours, renderer, window, dpi_scale, frame_counter};
-
 					if (vdp_registers)
-						Debug_VDP(vdp_registers, clownmdemu, monospace_font);
+						Debug_VDP(vdp_registers);
 
 					if (window_plane_viewer)
-						Debug_WindowPlane(window_plane_viewer, clownmdemu, debug_vdp_data);
+						Debug_WindowPlane(window_plane_viewer);
 
 					if (plane_a_viewer)
-						Debug_PlaneA(plane_a_viewer, clownmdemu, debug_vdp_data);
+						Debug_PlaneA(plane_a_viewer);
 
 					if (plane_b_viewer)
-						Debug_PlaneB(plane_b_viewer, clownmdemu, debug_vdp_data);
+						Debug_PlaneB(plane_b_viewer);
 
 					if (vram_viewer)
-						Debug_VRAM(vram_viewer, clownmdemu, debug_vdp_data);
+						Debug_VRAM(vram_viewer);
 
 					if (cram_viewer)
-						Debug_CRAM(cram_viewer, clownmdemu, debug_vdp_data, monospace_font);
+						Debug_CRAM(cram_viewer);
 
 					if (fm_status)
 						Debug_FM(fm_status, clownmdemu, monospace_font);

@@ -1,18 +1,19 @@
 #include "debug_log.h"
 
+#include <cstdarg>
 #include <cstdio>
 
-void DebugLog::Log(const char* const message, std::va_list args)
+void DebugLog::Log(const char* const format, std::va_list args)
 {
 	if (logging_enabled || force_console_output)
 	{
-		const std::size_t message_buffer_size = static_cast<std::size_t>(std::vsnprintf(nullptr, 0, message, args)) + 1;
+		const std::size_t message_buffer_size = static_cast<std::size_t>(std::vsnprintf(nullptr, 0, format, args)) + 1;
 
 		try
 		{
 			lines.emplace_back(message_buffer_size);
 			char* const message_buffer = &lines.back()[0];
-			std::vsnprintf(message_buffer, message_buffer_size, message, args);
+			std::vsnprintf(message_buffer, message_buffer_size, format, args);
 
 			if (log_to_console || force_console_output)
 				SDL_LogMessage(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, message_buffer);
@@ -23,6 +24,14 @@ void DebugLog::Log(const char* const message, std::va_list args)
 			lines.clear();
 		}
 	}
+}
+
+void DebugLog::Log(const char* const format, ...)
+{
+	std::va_list args;
+	va_start(args, format);
+	Log(format, args);
+	va_end(args);
 }
 
 void DebugLog::Display(bool &open, ImFont* const monospace_font)
