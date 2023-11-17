@@ -15,46 +15,36 @@ float Window::GetDPIScale() const
 	return dpi_scale;
 }
 
-bool Window::Initialise(const char* const window_title)
+bool Window::Initialise(const char* const window_title, const int framebuffer_width, const int framebuffer_height)
 {
-	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
+	sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
+
+	if (sdl == nullptr)
 	{
-		debug_log.Log("SDL_InitSubSystem(SDL_INIT_VIDEO) failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
-		// Create window
-		sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
+		// Use batching even if the user forces a specific rendering backend (wtf SDL).
+		//
+		// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
+		// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
+		// for backwards compatibility reasons. Setting this hint prevents that.
+		//
+		// Normally if a user is setting an environment variable to force a specific rendering
+		// backend, then they're expected to set another environment variable to set this hint too,
+		// but I might as well just do it myself and save everyone else the hassle.
+		SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
 
-		if (sdl == nullptr)
-		{
-			debug_log.Log("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Use batching even if the user forces a specific rendering backend (wtf SDL).
-			//
-			// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
-			// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
-			// for backwards compatibility reasons. Setting this hint prevents that.
-			//
-			// Normally if a user is setting an environment variable to force a specific rendering
-			// backend, then they're expected to set another environment variable to set this hint too,
-			// but I might as well just do it myself and save everyone else the hassle.
-			SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
+		// Create renderer
+		renderer = SDL_CreateRenderer(sdl, -1, SDL_RENDERER_TARGETTEXTURE);
 
-			// Create renderer
-			renderer = SDL_CreateRenderer(sdl, -1, SDL_RENDERER_TARGETTEXTURE);
+		if (renderer == nullptr)
+			debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
+		else if (InitialiseFramebuffer(framebuffer_width, framebuffer_height))
+			return true;
 
-			if (renderer == nullptr)
-				debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
-			else if (InitialiseFramebuffer())
-				return true;
-
-			SDL_DestroyWindow(sdl);
-		}
-
-		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+		SDL_DestroyWindow(sdl);
 	}
 
 	return false;
@@ -65,15 +55,14 @@ void Window::Deinitialise()
 	DeinitialiseFramebuffer();
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(sdl);
-	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
-bool Window::InitialiseFramebuffer()
+bool Window::InitialiseFramebuffer(const int width, const int height)
 {
 	// Create framebuffer texture
 	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-	framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+	framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 
 	if (framebuffer_texture == nullptr)
 	{

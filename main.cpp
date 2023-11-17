@@ -34,6 +34,9 @@
 
 #define VERSION "v0.4.4"
 
+#define FRAMEBUFFER_WIDTH 320
+#define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
+
 typedef struct Input
 {
 	unsigned int bound_joypad;
@@ -124,6 +127,16 @@ static ClownMDEmu_Constant clownmdemu_constant;
 
 static Audio audio(debug_log);
 
+static bool use_vsync;
+static bool integer_screen_scaling;
+static bool tall_double_resolution_mode;
+
+static Uint32 *framebuffer_texture_pixels;
+static int framebuffer_texture_pitch;
+
+static unsigned int current_screen_width;
+static unsigned int current_screen_height;
+
 
 ///////////
 // Fonts //
@@ -187,12 +200,12 @@ static void ColourUpdatedCallback(const void */*user_data*/, cc_u16f index, cc_u
 
 static void ScanlineRenderedCallback(const void */*user_data*/, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height)
 {
-	window.current_screen_width = screen_width;
-	window.current_screen_height = screen_height;
+	current_screen_width = screen_width;
+	current_screen_height = screen_height;
 
-	if (window.framebuffer_texture_pixels != nullptr)
+	if (framebuffer_texture_pixels != nullptr)
 		for (cc_u16f i = 0; i < screen_width; ++i)
-			window.framebuffer_texture_pixels[scanline * window.framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
+			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
 static cc_bool ReadInputCallback(const void */*user_data*/, cc_u8f player_id, ClownMDEmu_Button button_id)
@@ -455,7 +468,7 @@ static void UpdateFastForwardStatus()
 	if (previous_fast_forward_in_progress != fast_forward_in_progress)
 	{
 		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
-		if (window.use_vsync)
+		if (use_vsync)
 			SDL_RenderSetVSync(window.renderer, !fast_forward_in_progress);
 	}
 }
@@ -528,11 +541,11 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		const bool state = SDL_strcmp(value, "on") == 0;
 
 		if (SDL_strcmp(name, "vsync") == 0)
-			window.use_vsync = state;
+			use_vsync = state;
 		else if (SDL_strcmp(name, "integer-screen-scaling") == 0)
-			window.integer_screen_scaling = state;
+			integer_screen_scaling = state;
 		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
-			window.tall_double_resolution_mode = state;
+			tall_double_resolution_mode = state;
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
 			audio.SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
@@ -600,14 +613,14 @@ static void LoadConfiguration()
 		if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
 		{
 			// Enable V-sync on displays with an FPS of a multiple of 60.
-			window.use_vsync = display_mode.refresh_rate % 60 == 0;
+			use_vsync = display_mode.refresh_rate % 60 == 0;
 		}
 	}
 
 	// Default other settings.
 	audio.SetLowPassFilter(true);
-	window.integer_screen_scaling = false;
-	window.tall_double_resolution_mode = false;
+	integer_screen_scaling = false;
+	tall_double_resolution_mode = false;
 
 	clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 	clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
@@ -643,7 +656,7 @@ static void LoadConfiguration()
 		SDL_RWclose(file);
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_RenderSetVSync(window.renderer, window.use_vsync);
+	SDL_RenderSetVSync(window.renderer, use_vsync);
 }
 
 static void SaveConfiguration()
@@ -668,9 +681,9 @@ static void SaveConfiguration()
 		else \
 			PRINT_STRING(FILE, "off\n");
 
-		PRINT_BOOLEAN_OPTION(file, "vsync", window.use_vsync);
-		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", window.integer_screen_scaling);
-		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", window.tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
+		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
+		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio.GetLowPassfilter());
 		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
@@ -728,14 +741,14 @@ static void SaveConfiguration()
 int main(int argc, char **argv)
 {
 	// Initialise SDL2
-	if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		debug_log.Log("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
 	}
 	else
 	{
-		if (!window.Initialise("clownmdemu-frontend " VERSION))
+		if (!window.Initialise("clownmdemu-frontend " VERSION, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
 		{
 			debug_log.Log("window.Initialise failed");
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
@@ -1507,10 +1520,10 @@ int main(int argc, char **argv)
 					audio.MixerBegin();
 
 					// Lock the texture so that we can write to its pixels later
-					if (SDL_LockTexture(window.framebuffer_texture, nullptr, reinterpret_cast<void**>(&window.framebuffer_texture_pixels), &window.framebuffer_texture_pitch) < 0)
-						window.framebuffer_texture_pixels = nullptr;
+					if (SDL_LockTexture(window.framebuffer_texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
+						framebuffer_texture_pixels = nullptr;
 
-					window.framebuffer_texture_pitch /= sizeof(Uint32);
+					framebuffer_texture_pitch /= sizeof(Uint32);
 
 					// Run the emulator for a frame
 					ClownMDEmu_Iterate(&clownmdemu, &callbacks);
@@ -1898,7 +1911,7 @@ int main(int argc, char **argv)
 						unsigned int destination_width;
 						unsigned int destination_height;
 
-						switch (window.current_screen_height)
+						switch (current_screen_height)
 						{
 							default:
 								assert(false);
@@ -1914,12 +1927,12 @@ int main(int argc, char **argv)
 								break;
 
 							case 448:
-								destination_width = window.tall_double_resolution_mode ? 320 : 640;
+								destination_width = tall_double_resolution_mode ? 320 : 640;
 								destination_height = 448;
 								break;
 
 							case 480:
-								destination_width = window.tall_double_resolution_mode ? 320 : 640;
+								destination_width = tall_double_resolution_mode ? 320 : 640;
 								destination_height = 480;
 								break;
 						}
@@ -1927,9 +1940,9 @@ int main(int argc, char **argv)
 						unsigned int destination_width_scaled;
 						unsigned int destination_height_scaled;
 
-						ImVec2 uv1 = {static_cast<float>(window.current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(window.current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
+						ImVec2 uv1 = {static_cast<float>(current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
 
-						if (window.integer_screen_scaling)
+						if (integer_screen_scaling)
 						{
 							// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
 							const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(work_width / destination_width, work_height / destination_height));
@@ -1969,8 +1982,8 @@ int main(int argc, char **argv)
 								SDL_Rect framebuffer_rect;
 								framebuffer_rect.x = 0;
 								framebuffer_rect.y = 0;
-								framebuffer_rect.w = window.current_screen_width;
-								framebuffer_rect.h = window.current_screen_height;
+								framebuffer_rect.w = current_screen_width;
+								framebuffer_rect.h = current_screen_height;
 
 								SDL_Rect upscaled_framebuffer_rect;
 								upscaled_framebuffer_rect.x = 0;
@@ -2293,13 +2306,13 @@ int main(int argc, char **argv)
 						if (ImGui::BeginTable("Video Options", 2))
 						{
 							ImGui::TableNextColumn();
-							if (ImGui::Checkbox("V-Sync", &window.use_vsync))
+							if (ImGui::Checkbox("V-Sync", &use_vsync))
 								if (!fast_forward_in_progress)
-									SDL_RenderSetVSync(window.renderer, window.use_vsync);
+									SDL_RenderSetVSync(window.renderer, use_vsync);
 							DoToolTip("Prevents screen tearing.");
 
 							ImGui::TableNextColumn();
-							if (ImGui::Checkbox("Integer Screen Scaling", &window.integer_screen_scaling) && window.integer_screen_scaling)
+							if (ImGui::Checkbox("Integer Screen Scaling", &integer_screen_scaling) && integer_screen_scaling)
 							{
 								// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
 								SDL_DestroyTexture(window.framebuffer_texture_upscaled);
@@ -2308,7 +2321,7 @@ int main(int argc, char **argv)
 							DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
 							ImGui::TableNextColumn();
-							ImGui::Checkbox("Tall Interlace Mode 2", &window.tall_double_resolution_mode);
+							ImGui::Checkbox("Tall Interlace Mode 2", &tall_double_resolution_mode);
 							DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
 
 							ImGui::EndTable();
