@@ -40,7 +40,7 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 		if (plane_texture == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
 			if (plane_texture == nullptr)
 			{
@@ -220,7 +220,7 @@ void Debug_VRAM(bool &open)
 			vram_texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
+			vram_texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
 
 			if (vram_texture == nullptr)
 			{
@@ -247,14 +247,14 @@ void Debug_VRAM(bool &open)
 				if (file == nullptr)
 				{
 					debug_log.Log("Could not open save state file for writing");
-					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window);
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window.sdl);
 				}
 				else
 				{
 					if (SDL_RWwrite(file, clownmdemu.vdp.state->vram, sizeof(clownmdemu.vdp.state->vram), 1) != 1)
 					{
 						debug_log.Log("Could not write save state file");
-						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window);
+						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window.sdl);
 					}
 					else
 					{

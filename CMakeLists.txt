@@ -35,6 +35,8 @@ add_executable(clownmdemu-frontend WIN32
 	"file_picker.h"
 	"utilities.cpp"
 	"utilities.h"
+	"window.cpp"
+	"window.h"
 	"clownmdemu-frontend-common/mixer.h"
 	"inconsolata_regular.h"
 	"karla_regular.h"

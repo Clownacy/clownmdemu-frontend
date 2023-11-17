@@ -124,170 +124,6 @@ static ClownMDEmu_Constant clownmdemu_constant;
 
 static Audio audio(debug_log);
 
-///////////
-// Video //
-///////////
-
-#define FRAMEBUFFER_WIDTH 320
-#define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
-
-static SDL_Texture *framebuffer_texture;
-static Uint32 *framebuffer_texture_pixels;
-static int framebuffer_texture_pitch;
-static SDL_Texture *framebuffer_texture_upscaled;
-static unsigned int framebuffer_texture_upscaled_width;
-static unsigned int framebuffer_texture_upscaled_height;
-
-static unsigned int current_screen_width;
-static unsigned int current_screen_height;
-
-static bool use_vsync;
-static bool fullscreen;
-static bool integer_screen_scaling;
-static bool tall_double_resolution_mode;
-
-static float GetNewDPIScale()
-{
-	float dpi_scale = 1.0f;
-
-#ifdef _WIN32
-	// This doesn't work right on Linux nor macOS.
-	// TODO: Find a method that doesn't suck balls.
-	float ddpi;
-	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(window), &ddpi, nullptr, nullptr) == 0)
-		dpi_scale = ddpi / 96.0f;
-#endif
-
-	return dpi_scale;
-}
-
-static bool InitialiseVideo()
-{
-	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
-	{
-		debug_log.Log("SDL_InitSubSystem(SDL_INIT_VIDEO) failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		// Create window
-		window = SDL_CreateWindow("clownmdemu-frontend " VERSION, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
-
-		if (window == nullptr)
-		{
-			debug_log.Log("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Use batching even if the user forces a specific rendering backend (wtf SDL).
-			//
-			// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
-			// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
-			// for backwards compatibility reasons. Setting this hint prevents that.
-			//
-			// Normally if a user is setting an environment variable to force a specific rendering
-			// backend, then they're expected to set another environment variable to set this hint too,
-			// but I might as well just do it myself and save everyone else the hassle.
-			SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
-
-			// Create renderer
-			renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
-
-			if (renderer == nullptr)
-			{
-				debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
-			}
-			else
-			{
-				dpi_scale = GetNewDPIScale();
-
-				return true;
-			}
-
-			SDL_DestroyWindow(window);
-		}
-
-		SDL_QuitSubSystem(SDL_INIT_VIDEO);
-	}
-
-	return false;
-}
-
-static void DeinitialiseVideo()
-{
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_QuitSubSystem(SDL_INIT_VIDEO);
-}
-
-static void SetFullscreen(bool enabled)
-{
-	SDL_SetWindowFullscreen(window, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-}
-
-static void ToggleFullscreen()
-{
-	fullscreen = !fullscreen;
-	SetFullscreen(fullscreen);
-}
-
-static bool InitialiseFramebuffer()
-{
-	// Create framebuffer texture
-	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-	framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-
-	if (framebuffer_texture == nullptr)
-	{
-		debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		// Disable blending, since we don't need it
-		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
-			debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-		return true;
-	}
-
-	return false;
-}
-
-static void DeinitialiseFramebuffer()
-{
-	SDL_DestroyTexture(framebuffer_texture);
-}
-
-static void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height)
-{
-	static unsigned int previous_framebuffer_size_factor = 0;
-
-	const unsigned int framebuffer_size_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
-
-	if (framebuffer_texture_upscaled == nullptr || framebuffer_size_factor != previous_framebuffer_size_factor)
-	{
-		previous_framebuffer_size_factor = framebuffer_size_factor;
-
-		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
-		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
-
-		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-		framebuffer_texture_upscaled = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
-
-		if (framebuffer_texture_upscaled == nullptr)
-		{
-			debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Disable blending, since we don't need it
-			if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
-				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-		}
-	}
-}
-
 
 ///////////
 // Fonts //
@@ -351,12 +187,12 @@ static void ColourUpdatedCallback(const void */*user_data*/, cc_u16f index, cc_u
 
 static void ScanlineRenderedCallback(const void */*user_data*/, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height)
 {
-	current_screen_width = screen_width;
-	current_screen_height = screen_height;
+	window.current_screen_width = screen_width;
+	window.current_screen_height = screen_height;
 
-	if (framebuffer_texture_pixels != nullptr)
+	if (window.framebuffer_texture_pixels != nullptr)
 		for (cc_u16f i = 0; i < screen_width; ++i)
-			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
+			window.framebuffer_texture_pixels[scanline * window.framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
 }
 
 static cc_bool ReadInputCallback(const void */*user_data*/, cc_u8f player_id, ClownMDEmu_Button button_id)
@@ -509,7 +345,7 @@ static bool LoadCartridgeFileFromFile(const char *path)
 	if (temp_rom_buffer == nullptr)
 	{
 		debug_log.Log("Could not load the cartridge file");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the cartridge file.", window);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the cartridge file.", window.sdl);
 		return false;
 	}
 	else
@@ -528,7 +364,7 @@ static bool LoadCDFile(const char* const path)
 	if (cd_file == nullptr)
 	{
 		debug_log.Log("Could not load the CD file");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the CD file.", window);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Failed to load the CD file.", window.sdl);
 		return false;
 	}
 	else
@@ -564,14 +400,14 @@ static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, cons
 		if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
 		{
 			debug_log.Log("Invalid save state size");
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window);
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Save state file is incompatible.", window.sdl);
 		}
 		else
 		{
 			if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
 			{
 				debug_log.Log("Invalid save state magic");
-				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window);
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "The file was not a valid save state.", window.sdl);
 			}
 			else
 			{
@@ -619,8 +455,8 @@ static void UpdateFastForwardStatus()
 	if (previous_fast_forward_in_progress != fast_forward_in_progress)
 	{
 		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
-		if (use_vsync)
-			SDL_RenderSetVSync(renderer, !fast_forward_in_progress);
+		if (window.use_vsync)
+			SDL_RenderSetVSync(window.renderer, !fast_forward_in_progress);
 	}
 }
 
@@ -692,11 +528,11 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		const bool state = SDL_strcmp(value, "on") == 0;
 
 		if (SDL_strcmp(name, "vsync") == 0)
-			use_vsync = state;
+			window.use_vsync = state;
 		else if (SDL_strcmp(name, "integer-screen-scaling") == 0)
-			integer_screen_scaling = state;
+			window.integer_screen_scaling = state;
 		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
-			tall_double_resolution_mode = state;
+			window.tall_double_resolution_mode = state;
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
 			audio.SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
@@ -755,7 +591,7 @@ static void LoadConfiguration()
 	// Set default settings.
 
 	// Default V-sync.
-	const int display_index = SDL_GetWindowDisplayIndex(window);
+	const int display_index = SDL_GetWindowDisplayIndex(window.sdl);
 
 	if (display_index >= 0)
 	{
@@ -764,13 +600,14 @@ static void LoadConfiguration()
 		if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
 		{
 			// Enable V-sync on displays with an FPS of a multiple of 60.
-			use_vsync = display_mode.refresh_rate % 60 == 0;
+			window.use_vsync = display_mode.refresh_rate % 60 == 0;
 		}
 	}
 
 	// Default other settings.
-	integer_screen_scaling = false;
-	tall_double_resolution_mode = false;
+	audio.SetLowPassFilter(true);
+	window.integer_screen_scaling = false;
+	window.tall_double_resolution_mode = false;
 
 	clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 	clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
@@ -806,7 +643,7 @@ static void LoadConfiguration()
 		SDL_RWclose(file);
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_RenderSetVSync(renderer, use_vsync);
+	SDL_RenderSetVSync(window.renderer, window.use_vsync);
 }
 
 static void SaveConfiguration()
@@ -831,9 +668,9 @@ static void SaveConfiguration()
 		else \
 			PRINT_STRING(FILE, "off\n");
 
-		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
-		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
-		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file, "vsync", window.use_vsync);
+		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", window.integer_screen_scaling);
+		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", window.tall_double_resolution_mode);
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio.GetLowPassfilter());
 		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
@@ -898,17 +735,19 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		if (!InitialiseVideo())
+		if (!window.Initialise("clownmdemu-frontend " VERSION))
 		{
 			debug_log.Log("InitVideo failed");
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
 		}
 		else
 		{
+			dpi_scale = window.GetNewDPIScale();
+
 			DoublyLinkedList_Initialise(&recent_software_list);
 			LoadConfiguration();
 
-			if (!InitialiseFramebuffer())
+			if (!window.InitialiseFramebuffer())
 			{
 				debug_log.Log("CreateFramebuffer failed");
 				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise framebuffer. The program will now close.", nullptr);
@@ -968,11 +807,11 @@ int main(int argc, char **argv)
 				style.ScaleAllSizes(dpi_scale);
 				const unsigned int font_size = CalculateFontSize();
 				const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-				SDL_SetWindowSize(window, static_cast<int>(320.0f * 2.0f * dpi_scale), static_cast<int>(224.0f * 2.0f * dpi_scale + menu_bar_size));
+				SDL_SetWindowSize(window.sdl, static_cast<int>(320.0f * 2.0f * dpi_scale), static_cast<int>(224.0f * 2.0f * dpi_scale + menu_bar_size));
 
 				// Setup Platform/Renderer backends
-				ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
-				ImGui_ImplSDLRenderer2_Init(renderer);
+				ImGui_ImplSDL2_InitForSDLRenderer(window.sdl, window.renderer);
+				ImGui_ImplSDLRenderer2_Init(window.renderer);
 
 				// Load fonts
 				ReloadFonts(font_size);
@@ -1004,7 +843,7 @@ int main(int argc, char **argv)
 				if (!audio.Initialise())
 				{
 					debug_log.Log("InitialiseAudio failed");
-					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window);
+					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", "Unable to initialise audio subsystem: the program will not output audio!", window.sdl);
 				}
 				else
 				{
@@ -1020,7 +859,7 @@ int main(int argc, char **argv)
 					LoadCartridgeFileFromMemory(nullptr, 0);
 
 				// We are now ready to show the window
-				SDL_ShowWindow(window);
+				SDL_ShowWindow(window.sdl);
 
 				debug_log.ForceConsoleOutput(false);
 
@@ -1178,17 +1017,17 @@ int main(int argc, char **argv)
 
 								if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & KMOD_ALT) != 0)
 								{
-									ToggleFullscreen();
+									window.ToggleFullscreen();
 									break;
 								}
 
 								if (event.key.keysym.sym == SDLK_ESCAPE)
 								{
 									// Exit fullscreen
-									if (fullscreen)
+									if (window.fullscreen)
 									{
-										fullscreen = false;
-										SetFullscreen(fullscreen);
+										window.fullscreen = false;
+										window.SetFullscreen(window.fullscreen);
 									}
 								}
 
@@ -1200,7 +1039,7 @@ int main(int argc, char **argv)
 								switch (keyboard_bindings[event.key.keysym.scancode])
 								{
 									case INPUT_BINDING_TOGGLE_FULLSCREEN:
-										ToggleFullscreen();
+										window.ToggleFullscreen();
 										break;
 
 									case INPUT_BINDING_TOGGLE_CONTROL_PAD:
@@ -1663,7 +1502,7 @@ int main(int argc, char **argv)
 					}
 
 					// Handle dynamic DPI support
-					const float new_dpi = GetNewDPIScale();
+					const float new_dpi = window.GetNewDPIScale();
 					if (dpi_scale != new_dpi) // 96 DPI appears to be the "normal" DPI
 					{
 						style.ScaleAllSizes(new_dpi / dpi_scale);
@@ -1679,16 +1518,16 @@ int main(int argc, char **argv)
 						audio.MixerBegin();
 
 						// Lock the texture so that we can write to its pixels later
-						if (SDL_LockTexture(framebuffer_texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
-							framebuffer_texture_pixels = nullptr;
+						if (SDL_LockTexture(window.framebuffer_texture, nullptr, reinterpret_cast<void**>(&window.framebuffer_texture_pixels), &window.framebuffer_texture_pitch) < 0)
+							window.framebuffer_texture_pixels = nullptr;
 
-						framebuffer_texture_pitch /= sizeof(Uint32);
+						window.framebuffer_texture_pitch /= sizeof(Uint32);
 
 						// Run the emulator for a frame
 						ClownMDEmu_Iterate(&clownmdemu, &callbacks);
 
 						// Unlock the texture so that we can draw it
-						SDL_UnlockTexture(framebuffer_texture);
+						SDL_UnlockTexture(window.framebuffer_texture);
 
 						// Resample, mix, and output the audio for this frame.
 						audio.MixerEnd();
@@ -1747,7 +1586,7 @@ int main(int argc, char **argv)
 					// Prevent the window from getting too small or we'll get division by zero errors later on.
 					ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
-					const bool show_menu_bar = !fullscreen
+					const bool show_menu_bar = !window.fullscreen
 					                        || pop_out
 					                        || debug_log_active
 					                        || m68k_status
@@ -1937,14 +1776,14 @@ int main(int argc, char **argv)
 										if (file == nullptr)
 										{
 											debug_log.Log("Could not open save state file for writing");
-											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+											SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window.sdl);
 										}
 										else
 										{
 											if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
 											{
 												debug_log.Log("Could not write save state file");
-												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window);
+												SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create save state file.", window.sdl);
 											}
 											else
 											{
@@ -2012,8 +1851,8 @@ int main(int argc, char **argv)
 
 							if (ImGui::BeginMenu("Misc."))
 							{
-								if (ImGui::MenuItem("Fullscreen", nullptr, &fullscreen))
-									SetFullscreen(fullscreen);
+								if (ImGui::MenuItem("Fullscreen", nullptr, &window.fullscreen))
+									window.SetFullscreen(window.fullscreen);
 
 								ImGui::MenuItem("Display Window", nullptr, &pop_out);
 
@@ -2062,7 +1901,7 @@ int main(int argc, char **argv)
 						{
 							ImGui::SetCursorPos(cursor);
 
-							SDL_Texture *selected_framebuffer_texture = framebuffer_texture;
+							SDL_Texture *selected_framebuffer_texture = window.framebuffer_texture;
 
 							const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
 							const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
@@ -2070,7 +1909,7 @@ int main(int argc, char **argv)
 							unsigned int destination_width;
 							unsigned int destination_height;
 
-							switch (current_screen_height)
+							switch (window.current_screen_height)
 							{
 								default:
 									assert(false);
@@ -2086,12 +1925,12 @@ int main(int argc, char **argv)
 									break;
 
 								case 448:
-									destination_width = tall_double_resolution_mode ? 320 : 640;
+									destination_width = window.tall_double_resolution_mode ? 320 : 640;
 									destination_height = 448;
 									break;
 
 								case 480:
-									destination_width = tall_double_resolution_mode ? 320 : 640;
+									destination_width = window.tall_double_resolution_mode ? 320 : 640;
 									destination_height = 480;
 									break;
 							}
@@ -2099,9 +1938,9 @@ int main(int argc, char **argv)
 							unsigned int destination_width_scaled;
 							unsigned int destination_height_scaled;
 
-							ImVec2 uv1 = {static_cast<float>(current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
+							ImVec2 uv1 = {static_cast<float>(window.current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(window.current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
 
-							if (integer_screen_scaling)
+							if (window.integer_screen_scaling)
 							{
 								// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
 								const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(work_width / destination_width, work_height / destination_height));
@@ -2114,7 +1953,7 @@ int main(int argc, char **argv)
 								// Round to the nearest multiple of 'destination_width' and 'destination_height'.
 								const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_ROUND(work_width, destination_width), CC_DIVIDE_ROUND(work_height, destination_height)));
 
-								RecreateUpscaledFramebuffer(work_width, work_height);
+								window.RecreateUpscaledFramebuffer(work_width, work_height);
 
 								// Correct the aspect ratio of the rendered frame.
 								// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
@@ -2132,17 +1971,17 @@ int main(int argc, char **argv)
 								// Avoid blurring if...
 								// 1. The upscale texture failed to be created.
 								// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple.
-								if (framebuffer_texture_upscaled != nullptr && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
+								if (window.framebuffer_texture_upscaled != nullptr && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
 								{
 									// Render the upscaled framebuffer to the screen.
-									selected_framebuffer_texture = framebuffer_texture_upscaled;
+									selected_framebuffer_texture = window.framebuffer_texture_upscaled;
 
 									// Before we can do that though, we have to actually render the upscaled framebuffer.
 									SDL_Rect framebuffer_rect;
 									framebuffer_rect.x = 0;
 									framebuffer_rect.y = 0;
-									framebuffer_rect.w = current_screen_width;
-									framebuffer_rect.h = current_screen_height;
+									framebuffer_rect.w = window.current_screen_width;
+									framebuffer_rect.h = window.current_screen_height;
 
 									SDL_Rect upscaled_framebuffer_rect;
 									upscaled_framebuffer_rect.x = 0;
@@ -2151,17 +1990,17 @@ int main(int argc, char **argv)
 									upscaled_framebuffer_rect.h = destination_height * framebuffer_upscale_factor;
 
 									// Render to the upscaled framebuffer.
-									SDL_SetRenderTarget(renderer, framebuffer_texture_upscaled);
+									SDL_SetRenderTarget(window.renderer, window.framebuffer_texture_upscaled);
 
 									// Render.
-									SDL_RenderCopy(renderer, framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+									SDL_RenderCopy(window.renderer, window.framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
 
 									// Switch back to actually rendering to the screen.
-									SDL_SetRenderTarget(renderer, nullptr);
+									SDL_SetRenderTarget(window.renderer, nullptr);
 
 									// Update the texture UV to suit the upscaled framebuffer.
-									uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
-									uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
+									uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(window.framebuffer_texture_upscaled_width);
+									uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(window.framebuffer_texture_upscaled_height);
 								}
 							}
 
@@ -2465,22 +2304,22 @@ int main(int argc, char **argv)
 							if (ImGui::BeginTable("Video Options", 2))
 							{
 								ImGui::TableNextColumn();
-								if (ImGui::Checkbox("V-Sync", &use_vsync))
+								if (ImGui::Checkbox("V-Sync", &window.use_vsync))
 									if (!fast_forward_in_progress)
-										SDL_RenderSetVSync(renderer, use_vsync);
+										SDL_RenderSetVSync(window.renderer, window.use_vsync);
 								DoToolTip("Prevents screen tearing.");
 
 								ImGui::TableNextColumn();
-								if (ImGui::Checkbox("Integer Screen Scaling", &integer_screen_scaling) && integer_screen_scaling)
+								if (ImGui::Checkbox("Integer Screen Scaling", &window.integer_screen_scaling) && window.integer_screen_scaling)
 								{
 									// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
-									SDL_DestroyTexture(framebuffer_texture_upscaled);
-									framebuffer_texture_upscaled = nullptr;
+									SDL_DestroyTexture(window.framebuffer_texture_upscaled);
+									window.framebuffer_texture_upscaled = nullptr;
 								}
 								DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
 								ImGui::TableNextColumn();
-								ImGui::Checkbox("Tall Interlace Mode 2", &tall_double_resolution_mode);
+								ImGui::Checkbox("Tall Interlace Mode 2", &window.tall_double_resolution_mode);
 								DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
 
 								ImGui::EndTable();
@@ -2832,7 +2671,7 @@ int main(int argc, char **argv)
 								ImGui::TableNextColumn();
 
 								SDL_RendererInfo info;
-								if (SDL_GetRendererInfo(renderer, &info) == 0)
+								if (SDL_GetRendererInfo(window.renderer, &info) == 0)
 									ImGui::TextUnformatted(info.name);
 								else
 									ImGui::TextUnformatted("Unknown");
@@ -2862,14 +2701,14 @@ int main(int argc, char **argv)
 
 					file_picker.Update(drag_and_drop_filename);
 
-					SDL_RenderClear(renderer);
+					SDL_RenderClear(window.renderer);
 
 					// Render Dear ImGui.
 					ImGui::Render();
 					ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 
 					// Finally display the rendered frame to the user.
-					SDL_RenderPresent(renderer);
+					SDL_RenderPresent(window.renderer);
 				}
 
 				debug_log.ForceConsoleOutput(true);
@@ -2885,9 +2724,9 @@ int main(int argc, char **argv)
 				ImGui_ImplSDL2_Shutdown();
 				ImGui::DestroyContext();
 
-				SDL_DestroyTexture(framebuffer_texture_upscaled);
+				SDL_DestroyTexture(window.framebuffer_texture_upscaled);
 
-				DeinitialiseFramebuffer();
+				window.DeinitialiseFramebuffer();
 			}
 
 			SaveConfiguration();
@@ -2905,7 +2744,7 @@ int main(int argc, char **argv)
 				SDL_free(recent_software);
 			}
 
-			DeinitialiseVideo();
+			window.Deinitialise();
 		}
 
 		SDL_Quit();

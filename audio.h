@@ -29,7 +29,6 @@ private:
 	const Mixer mixer = {&mixer_constant, &mixer_state};
 
 public:
-
 	Audio(DebugLog &debug_log) : debug_log(debug_log) {}
 	bool Initialise();
 	void Deinitialise();

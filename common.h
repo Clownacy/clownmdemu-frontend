@@ -6,6 +6,7 @@
 
 #include "debug_log.h"
 #include "file_picker.h"
+#include "window.h"
 
 typedef struct EmulationState
 {
@@ -14,8 +15,7 @@ typedef struct EmulationState
 } EmulationState;
 
 extern EmulationState *emulation_state;
-extern SDL_Renderer *renderer;
-extern SDL_Window *window;
+extern Window window;
 extern float dpi_scale;
 extern unsigned int frame_counter;
 extern DebugLog debug_log;
