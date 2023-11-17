@@ -24,10 +24,7 @@
 #include "debug_psg.h"
 #include "debug_vdp.h"
 #include "debug_z80.h"
-
-extern "C" {
 #include "doubly-linked-list.h"
-}
 
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.h"

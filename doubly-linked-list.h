@@ -1,6 +1,10 @@
 #ifndef DOUBLY_LINKED_LIST_H
 #define DOUBLY_LINKED_LIST_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct DoublyLinkedList_Entry
 {
 	/* The previous pointer must be first because of a giant hack:
@@ -23,5 +27,9 @@ void DoublyLinkedList_Initialise(DoublyLinkedList* const list);
 void DoublyLinkedList_PushFront(DoublyLinkedList* const list, DoublyLinkedList_Entry* const entry);
 void DoublyLinkedList_PushBack(DoublyLinkedList* const list, DoublyLinkedList_Entry* const entry);
 void DoublyLinkedList_Remove(DoublyLinkedList* const list, DoublyLinkedList_Entry* const entry);
+
+#if __cplusplus
+}
+#endif
 
 #endif /* DOUBLY_LINKED_LIST_H */
