@@ -742,7 +742,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			dpi_scale = window.GetNewDPIScale();
+			dpi_scale = window.GetDPIScale();
 
 			DoublyLinkedList_Initialise(&recent_software_list);
 			LoadConfiguration();
@@ -1017,11 +1017,7 @@ int main(int argc, char **argv)
 							if (event.key.keysym.sym == SDLK_ESCAPE)
 							{
 								// Exit fullscreen
-								if (window.fullscreen)
-								{
-									window.fullscreen = false;
-									window.SetFullscreen(window.fullscreen);
-								}
+								window.SetFullscreen(false);
 							}
 
 							// Prevent invalid memory accesses due to future API expansions.
@@ -1495,7 +1491,7 @@ int main(int argc, char **argv)
 				}
 
 				// Handle dynamic DPI support
-				const float new_dpi = window.GetNewDPIScale();
+				const float new_dpi = window.GetDPIScale();
 				if (dpi_scale != new_dpi) // 96 DPI appears to be the "normal" DPI
 				{
 					style.ScaleAllSizes(new_dpi / dpi_scale);
@@ -1579,7 +1575,7 @@ int main(int argc, char **argv)
 				// Prevent the window from getting too small or we'll get division by zero errors later on.
 				ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
-				const bool show_menu_bar = !window.fullscreen
+				const bool show_menu_bar = !window.GetFullscreen()
 					                    || pop_out
 					                    || debug_log_active
 					                    || m68k_status
@@ -1844,8 +1840,8 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginMenu("Misc."))
 						{
-							if (ImGui::MenuItem("Fullscreen", nullptr, &window.fullscreen))
-								window.SetFullscreen(window.fullscreen);
+							if (ImGui::MenuItem("Fullscreen", nullptr, window.GetFullscreen()))
+								window.ToggleFullscreen();
 
 							ImGui::MenuItem("Display Window", nullptr, &pop_out);
 

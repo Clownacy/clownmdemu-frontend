@@ -12,6 +12,7 @@ class Window
 {
 private:
 	DebugLog &debug_log;
+	bool fullscreen;
 
 	bool InitialiseFramebuffer();
 	void DeinitialiseFramebuffer();
@@ -30,17 +31,21 @@ public:
 	unsigned int current_screen_height;
 
 	bool use_vsync; // Move out of this class
-	bool fullscreen;
 	bool integer_screen_scaling;
 	bool tall_double_resolution_mode;
 
 	Window(DebugLog &debug_log) : debug_log(debug_log) {}
 
-	float GetNewDPIScale() const;
+	float GetDPIScale() const;
 	bool Initialise(const char *window_title);
 	void Deinitialise();
-	void SetFullscreen(bool enabled);
-	void ToggleFullscreen();
+	void SetFullscreen(bool enabled)
+	{
+		fullscreen = enabled;
+		SDL_SetWindowFullscreen(sdl, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	}
+	bool GetFullscreen() const { return fullscreen; }
+	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height);
 };
 

@@ -1,6 +1,6 @@
 #include "window.h"
 
-float Window::GetNewDPIScale() const
+float Window::GetDPIScale() const
 {
 	float dpi_scale = 1.0f;
 
@@ -66,17 +66,6 @@ void Window::Deinitialise()
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(sdl);
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
-}
-
-void Window::SetFullscreen(bool enabled)
-{
-	SDL_SetWindowFullscreen(sdl, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-}
-
-void Window::ToggleFullscreen()
-{
-	fullscreen = !fullscreen;
-	SetFullscreen(fullscreen);
 }
 
 bool Window::InitialiseFramebuffer()

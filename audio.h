@@ -37,9 +37,9 @@ public:
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples);
 	void SetPALMode(bool enabled);
-	bool GetPALMode() { return pal_mode; }
+	bool GetPALMode() const { return pal_mode; }
 	void SetLowPassFilter(bool enabled);
-	bool GetLowPassfilter() { return low_pass_filter; }
+	bool GetLowPassfilter() const { return low_pass_filter; }
 };
 
 #endif /* AUDIO_H */
