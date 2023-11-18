@@ -4,7 +4,7 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_Z80(bool &open, Z80_State &z80, ImFont *monospace_font)
+void Debug_Z80(bool &open, Z80_State &z80, ImFont* const monospace_font)
 {
 	if (ImGui::Begin("Z80 Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

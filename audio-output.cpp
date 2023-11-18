@@ -62,18 +62,20 @@ void AudioOutput::MixerBegin()
 
 void AudioOutput::MixerEnd()
 {
-	// If there's a lot of audio queued, then don't queue any more.
-	if (SDL_GetQueuedAudioSize(device) < buffer_size * 4)
+	if (device != 0)
 	{
-		const auto callback = [](const void* const user_data, Sint16* const audio_samples, const size_t total_frames)
+		// If there's a lot of audio queued, then don't queue any more.
+		if (SDL_GetQueuedAudioSize(device) < buffer_size * 4)
 		{
-			const AudioOutput *audio_output = reinterpret_cast<const AudioOutput*>(user_data);
+			const auto callback = [](const void* const user_data, Sint16* const audio_samples, const size_t total_frames)
+			{
+				const AudioOutput *audio_output = reinterpret_cast<const AudioOutput*>(user_data);
 
-			if (audio_output->device != 0)
 				SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
-		};
+			};
 
-		Mixer_End(&mixer, callback, this);
+			Mixer_End(&mixer, callback, this);
+		}
 	}
 }
 

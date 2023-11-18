@@ -85,7 +85,7 @@ void Window::DeinitialiseFramebuffer()
 	SDL_DestroyTexture(framebuffer_texture);
 }
 
-void Window::RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height)
+void Window::RecreateUpscaledFramebuffer(const unsigned int display_width, const unsigned int display_height)
 {
 	static unsigned int previous_framebuffer_size_factor = 0;
 

@@ -194,12 +194,12 @@ void FilePicker::CreateFileDialog(char const* const title, const std::function<b
 	}
 }
 
-void FilePicker::CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback)
+void FilePicker::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
 {
 	CreateFileDialog(title, callback, false);
 }
 
-void FilePicker::CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback)
+void FilePicker::CreateSaveFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
 {
 	CreateFileDialog(title, callback, true);
 }

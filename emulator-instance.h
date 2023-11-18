@@ -77,21 +77,11 @@ public:
 	State *state;
 
 	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> input_callback);
-	~EmulatorInstance()
-	{
-		SDL_free(rom_buffer);
-		rom_buffer = nullptr;
-
-		if (cd_file != nullptr)
-		{
-			SDL_RWclose(cd_file);
-			cd_file = nullptr;
-		}
-	}
+	~EmulatorInstance();
 	void Update(Window &window);
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFile(unsigned char *rom_buffer_parameter, std::size_t rom_buffer_size_parameter);
+	void LoadCartridgeFile(unsigned char *file_buffer, std::size_t file_size);
 	bool LoadCartridgeFile(const char *path);
 	void UnloadCartridgeFile();
 	bool LoadCDFile(const char *path);

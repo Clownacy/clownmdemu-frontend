@@ -129,7 +129,7 @@ static unsigned int CalculateFontSize()
 	return static_cast<unsigned int>(15.0f * dpi_scale);
 }
 
-static void ReloadFonts(unsigned int font_size)
+static void ReloadFonts(const unsigned int font_size)
 {
 	ImGuiIO &io = ImGui::GetIO();
 
@@ -578,7 +578,7 @@ static void SaveConfiguration()
 // Main function //
 ///////////////////
 
-int main(int argc, char **argv)
+int main(const int argc, char** const argv)
 {
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)

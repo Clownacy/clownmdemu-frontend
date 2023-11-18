@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-void Debug_FM(bool &open, const EmulatorInstance &emulator, ImFont *monospace_font)
+void Debug_FM(bool &open, const EmulatorInstance &emulator, ImFont* const monospace_font)
 {
 	if (ImGui::Begin("FM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

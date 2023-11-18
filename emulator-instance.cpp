@@ -184,6 +184,18 @@ EmulatorInstance::EmulatorInstance(
 	}
 }
 
+EmulatorInstance::~EmulatorInstance()
+{
+	SDL_free(rom_buffer);
+	rom_buffer = nullptr;
+
+	if (cd_file != nullptr)
+	{
+		SDL_RWclose(cd_file);
+		cd_file = nullptr;
+	}
+}
+
 void EmulatorInstance::Update(Window &window)
 {
 	// Reset the audio buffers so that they can be mixed into.
@@ -259,13 +271,13 @@ void EmulatorInstance::HardResetConsole()
 	SoftResetConsole();
 }
 
-void EmulatorInstance::LoadCartridgeFile(unsigned char *rom_buffer_parameter, std::size_t rom_buffer_size_parameter)
+void EmulatorInstance::LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
 {
 	// Unload the previous ROM in memory.
 	SDL_free(rom_buffer);
 
-	rom_buffer = rom_buffer_parameter;
-	rom_buffer_size = rom_buffer_size_parameter;
+	rom_buffer = file_buffer;
+	rom_buffer_size = file_size;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	state_rewind_remaining = 0;
@@ -276,7 +288,7 @@ void EmulatorInstance::LoadCartridgeFile(unsigned char *rom_buffer_parameter, st
 	HardResetConsole();
 }
 
-bool EmulatorInstance::LoadCartridgeFile(const char *path)
+bool EmulatorInstance::LoadCartridgeFile(const char* const path)
 {
 	unsigned char *temp_rom_buffer;
 	std::size_t temp_rom_buffer_size;

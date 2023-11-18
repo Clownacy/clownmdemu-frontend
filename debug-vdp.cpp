@@ -19,7 +19,7 @@ struct TileMetadata
 	bool priority;
 };
 
-static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &tile_metadata)
+static void DecomposeTileMetadata(const cc_u16f packed_tile_metadata, TileMetadata &tile_metadata)
 {
 	tile_metadata.tile_index = packed_tile_metadata & 0x7FF;
 	tile_metadata.palette_line = (packed_tile_metadata >> 13) & 3;
@@ -28,7 +28,7 @@ static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &ti
 	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
+static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char* const name, int &plane_scale, const cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
