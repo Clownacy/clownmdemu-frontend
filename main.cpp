@@ -8,10 +8,10 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
+#include "libraries/doubly-linked-list/doubly-linked-list.h"
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
-
 #include "libraries/inih/ini.h"
 
 #include "inconsolata-regular.h"
@@ -26,7 +26,6 @@
 #include "debug-psg.h"
 #include "debug-vdp.h"
 #include "debug-z80.h"
-#include "doubly-linked-list.h"
 #include "emulator-instance.h"
 #include "file-picker.h"
 #include "utilities.h"

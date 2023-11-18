@@ -69,7 +69,7 @@ void AudioOutput::MixerEnd()
 		{
 			const auto callback = [](const void* const user_data, Sint16* const audio_samples, const size_t total_frames)
 			{
-				const AudioOutput *audio_output = reinterpret_cast<const AudioOutput*>(user_data);
+				const AudioOutput *audio_output = static_cast<const AudioOutput*>(user_data);
 
 				SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
 			};

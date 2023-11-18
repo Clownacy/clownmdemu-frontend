@@ -29,8 +29,6 @@ add_executable(clownmdemu-frontend WIN32
 	"debug-vdp.h"
 	"debug-z80.cpp"
 	"debug-z80.h"
-	"doubly-linked-list.c"
-	"doubly-linked-list.h"
 	"emulator-instance.cpp"
 	"emulator-instance.h"
 	"file-picker.cpp"
@@ -42,8 +40,8 @@ add_executable(clownmdemu-frontend WIN32
 	"clownmdemu-frontend-common/mixer.h"
 	"inconsolata-regular.h"
 	"karla-regular.h"
-	"libraries/inih/ini.c"
-	"libraries/inih/ini.h"
+	"libraries/doubly-linked-list/doubly-linked-list.c"
+	"libraries/doubly-linked-list/doubly-linked-list.h"
 	"libraries/imgui/imconfig.h"
 	"libraries/imgui/imgui.cpp"
 	"libraries/imgui/imgui.h"
@@ -58,6 +56,8 @@ add_executable(clownmdemu-frontend WIN32
 	"libraries/imgui/backends/imgui_impl_sdl2.h"
 	"libraries/imgui/backends/imgui_impl_sdlrenderer2.cpp"
 	"libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
+	"libraries/inih/ini.c"
+	"libraries/inih/ini.h"
 )
 
 set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
