@@ -38,15 +38,15 @@
 #define FRAMEBUFFER_WIDTH 320
 #define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
 
-typedef struct Input
+struct Input
 {
 	unsigned int bound_joypad;
 	unsigned char buttons[CLOWNMDEMU_BUTTON_MAX];
 	unsigned char fast_forward;
 	unsigned char rewind;
-} Input;
+};
 
-typedef struct ControllerInput
+struct ControllerInput
 {
 	SDL_JoystickID joystick_instance_id;
 	Sint16 left_stick_x;
@@ -58,17 +58,17 @@ typedef struct ControllerInput
 	Input input;
 
 	struct ControllerInput *next;
-} ControllerInput;
+};
 
-typedef struct RecentSoftware
+struct RecentSoftware
 {
 	DoublyLinkedList_Entry list;
 
 	bool is_cd_file;
 	char path[1];
-} RecentSoftware;
+};
 
-typedef enum InputBinding
+enum InputBinding
 {
 	INPUT_BINDING_NONE,
 	INPUT_BINDING_CONTROLLER_UP,
@@ -87,7 +87,7 @@ typedef enum InputBinding
 	INPUT_BINDING_QUICK_LOAD_STATE,
 	INPUT_BINDING_TOGGLE_FULLSCREEN,
 	INPUT_BINDING_TOGGLE_CONTROL_PAD
-} InputBinding;
+};
 
 #define INPUT_BINDING__TOTAL (INPUT_BINDING_TOGGLE_CONTROL_PAD + 1)
 
@@ -252,12 +252,12 @@ static void UpdateRewindStatus()
 static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
 {
 	quick_save_exists = false;
-	emulator.LoadCartridgeFileFromMemory(file_buffer, file_size);
+	emulator.LoadCartridgeFile(file_buffer, file_size);
 }
 
 static bool LoadCartridgeFile(const char* const path)
 {
-	if (!emulator.LoadCartridgeFileFromFile(path))
+	if (!emulator.LoadCartridgeFile(path))
 	{
 		debug_log.Log("Could not load the cartridge file");
 		window.ShowErrorMessageBox("Failed to load the cartridge file.");
@@ -284,7 +284,7 @@ static bool LoadCDFile(const char* const path)
 
 static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
 {
-	if (!emulator.LoadSaveStateFromMemory(file_buffer, file_size))
+	if (!emulator.LoadSaveState(file_buffer, file_size))
 	{
 		debug_log.Log("Could not load save state file");
 		window.ShowErrorMessageBox("Could not load save state file.");
@@ -298,7 +298,7 @@ static bool LoadSaveState(const unsigned char* const file_buffer, const std::siz
 
 static bool LoadSaveState(const char* const save_state_path)
 {
-	if (!emulator.LoadSaveStateFromFile(save_state_path))
+	if (!emulator.LoadSaveState(save_state_path))
 	{
 		debug_log.Log("Could not load save state file");
 		window.ShowErrorMessageBox("Could not load save state file.");
@@ -1307,7 +1307,7 @@ int main(int argc, char **argv)
 
 					if (file_buffer != nullptr)
 					{
-						if (emulator.ValidateSaveStateFromMemory(file_buffer, file_size))
+						if (emulator.ValidateSaveState(file_buffer, file_size))
 						{
 							if (emulator_on)
 								LoadSaveState(file_buffer, file_size);
@@ -1908,25 +1908,27 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
 						{
+							VDP_Configuration &vdp = emulator.clownmdemu_configuration.vdp;
+
 							ImGui::TableNextColumn();
-							temp = !emulator.clownmdemu_configuration.vdp.sprites_disabled;
+							temp = !vdp.sprites_disabled;
 							if (ImGui::Checkbox("Sprite Plane", &temp))
-								emulator.clownmdemu_configuration.vdp.sprites_disabled = !emulator.clownmdemu_configuration.vdp.sprites_disabled;
+								vdp.sprites_disabled = !vdp.sprites_disabled;
 
 							ImGui::TableNextColumn();
-							temp = !emulator.clownmdemu_configuration.vdp.window_disabled;
+							temp = !vdp.window_disabled;
 							if (ImGui::Checkbox("Window Plane", &temp))
-								emulator.clownmdemu_configuration.vdp.window_disabled = !emulator.clownmdemu_configuration.vdp.window_disabled;
+								vdp.window_disabled = !vdp.window_disabled;
 
 							ImGui::TableNextColumn();
-							temp = !emulator.clownmdemu_configuration.vdp.planes_disabled[0];
+							temp = !vdp.planes_disabled[0];
 							if (ImGui::Checkbox("Plane A", &temp))
-								emulator.clownmdemu_configuration.vdp.planes_disabled[0] = !emulator.clownmdemu_configuration.vdp.planes_disabled[0];
+								vdp.planes_disabled[0] = !vdp.planes_disabled[0];
 
 							ImGui::TableNextColumn();
-							temp = !emulator.clownmdemu_configuration.vdp.planes_disabled[1];
+							temp = !vdp.planes_disabled[1];
 							if (ImGui::Checkbox("Plane B", &temp))
-								emulator.clownmdemu_configuration.vdp.planes_disabled[1] = !emulator.clownmdemu_configuration.vdp.planes_disabled[1];
+								vdp.planes_disabled[1] = !vdp.planes_disabled[1];
 
 							ImGui::EndTable();
 						}
@@ -1935,21 +1937,23 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
 						{
+							FM_Configuration &fm = emulator.clownmdemu_configuration.fm;
+
 							char buffer[] = "FM1";
 
-							for (std::size_t i = 0; i < CC_COUNT_OF(emulator.clownmdemu_configuration.fm.fm_channels_disabled); ++i)
+							for (std::size_t i = 0; i < CC_COUNT_OF(fm.fm_channels_disabled); ++i)
 							{
 								buffer[2] = '1' + i;
 								ImGui::TableNextColumn();
-								temp = !emulator.clownmdemu_configuration.fm.fm_channels_disabled[i];
+								temp = !fm.fm_channels_disabled[i];
 								if (ImGui::Checkbox(buffer, &temp))
-									emulator.clownmdemu_configuration.fm.fm_channels_disabled[i] = !emulator.clownmdemu_configuration.fm.fm_channels_disabled[i];
+									fm.fm_channels_disabled[i] = !fm.fm_channels_disabled[i];
 							}
 
 							ImGui::TableNextColumn();
-							temp = !emulator.clownmdemu_configuration.fm.dac_channel_disabled;
+							temp = !fm.dac_channel_disabled;
 							if (ImGui::Checkbox("DAC", &temp))
-								emulator.clownmdemu_configuration.fm.dac_channel_disabled = !emulator.clownmdemu_configuration.fm.dac_channel_disabled;
+								fm.dac_channel_disabled = !fm.dac_channel_disabled;
 
 							ImGui::EndTable();
 						}
@@ -1958,21 +1962,23 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
 						{
+							PSG_Configuration &psg = emulator.clownmdemu_configuration.psg;
+
 							char buffer[] = "PSG1";
 
-							for (std::size_t i = 0; i < CC_COUNT_OF(emulator.clownmdemu_configuration.psg.tone_disabled); ++i)
+							for (std::size_t i = 0; i < CC_COUNT_OF(psg.tone_disabled); ++i)
 							{
 								buffer[3] = '1' + i;
 								ImGui::TableNextColumn();
-								temp = !emulator.clownmdemu_configuration.psg.tone_disabled[i];
+								temp = !psg.tone_disabled[i];
 								if (ImGui::Checkbox(buffer, &temp))
-									emulator.clownmdemu_configuration.psg.tone_disabled[i] = !emulator.clownmdemu_configuration.psg.tone_disabled[i];
+									psg.tone_disabled[i] = !psg.tone_disabled[i];
 							}
 
 							ImGui::TableNextColumn();
-							temp = !emulator.clownmdemu_configuration.psg.noise_disabled;
+							temp = !psg.noise_disabled;
 							if (ImGui::Checkbox("PSG Noise", &temp))
-								emulator.clownmdemu_configuration.psg.noise_disabled = !emulator.clownmdemu_configuration.psg.noise_disabled;
+								psg.noise_disabled = !psg.noise_disabled;
 
 							ImGui::EndTable();
 						}
@@ -1991,25 +1997,27 @@ int main(int argc, char **argv)
 
 						if (ImGui::BeginTable("Console Options", 3))
 						{
+							ClownMDEmu_Configuration &configuration = emulator.clownmdemu_configuration;
+
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("TV Standard:");
 							DoToolTip("Some games only work with a certain TV standard.");
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("NTSC", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+							if (ImGui::RadioButton("NTSC", configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 							{
-								if (emulator.clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
+								if (configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 								{
-									emulator.clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+									configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 									audio_output.SetPALMode(false);
 								}
 							}
 							DoToolTip("60 FPS");
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("PAL", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
+							if (ImGui::RadioButton("PAL", configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
 							{
-								if (emulator.clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
+								if (configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 								{
-									emulator.clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+									configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
 									audio_output.SetPALMode(true);
 								}
 							}
@@ -2019,11 +2027,11 @@ int main(int argc, char **argv)
 							ImGui::TextUnformatted("Region:");
 							DoToolTip("Some games only work with a certain region.");
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("Japan", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
-								emulator.clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
+							if (ImGui::RadioButton("Japan", configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
+								configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("Elsewhere", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
-								emulator.clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+							if (ImGui::RadioButton("Elsewhere", configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
+								configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 
 							ImGui::EndTable();
 						}

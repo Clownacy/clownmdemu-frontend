@@ -10,14 +10,14 @@
 
 #include "common.h"
 
-typedef struct TileMetadata
+struct TileMetadata
 {
 	cc_u16f tile_index;
 	cc_u16f palette_line;
 	bool x_flip;
 	bool y_flip;
 	bool priority;
-} TileMetadata;
+};
 
 static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &tile_metadata)
 {
@@ -250,14 +250,14 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 				if (file == nullptr)
 				{
 					debug_log.Log("Could not open save state file for writing");
-					SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window.sdl);
+					window.ShowErrorMessageBox("Could not create VRAM file.");
 				}
 				else
 				{
 					if (SDL_RWwrite(file, vdp.vram, sizeof(vdp.vram), 1) != 1)
 					{
 						debug_log.Log("Could not write save state file");
-						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window.sdl);
+						window.ShowErrorMessageBox("Could not create VRAM file.");
 					}
 					else
 					{

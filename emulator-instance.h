@@ -91,15 +91,15 @@ public:
 	void Update(Window &window);
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, std::size_t rom_buffer_size_parameter);
-	bool LoadCartridgeFileFromFile(const char *path);
+	void LoadCartridgeFile(unsigned char *rom_buffer_parameter, std::size_t rom_buffer_size_parameter);
+	bool LoadCartridgeFile(const char *path);
 	void UnloadCartridgeFile();
 	bool LoadCDFile(const char *path);
 	void UnloadCDFile();
-	static bool ValidateSaveStateFromMemory(const unsigned char *file_buffer, std::size_t file_size);
-	static bool ValidateSaveStateFromFile(const char *save_state_path);
-	bool LoadSaveStateFromMemory(const unsigned char *file_buffer, std::size_t file_size);
-	bool LoadSaveStateFromFile(const char *save_state_path);
+	static bool ValidateSaveState(const unsigned char *file_buffer, std::size_t file_size);
+	static bool ValidateSaveState(const char *save_state_path);
+	bool LoadSaveState(const unsigned char *file_buffer, std::size_t file_size);
+	bool LoadSaveState(const char *save_state_path);
 	bool CreateSaveState(const char *save_state_path);
 
 	bool IsCartridgeFileLoaded() const { return rom_buffer != nullptr; }
