@@ -27,6 +27,7 @@
 #include "debug-vdp.h"
 #include "debug-z80.h"
 #include "doubly-linked-list.h"
+#include "emulator-instance.h"
 #include "file-picker.h"
 #include "utilities.h"
 
@@ -105,25 +106,8 @@ static bool emulator_has_focus; // Used for deciding when to pass inputs to the 
 static bool emulator_paused;
 static bool emulator_frame_advance;
 
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-static EmulationState state_rewind_buffer[60 * 10]; // Roughly 30 seconds of rewinding at 60FPS
-static std::size_t state_rewind_index;
-static std::size_t state_rewind_remaining;
-#else
-static EmulationState state_rewind_buffer[1];
-#endif
-
 static bool quick_save_exists;
-static EmulationState quick_save_state;
-
-static unsigned char *rom_buffer;
-static std::size_t rom_buffer_size;
-
-static SDL_RWops *cd_file;
-static bool sector_size_2352;
-
-static ClownMDEmu_Configuration clownmdemu_configuration;
-static ClownMDEmu_Constant clownmdemu_constant;
+static EmulatorInstance::State quick_save_state;
 
 static AudioOutput audio_output(debug_log);
 
@@ -131,11 +115,8 @@ static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
-static Uint32 *framebuffer_texture_pixels;
-static int framebuffer_texture_pitch;
-
-static unsigned int current_screen_width;
-static unsigned int current_screen_height;
+static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
+static EmulatorInstance emulator(audio_output, debug_log, ReadInputCallback);
 
 
 ///////////
@@ -167,48 +148,7 @@ static void ReloadFonts(unsigned int font_size)
 // Emulator Functionality //
 ////////////////////////////
 
-static cc_u8f CartridgeReadCallback(const void */*user_data*/, cc_u32f address)
-{
-	if (address >= rom_buffer_size)
-		return 0;
-
-	return rom_buffer[address];
-}
-
-static void CartridgeWrittenCallback(const void */*user_data*/, cc_u32f /*address*/, cc_u8f /*value*/)
-{
-	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
-
-	/*
-	if (address >= rom_buffer_size)
-		return;
-
-	rom_buffer[address] = value;
-	*/
-}
-
-static void ColourUpdatedCallback(const void */*user_data*/, cc_u16f index, cc_u16f colour)
-{
-	// Decompose XBGR4444 into individual colour channels
-	const cc_u32f red = (colour >> 4 * 0) & 0xF;
-	const cc_u32f green = (colour >> 4 * 1) & 0xF;
-	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
-
-	// Reassemble into ARGB8888
-	emulation_state->colours[index] = static_cast<Uint32>((blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
-}
-
-static void ScanlineRenderedCallback(const void */*user_data*/, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height)
-{
-	current_screen_width = screen_width;
-	current_screen_height = screen_height;
-
-	if (framebuffer_texture_pixels != nullptr)
-		for (cc_u16f i = 0; i < screen_width; ++i)
-			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = emulation_state->colours[pixels[i]];
-}
-
-static cc_bool ReadInputCallback(const void */*user_data*/, cc_u8f player_id, ClownMDEmu_Button button_id)
+static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
 	SDL_assert(player_id < 2);
 
@@ -231,60 +171,6 @@ static cc_bool ReadInputCallback(const void */*user_data*/, cc_u8f player_id, Cl
 	}
 
 	return value;
-}
-
-static void FMAudioCallback(const void */*user_data*/, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_fm_audio(&clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
-}
-
-static void PSGAudioCallback(const void */*user_data*/, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
-{
-	generate_psg_audio(&clownmdemu, audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
-}
-
-static void CDSeekCallback(const void */*user_data*/, cc_u32f sector_index)
-{
-	if (cd_file != nullptr)
-		SDL_RWseek(cd_file, sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
-}
-
-static const cc_u8l* CDSectorReadCallback(const void */*user_data*/)
-{
-	static cc_u8l sector_buffer[2048];
-
-	if (cd_file != nullptr)
-		SDL_RWread(cd_file, sector_buffer, 2048, 1);
-
-	if (sector_size_2352)
-		SDL_RWseek(cd_file, 2352 - 2048, SEEK_CUR);
-
-	return sector_buffer;
-}
-
-// Construct our big list of callbacks for clownmdemu.
-static const ClownMDEmu_Callbacks callbacks = {nullptr, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback};
-
-static bool IsCartridgeFileLoaded()
-{
-	return rom_buffer != nullptr;
-}
-
-static bool IsCDFileLoaded()
-{
-	return cd_file != nullptr;
-}
-
-static void SoftResetConsole()
-{
-	ClownMDEmu_Reset(&clownmdemu, &callbacks, !IsCartridgeFileLoaded());
-}
-
-static void HardResetConsole()
-{
-	ClownMDEmu_State_Initialise(&emulation_state->clownmdemu);
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
-	SoftResetConsole();
 }
 
 static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
@@ -328,131 +214,6 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 	}
 }
 
-static void LoadCartridgeFileFromMemory(unsigned char *rom_buffer_parameter, std::size_t rom_buffer_size_parameter)
-{
-	quick_save_exists = false;
-
-	// Unload the previous ROM in memory.
-	SDL_free(rom_buffer);
-
-	rom_buffer = rom_buffer_parameter;
-	rom_buffer_size = rom_buffer_size_parameter;
-
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	state_rewind_remaining = 0;
-	state_rewind_index = 0;
-#endif
-	emulation_state = &state_rewind_buffer[0];
-
-	HardResetConsole();
-}
-
-static bool LoadCartridgeFileFromFile(const char *path)
-{
-	unsigned char *temp_rom_buffer;
-	std::size_t temp_rom_buffer_size;
-
-	// Load ROM to memory.
-	Utilities::LoadFileToBuffer(path, temp_rom_buffer, temp_rom_buffer_size);
-
-	if (temp_rom_buffer == nullptr)
-	{
-		debug_log.Log("Could not load the cartridge file");
-		window.ShowErrorMessageBox("Failed to load the cartridge file.");
-		return false;
-	}
-	else
-	{
-		AddToRecentSoftware(path, false, false);
-
-		LoadCartridgeFileFromMemory(temp_rom_buffer, temp_rom_buffer_size);
-		return true;
-	}
-}
-
-static bool LoadCDFile(const char* const path)
-{
-	cd_file = SDL_RWFromFile(path, "rb");
-
-	if (cd_file == nullptr)
-	{
-		debug_log.Log("Could not load the CD file");
-		window.ShowErrorMessageBox("Failed to load the CD file.");
-		return false;
-	}
-	else
-	{
-		AddToRecentSoftware(path, true, false);
-
-		// Detect if the sector size is 2048 bytes or 2352 bytes.
-		sector_size_2352 = false;
-
-		unsigned char buffer[0x10];
-		if (SDL_RWread(cd_file, buffer, sizeof(buffer), 1) == 1)
-		{
-			static const unsigned char sector_header[0x10] = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
-
-			if (SDL_memcmp(buffer, sector_header, sizeof(sector_header)) == 0)
-				sector_size_2352 = true;
-		}
-
-		HardResetConsole();
-
-		return true;
-	}
-}
-
-static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
-
-static bool LoadSaveStateFromMemory(const unsigned char* const file_buffer, const std::size_t file_size)
-{
-	bool success = false;
-
-	if (file_buffer != nullptr)
-	{
-		if (file_size != sizeof(save_state_magic) + sizeof(EmulationState))
-		{
-			debug_log.Log("Invalid save state size");
-			window.ShowErrorMessageBox("Save state file is incompatible.");
-		}
-		else
-		{
-			if (SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) != 0)
-			{
-				debug_log.Log("Invalid save state magic");
-				window.ShowErrorMessageBox("The file was not a valid save state.");
-			}
-			else
-			{
-				SDL_memcpy(emulation_state, &file_buffer[sizeof(save_state_magic)], sizeof(EmulationState));
-
-				emulator_paused = false;
-
-				success = true;
-			}
-		}
-	}
-
-	return success;
-}
-
-static bool LoadSaveStateFromFile(const char* const save_state_path)
-{
-	unsigned char *file_buffer;
-	std::size_t file_size;
-	Utilities::LoadFileToBuffer(save_state_path, file_buffer, file_size);
-
-	bool success = false;
-
-	if (file_buffer != nullptr)
-	{
-		success = LoadSaveStateFromMemory(file_buffer, file_size);
-		SDL_free(file_buffer);
-	}
-
-	return success;
-}
-
 // Manages whether the emulator runs at a higher speed or not.
 static bool fast_forward_in_progress;
 
@@ -474,16 +235,92 @@ static void UpdateFastForwardStatus()
 }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-static bool rewind_in_progress;
-
 static void UpdateRewindStatus()
 {
-	rewind_in_progress = keyboard_input.rewind;
+	emulator.rewind_in_progress = keyboard_input.rewind;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
-		rewind_in_progress |= controller_input->input.rewind != 0;
+		emulator.rewind_in_progress |= controller_input->input.rewind != 0;
 }
 #endif
+
+
+///////////
+// Misc. //
+///////////
+
+static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
+{
+	quick_save_exists = false;
+	emulator.LoadCartridgeFileFromMemory(file_buffer, file_size);
+}
+
+static bool LoadCartridgeFile(const char* const path)
+{
+	if (!emulator.LoadCartridgeFileFromFile(path))
+	{
+		debug_log.Log("Could not load the cartridge file");
+		window.ShowErrorMessageBox("Failed to load the cartridge file.");
+		return false;
+	}
+
+	quick_save_exists = false;
+	AddToRecentSoftware(path, false, false);
+	return true;
+}
+
+static bool LoadCDFile(const char* const path)
+{
+	if (!emulator.LoadCDFile(path))
+	{
+		debug_log.Log("Could not load the CD file");
+		window.ShowErrorMessageBox("Failed to load the CD file.");
+		return false;
+	}
+
+	AddToRecentSoftware(path, true, false);
+	return true;
+}
+
+static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
+{
+	if (!emulator.LoadSaveStateFromMemory(file_buffer, file_size))
+	{
+		debug_log.Log("Could not load save state file");
+		window.ShowErrorMessageBox("Could not load save state file.");
+		return false;
+	}
+
+	emulator_paused = false;
+
+	return true;
+}
+
+static bool LoadSaveState(const char* const save_state_path)
+{
+	if (!emulator.LoadSaveStateFromFile(save_state_path))
+	{
+		debug_log.Log("Could not load save state file");
+		window.ShowErrorMessageBox("Could not load save state file.");
+		return false;
+	}
+
+	emulator_paused = false;
+
+	return true;
+}
+
+static bool CreateSaveState(const char* const save_state_path)
+{
+	if (!emulator.CreateSaveState(save_state_path))
+	{
+		debug_log.Log("Could not create save state file");
+		window.ShowErrorMessageBox("Could not create save state file.");
+		return false;
+	}
+
+	return true;
+}
 
 
 /////////////
@@ -549,9 +386,9 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
 			audio_output.SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
-			clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
+			emulator.clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
 		else if (SDL_strcmp(name, "japanese") == 0)
-			clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
+			emulator.clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
 	#ifdef POSIX
 		else if (SDL_strcmp(name, "last-directory") == 0)
 			last_file_dialog_directory = SDL_strdup(value);
@@ -622,8 +459,8 @@ static void LoadConfiguration()
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
 
-	clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
-	clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+	emulator.clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+	emulator.clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 
 	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
 
@@ -685,8 +522,8 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio_output.GetLowPassFilter());
-		PRINT_BOOLEAN_OPTION(file, "pal", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-		PRINT_BOOLEAN_OPTION(file, "japanese", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
+		PRINT_BOOLEAN_OPTION(file, "pal", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+		PRINT_BOOLEAN_OPTION(file, "japanese", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
 	#ifdef POSIX
 		if (last_file_dialog_directory != nullptr)
@@ -706,7 +543,7 @@ static void SaveConfiguration()
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
 				char *buffer;
-				if (SDL_asprintf(&buffer, "%u = %u\n", static_cast<unsigned int>(i), keyboard_bindings[i]) != -1);
+				if (SDL_asprintf(&buffer, "%u = %u\n", static_cast<unsigned int>(i), keyboard_bindings[i]) != -1)
 				{
 					SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
 					SDL_free(buffer);
@@ -825,29 +662,6 @@ int main(int argc, char **argv)
 			// Load fonts
 			ReloadFonts(font_size);
 
-			// This should be called before any other clownmdemu functions are called!
-			ClownMDEmu_SetErrorCallback([](const char* const format, va_list args) {debug_log.Log(format, args); });
-
-			// Initialise the clownmdemu configuration struct.
-			clownmdemu_configuration.vdp.sprites_disabled = cc_false;
-			clownmdemu_configuration.vdp.window_disabled = cc_false;
-			clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
-			clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
-			clownmdemu_configuration.fm.fm_channels_disabled[0] = cc_false;
-			clownmdemu_configuration.fm.fm_channels_disabled[1] = cc_false;
-			clownmdemu_configuration.fm.fm_channels_disabled[2] = cc_false;
-			clownmdemu_configuration.fm.fm_channels_disabled[3] = cc_false;
-			clownmdemu_configuration.fm.fm_channels_disabled[4] = cc_false;
-			clownmdemu_configuration.fm.fm_channels_disabled[5] = cc_false;
-			clownmdemu_configuration.fm.dac_channel_disabled = cc_false;
-			clownmdemu_configuration.psg.tone_disabled[0] = cc_false;
-			clownmdemu_configuration.psg.tone_disabled[1] = cc_false;
-			clownmdemu_configuration.psg.tone_disabled[2] = cc_false;
-			clownmdemu_configuration.psg.noise_disabled = cc_false;
-
-			// Initialise persistent data such as lookup tables.
-			ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
-
 			// Intiialise audio if we can (but it's okay if it fails).
 			if (!audio_output.Initialise())
 			{
@@ -857,15 +671,15 @@ int main(int argc, char **argv)
 			else
 			{
 				// Initialise resamplers.
-				audio_output.SetPALMode(clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+				audio_output.SetPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 			}
 
 			// If the user passed the path to the software on the command line, then load it here, automatically.
 			// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
 			if (argc > 1)
-				LoadCartridgeFileFromFile(argv[1]);
+				LoadCartridgeFile(argv[1]);
 			else
-				LoadCartridgeFileFromMemory(nullptr, 0);
+				LoadCartridgeFile(nullptr, 0);
 
 			// We are now ready to show the window
 			SDL_ShowWindow(window.sdl);
@@ -905,58 +719,14 @@ int main(int argc, char **argv)
 
 			while (!quit)
 			{
-				const bool emulator_on = IsCartridgeFileLoaded() || IsCDFileLoaded();
+				const bool emulator_on = emulator.IsCartridgeFileLoaded() || emulator.IsCDFileLoaded();
 				const bool emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_picker.IsDialogOpen()
 				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-					&& !(rewind_in_progress && state_rewind_remaining == 0)
+					&& !emulator.RewindingExhausted()
 				#endif
 					;
 
 				emulator_frame_advance = false;
-
-			#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-				// Handle rewinding.
-				if (emulator_running)
-				{
-					// We maintain a ring buffer of emulator states:
-					// when rewinding, we go backwards through this buffer,
-					// and when not rewinding, we go forwards through it.
-					std::size_t from_index, to_index;
-
-					if (rewind_in_progress)
-					{
-						--state_rewind_remaining;
-
-						from_index = to_index = state_rewind_index;
-
-						if (from_index == 0)
-							from_index = CC_COUNT_OF(state_rewind_buffer) - 1;
-						else
-							--from_index;
-
-						state_rewind_index = from_index;
-					}
-					else
-					{
-						if (state_rewind_remaining < CC_COUNT_OF(state_rewind_buffer) - 1)
-							++state_rewind_remaining;
-
-						from_index = to_index = state_rewind_index;
-
-						if (to_index == CC_COUNT_OF(state_rewind_buffer) - 1)
-							to_index = 0;
-						else
-							++to_index;
-
-						state_rewind_index = to_index;
-					}
-
-					SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
-
-					emulation_state = &state_rewind_buffer[to_index];
-					ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &emulation_state->clownmdemu);
-				}
-			#endif
 
 				// This loop processes events and manages the framerate.
 				for (;;)
@@ -982,7 +752,7 @@ int main(int argc, char **argv)
 						// Calculate when the next frame will be
 						Uint32 delta;
 
-						switch (clownmdemu_configuration.general.tv_standard)
+						switch (emulator.clownmdemu_configuration.general.tv_standard)
 						{
 							default:
 							case CLOWNMDEMU_TV_STANDARD_NTSC:
@@ -1067,21 +837,21 @@ int main(int argc, char **argv)
 
 									case INPUT_BINDING_RESET:
 										// Soft-reset console
-										SoftResetConsole();
+										emulator.SoftResetConsole();
 										emulator_paused = false;
 										break;
 
 									case INPUT_BINDING_QUICK_SAVE_STATE:
 										// Save save state
 										quick_save_exists = true;
-										quick_save_state = *emulation_state;
+										quick_save_state = *emulator.state;
 										break;
 
 									case INPUT_BINDING_QUICK_LOAD_STATE:
 										// Load save state
 										if (quick_save_exists)
 										{
-											*emulation_state = quick_save_state;
+											*emulator.state = quick_save_state;
 
 											emulator_paused = false;
 										}
@@ -1268,7 +1038,7 @@ int main(int argc, char **argv)
 									// Load save state
 									if (quick_save_exists)
 									{
-										*emulation_state = quick_save_state;
+										*emulator.state = quick_save_state;
 
 										emulator_paused = false;
 
@@ -1280,7 +1050,7 @@ int main(int argc, char **argv)
 								case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 									// Save save state
 									quick_save_exists = true;
-									quick_save_state = *emulation_state;
+									quick_save_state = *emulator.state;
 
 									SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
 									break;
@@ -1519,24 +1289,7 @@ int main(int argc, char **argv)
 
 				if (emulator_running)
 				{
-					// Reset the audio buffers so that they can be mixed into.
-					audio_output.MixerBegin();
-
-					// Lock the texture so that we can write to its pixels later
-					if (SDL_LockTexture(window.framebuffer_texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
-						framebuffer_texture_pixels = nullptr;
-
-					framebuffer_texture_pitch /= sizeof(Uint32);
-
-					// Run the emulator for a frame
-					ClownMDEmu_Iterate(&clownmdemu, &callbacks);
-
-					// Unlock the texture so that we can draw it
-					SDL_UnlockTexture(window.framebuffer_texture);
-
-					// Resample, mix, and output the audio for this frame.
-					audio_output.MixerEnd();
-
+					emulator.Update(window);
 					++frame_counter;
 				}
 
@@ -1554,10 +1307,10 @@ int main(int argc, char **argv)
 
 					if (file_buffer != nullptr)
 					{
-						if (file_size >= sizeof(save_state_magic) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0)
+						if (emulator.ValidateSaveStateFromMemory(file_buffer, file_size))
 						{
 							if (emulator_on)
-								LoadSaveStateFromMemory(file_buffer, file_size);
+								LoadSaveState(file_buffer, file_size);
 
 							SDL_free(file_buffer);
 						}
@@ -1565,7 +1318,7 @@ int main(int argc, char **argv)
 						{
 							// TODO: Handle dropping a CD file here.
 							AddToRecentSoftware(drag_and_drop_filename, false, false);
-							LoadCartridgeFileFromMemory(file_buffer, file_size);
+							LoadCartridgeFile(file_buffer, file_size);
 							emulator_paused = false;
 						}
 					}
@@ -1645,7 +1398,7 @@ int main(int argc, char **argv)
 							{
 								file_picker.CreateOpenFileDialog("Load Cartridge File", [](const char* const path)
 								{
-									if (LoadCartridgeFileFromFile(path))
+									if (LoadCartridgeFile(path))
 									{
 										emulator_paused = false;
 										return true;
@@ -1657,14 +1410,12 @@ int main(int argc, char **argv)
 								});
 							}
 
-							if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, IsCartridgeFileLoaded()))
+							if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, emulator.IsCartridgeFileLoaded()))
 							{
-								SDL_free(rom_buffer);
-								rom_buffer = nullptr;
-								rom_buffer_size = 0;
+								emulator.UnloadCartridgeFile();
 
-								if (IsCDFileLoaded())
-									HardResetConsole();
+								if (emulator.IsCDFileLoaded())
+									emulator.HardResetConsole();
 
 								emulator_paused = false;
 							}
@@ -1687,13 +1438,12 @@ int main(int argc, char **argv)
 								});
 							}
 
-							if (ImGui::MenuItem("Unload CD File", nullptr, false, IsCDFileLoaded()))
+							if (ImGui::MenuItem("Unload CD File", nullptr, false, emulator.IsCDFileLoaded()))
 							{
-								SDL_RWclose(cd_file);
-								cd_file = nullptr;
+								emulator.UnloadCDFile();
 
-								if (IsCartridgeFileLoaded())
-									HardResetConsole();
+								if (emulator.IsCartridgeFileLoaded())
+									emulator.HardResetConsole();
 
 								emulator_paused = false;
 							}
@@ -1704,7 +1454,7 @@ int main(int argc, char **argv)
 
 							if (ImGui::MenuItem("Reset", nullptr, false, emulator_on))
 							{
-								SoftResetConsole();
+								emulator.SoftResetConsole();
 								emulator_paused = false;
 							}
 
@@ -1738,7 +1488,7 @@ int main(int argc, char **argv)
 										}
 										else
 										{
-											if (LoadCartridgeFileFromFile(recent_software->path))
+											if (LoadCartridgeFile(recent_software->path))
 												emulator_paused = false;
 										}
 									}
@@ -1756,12 +1506,12 @@ int main(int argc, char **argv)
 							if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 							{
 								quick_save_exists = true;
-								quick_save_state = *emulation_state;
+								quick_save_state = *emulator.state;
 							}
 
 							if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_exists))
 							{
-								*emulation_state = quick_save_state;
+								*emulator.state = quick_save_state;
 
 								emulator_paused = false;
 							}
@@ -1771,39 +1521,11 @@ int main(int argc, char **argv)
 							if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 							{
 								// Obtain a filename and path from the user.
-								file_picker.CreateSaveFileDialog("Create Save State", [](const char* const save_state_path)
-								{
-									bool success = false;
-
-									// Save the current state to the specified file.
-									SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
-
-									if (file == nullptr)
-									{
-										debug_log.Log("Could not open save state file for writing");
-										window.ShowErrorMessageBox("Could not create save state file.");
-									}
-									else
-									{
-										if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, emulation_state, sizeof(*emulation_state), 1) != 1)
-										{
-											debug_log.Log("Could not write save state file");
-											window.ShowErrorMessageBox("Could not create save state file.");
-										}
-										else
-										{
-											success = true;
-										}
-
-										SDL_RWclose(file);
-									}
-
-									return success;
-								});
+								file_picker.CreateSaveFileDialog("Create Save State", CreateSaveState);
 							}
 
 							if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-								file_picker.CreateOpenFileDialog("Load Save State", LoadSaveStateFromFile);
+								file_picker.CreateOpenFileDialog("Load Save State", static_cast<bool(*)(const char*)>(LoadSaveState));
 
 							ImGui::EndMenu();
 						}
@@ -1914,7 +1636,7 @@ int main(int argc, char **argv)
 						unsigned int destination_width;
 						unsigned int destination_height;
 
-						switch (current_screen_height)
+						switch (emulator.current_screen_height)
 						{
 							default:
 								assert(false);
@@ -1943,7 +1665,7 @@ int main(int argc, char **argv)
 						unsigned int destination_width_scaled;
 						unsigned int destination_height_scaled;
 
-						ImVec2 uv1 = {static_cast<float>(current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
+						ImVec2 uv1 = {static_cast<float>(emulator.current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(emulator.current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
 
 						if (integer_screen_scaling)
 						{
@@ -1985,8 +1707,8 @@ int main(int argc, char **argv)
 								SDL_Rect framebuffer_rect;
 								framebuffer_rect.x = 0;
 								framebuffer_rect.y = 0;
-								framebuffer_rect.w = current_screen_width;
-								framebuffer_rect.h = current_screen_height;
+								framebuffer_rect.w = emulator.current_screen_width;
+								framebuffer_rect.h = emulator.current_screen_height;
 
 								SDL_Rect upscaled_framebuffer_rect;
 								upscaled_framebuffer_rect.x = 0;
@@ -2024,49 +1746,49 @@ int main(int argc, char **argv)
 					debug_log.Display(debug_log_active, monospace_font);
 
 				if (m68k_status)
-					Debug_M68k(m68k_status, "Main 68000 Registers", clownmdemu.state->m68k, monospace_font);
+					Debug_M68k(m68k_status, "Main 68000 Registers", emulator.state->clownmdemu.m68k, monospace_font);
 
 				if (mcd_m68k_status)
-					Debug_M68k(mcd_m68k_status, "Sub 68000 Registers", clownmdemu.state->mcd_m68k, monospace_font);
+					Debug_M68k(mcd_m68k_status, "Sub 68000 Registers", emulator.state->clownmdemu.mcd_m68k, monospace_font);
 
 				if (z80_status)
-					Debug_Z80(z80_status, clownmdemu.state->z80, monospace_font);
+					Debug_Z80(z80_status, emulator.state->clownmdemu.z80, monospace_font);
 
 				if (m68k_ram_viewer)
-					Debug_Memory(m68k_ram_viewer, monospace_font, "WORK-RAM", clownmdemu.state->m68k_ram, CC_COUNT_OF(clownmdemu.state->m68k_ram));
+					Debug_Memory(m68k_ram_viewer, monospace_font, "WORK-RAM", emulator.state->clownmdemu.m68k_ram, CC_COUNT_OF(emulator.state->clownmdemu.m68k_ram));
 
 				if (z80_ram_viewer)
-					Debug_Memory(z80_ram_viewer, monospace_font, "SOUND-RAM", clownmdemu.state->z80_ram, CC_COUNT_OF(clownmdemu.state->z80_ram));
+					Debug_Memory(z80_ram_viewer, monospace_font, "SOUND-RAM", emulator.state->clownmdemu.z80_ram, CC_COUNT_OF(emulator.state->clownmdemu.z80_ram));
 
 				if (prg_ram_viewer)
-					Debug_Memory(prg_ram_viewer, monospace_font, "PRG-RAM", clownmdemu.state->prg_ram, CC_COUNT_OF(clownmdemu.state->prg_ram));
+					Debug_Memory(prg_ram_viewer, monospace_font, "PRG-RAM", emulator.state->clownmdemu.prg_ram, CC_COUNT_OF(emulator.state->clownmdemu.prg_ram));
 
 				if (word_ram_viewer)
-					Debug_Memory(word_ram_viewer, monospace_font, "WORD-RAM", clownmdemu.state->word_ram, CC_COUNT_OF(clownmdemu.state->word_ram));
+					Debug_Memory(word_ram_viewer, monospace_font, "WORD-RAM", emulator.state->clownmdemu.word_ram, CC_COUNT_OF(emulator.state->clownmdemu.word_ram));
 
 				if (vdp_registers)
-					Debug_VDP(vdp_registers);
+					Debug_VDP(vdp_registers, emulator);
 
 				if (window_plane_viewer)
-					Debug_WindowPlane(window_plane_viewer);
+					Debug_WindowPlane(window_plane_viewer, emulator);
 
 				if (plane_a_viewer)
-					Debug_PlaneA(plane_a_viewer);
+					Debug_PlaneA(plane_a_viewer, emulator);
 
 				if (plane_b_viewer)
-					Debug_PlaneB(plane_b_viewer);
+					Debug_PlaneB(plane_b_viewer, emulator);
 
 				if (vram_viewer)
-					Debug_VRAM(vram_viewer);
+					Debug_VRAM(vram_viewer, emulator);
 
 				if (cram_viewer)
-					Debug_CRAM(cram_viewer);
+					Debug_CRAM(cram_viewer, emulator);
 
 				if (fm_status)
-					Debug_FM(fm_status, clownmdemu, monospace_font);
+					Debug_FM(fm_status, emulator, monospace_font);
 
 				if (psg_status)
-					Debug_PSG(psg_status, clownmdemu, monospace_font);
+					Debug_PSG(psg_status, emulator, monospace_font);
 
 				if (other_status)
 				{
@@ -2074,6 +1796,8 @@ int main(int argc, char **argv)
 					{
 						if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
 						{
+							const ClownMDEmu_State &clownmdemu_state = emulator.state->clownmdemu;
+
 							cc_u8f i;
 
 							ImGui::TableSetupColumn("Property");
@@ -2084,88 +1808,88 @@ int main(int argc, char **argv)
 							ImGui::TextUnformatted("Z80 Bank");
 							ImGui::TableNextColumn();
 							ImGui::PushFont(monospace_font);
-							ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu.state->z80_bank * 0x8000, (clownmdemu.state->z80_bank + 1) * 0x8000 - 1);
+							ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80_bank * 0x8000, (clownmdemu_state.z80_bank + 1) * 0x8000 - 1);
 							ImGui::PopFont();
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->m68k_has_z80_bus ? "Yes" : "No");
+							ImGui::TextUnformatted(clownmdemu_state.m68k_has_z80_bus ? "Yes" : "No");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("Z80 Reset");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->z80_reset ? "Yes" : "No");
+							ImGui::TextUnformatted(clownmdemu_state.z80_reset ? "Yes" : "No");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->m68k_has_mcd_m68k_bus ? "Yes" : "No");
+							ImGui::TextUnformatted(clownmdemu_state.m68k_has_mcd_m68k_bus ? "Yes" : "No");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("Sub 68000 Reset");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->mcd_m68k_reset ? "Yes" : "No");
+							ImGui::TextUnformatted(clownmdemu_state.mcd_m68k_reset ? "Yes" : "No");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("PRG-RAM Bank");
 							ImGui::TableNextColumn();
 							ImGui::PushFont(monospace_font);
-							ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu.state->prg_ram_bank * 0x20000, (clownmdemu.state->prg_ram_bank + 1) * 0x20000 - 1);
+							ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.prg_ram_bank * 0x20000, (clownmdemu_state.prg_ram_bank + 1) * 0x20000 - 1);
 							ImGui::PopFont();
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("WORD-RAM Mode");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->word_ram_1m_mode ? "1M" : "2M");
+							ImGui::TextUnformatted(clownmdemu_state.word_ram_1m_mode ? "1M" : "2M");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("DMNA Bit");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->word_ram_dmna ? "Set" : "Clear");
+							ImGui::TextUnformatted(clownmdemu_state.word_ram_dmna ? "Set" : "Clear");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("RET Bit");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->word_ram_ret ? "Set" : "Clear");
+							ImGui::TextUnformatted(clownmdemu_state.word_ram_ret ? "Set" : "Clear");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("Boot Mode");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->cd_boot ? "CD" : "Cartridge");
+							ImGui::TextUnformatted(clownmdemu_state.cd_boot ? "CD" : "Cartridge");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("68000 Communication Flag");
 							ImGui::TableNextColumn();
 							ImGui::PushFont(monospace_font);
-							ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu.state->mcd_communication_flag);
+							ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mcd_communication_flag);
 							ImGui::PopFont();
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("68000 Communication Command");
 							ImGui::TableNextColumn();
 							ImGui::PushFont(monospace_font);
-							for (i = 0; i < CC_COUNT_OF(clownmdemu.state->mcd_communication_command); i += 2)
-								ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu.state->mcd_communication_command[i + 0], clownmdemu.state->mcd_communication_command[i + 1]);
+							for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mcd_communication_command); i += 2)
+								ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mcd_communication_command[i + 0], clownmdemu_state.mcd_communication_command[i + 1]);
 							ImGui::PopFont();
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("68000 Communication Status");
 							ImGui::TableNextColumn();
 							ImGui::PushFont(monospace_font);
-							for (i = 0; i < CC_COUNT_OF(clownmdemu.state->mcd_communication_status); i += 2)
-								ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu.state->mcd_communication_status[i + 0], clownmdemu.state->mcd_communication_status[i + 1]);
+							for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mcd_communication_status); i += 2)
+								ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mcd_communication_status[i + 0], clownmdemu_state.mcd_communication_status[i + 1]);
 							ImGui::PopFont();
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("SUB-CPU Waiting for V-Int");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->mcd_waiting_for_vint ? "True" : "False");
+							ImGui::TextUnformatted(clownmdemu_state.mcd_waiting_for_vint ? "True" : "False");
 
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted("SUB-CPU V-Int Enabled");
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(clownmdemu.state->mcd_vint_enabled ? "True" : "False");
+							ImGui::TextUnformatted(clownmdemu_state.mcd_vint_enabled ? "True" : "False");
 
 							ImGui::EndTable();
 						}
@@ -2185,24 +1909,24 @@ int main(int argc, char **argv)
 						if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
 						{
 							ImGui::TableNextColumn();
-							temp = !clownmdemu_configuration.vdp.sprites_disabled;
+							temp = !emulator.clownmdemu_configuration.vdp.sprites_disabled;
 							if (ImGui::Checkbox("Sprite Plane", &temp))
-								clownmdemu_configuration.vdp.sprites_disabled = !clownmdemu_configuration.vdp.sprites_disabled;
+								emulator.clownmdemu_configuration.vdp.sprites_disabled = !emulator.clownmdemu_configuration.vdp.sprites_disabled;
 
 							ImGui::TableNextColumn();
-							temp = !clownmdemu_configuration.vdp.window_disabled;
+							temp = !emulator.clownmdemu_configuration.vdp.window_disabled;
 							if (ImGui::Checkbox("Window Plane", &temp))
-								clownmdemu_configuration.vdp.window_disabled = !clownmdemu_configuration.vdp.window_disabled;
+								emulator.clownmdemu_configuration.vdp.window_disabled = !emulator.clownmdemu_configuration.vdp.window_disabled;
 
 							ImGui::TableNextColumn();
-							temp = !clownmdemu_configuration.vdp.planes_disabled[0];
+							temp = !emulator.clownmdemu_configuration.vdp.planes_disabled[0];
 							if (ImGui::Checkbox("Plane A", &temp))
-								clownmdemu_configuration.vdp.planes_disabled[0] = !clownmdemu_configuration.vdp.planes_disabled[0];
+								emulator.clownmdemu_configuration.vdp.planes_disabled[0] = !emulator.clownmdemu_configuration.vdp.planes_disabled[0];
 
 							ImGui::TableNextColumn();
-							temp = !clownmdemu_configuration.vdp.planes_disabled[1];
+							temp = !emulator.clownmdemu_configuration.vdp.planes_disabled[1];
 							if (ImGui::Checkbox("Plane B", &temp))
-								clownmdemu_configuration.vdp.planes_disabled[1] = !clownmdemu_configuration.vdp.planes_disabled[1];
+								emulator.clownmdemu_configuration.vdp.planes_disabled[1] = !emulator.clownmdemu_configuration.vdp.planes_disabled[1];
 
 							ImGui::EndTable();
 						}
@@ -2213,19 +1937,19 @@ int main(int argc, char **argv)
 						{
 							char buffer[] = "FM1";
 
-							for (std::size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.fm.fm_channels_disabled); ++i)
+							for (std::size_t i = 0; i < CC_COUNT_OF(emulator.clownmdemu_configuration.fm.fm_channels_disabled); ++i)
 							{
 								buffer[2] = '1' + i;
 								ImGui::TableNextColumn();
-								temp = !clownmdemu_configuration.fm.fm_channels_disabled[i];
+								temp = !emulator.clownmdemu_configuration.fm.fm_channels_disabled[i];
 								if (ImGui::Checkbox(buffer, &temp))
-									clownmdemu_configuration.fm.fm_channels_disabled[i] = !clownmdemu_configuration.fm.fm_channels_disabled[i];
+									emulator.clownmdemu_configuration.fm.fm_channels_disabled[i] = !emulator.clownmdemu_configuration.fm.fm_channels_disabled[i];
 							}
 
 							ImGui::TableNextColumn();
-							temp = !clownmdemu_configuration.fm.dac_channel_disabled;
+							temp = !emulator.clownmdemu_configuration.fm.dac_channel_disabled;
 							if (ImGui::Checkbox("DAC", &temp))
-								clownmdemu_configuration.fm.dac_channel_disabled = !clownmdemu_configuration.fm.dac_channel_disabled;
+								emulator.clownmdemu_configuration.fm.dac_channel_disabled = !emulator.clownmdemu_configuration.fm.dac_channel_disabled;
 
 							ImGui::EndTable();
 						}
@@ -2236,19 +1960,19 @@ int main(int argc, char **argv)
 						{
 							char buffer[] = "PSG1";
 
-							for (std::size_t i = 0; i < CC_COUNT_OF(clownmdemu_configuration.psg.tone_disabled); ++i)
+							for (std::size_t i = 0; i < CC_COUNT_OF(emulator.clownmdemu_configuration.psg.tone_disabled); ++i)
 							{
 								buffer[3] = '1' + i;
 								ImGui::TableNextColumn();
-								temp = !clownmdemu_configuration.psg.tone_disabled[i];
+								temp = !emulator.clownmdemu_configuration.psg.tone_disabled[i];
 								if (ImGui::Checkbox(buffer, &temp))
-									clownmdemu_configuration.psg.tone_disabled[i] = !clownmdemu_configuration.psg.tone_disabled[i];
+									emulator.clownmdemu_configuration.psg.tone_disabled[i] = !emulator.clownmdemu_configuration.psg.tone_disabled[i];
 							}
 
 							ImGui::TableNextColumn();
-							temp = !clownmdemu_configuration.psg.noise_disabled;
+							temp = !emulator.clownmdemu_configuration.psg.noise_disabled;
 							if (ImGui::Checkbox("PSG Noise", &temp))
-								clownmdemu_configuration.psg.noise_disabled = !clownmdemu_configuration.psg.noise_disabled;
+								emulator.clownmdemu_configuration.psg.noise_disabled = !emulator.clownmdemu_configuration.psg.noise_disabled;
 
 							ImGui::EndTable();
 						}
@@ -2271,21 +1995,21 @@ int main(int argc, char **argv)
 							ImGui::TextUnformatted("TV Standard:");
 							DoToolTip("Some games only work with a certain TV standard.");
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("NTSC", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
+							if (ImGui::RadioButton("NTSC", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
 							{
-								if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
+								if (emulator.clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 								{
-									clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+									emulator.clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
 									audio_output.SetPALMode(false);
 								}
 							}
 							DoToolTip("60 FPS");
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("PAL", clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
+							if (ImGui::RadioButton("PAL", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
 							{
-								if (clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
+								if (emulator.clownmdemu_configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 								{
-									clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
+									emulator.clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
 									audio_output.SetPALMode(true);
 								}
 							}
@@ -2295,11 +2019,11 @@ int main(int argc, char **argv)
 							ImGui::TextUnformatted("Region:");
 							DoToolTip("Some games only work with a certain region.");
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("Japan", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
-								clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
+							if (ImGui::RadioButton("Japan", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
+								emulator.clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
 							ImGui::TableNextColumn();
-							if (ImGui::RadioButton("Elsewhere", clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
-								clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+							if (ImGui::RadioButton("Elsewhere", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
+								emulator.clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
 
 							ImGui::EndTable();
 						}
@@ -2717,11 +2441,6 @@ int main(int argc, char **argv)
 			}
 
 			debug_log.ForceConsoleOutput(true);
-
-			SDL_free(rom_buffer);
-
-			if (cd_file != nullptr)
-				SDL_RWclose(cd_file);
 
 			audio_output.Deinitialise();
 

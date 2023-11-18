@@ -31,6 +31,8 @@ add_executable(clownmdemu-frontend WIN32
 	"debug-z80.h"
 	"doubly-linked-list.c"
 	"doubly-linked-list.h"
+	"emulator-instance.cpp"
+	"emulator-instance.h"
 	"file-picker.cpp"
 	"file-picker.h"
 	"utilities.cpp"

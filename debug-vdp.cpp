@@ -28,12 +28,14 @@ static void DecomposeTileMetadata(cc_u16f packed_tile_metadata, TileMetadata &ti
 	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
+static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char *name, int &plane_scale, cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin(name, &open))
 	{
+		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
 
@@ -63,7 +65,7 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
 				const cc_u16f tile_width = 8;
-				const cc_u16f tile_height = clownmdemu.state->vdp.double_resolution_enabled ? 16 : 8;
+				const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
 
 				// Only update the texture if we know that the frame has changed.
 				// This prevents constant texture generation even when the emulator is paused.
@@ -71,7 +73,7 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 				{
 					cache_frame_counter = frame_counter;
 
-					const cc_u8l *plane = &clownmdemu.state->vdp.vram[plane_address];
+					const cc_u8l *plane = &vdp.vram[plane_address];
 
 					// Lock texture so that we can write into it.
 					Uint8 *plane_texture_pixels;
@@ -81,9 +83,9 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 					{
 						const cc_u8l *plane_pointer = plane;
 
-						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < clownmdemu.state->vdp.plane_height; ++tile_y_in_plane)
+						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < vdp.plane_height; ++tile_y_in_plane)
 						{
-							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < clownmdemu.state->vdp.plane_width; ++tile_x_in_plane)
+							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < vdp.plane_width; ++tile_x_in_plane)
 							{
 								TileMetadata tile_metadata;
 								DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], tile_metadata);
@@ -92,11 +94,11 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 								const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 								const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (clownmdemu.state->vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
-								const Uint32 *palette_line = &emulation_state->colours[palette_index];
+								const Uint32 *palette_line = &emulator.state->colours[palette_index];
 
-								const cc_u8l *tile_pointer = &clownmdemu.state->vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
+								const cc_u8l *tile_pointer = &vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
 
 								for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 								{
@@ -121,8 +123,8 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 					}
 				}
 
-				const float plane_width_in_pixels = static_cast<float>(clownmdemu.state->vdp.plane_width * tile_width);
-				const float plane_height_in_pixels = static_cast<float>(clownmdemu.state->vdp.plane_height * tile_height);
+				const float plane_width_in_pixels = static_cast<float>(vdp.plane_width * tile_width);
+				const float plane_height_in_pixels = static_cast<float>(vdp.plane_height * tile_height);
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
@@ -137,7 +139,7 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_scale / tile_width);
 					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_scale / tile_height);
 
-					const cc_u8l *plane_pointer = &clownmdemu.state->vdp.vram[plane_address + (tile_y * clownmdemu.state->vdp.plane_width + tile_x) * 2];
+					const cc_u8l *plane_pointer = &vdp.vram[plane_address + (tile_y * vdp.plane_width + tile_x) * 2];
 					const cc_u16f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
 
 					TileMetadata tile_metadata;
@@ -158,31 +160,31 @@ static void Debug_Plane(bool &open, const char *name, int &plane_scale, cc_u16l 
 	ImGui::End();
 }
 
-void Debug_WindowPlane(bool &open)
+void Debug_WindowPlane(bool &open, const EmulatorInstance &emulator)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, "Window Plane", scale, clownmdemu.vdp.state->window_address, texture, cache_frame_counter);
+	Debug_Plane(open, emulator, "Window Plane", scale, emulator.state->clownmdemu.vdp.window_address, texture, cache_frame_counter);
 }
 
-void Debug_PlaneA(bool &open)
+void Debug_PlaneA(bool &open, const EmulatorInstance &emulator)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, "Plane A", scale, clownmdemu.vdp.state->plane_a_address, texture, cache_frame_counter);
+	Debug_Plane(open, emulator, "Plane A", scale, emulator.state->clownmdemu.vdp.plane_a_address, texture, cache_frame_counter);
 }
 
-void Debug_PlaneB(bool &open)
+void Debug_PlaneB(bool &open, const EmulatorInstance &emulator)
 {
 	static int scale;
 	static SDL_Texture *texture;
 	static unsigned int cache_frame_counter;
-	Debug_Plane(open, "Plane B", scale, clownmdemu.vdp.state->plane_b_address, texture, cache_frame_counter);
+	Debug_Plane(open, emulator, "Plane B", scale, emulator.state->clownmdemu.vdp.plane_b_address, texture, cache_frame_counter);
 }
 
-void Debug_VRAM(bool &open)
+void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float tile_scale = SDL_roundf(3.0f * dpi_scale);
@@ -197,20 +199,22 @@ void Debug_VRAM(bool &open)
 
 	if (ImGui::Begin("VRAM", &open))
 	{
+		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+
 		static SDL_Texture *vram_texture;
 		static std::size_t vram_texture_width;
 		static std::size_t vram_texture_height;
 
 		const std::size_t tile_width = 8;
-		const std::size_t tile_height = clownmdemu.state->vdp.double_resolution_enabled ? 16 : 8;
+		const std::size_t tile_height = vdp.double_resolution_enabled ? 16 : 8;
 
-		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(clownmdemu.state->vdp.vram) * 2 / (tile_width * tile_height);
+		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(vdp.vram) * 2 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
 		if (vram_texture == nullptr)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(clownmdemu.state->vdp.vram) * 2;
+			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
 			const std::size_t vram_texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(size_of_vram_in_pixels))));
 			const std::size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
 			const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
@@ -234,10 +238,9 @@ void Debug_VRAM(bool &open)
 			}
 		}
 
-
 		if (ImGui::Button("Save to File"))
 		{
-			file_picker.CreateSaveFileDialog("Create Save State", [](const char* const save_state_path)
+			file_picker.CreateSaveFileDialog("Create Save State", [vdp](const char* const save_state_path)
 			{
 				bool success = false;
 
@@ -251,7 +254,7 @@ void Debug_VRAM(bool &open)
 				}
 				else
 				{
-					if (SDL_RWwrite(file, clownmdemu.vdp.state->vram, sizeof(clownmdemu.vdp.state->vram), 1) != 1)
+					if (SDL_RWwrite(file, vdp.vram, sizeof(vdp.vram), 1) != 1)
 					{
 						debug_log.Log("Could not write save state file");
 						SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Could not create VRAM file.", window.sdl);
@@ -310,7 +313,7 @@ void Debug_VRAM(bool &open)
 				cache_frame_counter = frame_counter;
 
 				// Select the correct palette line.
-				const Uint32 *selected_palette = &emulation_state->colours[brightness_index + palette_line];
+				const Uint32 *selected_palette = &emulator.state->colours[brightness_index + palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
@@ -319,7 +322,7 @@ void Debug_VRAM(bool &open)
 				if (SDL_LockTexture(vram_texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
-					const cc_u8l *vram_pointer = clownmdemu.state->vdp.vram;
+					const cc_u8l *vram_pointer = vdp.vram;
 
 					// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 					// instead of left-to-right then top-to-bottom.
@@ -438,7 +441,7 @@ void Debug_VRAM(bool &open)
 	ImGui::End();
 }
 
-void Debug_CRAM(bool &open)
+void Debug_CRAM(bool &open, const EmulatorInstance &emulator)
 {
 	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -460,7 +463,7 @@ void Debug_CRAM(bool &open)
 		{
 			ImGui::PushID(j);
 
-			const cc_u16f value = clownmdemu.state->vdp.cram[j];
+			const cc_u16f value = emulator.state->clownmdemu.vdp.cram[j];
 			const cc_u16f blue = (value >> 9) & 7;
 			const cc_u16f green = (value >> 5) & 7;
 			const cc_u16f red = (value >> 1) & 7;
@@ -517,11 +520,11 @@ void Debug_CRAM(bool &open)
 	ImGui::End();
 }
 
-void Debug_VDP(bool &open)
+void Debug_VDP(bool &open, const EmulatorInstance &emulator)
 {
 	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const VDP_State &vdp = clownmdemu.state->vdp;
+		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
 
 		ImGui::SeparatorText("Miscellaneous");
 

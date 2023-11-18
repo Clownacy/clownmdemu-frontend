@@ -8,18 +8,10 @@
 #include "file-picker.h"
 #include "window.h"
 
-typedef struct EmulationState
-{
-	ClownMDEmu_State clownmdemu;
-	Uint32 colours[3 * 4 * 16];
-} EmulationState;
-
-extern EmulationState *emulation_state;
 extern Window window;
 extern float dpi_scale;
 extern unsigned int frame_counter;
 extern DebugLog debug_log;
-extern ClownMDEmu clownmdemu;
 extern ImFont *monospace_font;
 extern FilePicker file_picker;
 

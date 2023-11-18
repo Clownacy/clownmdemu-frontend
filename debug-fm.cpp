@@ -2,12 +2,7 @@
 
 #include <cstddef>
 
-#include "SDL.h"
-#include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
-#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
-
-void Debug_FM(bool &open, const ClownMDEmu &clownmdemu, ImFont *monospace_font)
+void Debug_FM(bool &open, const EmulatorInstance &emulator, ImFont *monospace_font)
 {
 	if (ImGui::Begin("FM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -16,7 +11,7 @@ void Debug_FM(bool &open, const ClownMDEmu &clownmdemu, ImFont *monospace_font)
 			{"L", "L+R"}
 		};
 
-		const FM_State &fm = clownmdemu.state->fm;
+		const FM_State &fm = emulator.state->clownmdemu.fm;
 
 		ImGui::SeparatorText("FM Channels");
 
