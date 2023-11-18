@@ -50,23 +50,23 @@ private:
 #endif
 
 	cc_u8f CartridgeReadCallback(cc_u32f address);
-	static cc_u8f CartridgeReadCallback(const void *user_data, cc_u32f address);
+	static cc_u8f CartridgeReadCallback(void *user_data, cc_u32f address);
 	void CartridgeWrittenCallback(cc_u32f address, cc_u8f value);
-	static void CartridgeWrittenCallback(const void *user_data, cc_u32f address, cc_u8f value);
+	static void CartridgeWrittenCallback(void *user_data, cc_u32f address, cc_u8f value);
 	void ColourUpdatedCallback(cc_u16f index, cc_u16f colour);
-	static void ColourUpdatedCallback(const void *user_data, cc_u16f index, cc_u16f colour);
+	static void ColourUpdatedCallback(void *user_data, cc_u16f index, cc_u16f colour);
 	void ScanlineRenderedCallback(cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height);
-	static void ScanlineRenderedCallback(const void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height);
+	static void ScanlineRenderedCallback(void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height);
 	cc_bool ReadInputCallback(cc_u8f player_id, ClownMDEmu_Button button_id);
-	static cc_bool ReadInputCallback(const void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
+	static cc_bool ReadInputCallback(void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
 	void FMAudioCallback(std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void FMAudioCallback(const void *user_data, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void FMAudioCallback(void *user_data, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	void PSGAudioCallback(std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
-	static void PSGAudioCallback(const void *user_data, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
+	static void PSGAudioCallback(void *user_data, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
 	void CDSeekCallback(cc_u32f sector_index);
-	static void CDSeekCallback(const void *user_data, cc_u32f sector_index);
+	static void CDSeekCallback(void *user_data, cc_u32f sector_index);
 	const cc_u8l* CDSectorReadCallback();
-	static const cc_u8l* CDSectorReadCallback(const void *user_data);
+	static const cc_u8l* CDSectorReadCallback(void *user_data);
 
 public:
 	ClownMDEmu_Configuration clownmdemu_configuration;
