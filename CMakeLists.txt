@@ -29,6 +29,8 @@ add_executable(clownmdemu-frontend WIN32
 	"debug-vdp.h"
 	"debug-z80.cpp"
 	"debug-z80.h"
+	"disassembler.cpp"
+	"disassembler.h"
 	"emulator-instance.cpp"
 	"emulator-instance.h"
 	"file-picker.cpp"
@@ -155,3 +157,5 @@ endif()
 if(WINDOWS)
 	target_link_libraries(clownmdemu-frontend comdlg32 ole32)
 endif()
+
+target_link_libraries(clownmdemu-frontend clown68000-disassembler)

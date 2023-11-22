@@ -21,6 +21,9 @@ public:
 		Uint32 colours[3 * 4 * 16];
 	};
 
+	unsigned char *rom_buffer;
+	std::size_t rom_buffer_size;
+
 private:
 	static bool clownmdemu_initialised;
 	static ClownMDEmu_Constant clownmdemu_constant;
@@ -31,9 +34,6 @@ private:
 	ClownMDEmu_Callbacks callbacks;
 
 	ClownMDEmu clownmdemu;
-
-	unsigned char *rom_buffer;
-	std::size_t rom_buffer_size;
 
 	SDL_RWops *cd_file;
 	bool sector_size_2352;

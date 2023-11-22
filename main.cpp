@@ -26,6 +26,7 @@
 #include "debug-psg.h"
 #include "debug-vdp.h"
 #include "debug-z80.h"
+#include "disassembler.h"
 #include "emulator-instance.h"
 #include "file-picker.h"
 #include "utilities.h"
@@ -709,6 +710,7 @@ int main(const int argc, char** const argv)
 			bool psg_status = false;
 			bool other_status = false;
 			bool debugging_toggles_menu = false;
+			bool disassembler = false;
 			bool options_menu = false;
 			bool about_menu = false;
 
@@ -1362,6 +1364,7 @@ int main(const int argc, char** const argv)
 					                    || fm_status
 					                    || psg_status
 					                    || other_status
+					                    || disassembler
 					                    || debugging_toggles_menu
 					                    || options_menu
 					                    || about_menu
@@ -1534,6 +1537,8 @@ int main(const int argc, char** const argv)
 							ImGui::MenuItem("Log", nullptr, &debug_log_active);
 
 							ImGui::MenuItem("Toggles", nullptr, &debugging_toggles_menu);
+
+							ImGui::MenuItem("68000 Disassembler", nullptr, &disassembler);
 
 							ImGui::Separator();
 
@@ -1985,6 +1990,9 @@ int main(const int argc, char** const argv)
 
 					ImGui::End();
 				}
+
+				if (disassembler)
+					Disassembler(disassembler, emulator);
 
 				if (options_menu)
 				{
