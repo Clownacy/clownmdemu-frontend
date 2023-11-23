@@ -30,7 +30,7 @@ void FilePicker::CreateFileDialog(char const* const title, const std::function<b
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = SDL_GetWindowWMInfo(window, &info) ? info.info.win.window : nullptr;
+		ofn.hwndOwner = SDL_GetWindowWMInfo(window.sdl, &info) ? info.info.win.window : nullptr;
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
 		ofn.lpstrTitle = title;
@@ -282,7 +282,7 @@ void FilePicker::Update(char *&drag_and_drop_filename)
 
 			if (enter_pressed || ok_pressed)
 			{
-				if (!is_save_dialog || !Utilities::FileExists(text_buffer))
+				if (!is_save_dialog || !utilities.FileExists(text_buffer))
 					submit = true;
 				else
 					ImGui::OpenPopup("File Already Exists");

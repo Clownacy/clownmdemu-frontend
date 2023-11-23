@@ -8,8 +8,6 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-#include "common.h"
-
 struct TileMetadata
 {
 	cc_u16f tile_index;
@@ -28,7 +26,7 @@ static void DecomposeTileMetadata(const cc_u16f packed_tile_metadata, TileMetada
 	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char* const name, int &plane_scale, const cc_u16l plane_address, SDL_Texture *&plane_texture, unsigned int &cache_frame_counter)
+void DebugVDP::Plane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
@@ -39,28 +37,28 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
 
-		if (plane_texture == nullptr)
+		if (plane_viewer.texture == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_viewer.texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
-			if (plane_texture == nullptr)
+			if (plane_viewer.texture == nullptr)
 			{
 				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(plane_texture, SDL_BLENDMODE_NONE) < 0)
+				if (SDL_SetTextureBlendMode(plane_viewer.texture, SDL_BLENDMODE_NONE) < 0)
 					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
-		if (plane_texture != nullptr)
+		if (plane_viewer.texture != nullptr)
 		{
-			ImGui::InputInt("Zoom", &plane_scale);
-			if (plane_scale < 1)
-				plane_scale = 1;
+			ImGui::InputInt("Zoom", &plane_viewer.scale);
+			if (plane_viewer.scale < 1)
+				plane_viewer.scale = 1;
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
@@ -69,9 +67,9 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 
 				// Only update the texture if we know that the frame has changed.
 				// This prevents constant texture generation even when the emulator is paused.
-				if (cache_frame_counter != frame_counter)
+				if (plane_viewer.cache_frame_counter != frame_counter)
 				{
-					cache_frame_counter = frame_counter;
+					plane_viewer.cache_frame_counter = frame_counter;
 
 					const cc_u8l *plane = &vdp.vram[plane_address];
 
@@ -79,7 +77,7 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 					Uint8 *plane_texture_pixels;
 					int plane_texture_pitch;
 
-					if (SDL_LockTexture(plane_texture, nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
+					if (SDL_LockTexture(plane_viewer.texture, nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
 					{
 						const cc_u8l *plane_pointer = plane;
 
@@ -119,7 +117,7 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 							}
 						}
 
-						SDL_UnlockTexture(plane_texture);
+						SDL_UnlockTexture(plane_viewer.texture);
 					}
 				}
 
@@ -128,7 +126,7 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-				ImGui::Image(plane_texture, ImVec2(plane_width_in_pixels * plane_scale, plane_height_in_pixels * plane_scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+				ImGui::Image(plane_viewer.texture, ImVec2(plane_width_in_pixels * plane_viewer.scale, plane_height_in_pixels * plane_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 				if (ImGui::IsItemHovered())
 				{
@@ -136,8 +134,8 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 
 					const ImVec2 mouse_position = ImGui::GetMousePos();
 
-					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_scale / tile_width);
-					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_scale / tile_height);
+					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_viewer.scale / tile_width);
+					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_viewer.scale / tile_height);
 
 					const cc_u8l *plane_pointer = &vdp.vram[plane_address + (tile_y * vdp.plane_width + tile_x) * 2];
 					const cc_u16f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
@@ -145,7 +143,7 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, tile_metadata);
 
-					ImGui::Image(plane_texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
+					ImGui::Image(plane_viewer.texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -160,31 +158,22 @@ static void Debug_Plane(bool &open, const EmulatorInstance &emulator, const char
 	ImGui::End();
 }
 
-void Debug_WindowPlane(bool &open, const EmulatorInstance &emulator)
+void DebugVDP::WindowPlane(bool &open)
 {
-	static int scale;
-	static SDL_Texture *texture;
-	static unsigned int cache_frame_counter;
-	Debug_Plane(open, emulator, "Window Plane", scale, emulator.state->clownmdemu.vdp.window_address, texture, cache_frame_counter);
+	Plane(open, "Window Plane", window_plane_data, emulator.state->clownmdemu.vdp.window_address);
 }
 
-void Debug_PlaneA(bool &open, const EmulatorInstance &emulator)
+void DebugVDP::PlaneA(bool &open)
 {
-	static int scale;
-	static SDL_Texture *texture;
-	static unsigned int cache_frame_counter;
-	Debug_Plane(open, emulator, "Plane A", scale, emulator.state->clownmdemu.vdp.plane_a_address, texture, cache_frame_counter);
+	Plane(open, "Plane A", plane_a_data, emulator.state->clownmdemu.vdp.plane_a_address);
 }
 
-void Debug_PlaneB(bool &open, const EmulatorInstance &emulator)
+void DebugVDP::PlaneB(bool &open)
 {
-	static int scale;
-	static SDL_Texture *texture;
-	static unsigned int cache_frame_counter;
-	Debug_Plane(open, emulator, "Plane B", scale, emulator.state->clownmdemu.vdp.plane_b_address, texture, cache_frame_counter);
+	Plane(open, "Plane B", plane_b_data, emulator.state->clownmdemu.vdp.plane_b_address);
 }
 
-void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
+void DebugVDP::VRAM(bool &open)
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float tile_scale = SDL_roundf(3.0f * dpi_scale);
@@ -201,17 +190,13 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 	{
 		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
 
-		static SDL_Texture *vram_texture;
-		static std::size_t vram_texture_width;
-		static std::size_t vram_texture_height;
-
 		const std::size_t tile_width = 8;
 		const std::size_t tile_height = vdp.double_resolution_enabled ? 16 : 8;
 
 		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(vdp.vram) * 2 / (tile_width * tile_height);
 
 		// Create VRAM texture if it does not exist.
-		if (vram_texture == nullptr)
+		if (vram_viewer.texture == nullptr)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
 			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
@@ -220,27 +205,27 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 			const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
 			const std::size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
 
-			vram_texture_width = vram_texture_width_rounded_up_to_8;
-			vram_texture_height = vram_texture_height_rounded_up_to_16;
+			vram_viewer.texture_width = vram_texture_width_rounded_up_to_8;
+			vram_viewer.texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_texture_width), static_cast<int>(vram_texture_height));
+			vram_viewer.texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_viewer.texture_width), static_cast<int>(vram_viewer.texture_height));
 
-			if (vram_texture == nullptr)
+			if (vram_viewer.texture == nullptr)
 			{
 				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(vram_texture, SDL_BLENDMODE_NONE) < 0)
+				if (SDL_SetTextureBlendMode(vram_viewer.texture, SDL_BLENDMODE_NONE) < 0)
 					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
 		if (ImGui::Button("Save to File"))
 		{
-			file_picker.CreateSaveFileDialog("Create Save State", [vdp](const char* const save_state_path)
+			file_picker.CreateSaveFileDialog("Create Save State", [this, &vdp](const char* const save_state_path)
 			{
 				bool success = false;
 
@@ -271,55 +256,50 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 			});
 		}
 
-		if (vram_texture != nullptr)
+		if (vram_viewer.texture != nullptr)
 		{
 			bool options_changed = false;
 
 			// Handle VRAM viewing options.
-			static int brightness_index;
-			static int palette_line;
-
 			const int length_of_palette_line = 16;
 			const int length_of_palette = length_of_palette_line * 4;
 
 			ImGui::SeparatorText("Brightness");
-			options_changed |= ImGui::RadioButton("Shadow", &brightness_index, length_of_palette * 1);
+			options_changed |= ImGui::RadioButton("Shadow", &vram_viewer.brightness_index, length_of_palette * 1);
 			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("Normal", &brightness_index, length_of_palette * 0);
+			options_changed |= ImGui::RadioButton("Normal", &vram_viewer.brightness_index, length_of_palette * 0);
 			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("Highlight", &brightness_index, length_of_palette * 2);
+			options_changed |= ImGui::RadioButton("Highlight", &vram_viewer.brightness_index, length_of_palette * 2);
 
 			ImGui::SeparatorText("Palette Line");
-			options_changed |= ImGui::RadioButton("0", &palette_line, length_of_palette_line * 0);
+			options_changed |= ImGui::RadioButton("0", &vram_viewer.palette_line, length_of_palette_line * 0);
 			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("1", &palette_line, length_of_palette_line * 1);
+			options_changed |= ImGui::RadioButton("1", &vram_viewer.palette_line, length_of_palette_line * 1);
 			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("2", &palette_line, length_of_palette_line * 2);
+			options_changed |= ImGui::RadioButton("2", &vram_viewer.palette_line, length_of_palette_line * 2);
 			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("3", &palette_line, length_of_palette_line * 3);
+			options_changed |= ImGui::RadioButton("3", &vram_viewer.palette_line, length_of_palette_line * 3);
 
 			ImGui::SeparatorText("Tiles");
 
 			// Set up some variables that we're going to need soon.
-			const std::size_t vram_texture_width_in_tiles = vram_texture_width / tile_width;
-			const std::size_t vram_texture_height_in_tiles = vram_texture_height / tile_height;
-
-			static unsigned int cache_frame_counter;
+			const std::size_t vram_texture_width_in_tiles = vram_viewer.texture_width / tile_width;
+			const std::size_t vram_texture_height_in_tiles = vram_viewer.texture_height / tile_height;
 
 			// Only update the texture if we know that the frame has changed.
 			// This prevents constant texture generation even when the emulator is paused.
-			if (cache_frame_counter != frame_counter || options_changed)
+			if (vram_viewer.cache_frame_counter != frame_counter || options_changed)
 			{
-				cache_frame_counter = frame_counter;
+				vram_viewer.cache_frame_counter = frame_counter;
 
 				// Select the correct palette line.
-				const Uint32 *selected_palette = &emulator.state->colours[brightness_index + palette_line];
+				const Uint32 *selected_palette = &emulator.state->colours[vram_viewer.brightness_index + vram_viewer.palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
 				int vram_texture_pitch;
 
-				if (SDL_LockTexture(vram_texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
+				if (SDL_LockTexture(vram_viewer.texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
 					const cc_u8l *vram_pointer = vdp.vram;
@@ -346,7 +326,7 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 						}
 					}
 
-					SDL_UnlockTexture(vram_texture);
+					SDL_UnlockTexture(vram_viewer.texture);
 				}
 			}
 
@@ -388,12 +368,12 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 						const std::size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
 
 						const ImVec2 current_tile_uv0(
-							static_cast<float>(current_tile_src_x) / static_cast<float>(vram_texture_width),
-							static_cast<float>(current_tile_src_y) / static_cast<float>(vram_texture_height));
+							static_cast<float>(current_tile_src_x) / static_cast<float>(vram_viewer.texture_width),
+							static_cast<float>(current_tile_src_y) / static_cast<float>(vram_viewer.texture_height));
 
 						const ImVec2 current_tile_uv1(
-							static_cast<float>(current_tile_src_x + tile_width) / static_cast<float>(vram_texture_width),
-							static_cast<float>(current_tile_src_y + tile_height) / static_cast<float>(vram_texture_height));
+							static_cast<float>(current_tile_src_x + tile_width) / static_cast<float>(vram_viewer.texture_width),
+							static_cast<float>(current_tile_src_y + tile_height) / static_cast<float>(vram_viewer.texture_height));
 
 						// Figure out where the tile goes in the viewer.
 						const float current_tile_dst_x = static_cast<float>(x) * dst_tile_size_and_padding.x;
@@ -416,7 +396,7 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 							tile_boundary_position_bottom_right.y - tile_spacing);
 
 						// Finally, display the tile.
-						draw_list->AddImage(vram_texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+						draw_list->AddImage(vram_viewer.texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
 
 						if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
 						{
@@ -426,7 +406,7 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 							ImGui::Text("%zd/0x%zX", tile_index, tile_index);
 
 							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-							ImGui::Image(vram_texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+							ImGui::Image(vram_viewer.texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
 
 							ImGui::EndTooltip();
 						}
@@ -441,18 +421,16 @@ void Debug_VRAM(bool &open, const EmulatorInstance &emulator)
 	ImGui::End();
 }
 
-void Debug_CRAM(bool &open, const EmulatorInstance &emulator)
+void DebugVDP::CRAM(bool &open)
 {
 	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		static int brightness = 1;
-
 		ImGui::SeparatorText("Brightness");
-		ImGui::RadioButton("Shadow", &brightness, 0);
+		ImGui::RadioButton("Shadow", &cram_viewer.brightness, 0);
 		ImGui::SameLine();
-		ImGui::RadioButton("Normal", &brightness, 1);
+		ImGui::RadioButton("Normal", &cram_viewer.brightness, 1);
 		ImGui::SameLine();
-		ImGui::RadioButton("Highlight", &brightness, 2);
+		ImGui::RadioButton("Highlight", &cram_viewer.brightness, 2);
 
 		ImGui::SeparatorText("Colours");
 
@@ -470,7 +448,7 @@ void Debug_CRAM(bool &open, const EmulatorInstance &emulator)
 
 			cc_u16f value_shaded = value & 0xEEE;
 
-			switch (brightness)
+			switch (cram_viewer.brightness)
 			{
 				case 0:
 					value_shaded >>= 1;
@@ -520,7 +498,7 @@ void Debug_CRAM(bool &open, const EmulatorInstance &emulator)
 	ImGui::End();
 }
 
-void Debug_VDP(bool &open, const EmulatorInstance &emulator)
+void DebugVDP::Registers(bool &open)
 {
 	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

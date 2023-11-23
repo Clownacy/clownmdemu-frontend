@@ -149,10 +149,13 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 EmulatorInstance::EmulatorInstance(
 	AudioOutput &audio_output,
 	DebugLog &debug_log,
+	Utilities &utilities,
+	Window &window,
 	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> input_callback
 ) :
 	audio_output(audio_output),
-	debug_log(debug_log),
+	utilities(utilities),
+	window(window),
 	input_callback(input_callback),
 	callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback})
 {
@@ -196,7 +199,7 @@ EmulatorInstance::~EmulatorInstance()
 	}
 }
 
-void EmulatorInstance::Update(Window &window)
+void EmulatorInstance::Update()
 {
 	// Reset the audio buffers so that they can be mixed into.
 	audio_output.MixerBegin();
@@ -294,7 +297,7 @@ bool EmulatorInstance::LoadCartridgeFile(const char* const path)
 	std::size_t temp_rom_buffer_size;
 
 	// Load ROM to memory.
-	Utilities::LoadFileToBuffer(path, temp_rom_buffer, temp_rom_buffer_size);
+	utilities.LoadFileToBuffer(path, temp_rom_buffer, temp_rom_buffer_size);
 
 	if (temp_rom_buffer == nullptr)
 		return false;
@@ -351,7 +354,7 @@ bool EmulatorInstance::ValidateSaveState(const char* const save_state_path)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
-	Utilities::LoadFileToBuffer(save_state_path, file_buffer, file_size);
+	utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
 
 	const bool valid = ValidateSaveState(file_buffer, file_size);
 
@@ -379,7 +382,7 @@ bool EmulatorInstance::LoadSaveState(const char* const save_state_path)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
-	Utilities::LoadFileToBuffer(save_state_path, file_buffer, file_size);
+	utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
 
 	bool success = false;
 

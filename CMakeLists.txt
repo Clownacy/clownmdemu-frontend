@@ -13,8 +13,6 @@ add_executable(clownmdemu-frontend WIN32
 	"main.cpp"
 	"audio-output.cpp"
 	"audio-output.h"
-	"common.cpp"
-	"common.h"
 	"debug-m68k.cpp"
 	"debug-m68k.h"
 	"debug-memory.cpp"

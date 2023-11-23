@@ -15,12 +15,16 @@
 
 #include <functional>
 
-#include "SDL.h"
+#include "debug-log.h"
+#include "utilities.h"
+#include "window.h"
 
 class FilePicker
 {
 private:
-	SDL_Window *window;
+	DebugLog &debug_log;
+	Utilities &utilities;
+	Window &window;
 	const char *active_file_picker_popup;
 	std::function<bool(const char *path)> popup_callback;
 	bool is_save_dialog;
@@ -36,7 +40,7 @@ public:
 	bool use_native_file_dialogs = true;
 #endif
 
-	FilePicker(SDL_Window* const window) : window(window) {}
+	FilePicker(DebugLog &debug_log, Utilities &utilities, Window &window) : debug_log(debug_log), utilities(utilities), window(window) {}
 	void CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void Update(char *&drag_and_drop_filename);

@@ -18,7 +18,6 @@
 #include "karla-regular.h"
 
 #include "audio-output.h"
-#include "common.h"
 #include "debug-fm.h"
 #include "debug-log.h"
 #include "debug-m68k.h"
@@ -30,6 +29,7 @@
 #include "emulator-instance.h"
 #include "file-picker.h"
 #include "utilities.h"
+#include "window.h"
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
@@ -109,15 +109,24 @@ static bool emulator_frame_advance;
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
 
-static AudioOutput audio_output(debug_log);
+static float dpi_scale;
+static unsigned int frame_counter;
+static ImFont *monospace_font;
 
 static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
-static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
-static EmulatorInstance emulator(audio_output, debug_log, ReadInputCallback);
+static DebugLog debug_log;
+static AudioOutput audio_output(debug_log);
+static Utilities utilities(debug_log);
+static Window window(debug_log);
+static FilePicker file_picker(debug_log, utilities, window);
 
+static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
+static EmulatorInstance emulator(audio_output, debug_log, utilities, window, ReadInputCallback);
+
+static DebugVDP debug_vdp(debug_log, dpi_scale, emulator, file_picker, frame_counter, monospace_font, window);
 
 ///////////
 // Fonts //
@@ -1290,7 +1299,7 @@ int main(const int argc, char** const argv)
 
 				if (emulator_running)
 				{
-					emulator.Update(window);
+					emulator.Update();
 					++frame_counter;
 				}
 
@@ -1304,7 +1313,7 @@ int main(const int argc, char** const argv)
 				{
 					unsigned char *file_buffer;
 					std::size_t file_size;
-					Utilities::LoadFileToBuffer(drag_and_drop_filename, file_buffer, file_size);
+					utilities.LoadFileToBuffer(drag_and_drop_filename, file_buffer, file_size);
 
 					if (file_buffer != nullptr)
 					{
@@ -1771,22 +1780,22 @@ int main(const int argc, char** const argv)
 					Debug_Memory(word_ram_viewer, monospace_font, "WORD-RAM", emulator.state->clownmdemu.word_ram, CC_COUNT_OF(emulator.state->clownmdemu.word_ram));
 
 				if (vdp_registers)
-					Debug_VDP(vdp_registers, emulator);
+					debug_vdp.Registers(vdp_registers);
 
 				if (window_plane_viewer)
-					Debug_WindowPlane(window_plane_viewer, emulator);
+					debug_vdp.WindowPlane(window_plane_viewer);
 
 				if (plane_a_viewer)
-					Debug_PlaneA(plane_a_viewer, emulator);
+					debug_vdp.PlaneA(plane_a_viewer);
 
 				if (plane_b_viewer)
-					Debug_PlaneB(plane_b_viewer, emulator);
+					debug_vdp.PlaneB(plane_b_viewer);
 
 				if (vram_viewer)
-					Debug_VRAM(vram_viewer, emulator);
+					debug_vdp.VRAM(vram_viewer);
 
 				if (cram_viewer)
-					Debug_CRAM(cram_viewer, emulator);
+					debug_vdp.CRAM(cram_viewer);
 
 				if (fm_status)
 					Debug_FM(fm_status, emulator, monospace_font);
@@ -1992,7 +2001,7 @@ int main(const int argc, char** const argv)
 				}
 
 				if (disassembler)
-					Disassembler(disassembler, emulator);
+					Disassembler(disassembler, emulator, monospace_font);
 
 				if (options_menu)
 				{

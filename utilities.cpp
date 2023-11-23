@@ -2,8 +2,6 @@
 
 #include "SDL.h"
 
-#include "common.h"
-
 bool Utilities::FileExists(const char* const filename)
 {
 	SDL_RWops* const file = SDL_RWFromFile(filename, "rb");

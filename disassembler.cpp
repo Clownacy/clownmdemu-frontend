@@ -1,9 +1,6 @@
 #include "disassembler.h"
 
-#include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
-
-#include "common.h"
 
 static unsigned int address;
 static int current_memory;
@@ -56,7 +53,7 @@ static void PrintCallback(void* /*const user_data*/, const char* const string)
 	ImGui::TextUnformatted(string);
 }
 
-void Disassembler(bool &open, const EmulatorInstance &emulator)
+void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const monospace_font)
 {
 	ImGui::SetNextWindowSize(ImVec2(580, 620), ImGuiCond_FirstUseEver);
 
