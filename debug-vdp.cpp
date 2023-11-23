@@ -224,37 +224,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 		}
 
 		if (ImGui::Button("Save to File"))
-		{
-			file_utilities.CreateSaveFileDialog("Create Save State", [this, &vdp](const char* const save_state_path)
-			{
-				bool success = false;
-
-				// Save the current state to the specified file.
-				SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
-
-				if (file == nullptr)
-				{
-					debug_log.Log("Could not open save state file for writing");
-					window.ShowErrorMessageBox("Could not create VRAM file.");
-				}
-				else
-				{
-					if (SDL_RWwrite(file, vdp.vram, sizeof(vdp.vram), 1) != 1)
-					{
-						debug_log.Log("Could not write save state file");
-						window.ShowErrorMessageBox("Could not create VRAM file.");
-					}
-					else
-					{
-						success = true;
-					}
-
-					SDL_RWclose(file);
-				}
-
-				return success;
-			});
-		}
+			file_utilities.SaveFile("Create Save State", vdp.vram, sizeof(vdp.vram));
 
 		if (vram_viewer.texture != nullptr)
 		{
