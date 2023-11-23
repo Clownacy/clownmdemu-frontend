@@ -42,11 +42,13 @@ public:
 #endif
 
 	FilePicker(DebugLog &debug_log, Utilities &utilities, Window &window) : debug_log(debug_log), utilities(utilities), window(window) {}
+#ifdef FILE_PICKER_POSIX
 	~FilePicker() {SDL_free(last_file_dialog_directory);}
+#endif
 	void CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void Update(char *&drag_and_drop_filename);
-	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; };
+	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
 };
 
 #endif /* FILE_PICKER_H */
