@@ -397,14 +397,21 @@ static bool LoadSaveState(SDL_RWops* const file)
 
 static bool CreateSaveState(const char* const save_state_path)
 {
-	if (!emulator.CreateSaveState(save_state_path))
+	bool success = true;
+
+	SDL_RWops* const file = SDL_RWFromFile(save_state_path, "wb");
+
+	if (file == nullptr || !emulator.CreateSaveState(file))
 	{
 		debug_log.Log("Could not create save state file");
 		window.ShowErrorMessageBox("Could not create save state file.");
-		return false;
+		success = false;
 	}
 
-	return true;
+	if (file != nullptr)
+		SDL_RWclose(file);
+
+	return success;
 }
 
 
@@ -1551,8 +1558,26 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
-					// Obtain a filename and path from the user.
+#ifdef __EMSCRIPTEN__
+					// Inefficient, but it's the only way...
+					const std::size_t save_state_size = emulator.GetSaveStateSize();
+					void* const save_state_buffer = SDL_malloc(save_state_size);
+
+					if (save_state_buffer != nullptr)
+					{
+						SDL_RWops* const file = SDL_RWFromMem(save_state_buffer, save_state_size);
+
+						if (file != nullptr)
+						{
+							emulator.CreateSaveState(file);
+							SDL_RWclose(file);
+
+							file_utilities.SaveFile("Create Save State", save_state_buffer, save_state_size);
+						}
+					}
+#else
 					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
+#endif
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))

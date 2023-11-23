@@ -342,20 +342,17 @@ bool EmulatorInstance::LoadSaveState(const unsigned char* const file_buffer, con
 	return success;
 }
 
-bool EmulatorInstance::CreateSaveState(const char* const save_state_path)
+std::size_t EmulatorInstance::GetSaveStateSize()
+{
+	return sizeof(save_state_magic) + sizeof(*state);
+}
+
+bool EmulatorInstance::CreateSaveState(SDL_RWops* const file)
 {
 	bool success = false;
 
-	// Save the current state to the specified file.
-	SDL_RWops *file = SDL_RWFromFile(save_state_path, "wb");
-
-	if (file != nullptr)
-	{
-		if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, state, sizeof(*state), 1) == 1)
-			success = true;
-
-		SDL_RWclose(file);
-	}
+	if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, state, sizeof(*state), 1) == 1)
+		success = true;
 
 	return success;
 }
