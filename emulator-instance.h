@@ -48,7 +48,7 @@ private:
 	std::size_t state_rewind_index;
 	std::size_t state_rewind_remaining;
 #else
-	EmulationState state_rewind_buffer[1];
+	State state_rewind_buffer[1];
 #endif
 
 	cc_u8f CartridgeReadCallback(cc_u32f address);

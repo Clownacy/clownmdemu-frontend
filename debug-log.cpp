@@ -13,7 +13,7 @@ void DebugLog::Log(const char* const format, std::va_list args)
 			SDL_vsnprintf(message_buffer, message_buffer_size, format, args);
 
 			if (log_to_console || force_console_output)
-				SDL_LogMessage(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, message_buffer);
+				SDL_LogMessage(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, "%s", message_buffer);
 		}
 		catch (const std::bad_alloc&)
 		{
