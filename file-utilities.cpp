@@ -1,4 +1,4 @@
-#include "file-picker.h"
+#include "file-utilities.h"
 
 #include <climits>
 
@@ -16,9 +16,7 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#include "utilities.h"
-
-void FilePicker::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> callback, const bool save)
+void FileUtilities::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> callback, const bool save)
 {
 #ifdef _WIN32
 	if (use_native_file_dialogs)
@@ -196,17 +194,17 @@ void FilePicker::CreateFileDialog(const char* const title, const std::function<b
 	}
 }
 
-void FilePicker::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
+void FileUtilities::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
 {
 	CreateFileDialog(title, callback, false);
 }
 
-void FilePicker::CreateSaveFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
+void FileUtilities::CreateSaveFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
 {
 	CreateFileDialog(title, callback, true);
 }
 
-void FilePicker::Update(char *&drag_and_drop_filename)
+void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 {
 	if (active_file_picker_popup != nullptr)
 	{
@@ -284,7 +282,7 @@ void FilePicker::Update(char *&drag_and_drop_filename)
 
 			if (enter_pressed || ok_pressed)
 			{
-				if (!is_save_dialog || !utilities.FileExists(text_buffer))
+				if (!is_save_dialog || !FileExists(text_buffer))
 					submit = true;
 				else
 					ImGui::OpenPopup("File Already Exists");
@@ -325,4 +323,87 @@ void FilePicker::Update(char *&drag_and_drop_filename)
 			ImGui::EndPopup();
 		}
 	}
+}
+
+bool FileUtilities::FileExists(const char* const filename)
+{
+	SDL_RWops* const file = SDL_RWFromFile(filename, "rb");
+
+	if (file != nullptr)
+	{
+		SDL_RWclose(file);
+		return true;
+	}
+
+	return false;
+}
+
+void FileUtilities::LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size)
+{
+	file_buffer = nullptr;
+	file_size = 0;
+
+	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
+
+	if (file == nullptr)
+		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
+	else
+		LoadFileToBuffer(file, file_buffer, file_size);
+}
+
+void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size)
+{
+	const Sint64 size_s64 = SDL_RWsize(file);
+
+	if (size_s64 < 0)
+	{
+		debug_log.Log("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		const std::size_t size = static_cast<std::size_t>(size_s64);
+
+		file_buffer = static_cast<unsigned char*>(SDL_malloc(size));
+
+		if (file_buffer == nullptr)
+		{
+			debug_log.Log("Could not allocate memory for file");
+		}
+		else
+		{
+			file_size = size;
+
+			SDL_RWread(file, file_buffer, 1, size);
+		}
+	}
+
+	if (SDL_RWclose(file) < 0)
+		debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
+}
+
+void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> callback)
+{
+	CreateOpenFileDialog(title, [&callback](const char* const path)
+	{
+		SDL_RWops* const file = SDL_RWFromFile(path, "rb");
+
+		if (file == nullptr)
+			return false;
+
+		callback(path, file);
+		return true;
+	});
+}
+
+void FileUtilities::SaveFile(const char* const title, const void* const data, const std::size_t data_size)
+{
+	CreateSaveFileDialog(title, [data, data_size](const char* const path)
+	{
+		SDL_RWops* const file = SDL_RWFromFile(path, "wb");
+
+		if (file == nullptr)
+			return false;
+
+		return SDL_RWwrite(file, data, 1, data_size) == data_size;
+	});
 }

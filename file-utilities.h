@@ -1,5 +1,5 @@
-#ifndef FILE_PICKER_H
-#define FILE_PICKER_H
+#ifndef FILE_UTILITIES_H
+#define FILE_UTILITIES_H
 
 #ifdef __unix__
 #include <unistd.h>
@@ -15,15 +15,15 @@
 
 #include <functional>
 
+#include "SDL.h"
+
 #include "debug-log.h"
-#include "utilities.h"
 #include "window.h"
 
-class FilePicker
+class FileUtilities
 {
 private:
 	DebugLog &debug_log;
-	Utilities &utilities;
 	Window &window;
 	const char *active_file_picker_popup;
 	std::function<bool(const char *path)> popup_callback;
@@ -41,14 +41,21 @@ public:
 	bool use_native_file_dialogs = true;
 #endif
 
-	FilePicker(DebugLog &debug_log, Utilities &utilities, Window &window) : debug_log(debug_log), utilities(utilities), window(window) {}
+	FileUtilities(DebugLog &debug_log, Window &window) : debug_log(debug_log), window(window) {}
 #ifdef FILE_PICKER_POSIX
-	~FilePicker() {SDL_free(last_file_dialog_directory);}
+	~FileUtilities() {SDL_free(last_file_dialog_directory);}
 #endif
 	void CreateOpenFileDialog(const char *title, std::function<bool(const char *path)> callback);
 	void CreateSaveFileDialog(const char *title, std::function<bool(const char *path)> callback);
-	void Update(char *&drag_and_drop_filename);
+	void DisplayFileDialog(char *&drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
+
+	bool FileExists(const char *filename);
+	void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size);
+	void LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size);
+
+	void LoadFile(const char *title, std::function<void(const char* const path, SDL_RWops *file)> callback);
+	void SaveFile(const char *title, const void *data, std::size_t data_size);
 };
 
-#endif /* FILE_PICKER_H */
+#endif /* FILE_UTILITIES_H */

@@ -225,7 +225,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 
 		if (ImGui::Button("Save to File"))
 		{
-			file_picker.CreateSaveFileDialog("Create Save State", [this, &vdp](const char* const save_state_path)
+			file_utilities.CreateSaveFileDialog("Create Save State", [this, &vdp](const char* const save_state_path)
 			{
 				bool success = false;
 

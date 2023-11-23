@@ -29,8 +29,7 @@
 #include "debug-z80.h"
 #include "disassembler.h"
 #include "emulator-instance.h"
-#include "file-picker.h"
-#include "utilities.h"
+#include "file-utilities.h"
 #include "window.h"
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
@@ -121,18 +120,17 @@ static bool tall_double_resolution_mode;
 
 static DebugLog debug_log(monospace_font);
 static AudioOutput audio_output(debug_log);
-static Utilities utilities(debug_log);
 static Window window(debug_log);
-static FilePicker file_picker(debug_log, utilities, window);
+static FileUtilities file_utilities(debug_log, window);
 
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
-static EmulatorInstance emulator(audio_output, debug_log, utilities, window, ReadInputCallback);
+static EmulatorInstance emulator(audio_output, debug_log, file_utilities, window, ReadInputCallback);
 
 static DebugFM debug_fm(emulator, monospace_font);
 static DebugM68k debug_m68k(monospace_font);
 static DebugMemory debug_memory(monospace_font);
 static DebugPSG debug_psg(emulator, monospace_font);
-static DebugVDP debug_vdp(debug_log, dpi_scale, emulator, file_picker, frame_counter, monospace_font, window);
+static DebugVDP debug_vdp(debug_log, dpi_scale, emulator, file_utilities, frame_counter, monospace_font, window);
 static DebugZ80 debug_z80(emulator, monospace_font);
 
 // Manages whether the program exits or not.
@@ -306,31 +304,61 @@ static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_
 	emulator.LoadCartridgeFile(file_buffer, file_size);
 }
 
-static bool LoadCartridgeFile(const char* const path)
+static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
 {
-	if (!emulator.LoadCartridgeFile(path))
+	unsigned char *file_buffer;
+	std::size_t file_size;
+	file_utilities.LoadFileToBuffer(file, file_buffer, file_size);
+
+	if (file_buffer == nullptr)
 	{
 		debug_log.Log("Could not load the cartridge file");
 		window.ShowErrorMessageBox("Failed to load the cartridge file.");
 		return false;
 	}
 
-	quick_save_exists = false;
-	AddToRecentSoftware(path, false, false);
+	if (path != nullptr)
+		AddToRecentSoftware(path, false, false);
+
+	LoadCartridgeFile(file_buffer, file_size);
+	return true;
+}
+
+static bool LoadCartridgeFile(const char* const path)
+{
+	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
+
+	if (file == nullptr)
+	{
+		debug_log.Log("Could not load the cartridge file");
+		window.ShowErrorMessageBox("Failed to load the cartridge file.");
+		return false;
+	}
+
+	return LoadCartridgeFile(path, file);
+}
+
+static bool LoadCDFile(const char* const path, SDL_RWops* const file)
+{
+	if (path != nullptr)
+		AddToRecentSoftware(path, true, false);
+
+	emulator.LoadCDFile(file);
 	return true;
 }
 
 static bool LoadCDFile(const char* const path)
 {
-	if (!emulator.LoadCDFile(path))
+	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
+
+	if (file == nullptr)
 	{
 		debug_log.Log("Could not load the CD file");
 		window.ShowErrorMessageBox("Failed to load the CD file.");
 		return false;
 	}
 
-	AddToRecentSoftware(path, true, false);
-	return true;
+	return LoadCDFile(path, file);
 }
 
 static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
@@ -442,9 +470,9 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 			emulator.clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
 	#ifdef FILE_PICKER_POSIX
 		else if (SDL_strcmp(name, "last-directory") == 0)
-			file_picker.last_file_dialog_directory = SDL_strdup(value);
+			file_utilities.last_file_dialog_directory = SDL_strdup(value);
 		else if (SDL_strcmp(name, "prefer-kdialog") == 0)
-			file_picker.prefer_kdialog = state;
+			file_utilities.prefer_kdialog = state;
 	#endif
 	}
 	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
@@ -577,13 +605,13 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
 	#ifdef FILE_PICKER_POSIX
-		if (file_picker.last_file_dialog_directory != nullptr)
+		if (file_utilities.last_file_dialog_directory != nullptr)
 		{
 			PRINT_STRING(file, "last-directory = ");
-			SDL_RWwrite(file, file_picker.last_file_dialog_directory, SDL_strlen(file_picker.last_file_dialog_directory), 1);
+			SDL_RWwrite(file, file_utilities.last_file_dialog_directory, SDL_strlen(file_utilities.last_file_dialog_directory), 1);
 			PRINT_STRING(file, "\n");
 		}
-		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", file_picker.prefer_kdialog);
+		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", file_utilities.prefer_kdialog);
 	#endif
 
 		// Save keyboard bindings.
@@ -632,7 +660,7 @@ static void SaveConfiguration()
 static void PreEventStuff()
 {
 	emulator_on = emulator.IsCartridgeFileLoaded() || emulator.IsCDFileLoaded();
-	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_picker.IsDialogOpen()
+	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen()
 	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		&& !emulator.RewindingExhausted()
 	#endif
@@ -742,7 +770,7 @@ bool Frontend::Initialise(const int argc, char** const argv)
 			if (argc > 1)
 				LoadCartridgeFile(argv[1]);
 			else
-				LoadCartridgeFile(nullptr, 0);
+				LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
 
 			// We are now ready to show the window
 			SDL_ShowWindow(window.sdl);
@@ -1295,11 +1323,11 @@ void Frontend::Update()
 	ImGui::NewFrame();
 
 	// Handle drag-and-drop event.
-	if (!file_picker.IsDialogOpen() && drag_and_drop_filename != nullptr)
+	if (!file_utilities.IsDialogOpen() && drag_and_drop_filename != nullptr)
 	{
 		unsigned char *file_buffer;
 		std::size_t file_size;
-		utilities.LoadFileToBuffer(drag_and_drop_filename, file_buffer, file_size);
+		file_utilities.LoadFileToBuffer(drag_and_drop_filename, file_buffer, file_size);
 
 		if (file_buffer != nullptr)
 		{
@@ -1393,9 +1421,9 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_picker.CreateOpenFileDialog("Load Cartridge File", [](const char* const path)
+					file_utilities.LoadFile("Load Cartridge File", [](const char* const path, SDL_RWops* const file)
 					{
-						if (LoadCartridgeFile(path))
+						if (LoadCartridgeFile(path, file))
 						{
 							emulator_paused = false;
 							return true;
@@ -1421,9 +1449,9 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_picker.CreateOpenFileDialog("Load CD File", [](const char* const path)
+					file_utilities.LoadFile("Load CD File", [](const char* const path, SDL_RWops* const file)
 					{
-						if (LoadCDFile(path))
+						if (LoadCDFile(path, file))
 						{
 							emulator_paused = false;
 							return true;
@@ -1518,11 +1546,11 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 					// Obtain a filename and path from the user.
-					file_picker.CreateSaveFileDialog("Create Save State", CreateSaveState);
+					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_picker.CreateOpenFileDialog("Load Save State", static_cast<bool(*)(const char*)>(LoadSaveState));
+					file_utilities.CreateOpenFileDialog("Load Save State", static_cast<bool(*)(const char*)>(LoadSaveState));
 
 				ImGui::EndMenu();
 			}
@@ -1588,7 +1616,7 @@ void Frontend::Update()
 				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
 
 			#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
-				ImGui::MenuItem("Native File Dialogs", nullptr, &file_picker.use_native_file_dialogs);
+				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
 			#endif
 			#endif
 
@@ -2084,13 +2112,13 @@ void Frontend::Update()
 			{
 				ImGui::TableNextColumn();
 
-				if (ImGui::RadioButton("Zenity (GTK)", !file_picker.prefer_kdialog))
-					file_picker.prefer_kdialog = false;
+				if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
+					file_utilities.prefer_kdialog = false;
 
 				ImGui::TableNextColumn();
 
-				if (ImGui::RadioButton("kdialog (Qt)", file_picker.prefer_kdialog))
-					file_picker.prefer_kdialog = true;
+				if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
+					file_utilities.prefer_kdialog = true;
 
 				ImGui::EndTable();
 			}
@@ -2438,7 +2466,7 @@ void Frontend::Update()
 		ImGui::End();
 	}
 
-	file_picker.Update(drag_and_drop_filename);
+	file_utilities.DisplayFileDialog(drag_and_drop_filename);
 
 	SDL_RenderClear(window.renderer);
 

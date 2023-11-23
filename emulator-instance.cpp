@@ -1,9 +1,5 @@
 #include "emulator-instance.h"
 
-#include "SDL.h"
-
-#include "utilities.h"
-
 bool EmulatorInstance::clownmdemu_initialised;
 ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant;
 
@@ -149,12 +145,12 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 EmulatorInstance::EmulatorInstance(
 	AudioOutput &audio_output,
 	DebugLog &debug_log,
-	Utilities &utilities,
+	FileUtilities &file_utilities,
 	Window &window,
 	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> input_callback
 ) :
 	audio_output(audio_output),
-	utilities(utilities),
+	file_utilities(file_utilities),
 	window(window),
 	input_callback(input_callback),
 	callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback})
@@ -291,21 +287,6 @@ void EmulatorInstance::LoadCartridgeFile(unsigned char* const file_buffer, const
 	HardResetConsole();
 }
 
-bool EmulatorInstance::LoadCartridgeFile(const char* const path)
-{
-	unsigned char *temp_rom_buffer;
-	std::size_t temp_rom_buffer_size;
-
-	// Load ROM to memory.
-	utilities.LoadFileToBuffer(path, temp_rom_buffer, temp_rom_buffer_size);
-
-	if (temp_rom_buffer == nullptr)
-		return false;
-
-	LoadCartridgeFile(temp_rom_buffer, temp_rom_buffer_size);
-	return true;
-}
-
 void EmulatorInstance::UnloadCartridgeFile()
 {
 	SDL_free(rom_buffer);
@@ -313,12 +294,9 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer_size = 0;
 }
 
-bool EmulatorInstance::LoadCDFile(const char* const path)
+void EmulatorInstance::LoadCDFile(SDL_RWops* const file)
 {
-	cd_file = SDL_RWFromFile(path, "rb");
-
-	if (cd_file == nullptr)
-		return false;
+	cd_file = file;
 
 	// Detect if the sector size is 2048 bytes or 2352 bytes.
 	sector_size_2352 = false;
@@ -333,8 +311,6 @@ bool EmulatorInstance::LoadCDFile(const char* const path)
 	}
 
 	HardResetConsole();
-
-	return true;
 }
 
 void EmulatorInstance::UnloadCDFile()
@@ -354,7 +330,7 @@ bool EmulatorInstance::ValidateSaveState(const char* const save_state_path)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
-	utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
+	file_utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
 
 	const bool valid = ValidateSaveState(file_buffer, file_size);
 
@@ -382,7 +358,7 @@ bool EmulatorInstance::LoadSaveState(const char* const save_state_path)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
-	utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
+	file_utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
 
 	bool success = false;
 

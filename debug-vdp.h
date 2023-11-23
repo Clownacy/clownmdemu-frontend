@@ -10,7 +10,7 @@
 
 #include "debug-log.h"
 #include "emulator-instance.h"
-#include "file-picker.h"
+#include "file-utilities.h"
 #include "window.h"
 
 class DebugVDP
@@ -19,7 +19,7 @@ private:
 	DebugLog &debug_log;
 	const float &dpi_scale;
 	const EmulatorInstance &emulator;
-	FilePicker &file_picker;
+	FileUtilities &file_utilities;
 	const unsigned int &frame_counter;
 	ImFont* const &monospace_font;
 	Window &window;
@@ -53,7 +53,7 @@ public:
 		DebugLog &debug_log,
 		const float &dpi_scale,
 		const EmulatorInstance &emulator,
-		FilePicker &file_picker,
+		FileUtilities &file_utilities,
 		const unsigned int &frame_counter,
 		ImFont* const &monospace_font,
 		Window &window
@@ -61,7 +61,7 @@ public:
 		debug_log(debug_log),
 		dpi_scale(dpi_scale),
 		emulator(emulator),
-		file_picker(file_picker),
+		file_utilities(file_utilities),
 		frame_counter(frame_counter),
 		monospace_font(monospace_font),
 		window(window)
