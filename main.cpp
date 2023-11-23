@@ -2487,8 +2487,36 @@ void Deinitialise()
 
 }
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 int main(const int argc, char** const argv)
 {
+#ifdef __EMSCRIPTEN__
+	if (Frontend::Initialise(argc, argv))
+	{
+		const auto callback = []()
+		{
+			if (quit)
+			{
+				Frontend::Deinitialise();
+				emscripten_cancel_main_loop();
+			}
+			else
+			{
+				SDL_Event event;
+				while (SDL_PollEvent(&event))
+					Frontend::HandleEvent(event);
+
+				Frontend::Update();
+			}
+		};
+
+		// TODO: 50FPS (PAL)
+		emscripten_set_main_loop(callback, 60, 0);
+	}
+#else
 	if (Frontend::Initialise(argc, argv))
 	{
 		while (!quit)
@@ -2546,6 +2574,7 @@ int main(const int argc, char** const argv)
 
 		Frontend::Deinitialise();
 	}
+#endif
 
 	return 0;
 }
