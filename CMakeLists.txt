@@ -33,6 +33,8 @@ add_executable(clownmdemu-frontend WIN32
 	"emulator-instance.h"
 	"file-picker.cpp"
 	"file-picker.h"
+	"frontend.cpp"
+	"frontend.h"
 	"utilities.cpp"
 	"utilities.h"
 	"window.cpp"
