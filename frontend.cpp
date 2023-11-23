@@ -2466,10 +2466,6 @@ void Frontend::Deinitialise()
 
 	SaveConfiguration();
 
-#ifdef FILE_PICKER_POSIX
-	SDL_free(file_picker.last_file_dialog_directory);
-#endif
-
 	// Free recent software list.
 	while (recent_software_list.head != nullptr)
 	{

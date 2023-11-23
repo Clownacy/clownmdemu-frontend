@@ -42,6 +42,7 @@ public:
 #endif
 
 	FilePicker(DebugLog &debug_log, Utilities &utilities, Window &window) : debug_log(debug_log), utilities(utilities), window(window) {}
+	~FilePicker() {SDL_free(last_file_dialog_directory);}
 	void CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
 	void Update(char *&drag_and_drop_filename);
