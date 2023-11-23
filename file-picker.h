@@ -29,7 +29,7 @@ private:
 	std::function<bool(const char *path)> popup_callback;
 	bool is_save_dialog;
 
-	void CreateFileDialog(char const* const title, const std::function<bool(const char *path)> callback, bool save);
+	void CreateFileDialog(const char *title, std::function<bool(const char *path)> callback, bool save);
 
 public:
 #ifdef FILE_PICKER_POSIX
@@ -45,8 +45,8 @@ public:
 #ifdef FILE_PICKER_POSIX
 	~FilePicker() {SDL_free(last_file_dialog_directory);}
 #endif
-	void CreateOpenFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
-	void CreateSaveFileDialog(char const* const title, const std::function<bool(const char *path)> callback);
+	void CreateOpenFileDialog(const char *title, std::function<bool(const char *path)> callback);
+	void CreateSaveFileDialog(const char *title, std::function<bool(const char *path)> callback);
 	void Update(char *&drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
 };
