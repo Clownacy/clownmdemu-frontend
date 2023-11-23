@@ -375,18 +375,24 @@ static bool LoadSaveState(const unsigned char* const file_buffer, const std::siz
 	return true;
 }
 
-static bool LoadSaveState(const char* const save_state_path)
+static bool LoadSaveState(SDL_RWops* const file)
 {
-	if (!emulator.LoadSaveState(save_state_path))
+	unsigned char *file_buffer;
+	std::size_t file_size;
+	file_utilities.LoadFileToBuffer(file, file_buffer, file_size);
+
+	if (file_buffer == nullptr)
 	{
 		debug_log.Log("Could not load save state file");
 		window.ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
-	emulator_paused = false;
+	const bool success = LoadSaveState(file_buffer, file_size);
 
-	return true;
+	SDL_free(file_buffer);
+
+	return success;
 }
 
 static bool CreateSaveState(const char* const save_state_path)
@@ -1550,7 +1556,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.CreateOpenFileDialog("Load Save State", static_cast<bool(*)(const char*)>(LoadSaveState));
+					file_utilities.LoadFile("Load Save State", [](const char* /*const path*/, SDL_RWops* const file){LoadSaveState(file);});
 
 				ImGui::EndMenu();
 			}
