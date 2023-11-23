@@ -1,5 +1,7 @@
 #include "file-picker.h"
 
+#include <climits>
+
 #ifdef _WIN32
 #include <windows.h>
 #include "SDL_syswm.h"
