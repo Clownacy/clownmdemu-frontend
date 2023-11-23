@@ -349,6 +349,9 @@ void FileUtilities::LoadFileToBuffer(const char *filename, unsigned char *&file_
 		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
 	else
 		LoadFileToBuffer(file, file_buffer, file_size);
+
+	if (SDL_RWclose(file) < 0)
+		debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
 }
 
 void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size)
@@ -376,9 +379,6 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 			SDL_RWread(file, file_buffer, 1, size);
 		}
 	}
-
-	if (SDL_RWclose(file) < 0)
-		debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
 }
 
 void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> callback)
@@ -391,6 +391,9 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 			return false;
 
 		callback(path, file);
+
+		SDL_RWclose(file);
+
 		return true;
 	});
 }
@@ -404,6 +407,10 @@ void FileUtilities::SaveFile(const char* const title, const void* const data, co
 		if (file == nullptr)
 			return false;
 
-		return SDL_RWwrite(file, data, 1, data_size) == data_size;
+		const bool success = SDL_RWwrite(file, data, 1, data_size) == data_size;
+
+		SDL_RWclose(file);
+
+		return success;
 	});
 }
