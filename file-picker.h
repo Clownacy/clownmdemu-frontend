@@ -28,14 +28,15 @@ private:
 	const char *active_file_picker_popup;
 	std::function<bool(const char *path)> popup_callback;
 	bool is_save_dialog;
+
+	void CreateFileDialog(char const* const title, const std::function<bool(const char *path)> callback, bool save);
+
+public:
 #ifdef FILE_PICKER_POSIX
 	char *last_file_dialog_directory;
 	bool prefer_kdialog;
 #endif
 
-	void CreateFileDialog(char const* const title, const std::function<bool(const char *path)> callback, bool save);
-
-public:
 #ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
 	bool use_native_file_dialogs = true;
 #endif

@@ -74,7 +74,7 @@ void FilePicker::CreateFileDialog(char const* const title, const std::function<b
 		}
 	}
 	else
-	#elif defined(POSIX)
+#elif defined(FILE_PICKER_POSIX)
 	bool done = false;
 
 	if (use_native_file_dialogs)

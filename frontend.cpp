@@ -440,11 +440,11 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 			emulator.clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
 		else if (SDL_strcmp(name, "japanese") == 0)
 			emulator.clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
-	#ifdef POSIX
+	#ifdef FILE_PICKER_POSIX
 		else if (SDL_strcmp(name, "last-directory") == 0)
-			last_file_dialog_directory = SDL_strdup(value);
+			file_picker.last_file_dialog_directory = SDL_strdup(value);
 		else if (SDL_strcmp(name, "prefer-kdialog") == 0)
-			prefer_kdialog = state;
+			file_picker.prefer_kdialog = state;
 	#endif
 	}
 	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
@@ -576,14 +576,14 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
 
-	#ifdef POSIX
-		if (last_file_dialog_directory != nullptr)
+	#ifdef FILE_PICKER_POSIX
+		if (file_picker.last_file_dialog_directory != nullptr)
 		{
 			PRINT_STRING(file, "last-directory = ");
-			SDL_RWwrite(file, last_file_dialog_directory, SDL_strlen(last_file_dialog_directory), 1);
+			SDL_RWwrite(file, file_picker.last_file_dialog_directory, SDL_strlen(file_picker.last_file_dialog_directory), 1);
 			PRINT_STRING(file, "\n");
 		}
-		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", prefer_kdialog);
+		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", file_picker.prefer_kdialog);
 	#endif
 
 		// Save keyboard bindings.
@@ -2077,20 +2077,20 @@ void Frontend::Update()
 				ImGui::EndTable();
 			}
 
-		#ifdef POSIX
+		#ifdef FILE_PICKER_POSIX
 			ImGui::SeparatorText("Preferred File Dialog");
 
 			if (ImGui::BeginTable("Preferred File Dialog", 2))
 			{
 				ImGui::TableNextColumn();
 
-				if (ImGui::RadioButton("Zenity (GTK)", !prefer_kdialog))
-					prefer_kdialog = false;
+				if (ImGui::RadioButton("Zenity (GTK)", !file_picker.prefer_kdialog))
+					file_picker.prefer_kdialog = false;
 
 				ImGui::TableNextColumn();
 
-				if (ImGui::RadioButton("kdialog (Qt)", prefer_kdialog))
-					prefer_kdialog = true;
+				if (ImGui::RadioButton("kdialog (Qt)", file_picker.prefer_kdialog))
+					file_picker.prefer_kdialog = true;
 
 				ImGui::EndTable();
 			}
@@ -2466,8 +2466,8 @@ void Frontend::Deinitialise()
 
 	SaveConfiguration();
 
-#ifdef POSIX
-	SDL_free(last_file_dialog_directory);
+#ifdef FILE_PICKER_POSIX
+	SDL_free(file_picker.last_file_dialog_directory);
 #endif
 
 	// Free recent software list.
