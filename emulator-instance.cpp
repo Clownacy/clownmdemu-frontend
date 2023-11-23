@@ -326,18 +326,6 @@ bool EmulatorInstance::ValidateSaveState(const unsigned char* const file_buffer,
 	return file_size == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0;
 }
 
-bool EmulatorInstance::ValidateSaveState(const char* const save_state_path)
-{
-	unsigned char *file_buffer;
-	std::size_t file_size;
-	file_utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
-
-	const bool valid = ValidateSaveState(file_buffer, file_size);
-
-	SDL_free(file_buffer);
-	return valid;
-}
-
 bool EmulatorInstance::LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
 {
 	bool success = false;
@@ -349,23 +337,6 @@ bool EmulatorInstance::LoadSaveState(const unsigned char* const file_buffer, con
 			SDL_memcpy(state, &file_buffer[sizeof(save_state_magic)], sizeof(State));
 			success = true;
 		}
-	}
-
-	return success;
-}
-
-bool EmulatorInstance::LoadSaveState(const char* const save_state_path)
-{
-	unsigned char *file_buffer;
-	std::size_t file_size;
-	file_utilities.LoadFileToBuffer(save_state_path, file_buffer, file_size);
-
-	bool success = false;
-
-	if (file_buffer != nullptr)
-	{
-		success = LoadSaveState(file_buffer, file_size);
-		SDL_free(file_buffer);
 	}
 
 	return success;

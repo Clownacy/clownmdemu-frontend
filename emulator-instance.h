@@ -88,9 +88,7 @@ public:
 	void LoadCDFile(SDL_RWops *file);
 	void UnloadCDFile();
 	bool ValidateSaveState(const unsigned char *file_buffer, std::size_t file_size);
-	bool ValidateSaveState(const char *save_state_path);
 	bool LoadSaveState(const unsigned char *file_buffer, std::size_t file_size);
-	bool LoadSaveState(const char *save_state_path);
 	bool CreateSaveState(const char *save_state_path);
 
 	bool IsCartridgeFileLoaded() const { return rom_buffer != nullptr; }
