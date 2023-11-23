@@ -31,7 +31,7 @@ void DebugLog::Log(const char* const format, ...)
 	va_end(args);
 }
 
-void DebugLog::Display(bool &open, ImFont* const monospace_font)
+void DebugLog::Display(bool &open)
 {
 	if (ImGui::Begin("Log", &open))
 	{

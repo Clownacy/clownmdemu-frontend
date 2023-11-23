@@ -26,7 +26,7 @@ static void DecomposeTileMetadata(const cc_u16f packed_tile_metadata, TileMetada
 	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-void DebugVDP::Plane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address)
+void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
@@ -158,22 +158,22 @@ void DebugVDP::Plane(bool &open, const char* const name, PlaneViewer &plane_view
 	ImGui::End();
 }
 
-void DebugVDP::WindowPlane(bool &open)
+void DebugVDP::DisplayWindowPlane(bool &open)
 {
-	Plane(open, "Window Plane", window_plane_data, emulator.state->clownmdemu.vdp.window_address);
+	DisplayPlane(open, "Window Plane", window_plane_data, emulator.state->clownmdemu.vdp.window_address);
 }
 
-void DebugVDP::PlaneA(bool &open)
+void DebugVDP::DisplayPlaneA(bool &open)
 {
-	Plane(open, "Plane A", plane_a_data, emulator.state->clownmdemu.vdp.plane_a_address);
+	DisplayPlane(open, "Plane A", plane_a_data, emulator.state->clownmdemu.vdp.plane_a_address);
 }
 
-void DebugVDP::PlaneB(bool &open)
+void DebugVDP::DisplayPlaneB(bool &open)
 {
-	Plane(open, "Plane B", plane_b_data, emulator.state->clownmdemu.vdp.plane_b_address);
+	DisplayPlane(open, "Plane B", plane_b_data, emulator.state->clownmdemu.vdp.plane_b_address);
 }
 
-void DebugVDP::VRAM(bool &open)
+void DebugVDP::DisplayVRAM(bool &open)
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float tile_scale = SDL_roundf(3.0f * dpi_scale);
@@ -421,7 +421,7 @@ void DebugVDP::VRAM(bool &open)
 	ImGui::End();
 }
 
-void DebugVDP::CRAM(bool &open)
+void DebugVDP::DisplayCRAM(bool &open)
 {
 	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -498,7 +498,7 @@ void DebugVDP::CRAM(bool &open)
 	ImGui::End();
 }
 
-void DebugVDP::Registers(bool &open)
+void DebugVDP::DisplayRegisters(bool &open)
 {
 	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

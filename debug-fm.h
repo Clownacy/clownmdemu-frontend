@@ -5,6 +5,21 @@
 
 #include "emulator-instance.h"
 
-void Debug_FM(bool &open, const EmulatorInstance &emulator, ImFont *monospace_font);
+class DebugFM
+{
+private:
+	const EmulatorInstance &emulator;
+	ImFont* const monospace_font;
+
+public:
+	DebugFM(
+		const EmulatorInstance &emulator,
+		ImFont* const monospace_font
+	) :
+		emulator(emulator),
+		monospace_font(monospace_font)
+	{}
+	void Display(bool &open);
+};
 
 #endif /* DEBUG_FM_H */

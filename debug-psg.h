@@ -5,6 +5,21 @@
 
 #include "emulator-instance.h"
 
-void Debug_PSG(bool &open, const EmulatorInstance &emulator, ImFont *monospace_font);
+class DebugPSG
+{
+private:
+	const EmulatorInstance &emulator;
+	ImFont* const monospace_font;
+
+public:
+	DebugPSG(
+		const EmulatorInstance &emulator,
+		ImFont* const monospace_font
+	) :
+		emulator(emulator),
+		monospace_font(monospace_font)
+	{}
+	void Display(bool &open);
+};
 
 #endif /* DEBUG_PSG_H */

@@ -4,6 +4,18 @@
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_M68k(bool &open, const char *name, Clown68000_State &m68k, ImFont *monospace_font);
+class DebugM68k
+{
+private:
+	ImFont* const monospace_font;
+
+public:
+	DebugM68k(
+		ImFont* const monospace_font
+	) :
+		monospace_font(monospace_font)
+	{}
+	void Display(bool &open, const char* const name, const Clown68000_State &m68k);
+};
 
 #endif /* DEBUG_M68K_H */

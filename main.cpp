@@ -117,7 +117,7 @@ static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
-static DebugLog debug_log;
+static DebugLog debug_log(monospace_font);
 static AudioOutput audio_output(debug_log);
 static Utilities utilities(debug_log);
 static Window window(debug_log);
@@ -126,7 +126,12 @@ static FilePicker file_picker(debug_log, utilities, window);
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
 static EmulatorInstance emulator(audio_output, debug_log, utilities, window, ReadInputCallback);
 
+static DebugFM debug_fm(emulator, monospace_font);
+static DebugM68k debug_m68k(monospace_font);
+static DebugMemory debug_memory(monospace_font);
+static DebugPSG debug_psg(emulator, monospace_font);
 static DebugVDP debug_vdp(debug_log, dpi_scale, emulator, file_picker, frame_counter, monospace_font, window);
+static DebugZ80 debug_z80(emulator, monospace_font);
 
 ///////////
 // Fonts //
@@ -1756,52 +1761,52 @@ int main(const int argc, char** const argv)
 				ImGui::End();
 
 				if (debug_log_active)
-					debug_log.Display(debug_log_active, monospace_font);
+					debug_log.Display(debug_log_active);
 
 				if (m68k_status)
-					Debug_M68k(m68k_status, "Main 68000 Registers", emulator.state->clownmdemu.m68k, monospace_font);
+					debug_m68k.Display(m68k_status, "Main 68000 Registers", emulator.state->clownmdemu.m68k);
 
 				if (mcd_m68k_status)
-					Debug_M68k(mcd_m68k_status, "Sub 68000 Registers", emulator.state->clownmdemu.mcd_m68k, monospace_font);
+					debug_m68k.Display(mcd_m68k_status, "Sub 68000 Registers", emulator.state->clownmdemu.mcd_m68k);
 
 				if (z80_status)
-					Debug_Z80(z80_status, emulator.state->clownmdemu.z80, monospace_font);
+					debug_z80.Display(z80_status);
 
 				if (m68k_ram_viewer)
-					Debug_Memory(m68k_ram_viewer, monospace_font, "WORK-RAM", emulator.state->clownmdemu.m68k_ram, CC_COUNT_OF(emulator.state->clownmdemu.m68k_ram));
+					debug_memory.Display(m68k_ram_viewer, "WORK-RAM", emulator.state->clownmdemu.m68k_ram, CC_COUNT_OF(emulator.state->clownmdemu.m68k_ram));
 
 				if (z80_ram_viewer)
-					Debug_Memory(z80_ram_viewer, monospace_font, "SOUND-RAM", emulator.state->clownmdemu.z80_ram, CC_COUNT_OF(emulator.state->clownmdemu.z80_ram));
+					debug_memory.Display(z80_ram_viewer, "SOUND-RAM", emulator.state->clownmdemu.z80_ram, CC_COUNT_OF(emulator.state->clownmdemu.z80_ram));
 
 				if (prg_ram_viewer)
-					Debug_Memory(prg_ram_viewer, monospace_font, "PRG-RAM", emulator.state->clownmdemu.prg_ram, CC_COUNT_OF(emulator.state->clownmdemu.prg_ram));
+					debug_memory.Display(prg_ram_viewer, "PRG-RAM", emulator.state->clownmdemu.prg_ram, CC_COUNT_OF(emulator.state->clownmdemu.prg_ram));
 
 				if (word_ram_viewer)
-					Debug_Memory(word_ram_viewer, monospace_font, "WORD-RAM", emulator.state->clownmdemu.word_ram, CC_COUNT_OF(emulator.state->clownmdemu.word_ram));
+					debug_memory.Display(word_ram_viewer, "WORD-RAM", emulator.state->clownmdemu.word_ram, CC_COUNT_OF(emulator.state->clownmdemu.word_ram));
 
 				if (vdp_registers)
-					debug_vdp.Registers(vdp_registers);
+					debug_vdp.DisplayRegisters(vdp_registers);
 
 				if (window_plane_viewer)
-					debug_vdp.WindowPlane(window_plane_viewer);
+					debug_vdp.DisplayWindowPlane(window_plane_viewer);
 
 				if (plane_a_viewer)
-					debug_vdp.PlaneA(plane_a_viewer);
+					debug_vdp.DisplayPlaneA(plane_a_viewer);
 
 				if (plane_b_viewer)
-					debug_vdp.PlaneB(plane_b_viewer);
+					debug_vdp.DisplayPlaneB(plane_b_viewer);
 
 				if (vram_viewer)
-					debug_vdp.VRAM(vram_viewer);
+					debug_vdp.DisplayVRAM(vram_viewer);
 
 				if (cram_viewer)
-					debug_vdp.CRAM(cram_viewer);
+					debug_vdp.DisplayCRAM(cram_viewer);
 
 				if (fm_status)
-					Debug_FM(fm_status, emulator, monospace_font);
+					debug_fm.Display(fm_status);
 
 				if (psg_status)
-					Debug_PSG(psg_status, emulator, monospace_font);
+					debug_psg.Display(psg_status);
 
 				if (other_status)
 				{

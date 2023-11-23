@@ -4,7 +4,7 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_M68k(bool &open, const char* const name, Clown68000_State &m68k, ImFont* const monospace_font)
+void DebugM68k::Display(bool &open, const char* const name, const Clown68000_State &m68k)
 {
 	if (ImGui::Begin(name, &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

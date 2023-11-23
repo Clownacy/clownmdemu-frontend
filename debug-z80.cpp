@@ -1,13 +1,13 @@
 #include "debug-z80.h"
 
-#include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_Z80(bool &open, Z80_State &z80, ImFont* const monospace_font)
+void DebugZ80::Display(bool &open)
 {
 	if (ImGui::Begin("Z80 Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		const Z80_State &z80 = emulator.state->clownmdemu.z80;
+
 		ImGui::PushFont(monospace_font);
 
 		ImGui::Text("Normal: A:%02" CC_PRIXLEAST8 " B:%02" CC_PRIXLEAST8 " C:%02" CC_PRIXLEAST8 " D:%02" CC_PRIXLEAST8 " E:%02" CC_PRIXLEAST8 " F:%02" CC_PRIXLEAST8 " H:%02" CC_PRIXLEAST8 " L:%02" CC_PRIXLEAST8, z80.a, z80.b, z80.c, z80.d, z80.e, z80.f, z80.h, z80.l);

@@ -13,11 +13,13 @@
 class DebugLog
 {
 private:
+	ImFont* const monospace_font;
+
 	std::vector<std::vector<char>> lines;
 	bool logging_enabled, log_to_console, force_console_output = true;
 
 public:
-	DebugLog()
+	DebugLog(ImFont* const monospace_font) : monospace_font(monospace_font)
 	{
 		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 	}
@@ -27,7 +29,7 @@ public:
 	}
 	void Log(const char *format, std::va_list args);
 	CC_ATTRIBUTE_PRINTF(2, 3) void Log(const char *format, ...);
-	void Display(bool &open, ImFont *monospace_font);
+	void Display(bool &open);
 };
 
 #endif /* DEBUG_LOG_H */

@@ -46,7 +46,7 @@ private:
 		unsigned int cache_frame_counter;
 	} window_plane_data, plane_a_data, plane_b_data;
 
-	void Plane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address);
+	void DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address);
 
 public:
 	DebugVDP(
@@ -66,12 +66,12 @@ public:
 		monospace_font(monospace_font),
 		window(window)
 	{}
-	void WindowPlane(bool &open);
-	void PlaneA(bool &open);
-	void PlaneB(bool &open);
-	void VRAM(bool &open);
-	void CRAM(bool &open);
-	void Registers(bool &open);
+	void DisplayWindowPlane(bool &open);
+	void DisplayPlaneA(bool &open);
+	void DisplayPlaneB(bool &open);
+	void DisplayVRAM(bool &open);
+	void DisplayCRAM(bool &open);
+	void DisplayRegisters(bool &open);
 };
 
 #endif /* DEBUG_VDP_H */

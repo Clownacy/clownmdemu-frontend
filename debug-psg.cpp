@@ -1,6 +1,6 @@
 #include "debug-psg.h"
 
-void Debug_PSG(bool &open, const EmulatorInstance &emulator, ImFont* const monospace_font)
+void DebugPSG::Display(bool &open)
 {
 	if (ImGui::Begin("PSG", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{

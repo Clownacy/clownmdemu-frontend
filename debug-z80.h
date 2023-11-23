@@ -2,8 +2,24 @@
 #define DEBUG_Z80_H
 
 #include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void Debug_Z80(bool &open, Z80_State &z80, ImFont *monospace_font);
+#include "emulator-instance.h"
+
+class DebugZ80
+{
+private:
+	const EmulatorInstance &emulator;
+	ImFont* const monospace_font;
+
+public:
+	DebugZ80(
+		const EmulatorInstance &emulator,
+		ImFont* const monospace_font
+	) :
+		emulator(emulator),
+		monospace_font(monospace_font)
+	{}
+	void Display(bool &open);
+};
 
 #endif /* DEBUG_Z80_H */
