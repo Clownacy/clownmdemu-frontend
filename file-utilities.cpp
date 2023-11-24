@@ -312,8 +312,32 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 			}
 
 			if (submit)
+			{
 				if (popup_callback(text_buffer))
 					exit = true;
+				else
+					ImGui::OpenPopup(is_save_dialog ? "Could Not Save File" : "Could Not Open File");
+			}
+
+			if (ImGui::BeginPopupModal("Could Not Open File", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::TextUnformatted("File could not be opened.");
+
+				if (ImGui::Button("OK"))
+					ImGui::CloseCurrentPopup();
+
+				ImGui::EndPopup();
+			}
+
+			if (ImGui::BeginPopupModal("Could Not Save File", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				ImGui::TextUnformatted("File could not be saved.");
+
+				if (ImGui::Button("OK"))
+					ImGui::CloseCurrentPopup();
+
+				ImGui::EndPopup();
+			}
 
 			if (exit)
 			{
