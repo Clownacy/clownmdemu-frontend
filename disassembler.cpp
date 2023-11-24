@@ -15,6 +15,7 @@ static long ReadCallback(void* const user_data)
 	{
 		default:
 		case 0:
+			// ROM
 			if (emulator->rom_buffer_size == 0)
 			{
 				value = 0;
@@ -28,18 +29,33 @@ static long ReadCallback(void* const user_data)
 			break;
 
 		case 1:
+			// WORK-RAM
 			address %= CC_COUNT_OF(emulator->state->clownmdemu.m68k_ram) * 2;
 			value = emulator->state->clownmdemu.m68k_ram[address / 2];
 			break;
 
 		case 2:
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2;
-			value = emulator->state->clownmdemu.word_ram[address / 2];
+			// PRG-RAM
+			address %= CC_COUNT_OF(emulator->state->clownmdemu.prg_ram) * 2;
+			value = emulator->state->clownmdemu.prg_ram[address / 2];
 			break;
 
 		case 3:
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.prg_ram) * 2;
-			value = emulator->state->clownmdemu.prg_ram[address / 2];
+			// WORD-RAM (1M) Bank 1
+			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2 / 2;
+			value = emulator->state->clownmdemu.word_ram[address / 2 * 2 + 0];
+			break;
+
+		case 4:
+			// WORD-RAM (1M) Bank 2
+			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2 / 2;
+			value = emulator->state->clownmdemu.word_ram[address / 2 * 2 + 1];
+			break;
+
+		case 5:
+			// WORD-RAM (2M)
+			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2;
+			value = emulator->state->clownmdemu.word_ram[address / 2];
 			break;
 	}
 
@@ -59,7 +75,7 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 
 	if (ImGui::Begin("68000 Disassembler", &open))
 	{
-		static const char* const memories[] = {"ROM", "WORK-RAM", "WORD-RAM", "PRG-RAM"};
+		static const char* const memories[] = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
 
 		ImGui::Combo("Memory", &current_memory, memories, CC_COUNT_OF(memories));
 
