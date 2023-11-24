@@ -96,7 +96,7 @@ if(EMSCRIPTEN)
 	)
 
     # Dependencies of the 'emscripten-browser-file' library
-	set(CMAKE_EXE_LINKER_FLAGS "-sEXPORTED_FUNCTIONS=[_main,_malloc,_free] -sEXPORTED_RUNTIME_METHODS=[ccall] -sALLOW_MEMORY_GROWTH=1")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXPORTED_FUNCTIONS=[_main,_malloc,_free] -sEXPORTED_RUNTIME_METHODS=[ccall] -sALLOW_MEMORY_GROWTH=1")
 endif()
 
 ##################
