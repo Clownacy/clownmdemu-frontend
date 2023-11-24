@@ -1,7 +1,7 @@
 #ifndef FILE_UTILITIES_H
 #define FILE_UTILITIES_H
 
-#ifdef __unix__
+#if defined(__unix__) && !defined(__EMSCRIPTEN__)
 #include <unistd.h>
 
 #if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
