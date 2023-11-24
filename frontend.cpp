@@ -2348,6 +2348,11 @@ void Frontend::Update()
 			static const char licence_dear_imgui[] = {
 				#include "licences/dear-imgui.h"
 			};
+		#ifdef __EMSCRIPTEN__
+			static const char licence_emscripten_browser_file[] = {
+				#include "licences/emscripten-browser-file.h"
+			};
+		#endif
 		#ifdef IMGUI_ENABLE_FREETYPE
 			static const char licence_freetype[] = {
 				#include "licences/freetype.h"
@@ -2397,6 +2402,15 @@ void Frontend::Update()
 				ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
 				ImGui::PopFont();
 			}
+
+		#ifdef __EMSCRIPTEN__
+			if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
+			{
+				ImGui::PushFont(monospace_font);
+				ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
+				ImGui::PopFont();
+			}
+		#endif
 
 		#ifdef IMGUI_ENABLE_FREETYPE
 			if (ImGui::CollapsingHeader("FreeType"))
