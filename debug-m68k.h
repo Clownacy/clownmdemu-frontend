@@ -7,11 +7,11 @@
 class DebugM68k
 {
 private:
-	ImFont* const monospace_font;
+	ImFont* const &monospace_font;
 
 public:
 	DebugM68k(
-		ImFont* const monospace_font
+		ImFont* const &monospace_font
 	) :
 		monospace_font(monospace_font)
 	{}

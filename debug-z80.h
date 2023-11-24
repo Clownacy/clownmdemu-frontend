@@ -9,12 +9,12 @@ class DebugZ80
 {
 private:
 	const EmulatorInstance &emulator;
-	ImFont* const monospace_font;
+	ImFont* const &monospace_font;
 
 public:
 	DebugZ80(
 		const EmulatorInstance &emulator,
-		ImFont* const monospace_font
+		ImFont* const &monospace_font
 	) :
 		emulator(emulator),
 		monospace_font(monospace_font)

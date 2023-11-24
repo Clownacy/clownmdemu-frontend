@@ -9,12 +9,12 @@ class DebugFM
 {
 private:
 	const EmulatorInstance &emulator;
-	ImFont* const monospace_font;
+	ImFont* const &monospace_font;
 
 public:
 	DebugFM(
 		const EmulatorInstance &emulator,
-		ImFont* const monospace_font
+		ImFont* const &monospace_font
 	) :
 		emulator(emulator),
 		monospace_font(monospace_font)

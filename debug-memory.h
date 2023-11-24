@@ -9,11 +9,11 @@
 class DebugMemory
 {
 private:
-	ImFont* const monospace_font;
+	ImFont* const &monospace_font;
 
 public:
 	DebugMemory(
-		ImFont* const monospace_font
+		ImFont* const &monospace_font
 	) :
 		monospace_font(monospace_font)
 	{}
