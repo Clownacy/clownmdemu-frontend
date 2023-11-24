@@ -165,9 +165,5 @@ if(CLOWNMDEMU_FRONTEND_FREETYPE)
 	endif()
 endif()
 
-# Link some Win32 stuff for tinyfiledialogs
-if(WINDOWS)
-	target_link_libraries(clownmdemu-frontend comdlg32 ole32)
-endif()
-
+# Link 68000 disassembler
 target_link_libraries(clownmdemu-frontend clown68000-disassembler)
