@@ -85,6 +85,20 @@ set_target_properties(clownmdemu-frontend PROPERTIES
 	CXX_EXTENSIONS OFF
 )
 
+####################
+# Emscripten hacks #
+####################
+
+if(EMSCRIPTEN)
+	# Emscripten needs C++17
+	set_target_properties(clownmdemu-frontend PROPERTIES
+		CXX_STANDARD 17
+	)
+
+    # Dependencies of the 'emscripten-browser-file' library
+	set(CMAKE_EXE_LINKER_FLAGS "-sEXPORTED_FUNCTIONS=[_main,_malloc,_free] -sEXPORTED_RUNTIME_METHODS=[ccall] -sALLOW_MEMORY_GROWTH=1")
+endif()
+
 ##################
 # Handle options #
 ##################

@@ -12,6 +12,9 @@
 
 #include "SDL.h"
 
+#ifdef __EMSCRIPTEN__
+#include "libraries/emscripten-browser-file/emscripten_browser_file.h"
+#endif
 #include "libraries/imgui/imgui.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -383,6 +386,34 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 
 void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> callback)
 {
+#ifdef __EMSCRIPTEN__
+	struct CallbackHolder
+	{
+		std::function<void(const char* const path, SDL_RWops *file)> callback;
+	};
+
+	CallbackHolder* const holder = (CallbackHolder*)SDL_malloc(sizeof(CallbackHolder));
+
+	if (holder != nullptr)
+	{
+		holder->callback = callback;
+
+		const auto call_callback = [](const std::string &/*filename*/, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
+		{
+			CallbackHolder* const holder = static_cast<CallbackHolder*>(user_data);
+			SDL_RWops* const file = SDL_RWFromConstMem(buffer.data(), buffer.size());
+
+			if (file != nullptr)
+			{
+				holder->callback(nullptr, file);
+				SDL_free(holder);
+				SDL_RWclose(file);
+			}
+		};
+
+		emscripten_browser_file::upload("", call_callback, holder);
+	}
+#else
 	CreateOpenFileDialog(title, [&callback](const char* const path)
 	{
 		SDL_RWops* const file = SDL_RWFromFile(path, "rb");
@@ -396,6 +427,7 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 
 		return true;
 	});
+#endif
 }
 
 void FileUtilities::SaveFile(const char* const title, const void* const data, const std::size_t data_size)
