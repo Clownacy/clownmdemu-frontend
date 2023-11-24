@@ -1,6 +1,7 @@
 #include "file-utilities.h"
 
 #include <climits>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -276,7 +277,20 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 				text_buffer_size = SDL_strlen(text_buffer) + 1;
 			}
 
-			ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x + (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x - ImGui::GetStyle().FramePadding.x * 4 - ImGui::CalcTextSize(is_save_dialog ? "Save" : "Open").x - ImGui::CalcTextSize("Cancel").x) / 2);
+			const auto centre_buttons = [](const std::vector<const char*> &labels)
+			{
+				float width = 0;
+
+				width += ImGui::GetStyle().ItemSpacing.x * (labels.size() - 1);
+				width += ImGui::GetStyle().FramePadding.x * 2 * labels.size();
+
+				for (const auto label : labels)
+					width += ImGui::CalcTextSize(label).x;
+
+				ImGui::SetCursorPosX(ImGui::GetStyle().WindowPadding.x + (ImGui::GetContentRegionAvail().x - width) / 2);
+			};
+
+			centre_buttons({is_save_dialog ? "Save" : "Open", "Cancel"});
 			const bool ok_pressed = ImGui::Button(is_save_dialog ? "Save" : "Open");
 			ImGui::SameLine();
 			bool exit = ImGui::Button("Cancel");
@@ -297,6 +311,7 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 			{
 				ImGui::TextUnformatted("A file with that name already exists. Overwrite it?");
 
+				centre_buttons({"Yes", "No"});
 				if (ImGui::Button("Yes"))
 				{
 					submit = true;
@@ -323,6 +338,7 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 			{
 				ImGui::TextUnformatted("File could not be opened.");
 
+				centre_buttons({"OK"});
 				if (ImGui::Button("OK"))
 					ImGui::CloseCurrentPopup();
 
@@ -333,6 +349,7 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 			{
 				ImGui::TextUnformatted("File could not be saved.");
 
+				centre_buttons({"OK"});
 				if (ImGui::Button("OK"))
 					ImGui::CloseCurrentPopup();
 
