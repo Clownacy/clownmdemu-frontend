@@ -83,7 +83,9 @@ enum InputBinding
 	INPUT_BINDING_PAUSE,
 	INPUT_BINDING_RESET,
 	INPUT_BINDING_FAST_FORWARD,
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	INPUT_BINDING_REWIND,
+#endif
 	INPUT_BINDING_QUICK_SAVE_STATE,
 	INPUT_BINDING_QUICK_LOAD_STATE,
 	INPUT_BINDING_TOGGLE_FULLSCREEN,
@@ -578,7 +580,9 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
+#endif
 	}
 
 	if (file != nullptr)
@@ -2199,7 +2203,9 @@ void Frontend::Update()
 				"Pause",
 				"Reset",
 				"Fast-Forward",
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 				"Rewind",
+#endif
 				"Quick Save State",
 				"Quick Load State",
 				"Toggle Fullscreen",
