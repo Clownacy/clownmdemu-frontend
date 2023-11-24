@@ -19,7 +19,7 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-void FileUtilities::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> callback, const bool save)
+void FileUtilities::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> &callback, const bool save)
 {
 #ifdef _WIN32
 	if (use_native_file_dialogs)
@@ -197,12 +197,12 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 	}
 }
 
-void FileUtilities::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
+void FileUtilities::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> &callback)
 {
 	CreateFileDialog(title, callback, false);
 }
 
-void FileUtilities::CreateSaveFileDialog(const char* const title, const std::function<bool(const char *path)> callback)
+void FileUtilities::CreateSaveFileDialog(const char* const title, const std::function<bool(const char *path)> &callback)
 {
 	CreateFileDialog(title, callback, true);
 }
@@ -384,7 +384,7 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 	}
 }
 
-void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> callback)
+void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
 	struct CallbackHolder

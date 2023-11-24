@@ -29,7 +29,7 @@ private:
 	std::function<bool(const char *path)> popup_callback;
 	bool is_save_dialog;
 
-	void CreateFileDialog(const char *title, std::function<bool(const char *path)> callback, bool save);
+	void CreateFileDialog(const char *title, const std::function<bool(const char *path)> &callback, bool save);
 
 public:
 #ifdef FILE_PICKER_POSIX
@@ -45,8 +45,8 @@ public:
 #ifdef FILE_PICKER_POSIX
 	~FileUtilities() {SDL_free(last_file_dialog_directory);}
 #endif
-	void CreateOpenFileDialog(const char *title, std::function<bool(const char *path)> callback);
-	void CreateSaveFileDialog(const char *title, std::function<bool(const char *path)> callback);
+	void CreateOpenFileDialog(const char *title, const std::function<bool(const char *path)> &callback);
+	void CreateSaveFileDialog(const char *title, const std::function<bool(const char *path)> &callback);
 	void DisplayFileDialog(char *&drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
 
@@ -54,7 +54,7 @@ public:
 	void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size);
 	void LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size);
 
-	void LoadFile(const char *title, std::function<void(const char* const path, SDL_RWops *file)> callback);
+	void LoadFile(const char *title, const std::function<void(const char* const path, SDL_RWops *file)> &callback);
 	void SaveFile(const char *title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback);
 };
 

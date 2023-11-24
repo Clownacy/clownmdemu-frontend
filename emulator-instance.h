@@ -78,7 +78,7 @@ public:
 
 	State *state;
 
-	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, FileUtilities &file_utilities, Window &window, std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> input_callback);
+	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, FileUtilities &file_utilities, Window &window, const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> &input_callback);
 	~EmulatorInstance();
 	void Update();
 	void SoftResetConsole();

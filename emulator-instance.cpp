@@ -147,7 +147,7 @@ EmulatorInstance::EmulatorInstance(
 	DebugLog &debug_log,
 	FileUtilities &file_utilities,
 	Window &window,
-	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> input_callback
+	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> &input_callback
 ) :
 	audio_output(audio_output),
 	file_utilities(file_utilities),
