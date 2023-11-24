@@ -432,6 +432,13 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 
 void FileUtilities::SaveFile(const char* const title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback)
 {
+#ifdef __EMSCRIPTEN__
+	callback([](const void* const data, const std::size_t data_size)
+	{
+		emscripten_browser_file::download("", "application/octet-stream", std::string_view(static_cast<const char*>(data), data_size));
+		return true;
+	});
+#else
 	CreateSaveFileDialog(title, [&callback](const char* const path)
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
@@ -450,4 +457,5 @@ void FileUtilities::SaveFile(const char* const title, const std::function<bool(c
 
 		return callback(save_file);
 	});
+#endif
 }
