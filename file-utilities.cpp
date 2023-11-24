@@ -414,7 +414,7 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 		emscripten_browser_file::upload("", call_callback, holder);
 	}
 #else
-	CreateOpenFileDialog(title, [&callback](const char* const path)
+	CreateOpenFileDialog(title, [callback](const char* const path)
 	{
 		SDL_RWops* const file = SDL_RWFromFile(path, "rb");
 
@@ -439,7 +439,7 @@ void FileUtilities::SaveFile(const char* const title, const std::function<bool(c
 		return true;
 	});
 #else
-	CreateSaveFileDialog(title, [&callback](const char* const path)
+	CreateSaveFileDialog(title, [callback](const char* const path)
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
