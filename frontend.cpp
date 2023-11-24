@@ -2311,12 +2311,12 @@ void Frontend::Update()
 
 				if (ImGui::BeginListBox("##Actions"))
 				{
-					for (InputBinding i = static_cast<InputBinding>(INPUT_BINDING_NONE + 1); i < INPUT_BINDING__TOTAL; i = static_cast<InputBinding>(i + 1))
+					for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
 					{
 						if (ImGui::Selectable(binding_names[i]))
 						{
 							ImGui::CloseCurrentPopup();
-							keyboard_bindings[selected_scancode] = i;
+							keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
 							sorted_scancodes_done = false;
 							scroll_to_add_bindings_button = true;
 						}
