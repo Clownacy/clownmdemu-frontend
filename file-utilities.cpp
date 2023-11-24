@@ -349,12 +349,16 @@ void FileUtilities::LoadFileToBuffer(const char *filename, unsigned char *&file_
 	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
 
 	if (file == nullptr)
+	{
 		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
+	}
 	else
+	{
 		LoadFileToBuffer(file, file_buffer, file_size);
 
-	if (SDL_RWclose(file) < 0)
-		debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
+		if (SDL_RWclose(file) < 0)
+			debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
+	}
 }
 
 void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size)
