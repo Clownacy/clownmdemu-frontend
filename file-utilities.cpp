@@ -396,7 +396,7 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 
 	if (holder != nullptr)
 	{
-		holder->callback = callback;
+		new(holder) CallbackHolder{callback};
 
 		const auto call_callback = [](const std::string &/*filename*/, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
