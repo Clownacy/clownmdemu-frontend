@@ -33,6 +33,8 @@ void DebugLog::Log(const char* const format, ...)
 
 void DebugLog::Display(bool &open)
 {
+	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
+
 	if (ImGui::Begin("Log", &open))
 	{
 		ImGui::Checkbox("Enable Logging", &logging_enabled);
