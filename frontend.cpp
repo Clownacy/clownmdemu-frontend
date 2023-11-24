@@ -1559,12 +1559,15 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 #ifdef __EMSCRIPTEN__
-					// Inefficient, but it's the only way...
-					const std::size_t save_state_size = emulator.GetSaveStateSize();
-					void* const save_state_buffer = SDL_malloc(save_state_size);
-
-					if (save_state_buffer != nullptr)
+					file_utilities.SaveFile("Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
+						// Inefficient, but it's the only way...
+						const std::size_t save_state_size = emulator.GetSaveStateSize();
+						void* const save_state_buffer = SDL_malloc(save_state_size);
+
+						if (save_state_buffer == nullptr)
+							return false;
+
 						SDL_RWops* const file = SDL_RWFromMem(save_state_buffer, save_state_size);
 
 						if (file != nullptr)
@@ -1572,9 +1575,12 @@ void Frontend::Update()
 							emulator.CreateSaveState(file);
 							SDL_RWclose(file);
 
-							file_utilities.SaveFile("Create Save State", save_state_buffer, save_state_size);
+							callback(save_state_buffer, save_state_size);
+							SDL_free(save_state_buffer);
 						}
-					}
+
+						return true;
+					});
 #else
 					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
 #endif

@@ -224,7 +224,15 @@ void DebugVDP::DisplayVRAM(bool &open)
 		}
 
 		if (ImGui::Button("Save to File"))
-			file_utilities.SaveFile("Create Save State", vdp.vram, sizeof(vdp.vram));
+		{
+			file_utilities.SaveFile("Save VRAM Dump",
+			[this](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
+			{
+				const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+
+				return callback(vdp.vram, sizeof(vdp.vram));
+			});
+		}
 
 		if (vram_viewer.texture != nullptr)
 		{

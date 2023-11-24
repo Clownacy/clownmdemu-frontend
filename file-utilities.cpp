@@ -430,19 +430,24 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 #endif
 }
 
-void FileUtilities::SaveFile(const char* const title, const void* const data, const std::size_t data_size)
+void FileUtilities::SaveFile(const char* const title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback)
 {
-	CreateSaveFileDialog(title, [data, data_size](const char* const path)
+	CreateSaveFileDialog(title, [&callback](const char* const path)
 	{
-		SDL_RWops* const file = SDL_RWFromFile(path, "wb");
+		const auto save_file = [path](const void* const data, const std::size_t data_size)
+		{
+			SDL_RWops* const file = SDL_RWFromFile(path, "wb");
 
-		if (file == nullptr)
-			return false;
+			if (file == nullptr)
+				return false;
 
-		const bool success = SDL_RWwrite(file, data, 1, data_size) == data_size;
+			const bool success = SDL_RWwrite(file, data, 1, data_size) == data_size;
 
-		SDL_RWclose(file);
+			SDL_RWclose(file);
 
-		return success;
+			return success;
+		};
+
+		return callback(save_file);
 	});
 }
