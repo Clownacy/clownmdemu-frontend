@@ -13,13 +13,14 @@
 class DebugLog
 {
 private:
+	const float &dpi_scale;
 	ImFont* const &monospace_font;
 
 	std::vector<std::vector<char>> lines;
 	bool logging_enabled, log_to_console, force_console_output = true;
 
 public:
-	DebugLog(ImFont* const &monospace_font) : monospace_font(monospace_font)
+	DebugLog(const float &dpi_scale, ImFont* const &monospace_font) : dpi_scale(dpi_scale), monospace_font(monospace_font)
 	{
 		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 	}

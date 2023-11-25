@@ -120,7 +120,7 @@ static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
-static DebugLog debug_log(monospace_font);
+static DebugLog debug_log(dpi_scale, monospace_font);
 static AudioOutput audio_output(debug_log);
 static Window window(debug_log);
 static FileUtilities file_utilities(debug_log, window);

@@ -33,7 +33,7 @@ void DebugLog::Log(const char* const format, ...)
 
 void DebugLog::Display(bool &open)
 {
-	ImGui::SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(400 * dpi_scale, 300 * dpi_scale), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("Log", &open))
 	{
