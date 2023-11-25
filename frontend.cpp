@@ -761,7 +761,13 @@ bool Frontend::Initialise(const int argc, char** const argv)
 			style.ScaleAllSizes(dpi_scale);
 			const unsigned int font_size = CalculateFontSize();
 			const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-			SDL_SetWindowSize(window.sdl, static_cast<int>(320.0f * 2.0f * dpi_scale), static_cast<int>(224.0f * 2.0f * dpi_scale + menu_bar_size));
+#ifdef _WIN32
+			// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
+			const float window_size_scale = (SDL_GetWindowFlags(window.sdl) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 0.0f : dpi_scale;
+#else
+			const float window_size_scale = 0.0f;
+#endif
+			SDL_SetWindowSize(window.sdl, static_cast<int>(320.0f * 2.0f * window_size_scale), static_cast<int>(224.0f * 2.0f * window_size_scale + menu_bar_size));
 
 			// Setup Platform/Renderer backends
 			ImGui_ImplSDL2_InitForSDLRenderer(window.sdl, window.renderer);

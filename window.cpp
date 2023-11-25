@@ -2,14 +2,22 @@
 
 float Window::GetDPIScale() const
 {
-	float dpi_scale = 1.0f;
+	// TODO: Make the DPI scale two-dimensional.
+	float dpi_scale;
 
 #ifdef _WIN32
-	// This doesn't work right on Linux nor macOS.
-	// TODO: Find a method that doesn't suck balls.
+	// Windows need silly custom bollocks. Maybe I should just use WinAPI.
+	dpi_scale = 1.0f;
+
 	float ddpi;
 	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(sdl), &ddpi, nullptr, nullptr) == 0)
 		dpi_scale = ddpi / 96.0f;
+#else
+	int window_width, renderer_width;
+	SDL_GetWindowSize(sdl, &window_width, nullptr);
+	SDL_GetRendererOutputSize(renderer, &renderer_width, nullptr);
+
+	dpi_scale = static_cast<float>(renderer_width) / window_width;
 #endif
 
 	return dpi_scale;
@@ -17,7 +25,14 @@ float Window::GetDPIScale() const
 
 bool Window::Initialise(const char* const window_title, const int framebuffer_width, const int framebuffer_height)
 {
-	sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
+	sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
+#ifndef _WIN32
+		// This currently does nothing on Windows, so we use our own custom implementation.
+		// However, in case this ever does do something in the future, avoid using it on Windows.
+		// We wouldn't want the two to clash.
+		| SDL_WINDOW_ALLOW_HIGHDPI
+#endif
+	);
 
 	if (sdl == nullptr)
 	{
