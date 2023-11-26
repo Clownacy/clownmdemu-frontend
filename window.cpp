@@ -23,9 +23,9 @@ float Window::GetDPIScale() const
 	return dpi_scale;
 }
 
-bool Window::Initialise(const char* const window_title, const int framebuffer_width, const int framebuffer_height)
+bool Window::Initialise(const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
 {
-	sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 320 * 2, 224 * 2, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
+	sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
 #ifndef _WIN32
 		// This currently does nothing on Windows, so we use our own custom implementation.
 		// However, in case this ever does do something in the future, avoid using it on Windows.

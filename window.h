@@ -25,7 +25,7 @@ public:
 	Window(DebugLog &debug_log) : debug_log(debug_log) {}
 
 	float GetDPIScale() const;
-	bool Initialise(const char *window_title, int framebuffer_width, int framebuffer_height);
+	bool Initialise(const char *window_title, int window_width, int window_height, int framebuffer_width, int framebuffer_height);
 	void Deinitialise();
 	void SetFullscreen(bool enabled)
 	{

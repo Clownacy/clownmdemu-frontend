@@ -36,6 +36,9 @@
 
 #define VERSION "v0.4.4"
 
+#define INITIAL_WINDOW_WIDTH (320*2)
+#define INITIAL_WINDOW_HEIGHT (224*2)
+
 #define FRAMEBUFFER_WIDTH 320
 #define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
 
@@ -119,6 +122,8 @@ static ImFont *monospace_font;
 static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
+
+static ImGuiStyle style_backup;
 
 static DebugLog debug_log(dpi_scale, monospace_font);
 static AudioOutput audio_output(debug_log);
@@ -696,7 +701,7 @@ bool Frontend::Initialise(const int argc, char** const argv)
 	}
 	else
 	{
-		if (!window.Initialise("clownmdemu-frontend " VERSION, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
+		if (!window.Initialise("clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
 		{
 			debug_log.Log("window.Initialise failed");
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
@@ -757,6 +762,8 @@ bool Frontend::Initialise(const int argc, char** const argv)
 			colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
 			colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
 
+			style_backup = style;
+
 			// Apply DPI scale (also resize the window so that there's room for the menu bar).
 			style.ScaleAllSizes(dpi_scale);
 			const unsigned int font_size = CalculateFontSize();
@@ -767,7 +774,7 @@ bool Frontend::Initialise(const int argc, char** const argv)
 #else
 			const float window_size_scale = 0.0f;
 #endif
-			SDL_SetWindowSize(window.sdl, static_cast<int>(320.0f * 2.0f * window_size_scale), static_cast<int>(224.0f * 2.0f * window_size_scale + menu_bar_size));
+			SDL_SetWindowSize(window.sdl, static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
 
 			// Setup Platform/Renderer backends
 			ImGui_ImplSDL2_InitForSDLRenderer(window.sdl, window.renderer);
@@ -1325,12 +1332,13 @@ void Frontend::Update()
 
 	// Handle dynamic DPI support
 	const float new_dpi = window.GetDPIScale();
+
 	if (dpi_scale != new_dpi) // 96 DPI appears to be the "normal" DPI
 	{
-		style.ScaleAllSizes(new_dpi / dpi_scale);
-
 		dpi_scale = new_dpi;
 
+		style = style_backup;
+		style.ScaleAllSizes(dpi_scale);
 		ReloadFonts(CalculateFontSize());
 	}
 
