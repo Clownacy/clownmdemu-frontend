@@ -4,7 +4,10 @@ void DebugLog::Log(const char* const format, std::va_list args)
 {
 	if (logging_enabled || force_console_output)
 	{
-		const std::size_t message_buffer_size = static_cast<std::size_t>(SDL_vsnprintf(nullptr, 0, format, args)) + 1;
+		std::va_list args2;
+		va_copy(args2, args);
+		const std::size_t message_buffer_size = static_cast<std::size_t>(SDL_vsnprintf(nullptr, 0, format, args2)) + 1;
+		va_end(args2);
 
 		try
 		{
