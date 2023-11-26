@@ -1683,10 +1683,12 @@ void Frontend::Update()
 
 				ImGui::MenuItem("About", nullptr, &about_menu);
 
+			#ifndef __EMSCRIPTEN__
 				ImGui::Separator();
 
 				if (ImGui::MenuItem("Exit"))
 					quit = true;
+			#endif
 
 				ImGui::EndMenu();
 			}
