@@ -36,11 +36,11 @@
 
 #define VERSION "v0.5"
 
-#define INITIAL_WINDOW_WIDTH (320*2)
-#define INITIAL_WINDOW_HEIGHT (224*2)
+#define INITIAL_WINDOW_WIDTH (320 * 2)
+#define INITIAL_WINDOW_HEIGHT (224 * 2)
 
 #define FRAMEBUFFER_WIDTH 320
-#define FRAMEBUFFER_HEIGHT (240*2) // *2 because of double-resolution mode.
+#define FRAMEBUFFER_HEIGHT (240 * 2) // *2 because of double-resolution mode.
 
 struct Input
 {
