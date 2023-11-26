@@ -42,6 +42,10 @@
 #define FRAMEBUFFER_WIDTH 320
 #define FRAMEBUFFER_HEIGHT (240 * 2) // *2 because of double-resolution mode.
 
+#ifndef __EMSCRIPTEN__
+#define FILE_PATH_SUPPORT
+#endif
+
 struct Input
 {
 	unsigned int bound_joypad;
@@ -64,6 +68,7 @@ struct ControllerInput
 	struct ControllerInput *next;
 };
 
+#ifdef FILE_PATH_SUPPORT
 struct RecentSoftware
 {
 	DoublyLinkedList_Entry list;
@@ -71,6 +76,7 @@ struct RecentSoftware
 	bool is_cd_file;
 	char path[1];
 };
+#endif
 
 enum InputBinding
 {
@@ -229,6 +235,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 	return value;
 }
 
+#ifdef FILE_PATH_SUPPORT
 static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
@@ -269,6 +276,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 		(add_to_end ? DoublyLinkedList_PushBack : DoublyLinkedList_PushFront)(&recent_software_list, &new_entry->list);
 	}
 }
+#endif
 
 // Manages whether the emulator runs at a higher speed or not.
 static bool fast_forward_in_progress;
@@ -324,8 +332,12 @@ static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
 		return false;
 	}
 
+#ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
 		AddToRecentSoftware(path, false, false);
+#else
+	static_cast<void>(path);
+#endif
 
 	LoadCartridgeFile(file_buffer, file_size);
 	return true;
@@ -347,8 +359,12 @@ static bool LoadCartridgeFile(const char* const path)
 
 static bool LoadCDFile(const char* const path, SDL_RWops* const file)
 {
+#ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
 		AddToRecentSoftware(path, true, false);
+#else
+	static_cast<void>(path);
+#endif
 
 	emulator.LoadCDFile(file);
 	return true;
@@ -512,6 +528,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		}
 
 	}
+#ifdef FILE_PATH_SUPPORT
 	else if (SDL_strcmp(section, "Recent Software") == 0)
 	{
 		static bool is_cd_file = false;
@@ -526,6 +543,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 				AddToRecentSoftware(value, is_cd_file, true);
 		}
 	}
+#endif
 
 	return 1;
 }
@@ -652,6 +670,7 @@ static void SaveConfiguration()
 			}
 		}
 
+	#ifdef FILE_PATH_SUPPORT
 		// Save recent software paths.
 		PRINT_STRING(file, "\n[Recent Software]\n");
 
@@ -669,6 +688,7 @@ static void SaveConfiguration()
 			SDL_RWwrite(file, recent_software->path, 1, SDL_strlen(recent_software->path));
 			PRINT_STRING(file, "\n");
 		}
+	#endif
 
 		SDL_RWclose(file);
 	}
@@ -1383,7 +1403,9 @@ void Frontend::Update()
 			else
 			{
 				// TODO: Handle dropping a CD file here.
+			#ifdef FILE_PATH_SUPPORT
 				AddToRecentSoftware(drag_and_drop_filename, false, false);
+			#endif
 				LoadCartridgeFile(file_buffer, file_size);
 				emulator_paused = false;
 			}
@@ -1525,6 +1547,7 @@ void Frontend::Update()
 					emulator_paused = false;
 				}
 
+			#ifdef FILE_PATH_SUPPORT
 				ImGui::SeparatorText("Recent Software");
 
 				if (recent_software_list.head == nullptr)
@@ -1564,6 +1587,7 @@ void Frontend::Update()
 						DoToolTip(recent_software->path);
 					}
 				}
+			#endif
 
 				ImGui::EndMenu();
 			}
@@ -1587,7 +1611,9 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
-#ifdef __EMSCRIPTEN__
+				#ifdef FILE_PATH_SUPPORT
+					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
+				#else
 					file_utilities.SaveFile("Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
 						// Inefficient, but it's the only way...
@@ -1610,9 +1636,7 @@ void Frontend::Update()
 
 						return true;
 					});
-#else
-					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
-#endif
+				#endif
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
@@ -2578,6 +2602,7 @@ void Frontend::Deinitialise()
 
 	SaveConfiguration();
 
+#ifdef FILE_PATH_SUPPORT
 	// Free recent software list.
 	while (recent_software_list.head != nullptr)
 	{
@@ -2586,6 +2611,7 @@ void Frontend::Deinitialise()
 		DoublyLinkedList_Remove(&recent_software_list, recent_software_list.head);
 		SDL_free(recent_software);
 	}
+#endif
 
 	window.Deinitialise();
 
