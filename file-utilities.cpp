@@ -22,6 +22,10 @@
 
 void FileUtilities::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> &callback, const bool save)
 {
+#ifndef _WIN32
+	static_cast<void>(window); // Unused
+#endif
+
 #ifdef _WIN32
 	if (use_native_file_dialogs)
 	{
@@ -432,6 +436,8 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
+	static_cast<void>(title);
+
 	struct CallbackHolder
 	{
 		std::function<void(const char* const path, SDL_RWops *file)> callback;
@@ -478,6 +484,8 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 void FileUtilities::SaveFile(const char* const title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
+	static_cast<void>(title);
+
 	callback([](const void* const data, const std::size_t data_size)
 	{
 		emscripten_browser_file::download("", "application/octet-stream", std::string_view(static_cast<const char*>(data), data_size));

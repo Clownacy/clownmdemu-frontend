@@ -137,7 +137,7 @@ static Window window(debug_log);
 static FileUtilities file_utilities(debug_log, window);
 
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
-static EmulatorInstance emulator(audio_output, debug_log, file_utilities, window, ReadInputCallback);
+static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
 
 static DebugFM debug_fm(emulator, monospace_font);
 static DebugM68k debug_m68k(monospace_font);
@@ -370,6 +370,7 @@ static bool LoadCDFile(const char* const path, SDL_RWops* const file)
 	return true;
 }
 
+#ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const char* const path)
 {
 	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
@@ -383,6 +384,7 @@ static bool LoadCDFile(const char* const path)
 
 	return LoadCDFile(path, file);
 }
+#endif
 
 static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
 {
@@ -418,6 +420,7 @@ static bool LoadSaveState(SDL_RWops* const file)
 	return success;
 }
 
+#ifdef FILE_PATH_SUPPORT
 static bool CreateSaveState(const char* const save_state_path)
 {
 	bool success = true;
@@ -436,6 +439,7 @@ static bool CreateSaveState(const char* const save_state_path)
 
 	return success;
 }
+#endif
 
 
 /////////////

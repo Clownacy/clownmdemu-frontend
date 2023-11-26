@@ -145,12 +145,10 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 EmulatorInstance::EmulatorInstance(
 	AudioOutput &audio_output,
 	DebugLog &debug_log,
-	FileUtilities &file_utilities,
 	Window &window,
 	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> &input_callback
 ) :
 	audio_output(audio_output),
-	file_utilities(file_utilities),
 	window(window),
 	input_callback(input_callback),
 	callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback})
