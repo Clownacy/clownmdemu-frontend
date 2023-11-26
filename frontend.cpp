@@ -17,7 +17,7 @@
 #include "libraries/inih/ini.h"
 
 #include "inconsolata-regular.h"
-#include "karla-regular.h"
+#include "noto-sans-regular.h"
 
 #include "audio-output.h"
 #include "debug-fm.h"
@@ -182,7 +182,7 @@ static bool emulator_on, emulator_running;
 static unsigned int CalculateFontSize()
 {
 	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
-	return static_cast<unsigned int>(15.0f * dpi_scale);
+	return static_cast<unsigned int>(16.0f * dpi_scale);
 }
 
 static void ReloadFonts(const unsigned int font_size)
@@ -193,8 +193,8 @@ static void ReloadFonts(const unsigned int font_size)
 	ImGui_ImplSDLRenderer2_DestroyFontsTexture();
 
 	ImFontConfig font_cfg = ImFontConfig();
-	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Karla Regular, %upx", font_size);
-	io.Fonts->AddFontFromMemoryCompressedTTF(karla_regular_compressed_data, karla_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Noto Sans Regular, %upx", font_size);
+	io.Fonts->AddFontFromMemoryCompressedTTF(noto_sans_regular_compressed_data, noto_sans_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
 	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
 	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
 }
@@ -2395,8 +2395,8 @@ void Frontend::Update()
 			static const char licence_inih[] = {
 				#include "licences/inih.h"
 			};
-			static const char licence_karla[] = {
-				#include "licences/karla.h"
+			static const char licence_noto_sans[] = {
+				#include "licences/noto-sans.h"
 			};
 			static const char licence_inconsolata[] = {
 				#include "licences/inconsolata.h"
@@ -2486,10 +2486,10 @@ void Frontend::Update()
 				ImGui::PopFont();
 			}
 
-			if (ImGui::CollapsingHeader("Karla"))
+			if (ImGui::CollapsingHeader("Noto Sans"))
 			{
 				ImGui::PushFont(monospace_font);
-				ImGui::TextUnformatted(licence_karla, licence_karla + sizeof(licence_karla));
+				ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
 				ImGui::PopFont();
 			}
 
