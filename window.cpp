@@ -17,10 +17,11 @@ float Window::GetDPIScale() const
 	SDL_GetWindowSize(sdl, &window_width, nullptr);
 	SDL_GetRendererOutputSize(renderer, &renderer_width, nullptr);
 
-	dpi_scale = static_cast<float>(renderer_width) / window_width;
+	dpi_scale = static_cast<float>(renderer_width) / CC_MAX(1, window_width); // Prevent a division by 0.
 #endif
 
-	return dpi_scale;
+	// Prevent any insanity if we somehow get bad values.
+	return CC_MAX(1.0f, dpi_scale);
 }
 
 bool Window::Initialise(const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
