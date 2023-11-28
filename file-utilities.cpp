@@ -43,6 +43,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
 		ofn.lpstrTitle = title;
 
+		// Common File Dialog changes the current directory, so back it up here first.
 		char *working_directory_buffer = nullptr;
 		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, nullptr);
 
@@ -60,6 +61,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 			}
 		}
 
+		// Invoke the file dialog.
 		if (save)
 		{
 			ofn.Flags = OFN_OVERWRITEPROMPT;
@@ -73,6 +75,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 				callback(path_buffer);
 		}
 
+		// Restore the current directory.
 		if (working_directory_buffer != nullptr)
 		{
 			SetCurrentDirectory(working_directory_buffer);
