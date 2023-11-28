@@ -95,7 +95,10 @@ if(EMSCRIPTEN)
 		CXX_STANDARD 17
 	)
 
-    # Dependencies of the 'emscripten-browser-file' library
+	# Add the file dialog library
+	target_sources(clownmdemu-frontend PRIVATE "libraries/emscripten-browser-file/emscripten_browser_file.h")
+
+	# Dependencies of the 'emscripten-browser-file' library
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXPORTED_FUNCTIONS=[_main,_malloc,_free] -sEXPORTED_RUNTIME_METHODS=[ccall] -sALLOW_MEMORY_GROWTH=1")
 
 	# Link the persistent file storage library
