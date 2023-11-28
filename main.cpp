@@ -15,14 +15,14 @@ static void Terminate()
 
 	// Deinitialise persistent storage.
 	EM_ASM({
-		FS.syncfs(false, function (err) {
-			Module._StorageLoaded();
-		});
+		FS.syncfs(false, function (err) {});
 	}, 0);
 }
 
 static int EventFilter(void* /*const userdata*/, SDL_Event* const event)
 {
+	// The event loop will never have time to catch this, so we
+	// must use this callback to intercept it as soon as possible.
 	if (event->type == SDL_APP_TERMINATING)
 		Terminate();
 
