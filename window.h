@@ -32,7 +32,7 @@ public:
 		fullscreen = enabled;
 		SDL_SetWindowFullscreen(sdl, enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 	}
-	bool GetFullscreen() const { return fullscreen; }
+	bool GetFullscreen() const { return (SDL_GetWindowFlags(sdl) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height);
 	void ShowWarningMessageBox(const char *message) const;
