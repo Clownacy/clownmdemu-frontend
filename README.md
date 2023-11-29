@@ -1,5 +1,9 @@
 ![Logo](/assets/logo.png)
 
+# Try It Yourself
+
+You can try clownmdemu in your web browser at [clownmdemu.clownacy.com](http://clownmdemu.clownacy.com).
+
 # Overview
 
 This is clownmdemu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
