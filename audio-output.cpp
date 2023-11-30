@@ -4,6 +4,8 @@
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.h"
 
+#define SIZE_OF_FRAME (sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT)
+
 Mixer_Constant AudioOutput::mixer_constant;
 bool AudioOutput::mixer_constant_initialised;
 
@@ -64,18 +66,24 @@ void AudioOutput::MixerEnd()
 {
 	if (device != 0)
 	{
-		// If there's a lot of audio queued, then don't queue any more.
-		if (SDL_GetQueuedAudioSize(device) < buffer_size * 4)
+		const auto callback = [](const void* const user_data, Sint16* const audio_samples, const std::size_t total_frames)
 		{
-			const auto callback = [](const void* const user_data, Sint16* const audio_samples, const size_t total_frames)
-			{
-				const AudioOutput *audio_output = static_cast<const AudioOutput*>(user_data);
+			const AudioOutput *audio_output = static_cast<const AudioOutput*>(user_data);
 
-				SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT));
-			};
+			// If there's a lot of audio queued, then don't queue any more.
+			// This is to keep audio latency to a fixed minimum.
+			const std::size_t maximum_frames = audio_output->sample_rate / 20; // 50ms
+			const std::size_t queued_frames = SDL_GetQueuedAudioSize(audio_output->device) / SIZE_OF_FRAME;
+			const std::size_t frames_remaining = queued_frames >= maximum_frames ? 0 : maximum_frames - queued_frames;
+			const std::size_t frames_to_send = CC_MIN(total_frames, frames_remaining);
 
-			Mixer_End(&mixer, callback, this);
-		}
+			//if (frames_to_send != total_frames)
+			//	audio_output->debug_log.Log("%zd audio frames discarded.", total_frames - frames_to_send);
+
+			SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * SIZE_OF_FRAME));
+		};
+
+		Mixer_End(&mixer, callback, this);
 	}
 }
 
