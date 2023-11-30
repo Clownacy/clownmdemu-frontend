@@ -40,7 +40,7 @@ bool AudioOutput::Initialise()
 			mixer_constant_initialised = true;
 			Mixer_Constant_Initialise(&mixer_constant);
 		}
-		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
+		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
 
 		// Unpause audio device, so that playback can begin.
 		SDL_PauseAudioDevice(device, 0);
@@ -80,7 +80,7 @@ void AudioOutput::MixerEnd()
 			//if (frames_to_send != total_frames)
 			//	audio_output->debug_log.Log("%zd audio frames discarded.", total_frames - frames_to_send);
 
-			SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * SIZE_OF_FRAME));
+			SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(frames_to_send * SIZE_OF_FRAME));
 		};
 
 		Mixer_End(&mixer, callback, this);
@@ -97,12 +97,21 @@ cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_samples)
 	return Mixer_AllocatePSGSamples(&mixer, total_samples);
 }
 
+void AudioOutput::SetFrameRate(const float frame_rate)
+{
+	this->frame_rate = frame_rate;
+
+	// TODO: Maybe just set a pending flag and do this in one of the per-frame methods?
+	if (device != 0)
+		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
+}
+
 void AudioOutput::SetPALMode(const bool enabled)
 {
 	pal_mode = enabled;
 
 	if (device != 0)
-		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
+		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
 }
 
 void AudioOutput::SetLowPassFilter(const bool enabled)
@@ -110,5 +119,5 @@ void AudioOutput::SetLowPassFilter(const bool enabled)
 	low_pass_filter = enabled;
 
 	if (device != 0)
-		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
+		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
 }

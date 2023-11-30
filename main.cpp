@@ -8,6 +8,9 @@
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
+static double next_time;
+static double time_delta;
+
 static void Terminate()
 {
 	Frontend::Deinitialise();
@@ -17,6 +20,13 @@ static void Terminate()
 	EM_ASM({
 		FS.syncfs(false, function (err) {});
 	}, 0);
+}
+
+static float FrameRateCallback(const bool pal_mode)
+{
+	const float frame_rate = (pal_mode ? 50.0f : 60.0f / 1.001f);
+	time_delta = 1000.0 / frame_rate;
+	return frame_rate;
 }
 
 static int EventFilter(void* /*const userdata*/, SDL_Event* const event)
@@ -31,12 +41,18 @@ static int EventFilter(void* /*const userdata*/, SDL_Event* const event)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 {
-	if (Frontend::Initialise(0, nullptr))
+	const auto callback = []()
 	{
-		SDL_AddEventWatch(EventFilter, nullptr);
+		const double current_time = emscripten_get_now();
 
-		const auto callback = []()
+		if (current_time >= next_time)
 		{
+			// If massively delayed, resynchronise to avoid fast-forwarding.
+			if (current_time >= next_time + 100.0)
+				next_time = current_time;
+
+			next_time += time_delta;
+
 			SDL_Event event;
 			while (SDL_PollEvent(&event))
 				Frontend::HandleEvent(event);
@@ -45,11 +61,37 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 			if (Frontend::WantsToQuit())
 				Terminate();
-		};
+		}
+	};
 
-		// TODO: 50FPS (PAL)
-		emscripten_set_main_loop(callback, 60, 0);
+	next_time = emscripten_get_now();
+
+	emscripten_set_main_loop(callback, 0, 0);
+
+	if (Frontend::Initialise(0, nullptr, FrameRateCallback))
+		SDL_AddEventWatch(EventFilter, nullptr);
+}
+#else
+// 300 is the magic number that prevents the frame delta calculations from ever dipping into
+// numbers smaller than 1 (technically it's only required by the NTSC framerate: PAL doesn't need it).
+#define FRAME_DELTA_MULTIPLIER 300
+
+static Uint32 frame_rate_delta;
+
+static float FrameRateCallback(const bool pal_mode)
+{
+	if (pal_mode)
+	{
+		// Run at 50FPS
+		frame_rate_delta = Frontend::DivideByPALFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
 	}
+	else
+	{
+		// Run at roughly 59.94FPS (60 divided by 1.001)
+		frame_rate_delta = Frontend::DivideByNTSCFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
+	}
+
+	return 1000.0f * FRAME_DELTA_MULTIPLIER / frame_rate_delta;
 }
 #endif
 
@@ -70,25 +112,21 @@ int main(const int argc, char** const argv)
 		});
 	}, 0);
 #else
-	if (Frontend::Initialise(argc, argv))
+	if (Frontend::Initialise(argc, argv, FrameRateCallback))
 	{
 		while (!Frontend::WantsToQuit())
 		{
 			// This loop processes events and manages the framerate.
 			for (;;)
 			{
-				// 300 is the magic number that prevents these calculations from ever dipping into numbers smaller than 1
-				// (technically it's only required by the NTSC framerate: PAL doesn't need it).
-				#define MULTIPLIER 300
-
 				static Uint64 next_time;
-				const Uint64 current_time = SDL_GetTicks64() * MULTIPLIER;
+				const Uint64 current_time = SDL_GetTicks64() * FRAME_DELTA_MULTIPLIER;
 
 				int timeout = 0;
 
 				if (current_time < next_time)
-					timeout = (next_time - current_time) / MULTIPLIER;
-				else if (current_time > next_time + 100 * MULTIPLIER) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+					timeout = (next_time - current_time) / FRAME_DELTA_MULTIPLIER;
+				else if (current_time > next_time + 100 * FRAME_DELTA_MULTIPLIER) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
 					next_time = current_time;
 
 				// Obtain an event
@@ -96,25 +134,9 @@ int main(const int argc, char** const argv)
 				if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
 				{
 					// Calculate when the next frame will be
-					Uint32 delta;
-
-					if (Frontend::PALMode())
-					{
-						// Run at 50FPS
-						delta = Frontend::DivideByPALFramerate(1000ul * MULTIPLIER);
-					}
-					else
-					{
-						// Run at roughly 59.94FPS (60 divided by 1.001)
-						delta = Frontend::DivideByNTSCFramerate(1000ul * MULTIPLIER);
-					}
-
-					next_time += delta >> (Frontend::IsFastForwarding() ? 2 : 0);
-
+					next_time += frame_rate_delta >> (Frontend::IsFastForwarding() ? 2 : 0);
 					break;
 				}
-
-				#undef MULTIPLIER
 
 				Frontend::HandleEvent(event);
 			}

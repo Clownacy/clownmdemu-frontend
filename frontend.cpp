@@ -131,6 +131,8 @@ static bool tall_double_resolution_mode;
 
 static ImGuiStyle style_backup;
 
+static Frontend::FrameRateCallback frame_rate_callback;
+
 static DebugLog debug_log(dpi_scale, monospace_font);
 static AudioOutput audio_output(debug_log);
 static Window window(debug_log);
@@ -441,6 +443,12 @@ static bool CreateSaveState(const char* const save_state_path)
 }
 #endif
 
+static void SetAudioPALMode(const bool enabled)
+{
+	audio_output.SetFrameRate(frame_rate_callback(enabled));
+	audio_output.SetPALMode(enabled);
+}
+
 
 /////////////
 // Tooltip //
@@ -715,8 +723,10 @@ static void PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const int argc, char** const argv)
+bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback_param)
 {
+	frame_rate_callback = frame_rate_callback_param;
+
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
@@ -827,7 +837,7 @@ bool Frontend::Initialise(const int argc, char** const argv)
 			else
 			{
 				// Initialise resamplers.
-				audio_output.SetPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+				SetAudioPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 			}
 
 			// If the user passed the path to the software on the command line, then load it here, automatically.
@@ -2134,7 +2144,7 @@ void Frontend::Update()
 					if (configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
 					{
 						configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-						audio_output.SetPALMode(false);
+						SetAudioPALMode(false);
 					}
 				}
 				DoToolTip("60 FPS");
@@ -2144,7 +2154,7 @@ void Frontend::Update()
 					if (configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
 					{
 						configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-						audio_output.SetPALMode(true);
+						SetAudioPALMode(true);
 					}
 				}
 				DoToolTip("50 FPS");
@@ -2625,11 +2635,6 @@ void Frontend::Deinitialise()
 bool Frontend::WantsToQuit()
 {
 	return quit;
-}
-
-bool Frontend::PALMode()
-{
-	return emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL;
 }
 
 bool Frontend::IsFastForwarding()
