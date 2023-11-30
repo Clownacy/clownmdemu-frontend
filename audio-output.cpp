@@ -59,6 +59,12 @@ void AudioOutput::Deinitialise()
 
 void AudioOutput::MixerBegin()
 {
+	if (mixer_update_pending)
+	{
+		mixer_update_pending = false;
+		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
+	}
+
 	Mixer_Begin(&mixer);
 }
 
@@ -95,29 +101,4 @@ cc_s16l* AudioOutput::MixerAllocateFMSamples(const std::size_t total_samples)
 cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_samples)
 {
 	return Mixer_AllocatePSGSamples(&mixer, total_samples);
-}
-
-void AudioOutput::SetFrameRate(const float frame_rate)
-{
-	this->frame_rate = frame_rate;
-
-	// TODO: Maybe just set a pending flag and do this in one of the per-frame methods?
-	if (device != 0)
-		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
-}
-
-void AudioOutput::SetPALMode(const bool enabled)
-{
-	pal_mode = enabled;
-
-	if (device != 0)
-		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
-}
-
-void AudioOutput::SetLowPassFilter(const bool enabled)
-{
-	low_pass_filter = enabled;
-
-	if (device != 0)
-		Mixer_State_Initialise(&mixer_state, sample_rate, frame_rate, pal_mode, low_pass_filter);
 }

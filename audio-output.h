@@ -25,6 +25,7 @@ private:
 	float frame_rate = 60; // TODO: Is this default necessary?
 	bool pal_mode;
 	bool low_pass_filter = true;
+	bool mixer_update_pending;
 
 	Mixer_State mixer_state;
 	const Mixer mixer = {&mixer_constant, &mixer_state};
@@ -37,11 +38,29 @@ public:
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples);
-	void SetFrameRate(float frame_rate);
+
+	void SetFrameRate(const float frame_rate)
+	{
+		this->frame_rate = frame_rate;
+		mixer_update_pending = true;
+	}
+
 	float GetFrameRate() const { return frame_rate; }
-	void SetPALMode(bool enabled);
+
+	void SetPALMode(const bool enabled)
+	{
+		pal_mode = enabled;
+		mixer_update_pending = true;
+	}
+
 	bool GetPALMode() const { return pal_mode; }
-	void SetLowPassFilter(bool enabled);
+
+	void SetLowPassFilter(const bool enabled)
+	{
+		low_pass_filter = enabled;
+		mixer_update_pending = true;
+	}
+
 	bool GetLowPassFilter() const { return low_pass_filter; }
 };
 
