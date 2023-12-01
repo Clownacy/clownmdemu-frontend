@@ -461,7 +461,6 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 			{
 				holder->callback(nullptr, file);
 				SDL_free(holder);
-				SDL_RWclose(file);
 			}
 		};
 
@@ -476,8 +475,6 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 			return false;
 
 		callback(path, file);
-
-		SDL_RWclose(file);
 
 		return true;
 	});

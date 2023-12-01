@@ -1501,15 +1501,14 @@ void Frontend::Update()
 				{
 					file_utilities.LoadFile("Load Cartridge File", [](const char* const path, SDL_RWops* const file)
 					{
-						if (LoadCartridgeFile(path, file))
-						{
+						const bool success = LoadCartridgeFile(path, file);
+
+						SDL_RWclose(file);
+
+						if (success)
 							emulator_paused = false;
-							return true;
-						}
-						else
-						{
-							return false;
-						}
+
+						return success;
 					});
 				}
 
@@ -1654,7 +1653,11 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile("Load Save State", [](const char* /*const path*/, SDL_RWops* const file){LoadSaveState(file);});
+					file_utilities.LoadFile("Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
+					{
+						LoadSaveState(file);
+						SDL_RWclose(file);
+					});
 
 				ImGui::EndMenu();
 			}
