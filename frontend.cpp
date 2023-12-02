@@ -745,20 +745,17 @@ static void SaveConfiguration()
 			{
 				const char *binding_string;
 
+				// Default, to shut up potential warnings.
+				binding_string = "INPUT_BINDING_NONE";
+
 				switch (keyboard_bindings[i])
 				{
-					default:
 					case INPUT_BINDING_NONE:
-					case INPUT_BINDING_CONTROLLER_A:
-						binding_string = "INPUT_BINDING_CONTROLLER_A";
+						binding_string = "INPUT_BINDING_NONE";
 						break;
 
-					case INPUT_BINDING_CONTROLLER_B:
-						binding_string = "INPUT_BINDING_CONTROLLER_B";
-						break;
-
-					case INPUT_BINDING_CONTROLLER_C:
-						binding_string = "INPUT_BINDING_CONTROLLER_C";
+					case INPUT_BINDING_CONTROLLER_UP:
+						binding_string = "INPUT_BINDING_CONTROLLER_UP";
 						break;
 
 					case INPUT_BINDING_CONTROLLER_DOWN:
@@ -773,28 +770,32 @@ static void SaveConfiguration()
 						binding_string = "INPUT_BINDING_CONTROLLER_RIGHT";
 						break;
 
-					case INPUT_BINDING_CONTROLLER_UP:
-						binding_string = "INPUT_BINDING_CONTROLLER_UP";
+					case INPUT_BINDING_CONTROLLER_A:
+						binding_string = "INPUT_BINDING_CONTROLLER_A";
 						break;
 
-					case INPUT_BINDING_FAST_FORWARD:
-						binding_string = "INPUT_BINDING_FAST_FORWARD";
+					case INPUT_BINDING_CONTROLLER_B:
+						binding_string = "INPUT_BINDING_CONTROLLER_B";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_C:
+						binding_string = "INPUT_BINDING_CONTROLLER_C";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_START:
+						binding_string = "INPUT_BINDING_CONTROLLER_START";
 						break;
 
 					case INPUT_BINDING_PAUSE:
 						binding_string = "INPUT_BINDING_PAUSE";
 						break;
 
-					case INPUT_BINDING_QUICK_LOAD_STATE:
-						binding_string = "INPUT_BINDING_QUICK_LOAD_STATE";
-						break;
-
-					case INPUT_BINDING_QUICK_SAVE_STATE:
-						binding_string = "INPUT_BINDING_QUICK_SAVE_STATE";
-						break;
-
 					case INPUT_BINDING_RESET:
 						binding_string = "INPUT_BINDING_RESET";
+						break;
+
+					case INPUT_BINDING_FAST_FORWARD:
+						binding_string = "INPUT_BINDING_FAST_FORWARD";
 						break;
 
 				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
@@ -803,12 +804,20 @@ static void SaveConfiguration()
 						break;
 				#endif
 
-					case INPUT_BINDING_TOGGLE_CONTROL_PAD:
-						binding_string = "INPUT_BINDING_TOGGLE_CONTROL_PAD";
+					case INPUT_BINDING_QUICK_SAVE_STATE:
+						binding_string = "INPUT_BINDING_QUICK_SAVE_STATE";
+						break;
+
+					case INPUT_BINDING_QUICK_LOAD_STATE:
+						binding_string = "INPUT_BINDING_QUICK_LOAD_STATE";
 						break;
 
 					case INPUT_BINDING_TOGGLE_FULLSCREEN:
 						binding_string = "INPUT_BINDING_TOGGLE_FULLSCREEN";
+						break;
+
+					case INPUT_BINDING_TOGGLE_CONTROL_PAD:
+						binding_string = "INPUT_BINDING_TOGGLE_CONTROL_PAD";
 						break;
 				}
 
