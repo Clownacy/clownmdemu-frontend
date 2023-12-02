@@ -62,13 +62,16 @@ add_executable(clownmdemu-frontend WIN32
 
 set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
 
-# Link a manifest file that enables Hi-DPI support on Windows
 if(WIN32)
+	# Link a manifest file that enables Hi-DPI support
 	target_sources(clownmdemu-frontend PRIVATE "clownmdemu-frontend.rc")
 
 	if (MSVC)
 		target_sources(clownmdemu-frontend PRIVATE "clownmdemu-frontend.manifest")
 	endif()
+
+	# Enable Unicode support so that non-ANSI file paths work
+	target_compile_definitions(clownmdemu-frontend PRIVATE UNICODE)
 endif()
 
 ##############################

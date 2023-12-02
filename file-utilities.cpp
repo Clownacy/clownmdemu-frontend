@@ -20,6 +20,21 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
+#ifdef _WIN32
+// Adapted from SDL2.
+#define StringToUTF8W(S) SDL_iconv_string("UTF-8", "UTF-16LE", reinterpret_cast<const char*>(S), (SDL_wcslen(S) + 1) * sizeof(WCHAR))
+#define UTF8ToStringW(S) reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
+#define StringToUTF8A(S) SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1))
+#define UTF8ToStringA(S) SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)
+#if UNICODE
+#define StringToUTF8 StringToUTF8W
+#define UTF8ToString UTF8ToStringW
+#else
+#define StringToUTF8 StringToUTF8A
+#define UTF8ToString UTF8ToStringA
+#endif
+#endif
+
 void FileUtilities::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> &callback, const bool save)
 {
 #ifndef _WIN32
@@ -31,10 +46,12 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 #ifdef _WIN32
 	if (use_native_file_dialogs)
 	{
+		const LPTSTR title_utf16 = UTF8ToString(title);
+
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
 
-		char path_buffer[MAX_PATH];
+		TCHAR path_buffer[MAX_PATH];
 		path_buffer[0] = '\0';
 
 		OPENFILENAME ofn;
@@ -43,15 +60,15 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		ofn.hwndOwner = SDL_GetWindowWMInfo(window.sdl, &info) ? info.info.win.window : nullptr;
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
-		ofn.lpstrTitle = title;
+		ofn.lpstrTitle = title_utf16; // Test if it's okay for this to be nullptr.
 
 		// Common File Dialog changes the current directory, so back it up here first.
-		char *working_directory_buffer = nullptr;
+		LPTSTR working_directory_buffer = nullptr;
 		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, nullptr);
 
 		if (working_directory_buffer_size != 0)
 		{
-			working_directory_buffer = static_cast<char*>(SDL_malloc(working_directory_buffer_size));
+			working_directory_buffer = static_cast<LPTSTR>(SDL_malloc(working_directory_buffer_size * sizeof(*working_directory_buffer)));
 
 			if (working_directory_buffer != nullptr)
 			{
@@ -64,20 +81,18 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		}
 
 		// Invoke the file dialog.
-		if (save)
+		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
+		if ((save ? GetSaveFileName : GetOpenFileName)(&ofn))
 		{
-			ofn.Flags = OFN_OVERWRITEPROMPT;
-			if (GetSaveFileName(&ofn))
-				if (!callback(path_buffer))
-					success = false;
+			char* const path_utf8 = StringToUTF8(path_buffer);
+
+			if (path_utf8 == nullptr || !callback(path_utf8))
+				success = false;
+
+			SDL_free(path_utf8);
 		}
-		else
-		{
-			ofn.Flags = OFN_FILEMUSTEXIST;
-			if (GetOpenFileName(&ofn))
-				if (!callback(path_buffer))
-					success = false;
-		}
+
+		SDL_free(title_utf16);
 
 		// Restore the current directory.
 		if (working_directory_buffer != nullptr)
