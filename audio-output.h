@@ -12,6 +12,8 @@
 
 #include "debug-log.h"
 
+//#define PRINT_AUDIO_BUFFER_STATS
+
 class AudioOutput
 {
 private:
@@ -25,6 +27,10 @@ private:
 	bool pal_mode;
 	bool low_pass_filter = true;
 	bool mixer_update_pending;
+#ifdef PRINT_AUDIO_BUFFER_STATS
+	Uint32 rolling_average_buffer[0x10];
+	unsigned int rolling_average_buffer_index;
+#endif
 
 	Mixer_State mixer_state;
 	const Mixer mixer = {&mixer_constant, &mixer_state};

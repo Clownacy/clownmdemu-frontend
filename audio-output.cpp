@@ -75,6 +75,21 @@ void AudioOutput::MixerEnd()
 		const unsigned long target_frames = sample_rate / 40; // 25ms
 		const Uint32 queued_frames = SDL_GetQueuedAudioSize(device) / SIZE_OF_FRAME;
 
+	#ifdef PRINT_AUDIO_BUFFER_STATS
+		rolling_average_buffer[rolling_average_buffer_index] = queued_frames;
+		rolling_average_buffer_index = (rolling_average_buffer_index + 1) % CC_COUNT_OF(rolling_average_buffer);
+
+		Uint32 average_queued_frames = 0;
+
+		for (const auto value : rolling_average_buffer)
+			average_queued_frames += value;
+
+		average_queued_frames /= CC_COUNT_OF(rolling_average_buffer);
+
+		debug_log.Log("average_queued_frames %u", average_queued_frames);
+		debug_log.Log("target_frames %lu", target_frames);
+	#endif
+
 		// If there is too much audio, just drop it because the dynamic rate control will be unable to handle it.
 		if (queued_frames < target_frames * 2)
 		{
