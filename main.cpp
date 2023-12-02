@@ -50,7 +50,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 			if (current_time >= next_time + 100.0)
 				next_time = current_time;
 
-			next_time += time_delta;
+			next_time += time_delta / (Frontend::IsFastForwarding() ? 4 : 1);
 
 			SDL_Event event;
 			while (SDL_PollEvent(&event))
