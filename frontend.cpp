@@ -533,10 +533,80 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		if (errno != ERANGE && string_end >= SDL_strchr(name, '\0') && scancode < SDL_NUM_SCANCODES)
 		{
 			errno = 0;
-			const InputBinding input_binding = static_cast<InputBinding>(SDL_strtoul(value, &string_end, 0));
+			const unsigned long binding_index = SDL_strtoul(value, &string_end, 0);
+
+			InputBinding input_binding;
 
 			if (errno != ERANGE && string_end >= SDL_strchr(value, '\0'))
-				keyboard_bindings[scancode] = input_binding;
+			{
+				// Legacy numerical input bindings.
+				static const InputBinding input_bindings[17] = {
+					INPUT_BINDING_NONE,
+					INPUT_BINDING_CONTROLLER_UP,
+					INPUT_BINDING_CONTROLLER_DOWN,
+					INPUT_BINDING_CONTROLLER_LEFT,
+					INPUT_BINDING_CONTROLLER_RIGHT,
+					INPUT_BINDING_CONTROLLER_A,
+					INPUT_BINDING_CONTROLLER_B,
+					INPUT_BINDING_CONTROLLER_C,
+					INPUT_BINDING_CONTROLLER_START,
+					INPUT_BINDING_PAUSE,
+					INPUT_BINDING_RESET,
+					INPUT_BINDING_FAST_FORWARD,
+				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+					INPUT_BINDING_REWIND,
+				#else
+					INPUT_BINDING_NONE,
+				#endif
+					INPUT_BINDING_QUICK_SAVE_STATE,
+					INPUT_BINDING_QUICK_LOAD_STATE,
+					INPUT_BINDING_TOGGLE_FULLSCREEN,
+					INPUT_BINDING_TOGGLE_CONTROL_PAD
+				};
+
+				input_binding = binding_index >= CC_COUNT_OF(input_bindings) ? INPUT_BINDING_NONE : input_bindings[binding_index];
+			}
+			else
+			{
+				if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_UP") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_UP;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_DOWN") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_DOWN;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_LEFT") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_LEFT;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_RIGHT") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_RIGHT;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_A") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_A;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_B") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_B;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_C") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_C;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_START") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_START;
+				else if (SDL_strcmp(value, "INPUT_BINDING_PAUSE") == 0)
+					input_binding = INPUT_BINDING_PAUSE;
+				else if (SDL_strcmp(value, "INPUT_BINDING_RESET") == 0)
+					input_binding = INPUT_BINDING_RESET;
+				else if (SDL_strcmp(value, "INPUT_BINDING_FAST_FORWARD") == 0)
+					input_binding = INPUT_BINDING_FAST_FORWARD;
+			#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+				else if (SDL_strcmp(value, "INPUT_BINDING_REWIND") == 0)
+					input_binding = INPUT_BINDING_REWIND;
+			#endif
+				else if (SDL_strcmp(value, "INPUT_BINDING_QUICK_SAVE_STATE") == 0)
+					input_binding = INPUT_BINDING_QUICK_SAVE_STATE;
+				else if (SDL_strcmp(value, "INPUT_BINDING_QUICK_LOAD_STATE") == 0)
+					input_binding = INPUT_BINDING_QUICK_LOAD_STATE;
+				else if (SDL_strcmp(value, "INPUT_BINDING_TOGGLE_FULLSCREEN") == 0)
+					input_binding = INPUT_BINDING_TOGGLE_FULLSCREEN;
+				else if (SDL_strcmp(value, "INPUT_BINDING_TOGGLE_CONTROL_PAD") == 0)
+					input_binding = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+				else
+					input_binding = INPUT_BINDING_NONE;
+			}
+
+			keyboard_bindings[scancode] = input_binding;
 		}
 
 	}
@@ -673,8 +743,77 @@ static void SaveConfiguration()
 		{
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
+				const char *binding_string;
+
+				switch (keyboard_bindings[i])
+				{
+					default:
+					case INPUT_BINDING_NONE:
+					case INPUT_BINDING_CONTROLLER_A:
+						binding_string = "INPUT_BINDING_CONTROLLER_A";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_B:
+						binding_string = "INPUT_BINDING_CONTROLLER_B";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_C:
+						binding_string = "INPUT_BINDING_CONTROLLER_C";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_DOWN:
+						binding_string = "INPUT_BINDING_CONTROLLER_DOWN";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_LEFT:
+						binding_string = "INPUT_BINDING_CONTROLLER_LEFT";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_RIGHT:
+						binding_string = "INPUT_BINDING_CONTROLLER_RIGHT";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_UP:
+						binding_string = "INPUT_BINDING_CONTROLLER_UP";
+						break;
+
+					case INPUT_BINDING_FAST_FORWARD:
+						binding_string = "INPUT_BINDING_FAST_FORWARD";
+						break;
+
+					case INPUT_BINDING_PAUSE:
+						binding_string = "INPUT_BINDING_PAUSE";
+						break;
+
+					case INPUT_BINDING_QUICK_LOAD_STATE:
+						binding_string = "INPUT_BINDING_QUICK_LOAD_STATE";
+						break;
+
+					case INPUT_BINDING_QUICK_SAVE_STATE:
+						binding_string = "INPUT_BINDING_QUICK_SAVE_STATE";
+						break;
+
+					case INPUT_BINDING_RESET:
+						binding_string = "INPUT_BINDING_RESET";
+						break;
+
+				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+					case INPUT_BINDING_REWIND:
+						binding_string = "INPUT_BINDING_REWIND";
+						break;
+				#endif
+
+					case INPUT_BINDING_TOGGLE_CONTROL_PAD:
+						binding_string = "INPUT_BINDING_TOGGLE_CONTROL_PAD";
+						break;
+
+					case INPUT_BINDING_TOGGLE_FULLSCREEN:
+						binding_string = "INPUT_BINDING_TOGGLE_FULLSCREEN";
+						break;
+				}
+
 				char *buffer;
-				if (SDL_asprintf(&buffer, "%u = %u\n", static_cast<unsigned int>(i), keyboard_bindings[i]) != -1)
+				if (SDL_asprintf(&buffer, "%u = %s\n", static_cast<unsigned int>(i), binding_string) != -1)
 				{
 					SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
 					SDL_free(buffer);
