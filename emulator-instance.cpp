@@ -18,6 +18,9 @@ void EmulatorInstance::CartridgeWrittenCallback(void* const user_data, const cc_
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
 	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
+	static_cast<void>(emulator);
+	static_cast<void>(address);
+	static_cast<void>(value);
 
 	/*
 	if (address >= emulator->rom_buffer_size)
