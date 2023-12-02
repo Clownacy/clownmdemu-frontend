@@ -3,143 +3,97 @@
 bool EmulatorInstance::clownmdemu_initialised;
 ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant;
 
-cc_u8f EmulatorInstance::CartridgeReadCallback(const cc_u32f address)
-{
-	if (address >= rom_buffer_size)
-		return 0;
-
-	return rom_buffer[address];
-}
-
 cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u32f address)
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	return emulator_instance->CartridgeReadCallback(address);
-}
+	if (address >= emulator->rom_buffer_size)
+		return 0;
 
-void EmulatorInstance::CartridgeWrittenCallback(const cc_u32f /*address*/, const cc_u8f /*value*/)
-{
-	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
-
-	/*
-	if (address >= rom_buffer_size)
-		return;
-
-	rom_buffer[address] = value;
-	*/
+	return emulator->rom_buffer[address];
 }
 
 void EmulatorInstance::CartridgeWrittenCallback(void* const user_data, const cc_u32f address, const cc_u8f value)
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	emulator_instance->CartridgeWrittenCallback(address, value);
+	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
+
+	/*
+	if (address >= emulator->rom_buffer_size)
+		return;
+
+	emulator->rom_buffer[address] = value;
+	*/
 }
 
-void EmulatorInstance::ColourUpdatedCallback(const cc_u16f index, const cc_u16f colour)
+void EmulatorInstance::ColourUpdatedCallback(void* const user_data, const cc_u16f index, const cc_u16f colour)
 {
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
 	// Decompose XBGR4444 into individual colour channels
 	const cc_u32f red = (colour >> 4 * 0) & 0xF;
 	const cc_u32f green = (colour >> 4 * 1) & 0xF;
 	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	state->colours[index] = static_cast<Uint32>((blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
-}
-
-void EmulatorInstance::ColourUpdatedCallback(void* const user_data, const cc_u16f index, const cc_u16f colour)
-{
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
-
-	emulator_instance->ColourUpdatedCallback(index, colour);
-}
-
-void EmulatorInstance::ScanlineRenderedCallback(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f screen_width, const cc_u16f screen_height)
-{
-	current_screen_width = screen_width;
-	current_screen_height = screen_height;
-
-	if (framebuffer_texture_pixels != nullptr)
-		for (cc_u16f i = 0; i < screen_width; ++i)
-			framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + i] = state->colours[pixels[i]];
+	emulator->state->colours[index] = static_cast<Uint32>((blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
 void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f screen_width, const cc_u16f screen_height)
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	emulator_instance->ScanlineRenderedCallback(scanline, pixels, screen_width, screen_height);
-}
+	emulator->current_screen_width = screen_width;
+	emulator->current_screen_height = screen_height;
 
-cc_bool EmulatorInstance::ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
-{
-	// TODO: Merge me with the below function and make it a static method.
-	return input_callback(player_id, button_id);
+	if (emulator->framebuffer_texture_pixels != nullptr)
+		for (cc_u16f i = 0; i < screen_width; ++i)
+			emulator->framebuffer_texture_pixels[scanline * emulator->framebuffer_texture_pitch + i] = emulator->state->colours[pixels[i]];
 }
 
 cc_bool EmulatorInstance::ReadInputCallback(void* const user_data, const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	return emulator_instance->ReadInputCallback(player_id, button_id);
-}
-
-void EmulatorInstance::FMAudioCallback(const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_fm_audio(&clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
+	return emulator->input_callback(player_id, button_id);
 }
 
 void EmulatorInstance::FMAudioCallback(void* const user_data, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	emulator_instance->FMAudioCallback(total_frames, generate_fm_audio);
-}
-
-void EmulatorInstance::PSGAudioCallback(const std::size_t total_samples, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
-{
-	generate_psg_audio(&clownmdemu, audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
+	generate_fm_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocateFMSamples(total_frames), total_frames);
 }
 
 void EmulatorInstance::PSGAudioCallback(void* const user_data, const std::size_t total_samples, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	emulator_instance->PSGAudioCallback(total_samples, generate_psg_audio);
-}
-
-void EmulatorInstance::CDSeekCallback(const cc_u32f sector_index)
-{
-	if (cd_file != nullptr)
-		SDL_RWseek(cd_file, sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
+	generate_psg_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
 }
 
 void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f sector_index)
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	emulator_instance->CDSeekCallback(sector_index);
-}
-
-const cc_u8l* EmulatorInstance::CDSectorReadCallback()
-{
-	static cc_u8l sector_buffer[2048];
-
-	if (cd_file != nullptr)
-		SDL_RWread(cd_file, sector_buffer, 2048, 1);
-
-	if (sector_size_2352)
-		SDL_RWseek(cd_file, 2352 - 2048, SEEK_CUR);
-
-	return sector_buffer;
+	if (emulator->cd_file != nullptr)
+		SDL_RWseek(emulator->cd_file, emulator->sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
 }
 
 const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 {
-	EmulatorInstance* const emulator_instance = static_cast<EmulatorInstance*>(user_data);
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	return emulator_instance->CDSectorReadCallback();
+	static cc_u8l sector_buffer[2048];
+
+	if (emulator->cd_file != nullptr)
+		SDL_RWread(emulator->cd_file, sector_buffer, 2048, 1);
+
+	if (emulator->sector_size_2352)
+		SDL_RWseek(emulator->cd_file, 2352 - 2048, SEEK_CUR);
+
+	return sector_buffer;
 }
 
 EmulatorInstance::EmulatorInstance(
