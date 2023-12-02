@@ -72,7 +72,7 @@ void AudioOutput::MixerEnd()
 {
 	if (device != 0)
 	{
-		const unsigned long target_frames = sample_rate / 40; // 25ms
+		const unsigned long target_frames = sample_rate / 20; // 50ms
 		const Uint32 queued_frames = SDL_GetQueuedAudioSize(device) / SIZE_OF_FRAME;
 
 	#ifdef PRINT_AUDIO_BUFFER_STATS
