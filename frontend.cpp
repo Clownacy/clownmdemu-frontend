@@ -2516,6 +2516,8 @@ void Frontend::Update()
 			{
 				bool previous_menu = false;
 
+				ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
+
 				if (ImGui::BeginListBox("##Actions"))
 				{
 					for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
@@ -2530,8 +2532,6 @@ void Frontend::Update()
 					}
 					ImGui::EndListBox();
 				}
-
-				ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
 
 				if (ImGui::Button("Cancel"))
 				{
