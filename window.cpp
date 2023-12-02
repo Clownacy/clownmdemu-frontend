@@ -144,5 +144,4 @@ void Window::ShowErrorMessageBox(const char* const message) const
 void Window::ShowFatalMessageBox(const char* const message) const
 {
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message, sdl);
-
 }
