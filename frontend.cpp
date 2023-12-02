@@ -1805,6 +1805,7 @@ void Frontend::Update()
 					{
 						LoadSaveState(file);
 						SDL_RWclose(file);
+						return true;
 					});
 
 				ImGui::EndMenu();

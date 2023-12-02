@@ -26,6 +26,8 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 	static_cast<void>(window); // Unused
 #endif
 
+	bool success = true;
+
 #ifdef _WIN32
 	if (use_native_file_dialogs)
 	{
@@ -66,13 +68,15 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		{
 			ofn.Flags = OFN_OVERWRITEPROMPT;
 			if (GetSaveFileName(&ofn))
-				callback(path_buffer);
+				if (!callback(path_buffer))
+					success = false;
 		}
 		else
 		{
 			ofn.Flags = OFN_FILEMUSTEXIST;
 			if (GetOpenFileName(&ofn))
-				callback(path_buffer);
+				if (!callback(path_buffer))
+					success = false;
 		}
 
 		// Restore the current directory.
@@ -160,7 +164,8 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 											done = true;
 
 											path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
-											callback(path_buffer);
+											if (!callback(path_buffer))
+												success = false;
 
 											char* const directory_separator = SDL_strrchr(path_buffer, '/');
 
@@ -203,6 +208,9 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		popup_callback = callback;
 		is_save_dialog = save;
 	}
+
+	if (!success)
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", is_save_dialog ? "Could not save file." : "Could not open file.", nullptr);
 }
 
 void FileUtilities::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> &callback)
@@ -436,14 +444,14 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 	}
 }
 
-void FileUtilities::LoadFile(const char* const title, const std::function<void(const char* const path, SDL_RWops *file)> &callback)
+void FileUtilities::LoadFile(const char* const title, const std::function<bool(const char* const path, SDL_RWops *file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(title);
 
 	struct CallbackHolder
 	{
-		std::function<void(const char* const path, SDL_RWops *file)> callback;
+		std::function<bool(const char* const path, SDL_RWops *file)> callback;
 	};
 
 	CallbackHolder* const holder = (CallbackHolder*)SDL_malloc(sizeof(CallbackHolder));
@@ -474,9 +482,7 @@ void FileUtilities::LoadFile(const char* const title, const std::function<void(c
 		if (file == nullptr)
 			return false;
 
-		callback(path, file);
-
-		return true;
+		return callback(path, file);
 	});
 #endif
 }
