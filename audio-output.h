@@ -22,7 +22,6 @@ private:
 	SDL_AudioDeviceID device;
 	Uint32 buffer_size;
 	unsigned long sample_rate;
-	float frame_rate = 60; // TODO: Is this default necessary?
 	bool pal_mode;
 	bool low_pass_filter = true;
 	bool mixer_update_pending;
@@ -38,14 +37,6 @@ public:
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples);
-
-	void SetFrameRate(const float frame_rate)
-	{
-		this->frame_rate = frame_rate;
-		mixer_update_pending = true;
-	}
-
-	float GetFrameRate() const { return frame_rate; }
 
 	void SetPALMode(const bool enabled)
 	{

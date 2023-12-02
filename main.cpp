@@ -22,11 +22,10 @@ static void Terminate()
 	}, 0);
 }
 
-static float FrameRateCallback(const bool pal_mode)
+static void FrameRateCallback(const bool pal_mode)
 {
 	const float frame_rate = (pal_mode ? 50.0f : 60.0f / 1.001f);
 	time_delta = 1000.0 / frame_rate;
-	return frame_rate;
 }
 
 static int EventFilter(void* /*const userdata*/, SDL_Event* const event)
@@ -78,7 +77,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 static Uint32 frame_rate_delta;
 
-static float FrameRateCallback(const bool pal_mode)
+static void FrameRateCallback(const bool pal_mode)
 {
 	if (pal_mode)
 	{
@@ -90,8 +89,6 @@ static float FrameRateCallback(const bool pal_mode)
 		// Run at roughly 59.94FPS (60 divided by 1.001)
 		frame_rate_delta = Frontend::DivideByNTSCFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
 	}
-
-	return 1000.0f * FRAME_DELTA_MULTIPLIER / frame_rate_delta;
 }
 #endif
 

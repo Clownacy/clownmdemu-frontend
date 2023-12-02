@@ -445,7 +445,7 @@ static bool CreateSaveState(const char* const save_state_path)
 
 static void SetAudioPALMode(const bool enabled)
 {
-	audio_output.SetFrameRate(frame_rate_callback(enabled));
+	frame_rate_callback(enabled);
 	audio_output.SetPALMode(enabled);
 }
 

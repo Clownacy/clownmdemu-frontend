@@ -7,7 +7,7 @@
 
 namespace Frontend
 {
-	typedef std::function<float(bool pal_mode)> FrameRateCallback;
+	typedef std::function<void(bool pal_mode)> FrameRateCallback;
 
 	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
 	void HandleEvent(const SDL_Event &event);
