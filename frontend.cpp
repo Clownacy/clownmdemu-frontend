@@ -535,7 +535,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 			errno = 0;
 			const InputBinding input_binding = static_cast<InputBinding>(SDL_strtoul(value, &string_end, 0));
 
-			if (errno != ERANGE && string_end >= SDL_strchr(name, '\0'))
+			if (errno != ERANGE && string_end >= SDL_strchr(value, '\0'))
 				keyboard_bindings[scancode] = input_binding;
 		}
 
