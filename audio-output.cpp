@@ -72,24 +72,24 @@ void AudioOutput::MixerEnd()
 {
 	if (device != 0)
 	{
-		const auto callback = [](const void* const user_data, Sint16* const audio_samples, const std::size_t total_frames)
+		const unsigned long target_frames = sample_rate / 40; // 25ms
+		const Uint32 queued_frames = SDL_GetQueuedAudioSize(device) / SIZE_OF_FRAME;
+
+		// If there is too much audio, just drop it because the dynamic rate control will be unable to handle it.
+		if (queued_frames < target_frames * 2)
 		{
-			const AudioOutput *audio_output = static_cast<const AudioOutput*>(user_data);
+			const auto callback = [](const void* const user_data, Sint16* const audio_samples, const std::size_t total_frames)
+			{
+				const AudioOutput *audio_output = static_cast<const AudioOutput*>(user_data);
 
-			// If there's a lot of audio queued, then don't queue any more.
-			// This is to keep audio latency to a fixed minimum.
-			const std::size_t maximum_frames = audio_output->sample_rate / 20; // 50ms
-			const std::size_t queued_frames = SDL_GetQueuedAudioSize(audio_output->device) / SIZE_OF_FRAME;
-			const std::size_t frames_remaining = queued_frames >= maximum_frames ? 0 : maximum_frames - queued_frames;
-			const std::size_t frames_to_send = CC_MIN(total_frames, frames_remaining);
+				SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(total_frames * SIZE_OF_FRAME));
+			};
 
-			//if (frames_to_send != total_frames)
-			//	audio_output->debug_log.Log("%zd audio frames discarded.", total_frames - frames_to_send);
-
-			SDL_QueueAudio(audio_output->device, audio_samples, static_cast<Uint32>(frames_to_send * SIZE_OF_FRAME));
-		};
-
-		Mixer_End(&mixer, callback, this);
+			// Hans-Kristian Arntzen's Dynamic Rate Control formula.
+			// https://github.com/libretro/docs/blob/master/archive/ratecontrol.pdf
+			const cc_u32f divisor = target_frames * 0x100; // The number here is the inverse of the formula's 'd' value.
+			Mixer_End(&mixer, queued_frames - target_frames + divisor, divisor, callback, this);
+		}
 	}
 }
 
