@@ -2316,9 +2316,11 @@ void Frontend::Update()
 				ImGui::TableNextColumn();
 				if (ImGui::RadioButton("Japan", configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
 					configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
+				DoToolTip("Games may show Japanese text.");
 				ImGui::TableNextColumn();
 				if (ImGui::RadioButton("Elsewhere", configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
 					configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+				DoToolTip("Games may show English text.");
 
 				ImGui::EndTable();
 			}
@@ -2371,11 +2373,13 @@ void Frontend::Update()
 
 				if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
 					file_utilities.prefer_kdialog = false;
+				DoToolTip("Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
 
 				ImGui::TableNextColumn();
 
 				if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
 					file_utilities.prefer_kdialog = true;
+				DoToolTip("Best with KDE, LXQt, Deepin, etc.");
 
 				ImGui::EndTable();
 			}
