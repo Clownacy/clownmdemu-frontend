@@ -26,7 +26,7 @@
 #define UTF8ToStringW(S) reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
 #define StringToUTF8A(S) SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1))
 #define UTF8ToStringA(S) SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)
-#if UNICODE
+#ifdef UNICODE
 #define StringToUTF8 StringToUTF8W
 #define UTF8ToString UTF8ToStringW
 #else
@@ -60,7 +60,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		ofn.hwndOwner = SDL_GetWindowWMInfo(window.sdl, &info) ? info.info.win.window : nullptr;
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
-		ofn.lpstrTitle = title_utf16; // Test if it's okay for this to be nullptr.
+		ofn.lpstrTitle = title_utf16; // It's okay for this to be nullptr.
 
 		// Common File Dialog changes the current directory, so back it up here first.
 		LPTSTR working_directory_buffer = nullptr;
