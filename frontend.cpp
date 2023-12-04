@@ -21,6 +21,7 @@
 
 #include "audio-output.h"
 #include "debug-fm.h"
+#include "debug-frontend.h"
 #include "debug-log.h"
 #include "debug-m68k.h"
 #include "debug-memory.h"
@@ -142,6 +143,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
 
 static DebugFM debug_fm(emulator, monospace_font);
+static DebugFrontend debug_frontend(audio_output, window);
 static DebugM68k debug_m68k(monospace_font);
 static DebugMemory debug_memory(monospace_font);
 static DebugPSG debug_psg(emulator, monospace_font);
@@ -155,6 +157,7 @@ static bool quit;
 static bool pop_out;
 
 static bool debug_log_active;
+static bool debug_frontend_active;
 static bool m68k_status;
 static bool mcd_m68k_status;
 static bool z80_status;
@@ -1597,6 +1600,7 @@ void Frontend::Update()
 	const bool show_menu_bar = !window.GetFullscreen()
 							|| pop_out
 							|| debug_log_active
+							|| debug_frontend_active
 							|| m68k_status
 							|| mcd_m68k_status
 							|| z80_status
@@ -1821,6 +1825,8 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
+				ImGui::MenuItem("Frontend", nullptr, &debug_frontend_active);
+
 				if (ImGui::BeginMenu("CPU Registers"))
 				{
 					ImGui::MenuItem("Main 68000", nullptr, &m68k_status);
@@ -2029,6 +2035,9 @@ void Frontend::Update()
 
 	if (debug_log_active)
 		debug_log.Display(debug_log_active);
+
+	if (debug_frontend_active)
+		debug_frontend.Display(debug_frontend_active);
 
 	if (m68k_status)
 		debug_m68k.Display(m68k_status, "Main 68000 Registers", emulator.state->clownmdemu.m68k);
@@ -2703,41 +2712,6 @@ void Frontend::Update()
 				ImGui::PushFont(monospace_font);
 				ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
 				ImGui::PopFont();
-			}
-
-			ImGui::SeparatorText("SDL2 Drivers");
-
-			if (ImGui::BeginTable("SDL2 Drivers", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
-			{
-				// Render
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Render");
-
-				ImGui::TableNextColumn();
-
-				SDL_RendererInfo info;
-				if (SDL_GetRendererInfo(window.renderer, &info) == 0)
-					ImGui::TextUnformatted(info.name);
-				else
-					ImGui::TextUnformatted("Unknown");
-
-				// Video
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Video");
-
-				ImGui::TableNextColumn();
-				const char* const audio_driver_name = SDL_GetCurrentVideoDriver();
-				ImGui::TextUnformatted(audio_driver_name != nullptr ? audio_driver_name : "None");
-
-				// Audio
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Audio");
-
-				ImGui::TableNextColumn();
-				const char* const video_driver_name = SDL_GetCurrentAudioDriver();
-				ImGui::TextUnformatted(video_driver_name != nullptr ? video_driver_name : "None");
-
-				ImGui::EndTable();
 			}
 		}
 

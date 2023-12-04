@@ -12,8 +12,6 @@
 
 #include "debug-log.h"
 
-//#define PRINT_AUDIO_BUFFER_STATS
-
 class AudioOutput
 {
 private:
@@ -22,15 +20,13 @@ private:
 
 	DebugLog &debug_log;
 	SDL_AudioDeviceID device;
-	Uint32 buffer_size;
-	unsigned long sample_rate;
+	cc_u32f buffer_size;
+	cc_u32f sample_rate;
 	bool pal_mode;
 	bool low_pass_filter = true;
 	bool mixer_update_pending;
-#ifdef PRINT_AUDIO_BUFFER_STATS
 	Uint32 rolling_average_buffer[0x10];
-	unsigned int rolling_average_buffer_index;
-#endif
+	cc_u8f rolling_average_buffer_index;
 
 	Mixer_State mixer_state;
 	const Mixer mixer = {&mixer_constant, &mixer_state};
@@ -43,6 +39,10 @@ public:
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples);
+	cc_u32f GetAverageFrames() const;
+	cc_u32f GetTargetFrames() const { return sample_rate / 20; } // 50ms
+	cc_u32f GetBufferSize() const { return buffer_size; }
+	cc_u32f GetSampleRate() const { return sample_rate; }
 
 	void SetPALMode(const bool enabled)
 	{

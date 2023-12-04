@@ -17,7 +17,7 @@ private:
 	ImFont* const &monospace_font;
 
 	std::vector<std::vector<char>> lines;
-	bool logging_enabled, log_to_console, force_console_output = true;
+	bool logging_enabled, log_to_console, audio_buffer_diagnostics, force_console_output = true;
 
 public:
 	DebugLog(const float &dpi_scale, ImFont* const &monospace_font) : dpi_scale(dpi_scale), monospace_font(monospace_font)
