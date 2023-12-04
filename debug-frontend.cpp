@@ -49,9 +49,9 @@ void DebugFrontend::Display(bool &open)
 			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetSampleRate());
 
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Buffer Size");
+			ImGui::TextUnformatted("Buffer Frames");
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%" CC_PRIXFAST32, audio_output.GetBufferSize());
+			ImGui::Text("%" CC_PRIdFAST32, audio_output.GetTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");

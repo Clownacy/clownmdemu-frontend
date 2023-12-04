@@ -20,7 +20,7 @@ private:
 
 	DebugLog &debug_log;
 	SDL_AudioDeviceID device;
-	cc_u32f buffer_size;
+	cc_u32f total_buffer_frames;
 	cc_u32f sample_rate;
 	bool pal_mode;
 	bool low_pass_filter = true;
@@ -40,8 +40,8 @@ public:
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples);
 	cc_u32f GetAverageFrames() const;
-	cc_u32f GetTargetFrames() const { return sample_rate / 20; } // 50ms
-	cc_u32f GetBufferSize() const { return buffer_size; }
+	cc_u32f GetTargetFrames() const { return CC_MAX(total_buffer_frames * 2, sample_rate / 20); } // 50ms
+	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
 	cc_u32f GetSampleRate() const { return sample_rate; }
 
 	void SetPALMode(const bool enabled)

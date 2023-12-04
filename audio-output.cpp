@@ -31,7 +31,7 @@ bool AudioOutput::Initialise()
 	}
 	else
 	{
-		buffer_size = static_cast<cc_u32f>(have.size);
+		total_buffer_frames = static_cast<cc_u32f>(have.samples / have.channels);
 		sample_rate = static_cast<cc_u32f>(have.freq);
 
 		// Initialise the mixer.
