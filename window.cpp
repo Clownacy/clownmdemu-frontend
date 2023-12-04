@@ -6,7 +6,7 @@ float Window::GetDPIScale() const
 	float dpi_scale;
 
 #ifdef _WIN32
-	// Windows need silly custom bollocks. Maybe I should just use WinAPI.
+	// Windows needs silly custom bollocks. Maybe I should just use WinAPI.
 	dpi_scale = 1.0f;
 
 	float ddpi;
