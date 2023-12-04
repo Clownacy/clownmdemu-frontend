@@ -61,6 +61,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
 		ofn.lpstrTitle = title_utf16; // It's okay for this to be nullptr.
+		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
 
 		// Common File Dialog changes the current directory, so back it up here first.
 		LPTSTR working_directory_buffer = nullptr;
@@ -81,8 +82,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		}
 
 		// Invoke the file dialog.
-		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
-		if ((save ? GetSaveFileName : GetOpenFileName)(&ofn))
+		if (save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn))
 		{
 			char* const path_utf8 = StringToUTF8(path_buffer);
 
