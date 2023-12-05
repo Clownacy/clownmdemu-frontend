@@ -1,5 +1,10 @@
 #include "audio-output.h"
 
+#define CLOWNRESAMPLER_ASSERT SDL_assert
+#define CLOWNRESAMPLER_FABS SDL_fabs
+#define CLOWNRESAMPLER_SIN SDL_sin
+#define CLOWNRESAMPLER_ZERO(buffer, size) SDL_memset(buffer, 0, size)
+#define CLOWNRESAMPLER_MEMMOVE SDL_memmove
 #define MIXER_IMPLEMENTATION
 #define MIXER_FORMAT Sint16
 #include "clownmdemu-frontend-common/mixer.h"
