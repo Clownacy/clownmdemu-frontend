@@ -7,6 +7,9 @@
 #define CLOWNRESAMPLER_MEMMOVE SDL_memmove
 #define MIXER_IMPLEMENTATION
 #define MIXER_FORMAT Sint16
+#define MIXER_ASSERT SDL_assert
+#define MIXER_MEMCPY SDL_memcpy
+#define MIXER_MEMSET SDL_memset
 #include "clownmdemu-frontend-common/mixer.h"
 
 #define SIZE_OF_FRAME (sizeof(Sint16) * MIXER_FM_CHANNEL_COUNT)
