@@ -24,8 +24,7 @@ static void Terminate()
 
 static void FrameRateCallback(const bool pal_mode)
 {
-	const float frame_rate = (pal_mode ? 50.0f : 60.0f / 1.001f);
-	time_delta = 1000.0 / frame_rate;
+	time_delta = pal_mode ? Frontend::DivideByPALFramerate(1000.0) : Frontend::DivideByNTSCFramerate(1000.0);
 }
 
 static int EventFilter(void* /*const userdata*/, SDL_Event* const event)

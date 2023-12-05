@@ -5,6 +5,8 @@
 
 #include "SDL.h"
 
+#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
+
 namespace Frontend
 {
 	typedef std::function<void(bool pal_mode)> FrameRateCallback;
@@ -15,8 +17,10 @@ namespace Frontend
 	void Deinitialise();
 	bool WantsToQuit();
 	bool IsFastForwarding();
-	Uint32 DivideByPALFramerate(Uint32 value);
-	Uint32 DivideByNTSCFramerate(Uint32 value);
+	template<typename T>
+	T DivideByPALFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(value); }
+	template<typename T>
+	T DivideByNTSCFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(value); };
 }
 
 #endif /* FRONTEND_H */
