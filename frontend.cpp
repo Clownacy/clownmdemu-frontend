@@ -2771,13 +2771,3 @@ bool Frontend::IsFastForwarding()
 {
 	return fast_forward_in_progress;
 }
-
-Uint32 Frontend::DivideByPALFramerate(const Uint32 value)
-{
-	return CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(value);
-}
-
-Uint32 Frontend::DivideByNTSCFramerate(const Uint32 value)
-{
-	return CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(value);
-}
