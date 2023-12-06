@@ -1,5 +1,15 @@
 #include "debug-frontend.h"
 
+static void DoToolTip(const char* const text)
+{
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted(text);
+		ImGui::EndTooltip();
+	}
+}
+
 void DebugFrontend::Display(bool &open)
 {
 	if (ImGui::Begin("Frontend", &open, ImGuiWindowFlags_AlwaysAutoResize))
@@ -45,21 +55,25 @@ void DebugFrontend::Display(bool &open)
 		{
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Sample Rate");
+			DoToolTip("The number of audio frames played per second.");
 			ImGui::TableNextColumn();
 			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetSampleRate());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Buffer Frames");
+			DoToolTip("The number of audio frames that are pulled from the buffer in a single batch.");
 			ImGui::TableNextColumn();
 			ImGui::Text("%" CC_PRIdFAST32, audio_output.GetTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");
+			DoToolTip("The number of buffered audio frames that the audio system tries to maintain.");
 			ImGui::TableNextColumn();
 			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetTargetFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Average Frames");
+			DoToolTip("The current average number of buffered audio frames.");
 			ImGui::TableNextColumn();
 			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetAverageFrames());
 
