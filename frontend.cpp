@@ -35,7 +35,7 @@
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
-#define VERSION "v0.5"
+#define VERSION "v0.5.1"
 
 #define INITIAL_WINDOW_WIDTH (320 * 2)
 #define INITIAL_WINDOW_HEIGHT (224 * 2)
