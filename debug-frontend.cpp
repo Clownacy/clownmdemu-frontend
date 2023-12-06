@@ -57,17 +57,44 @@ void DebugFrontend::Display(bool &open)
 			ImGui::TextUnformatted("Output");
 			DoToolTip("The size that the frame is drawn at.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%ux%u", output_width, output_height);
 
-			unsigned int upscale_width, upscale_height;
-			if (get_upscaled_framebuffer_size(upscale_width, upscale_height))
+			if (output_width != 0 || output_height != 0)
 			{
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Upscale");
-				DoToolTip("The size that the frame is upscaled to for fractional scaling.");
-				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST32 "x%" CC_PRIuFAST32, upscale_width, upscale_height);
+				ImGui::Text("%ux%u", output_width, output_height);
+
+				output_width = output_height = 0;
 			}
+			else
+			{
+				ImGui::TextUnformatted("N/A");
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Upscale");
+			DoToolTip("The size that the frame is upscaled to for fractional scaling.");
+			ImGui::TableNextColumn();
+
+			if (upscale_width != 0 || upscale_height != 0)
+			{
+				ImGui::Text("%ux%u", upscale_width, upscale_height);
+
+				upscale_width = upscale_height = 0;
+			}
+			else
+			{
+				ImGui::TextUnformatted("N/A");
+			}
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Texture");
+			DoToolTip("The size of the texture that is used for fractional upscaling.");
+			ImGui::TableNextColumn();
+
+			unsigned int texture_width, texture_height;
+			if (get_upscaled_framebuffer_size(texture_width, texture_height))
+				ImGui::Text("%" CC_PRIuFAST32 "x%" CC_PRIuFAST32, texture_width, texture_height);
+			else
+				ImGui::TextUnformatted("N/A");
 
 			ImGui::EndTable();
 		}

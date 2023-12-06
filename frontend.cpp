@@ -2069,6 +2069,9 @@ void Frontend::Update()
 					// Update the texture UV to suit the upscaled framebuffer.
 					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
 					uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
+
+					debug_frontend.upscale_width = upscaled_framebuffer_rect.w;
+					debug_frontend.upscale_height = upscaled_framebuffer_rect.h;
 				}
 			}
 
