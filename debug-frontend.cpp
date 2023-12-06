@@ -63,7 +63,7 @@ void DebugFrontend::Display(bool &open)
 			ImGui::TextUnformatted("Buffer Frames");
 			DoToolTip("The number of audio frames that are pulled from the buffer in a single batch.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdFAST32, audio_output.GetTotalBufferFrames());
+			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");
