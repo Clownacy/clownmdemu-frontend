@@ -18,9 +18,6 @@ public:
 	SDL_Window *sdl;
 	SDL_Renderer *renderer;
 	SDL_Texture *framebuffer_texture;
-	SDL_Texture *framebuffer_texture_upscaled;
-	unsigned int framebuffer_texture_upscaled_width;
-	unsigned int framebuffer_texture_upscaled_height;
 
 	Window(DebugLog &debug_log) : debug_log(debug_log) {}
 
@@ -34,7 +31,6 @@ public:
 	}
 	bool GetFullscreen() const { return (SDL_GetWindowFlags(sdl) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
-	void RecreateUpscaledFramebuffer(unsigned int display_width, unsigned int display_height);
 	void ShowWarningMessageBox(const char *message) const;
 	void ShowErrorMessageBox(const char *message) const;
 	void ShowFatalMessageBox(const char *message) const;

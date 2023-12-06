@@ -68,7 +68,6 @@ bool Window::Initialise(const char* const window_title, const int window_width, 
 
 void Window::Deinitialise()
 {
-	SDL_DestroyTexture(framebuffer_texture_upscaled);
 	DeinitialiseFramebuffer();
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(sdl);
@@ -100,36 +99,6 @@ bool Window::InitialiseFramebuffer(const int width, const int height)
 void Window::DeinitialiseFramebuffer()
 {
 	SDL_DestroyTexture(framebuffer_texture);
-}
-
-void Window::RecreateUpscaledFramebuffer(const unsigned int display_width, const unsigned int display_height)
-{
-	static unsigned int previous_framebuffer_size_factor = 0;
-
-	const unsigned int framebuffer_size_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
-
-	if (framebuffer_texture_upscaled == nullptr || framebuffer_size_factor != previous_framebuffer_size_factor)
-	{
-		previous_framebuffer_size_factor = framebuffer_size_factor;
-
-		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
-		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
-
-		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-		framebuffer_texture_upscaled = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
-
-		if (framebuffer_texture_upscaled == nullptr)
-		{
-			debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Disable blending, since we don't need it
-			if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
-				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-		}
-	}
 }
 
 void Window::ShowWarningMessageBox(const char* const message) const

@@ -49,6 +49,22 @@ void DebugFrontend::Display(bool &open)
 			ImGui::EndTable();
 		}
 
+		ImGui::SeparatorText("Video");
+
+		if (ImGui::BeginTable("Video", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
+		{
+			unsigned int upscale_width, upscale_height;
+			get_upscaled_framebuffer_size(upscale_width, upscale_height);
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Upscale Size");
+			DoToolTip("The size that the framebuffer is upscaled to for sharp scaling.");
+			ImGui::TableNextColumn();
+			ImGui::Text("%" CC_PRIuFAST32 "x%" CC_PRIuFAST32, upscale_width, upscale_height);
+
+			ImGui::EndTable();
+		}
+
 		ImGui::SeparatorText("Audio");
 
 		if (ImGui::BeginTable("Audio", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))

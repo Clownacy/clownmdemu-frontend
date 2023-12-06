@@ -142,8 +142,10 @@ static FileUtilities file_utilities(debug_log, window);
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
 static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
 
+static void GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
+
 static DebugFM debug_fm(emulator, monospace_font);
-static DebugFrontend debug_frontend(audio_output, window);
+static DebugFrontend debug_frontend(audio_output, window, GetUpscaledFramebufferSize);
 static DebugM68k debug_m68k(monospace_font);
 static DebugMemory debug_memory(monospace_font);
 static DebugPSG debug_psg(emulator, monospace_font);
@@ -312,6 +314,53 @@ static void UpdateRewindStatus()
 		emulator.rewind_in_progress |= controller_input->input.rewind != 0;
 }
 #endif
+
+
+//////////////////////////
+// Upscaled Framebuffer //
+//////////////////////////
+
+static SDL_Texture *framebuffer_texture_upscaled;
+static unsigned int framebuffer_texture_upscaled_width;
+static unsigned int framebuffer_texture_upscaled_height;
+
+static void RecreateUpscaledFramebuffer(const unsigned int display_width, const unsigned int display_height)
+{
+	static unsigned int previous_framebuffer_size_factor = 0;
+
+	const unsigned int framebuffer_size_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
+
+	if (framebuffer_texture_upscaled == nullptr || framebuffer_size_factor != previous_framebuffer_size_factor)
+	{
+		previous_framebuffer_size_factor = framebuffer_size_factor;
+
+		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
+		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
+
+		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+		framebuffer_texture_upscaled = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
+
+		if (framebuffer_texture_upscaled == nullptr)
+		{
+			debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			// Disable blending, since we don't need it
+			if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
+				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+		}
+	}
+}
+
+static void GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
+{
+	if (framebuffer_texture_upscaled == nullptr)
+		width = height = 0;
+	else
+		SDL_QueryTexture(framebuffer_texture_upscaled, nullptr, nullptr, reinterpret_cast<int*>(&width), reinterpret_cast<int*>(&height));
+}
 
 
 ///////////
@@ -1971,7 +2020,7 @@ void Frontend::Update()
 				// Round to the nearest multiple of 'destination_width' and 'destination_height'.
 				const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_ROUND(work_width, destination_width), CC_DIVIDE_ROUND(work_height, destination_height)));
 
-				window.RecreateUpscaledFramebuffer(work_width, work_height);
+				RecreateUpscaledFramebuffer(work_width, work_height);
 
 				// Correct the aspect ratio of the rendered frame.
 				// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
@@ -1989,10 +2038,10 @@ void Frontend::Update()
 				// Avoid blurring if...
 				// 1. The upscale texture failed to be created.
 				// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple.
-				if (window.framebuffer_texture_upscaled != nullptr && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
+				if (framebuffer_texture_upscaled != nullptr && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
 				{
 					// Render the upscaled framebuffer to the screen.
-					selected_framebuffer_texture = window.framebuffer_texture_upscaled;
+					selected_framebuffer_texture = framebuffer_texture_upscaled;
 
 					// Before we can do that though, we have to actually render the upscaled framebuffer.
 					SDL_Rect framebuffer_rect;
@@ -2008,7 +2057,7 @@ void Frontend::Update()
 					upscaled_framebuffer_rect.h = destination_height * framebuffer_upscale_factor;
 
 					// Render to the upscaled framebuffer.
-					SDL_SetRenderTarget(window.renderer, window.framebuffer_texture_upscaled);
+					SDL_SetRenderTarget(window.renderer, framebuffer_texture_upscaled);
 
 					// Render.
 					SDL_RenderCopy(window.renderer, window.framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
@@ -2017,8 +2066,8 @@ void Frontend::Update()
 					SDL_SetRenderTarget(window.renderer, nullptr);
 
 					// Update the texture UV to suit the upscaled framebuffer.
-					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(window.framebuffer_texture_upscaled_width);
-					uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(window.framebuffer_texture_upscaled_height);
+					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
+					uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
 				}
 			}
 
@@ -2349,8 +2398,8 @@ void Frontend::Update()
 				if (ImGui::Checkbox("Integer Screen Scaling", &integer_screen_scaling) && integer_screen_scaling)
 				{
 					// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
-					SDL_DestroyTexture(window.framebuffer_texture_upscaled);
-					window.framebuffer_texture_upscaled = nullptr;
+					SDL_DestroyTexture(framebuffer_texture_upscaled);
+					framebuffer_texture_upscaled = nullptr;
 				}
 				DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
@@ -2735,6 +2784,8 @@ void Frontend::Update()
 void Frontend::Deinitialise()
 {
 	debug_log.ForceConsoleOutput(true);
+
+	SDL_DestroyTexture(framebuffer_texture_upscaled);
 
 	audio_output.Deinitialise();
 
