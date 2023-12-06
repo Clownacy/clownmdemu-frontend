@@ -8,7 +8,9 @@
 #define MIXER_IMPLEMENTATION
 #define MIXER_FORMAT Sint16
 #define MIXER_ASSERT SDL_assert
-#define MIXER_MEMCPY SDL_memcpy
+#define MIXER_FREE SDL_free
+#define MIXER_CALLOC SDL_calloc
+#define MIXER_MEMMOVE SDL_memmove
 #define MIXER_MEMSET SDL_memset
 #include "clownmdemu-frontend-common/mixer.h"
 
@@ -70,6 +72,7 @@ void AudioOutput::MixerBegin()
 	if (mixer_update_pending)
 	{
 		mixer_update_pending = false;
+		Mixer_State_Deinitialise(&mixer_state);
 		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
 	}
 
