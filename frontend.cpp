@@ -2742,8 +2742,6 @@ void Frontend::Deinitialise()
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
 
-	SDL_DestroyTexture(window.framebuffer_texture_upscaled);
-
 	SaveConfiguration();
 
 #ifdef FILE_PATH_SUPPORT

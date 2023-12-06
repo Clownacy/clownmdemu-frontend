@@ -68,6 +68,7 @@ bool Window::Initialise(const char* const window_title, const int window_width, 
 
 void Window::Deinitialise()
 {
+	SDL_DestroyTexture(framebuffer_texture_upscaled);
 	DeinitialiseFramebuffer();
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(sdl);
