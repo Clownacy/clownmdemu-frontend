@@ -142,7 +142,7 @@ static FileUtilities file_utilities(debug_log, window);
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
 static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
 
-static void GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
+static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 
 static DebugFM debug_fm(emulator, monospace_font);
 static DebugFrontend debug_frontend(audio_output, window, GetUpscaledFramebufferSize);
@@ -354,12 +354,13 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 	}
 }
 
-static void GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
+static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
 {
 	if (framebuffer_texture_upscaled == nullptr)
-		width = height = 0;
-	else
-		SDL_QueryTexture(framebuffer_texture_upscaled, nullptr, nullptr, reinterpret_cast<int*>(&width), reinterpret_cast<int*>(&height));
+		return false;
+
+	SDL_QueryTexture(framebuffer_texture_upscaled, nullptr, nullptr, reinterpret_cast<int*>(&width), reinterpret_cast<int*>(&height));
+	return true;
 }
 
 
@@ -2077,6 +2078,9 @@ void Frontend::Update()
 
 			// Draw the upscaled framebuffer in the window.
 			ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
+
+			debug_frontend.output_width = destination_width_scaled;
+			debug_frontend.output_height = destination_height_scaled;
 		}
 	}
 

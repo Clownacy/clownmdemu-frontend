@@ -53,14 +53,21 @@ void DebugFrontend::Display(bool &open)
 
 		if (ImGui::BeginTable("Video", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
 		{
-			unsigned int upscale_width, upscale_height;
-			get_upscaled_framebuffer_size(upscale_width, upscale_height);
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Output");
+			DoToolTip("The size that the frame is drawn at.");
+			ImGui::TableNextColumn();
+			ImGui::Text("%ux%u", output_width, output_height);
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Upscale Size");
-			DoToolTip("The size that the framebuffer is upscaled to for sharp scaling.");
-			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32 "x%" CC_PRIuFAST32, upscale_width, upscale_height);
+			unsigned int upscale_width, upscale_height;
+			if (get_upscaled_framebuffer_size(upscale_width, upscale_height))
+			{
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Upscale");
+				DoToolTip("The size that the frame is upscaled to for fractional scaling.");
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST32 "x%" CC_PRIuFAST32, upscale_width, upscale_height);
+			}
 
 			ImGui::EndTable();
 		}

@@ -7,7 +7,7 @@
 class DebugFrontend
 {
 public:
-	typedef void GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
+	typedef bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 
 private:
 	const AudioOutput &audio_output;
@@ -15,6 +15,8 @@ private:
 	const GetUpscaledFramebufferSize &get_upscaled_framebuffer_size;
 
 public:
+	unsigned int output_width, output_height;
+
 	DebugFrontend(const AudioOutput &audio_output, const Window &window, const GetUpscaledFramebufferSize &get_upscaled_framebuffer_size) : audio_output(audio_output), window(window), get_upscaled_framebuffer_size(get_upscaled_framebuffer_size){}
 	void Display(bool &open);
 };
