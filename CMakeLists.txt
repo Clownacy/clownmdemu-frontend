@@ -137,6 +137,9 @@ endif()
 # Dear ImGui stuff #
 ####################
 
+# Disable development stuff in non-development builds
+target_compile_definitions(clownmdemu-frontend PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
+
 # Disable some deprecated junk in Dear ImGui
 target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
 
