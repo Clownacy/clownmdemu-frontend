@@ -137,7 +137,7 @@ static Frontend::FrameRateCallback frame_rate_callback;
 static DebugLog debug_log(dpi_scale, monospace_font);
 static AudioOutput audio_output(debug_log);
 static Window window(debug_log);
-static FileUtilities file_utilities(debug_log, window);
+static FileUtilities file_utilities(debug_log);
 
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
 static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
@@ -1731,7 +1731,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile("Load Cartridge File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile(window, "Load Cartridge File", [](const char* const path, SDL_RWops* const file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -1758,7 +1758,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile("Load CD File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile(window, "Load CD File", [](const char* const path, SDL_RWops* const file)
 					{
 						if (LoadCDFile(path, file))
 						{
@@ -1857,9 +1857,9 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 				#ifdef FILE_PATH_SUPPORT
-					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
+					file_utilities.CreateSaveFileDialog(window, "Create Save State", CreateSaveState);
 				#else
-					file_utilities.SaveFile("Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
+					file_utilities.SaveFile(window, "Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
 						// Inefficient, but it's the only way...
 						const std::size_t save_state_size = emulator.GetSaveStateSize();
@@ -1885,7 +1885,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile("Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
+					file_utilities.LoadFile(window, "Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
 					{
 						LoadSaveState(file);
 						SDL_RWclose(file);

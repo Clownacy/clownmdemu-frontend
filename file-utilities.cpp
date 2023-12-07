@@ -35,7 +35,7 @@
 #endif
 #endif
 
-void FileUtilities::CreateFileDialog(const char* const title, const std::function<bool(const char *path)> &callback, const bool save)
+void FileUtilities::CreateFileDialog(const Window &window, const char* const title, const PopupCallback &callback, const bool save)
 {
 #ifndef _WIN32
 	static_cast<void>(window); // Unused
@@ -57,7 +57,7 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = SDL_GetWindowWMInfo(window.sdl, &info) ? info.info.win.window : nullptr;
+		ofn.hwndOwner = SDL_GetWindowWMInfo(window.GetSDLWindow(), &info) ? info.info.win.window : nullptr;
 		ofn.lpstrFile = path_buffer;
 		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
 		ofn.lpstrTitle = title_utf16; // It's okay for this to be nullptr.
@@ -228,14 +228,14 @@ void FileUtilities::CreateFileDialog(const char* const title, const std::functio
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", is_save_dialog ? "Could not save file." : "Could not open file.", nullptr);
 }
 
-void FileUtilities::CreateOpenFileDialog(const char* const title, const std::function<bool(const char *path)> &callback)
+void FileUtilities::CreateOpenFileDialog(const Window &window, const char* const title, const PopupCallback &callback)
 {
-	CreateFileDialog(title, callback, false);
+	CreateFileDialog(window, title, callback, false);
 }
 
-void FileUtilities::CreateSaveFileDialog(const char* const title, const std::function<bool(const char *path)> &callback)
+void FileUtilities::CreateSaveFileDialog(const Window &window, const char* const title, const PopupCallback &callback)
 {
-	CreateFileDialog(title, callback, true);
+	CreateFileDialog(window, title, callback, true);
 }
 
 void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
@@ -459,7 +459,7 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 	}
 }
 
-void FileUtilities::LoadFile(const char* const title, const std::function<bool(const char* const path, SDL_RWops *file)> &callback)
+void FileUtilities::LoadFile(const Window &window, const char* const title, const std::function<bool(const char* const path, SDL_RWops *file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(title);
@@ -490,7 +490,7 @@ void FileUtilities::LoadFile(const char* const title, const std::function<bool(c
 		emscripten_browser_file::upload("", call_callback, holder);
 	}
 #else
-	CreateOpenFileDialog(title, [callback](const char* const path)
+	CreateOpenFileDialog(window, title, [callback](const char* const path)
 	{
 		SDL_RWops* const file = SDL_RWFromFile(path, "rb");
 
@@ -502,7 +502,7 @@ void FileUtilities::LoadFile(const char* const title, const std::function<bool(c
 #endif
 }
 
-void FileUtilities::SaveFile(const char* const title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback)
+void FileUtilities::SaveFile(const Window &window, const char* const title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(title);
@@ -513,7 +513,7 @@ void FileUtilities::SaveFile(const char* const title, const std::function<bool(c
 		return true;
 	});
 #else
-	CreateSaveFileDialog(title, [callback](const char* const path)
+	CreateSaveFileDialog(window, title, [callback](const char* const path)
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
