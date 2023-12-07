@@ -1,6 +1,7 @@
 #ifndef EMULATOR_INSTANCE_H
 #define EMULATOR_INSTANCE_H
 
+#include <array>
 #include <cstddef>
 #include <functional>
 
@@ -20,7 +21,7 @@ public:
 	struct State
 	{
 		ClownMDEmu_State clownmdemu;
-		Uint32 colours[3 * 4 * 16];
+		std::array<Uint32, 3 * 4 * 16>colours;
 	};
 
 private:
@@ -45,7 +46,7 @@ private:
 	int framebuffer_texture_pitch;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	State state_rewind_buffer[60 * 10]; // Roughly 30 seconds of rewinding at 60FPS
+	std::array<State, 60 * 10>state_rewind_buffer; // Roughly 30 seconds of rewinding at 60FPS
 	std::size_t state_rewind_index = 0;
 	std::size_t state_rewind_remaining = 0;
 	bool rewind_in_progress = false;
