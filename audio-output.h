@@ -12,29 +12,28 @@
 
 #include "debug-log.h"
 
-class AudioOutput
+class AudioOutputInner
 {
 private:
 	static Mixer_Constant mixer_constant;
 	static bool mixer_constant_initialised;
 
-	DebugLog &debug_log;
 	SDL_AudioDeviceID device;
-	cc_u32f total_buffer_frames;
-	cc_u32f sample_rate;
-	bool pal_mode;
+
+	cc_u32f total_buffer_frames = false;
+	cc_u32f sample_rate = false;
+	bool pal_mode = false;
 	bool low_pass_filter = true;
-	bool mixer_update_pending;
-	Uint32 rolling_average_buffer[0x10];
-	cc_u8f rolling_average_buffer_index;
+	bool mixer_update_pending = false;
+	Uint32 rolling_average_buffer[0x10] = {0};
+	cc_u8f rolling_average_buffer_index = 0;
 
 	Mixer_State mixer_state;
 	const Mixer mixer = {&mixer_constant, &mixer_state};
 
 public:
-	AudioOutput(DebugLog &debug_log) : debug_log(debug_log) {}
-	bool Initialise();
-	void Deinitialise();
+	AudioOutputInner();
+	~AudioOutputInner();
 	void MixerBegin();
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
@@ -59,6 +58,47 @@ public:
 	}
 
 	bool GetLowPassFilter() const { return low_pass_filter; }
+};
+
+class AudioOutput
+{
+private:
+	AudioOutputInner *inner = nullptr;
+
+public:
+	AudioOutput(DebugLog &/*debug_log*/) {}
+	bool Initialise()
+	{
+		inner = new AudioOutputInner();
+		return inner != nullptr;
+	}
+	void Deinitialise()
+	{
+		delete inner;
+		inner = nullptr;
+	}
+	void MixerBegin() { inner->MixerBegin(); };
+	void MixerEnd() { inner->MixerEnd(); };
+	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples) { return inner->MixerAllocateFMSamples(total_samples); };
+	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples) { return inner->MixerAllocatePSGSamples(total_samples); };
+	cc_u32f GetAverageFrames() const { return inner->GetAverageFrames(); };
+	cc_u32f GetTargetFrames() const { return inner->GetTargetFrames(); } // 50ms
+	cc_u32f GetTotalBufferFrames() const { return inner->GetTotalBufferFrames(); }
+	cc_u32f GetSampleRate() const { return inner->GetSampleRate(); }
+
+	void SetPALMode(const bool enabled)
+	{
+		inner->SetPALMode(enabled);
+	}
+
+	bool GetPALMode() const { return inner->GetPALMode(); }
+
+	void SetLowPassFilter(const bool enabled)
+	{
+		inner->SetLowPassFilter(enabled);
+	}
+
+	bool GetLowPassFilter() const { return inner->GetLowPassFilter(); }
 };
 
 #endif /* AUDIO_OUTPUT_H */

@@ -943,6 +943,18 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		}
 		else
 		{
+			// Intiialise audio if we can (but it's okay if it fails).
+			if (!audio_output.Initialise())
+			{
+				debug_log.Log("InitialiseAudio failed");
+				window.ShowWarningMessageBox("Unable to initialise audio subsystem: the program will not output audio!");
+			}
+			else
+			{
+				// Initialise resamplers.
+				SetAudioPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+			}
+
 			dpi_scale = window.GetDPIScale();
 
 			DoublyLinkedList_Initialise(&recent_software_list);
@@ -1029,18 +1041,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 			// Load fonts
 			ReloadFonts(font_size);
 
-			// Intiialise audio if we can (but it's okay if it fails).
-			if (!audio_output.Initialise())
-			{
-				debug_log.Log("InitialiseAudio failed");
-				window.ShowWarningMessageBox("Unable to initialise audio subsystem: the program will not output audio!");
-			}
-			else
-			{
-				// Initialise resamplers.
-				SetAudioPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-			}
-
 			// If the user passed the path to the software on the command line, then load it here, automatically.
 			// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
 			if (argc > 1)
@@ -1070,8 +1070,6 @@ void Frontend::Deinitialise()
 
 	SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-	audio_output.Deinitialise();
-
 	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
@@ -1089,6 +1087,7 @@ void Frontend::Deinitialise()
 	}
 #endif
 
+	audio_output.Deinitialise();
 	window.Deinitialise();
 
 	SDL_Quit();
