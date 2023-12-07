@@ -7,6 +7,8 @@
 
 #include "frontend.h"
 
+static Frontend *frontend;
+
 #ifdef __EMSCRIPTEN__
 static double next_time;
 static double time_delta;
@@ -66,8 +68,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 	emscripten_set_main_loop(callback, 0, 0);
 
-	if (Frontend::Initialise(0, nullptr, FrameRateCallback))
-		SDL_AddEventWatch(EventFilter, nullptr);
+	frontend = CreateFrontend(argc, argv, FrameRateCallback);
+
+	SDL_AddEventWatch(EventFilter, nullptr);
 }
 #else
 // 300 is the magic number that prevents the frame delta calculations from ever dipping into
@@ -81,15 +84,21 @@ static void FrameRateCallback(const bool pal_mode)
 	if (pal_mode)
 	{
 		// Run at 50FPS
-		frame_rate_delta = Frontend::DivideByPALFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
+		frame_rate_delta = frontend->DivideByPALFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
 	}
 	else
 	{
 		// Run at roughly 59.94FPS (60 divided by 1.001)
-		frame_rate_delta = Frontend::DivideByNTSCFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
+		frame_rate_delta = frontend->DivideByNTSCFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
 	}
 }
 #endif
+
+static Frontend* CreateFrontend(const int argc, char** const argv, const Frontend::FrameRateCallback &frame_rate_callback)
+{
+	static Frontend frontend(argc, argv, frame_rate_callback);
+	return &frontend;
+}
 
 int main(const int argc, char** const argv)
 {
@@ -108,39 +117,36 @@ int main(const int argc, char** const argv)
 		});
 	}, 0);
 #else
-	if (Frontend::Initialise(argc, argv, FrameRateCallback))
+	frontend = CreateFrontend(argc, argv, FrameRateCallback);
+
+	while (!frontend->WantsToQuit())
 	{
-		while (!Frontend::WantsToQuit())
+		// This loop processes events and manages the framerate.
+		for (;;)
 		{
-			// This loop processes events and manages the framerate.
-			for (;;)
+			static Uint64 next_time;
+			const Uint64 current_time = SDL_GetTicks64() * FRAME_DELTA_MULTIPLIER;
+
+			int timeout = 0;
+
+			if (current_time < next_time)
+				timeout = (next_time - current_time) / FRAME_DELTA_MULTIPLIER;
+			else if (current_time > next_time + 100 * FRAME_DELTA_MULTIPLIER) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+				next_time = current_time;
+
+			// Obtain an event
+			SDL_Event event;
+			if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
 			{
-				static Uint64 next_time;
-				const Uint64 current_time = SDL_GetTicks64() * FRAME_DELTA_MULTIPLIER;
-
-				int timeout = 0;
-
-				if (current_time < next_time)
-					timeout = (next_time - current_time) / FRAME_DELTA_MULTIPLIER;
-				else if (current_time > next_time + 100 * FRAME_DELTA_MULTIPLIER) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
-					next_time = current_time;
-
-				// Obtain an event
-				SDL_Event event;
-				if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
-				{
-					// Calculate when the next frame will be
-					next_time += frame_rate_delta >> (Frontend::IsFastForwarding() ? 2 : 0);
-					break;
-				}
-
-				Frontend::HandleEvent(event);
+				// Calculate when the next frame will be
+				next_time += frame_rate_delta >> (frontend->IsFastForwarding() ? 2 : 0);
+				break;
 			}
 
-			Frontend::Update();
+			frontend->HandleEvent(event);
 		}
 
-		Frontend::Deinitialise();
+		frontend->Update();
 	}
 #endif
 

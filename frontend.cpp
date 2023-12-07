@@ -1,17 +1,15 @@
 #include "frontend.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <climits> // For INT_MAX.
-#include <cstddef>
-#include <functional>
+#include <stdexcept>
 
 #include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-#include "libraries/doubly-linked-list/doubly-linked-list.h"
-#include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 #include "libraries/inih/ini.h"
@@ -19,19 +17,7 @@
 #include "inconsolata-regular.h"
 #include "noto-sans-regular.h"
 
-#include "audio-output.h"
-#include "debug-fm.h"
-#include "debug-frontend.h"
-#include "debug-log.h"
-#include "debug-m68k.h"
-#include "debug-memory.h"
-#include "debug-psg.h"
-#include "debug-vdp.h"
-#include "debug-z80.h"
 #include "disassembler.h"
-#include "emulator-instance.h"
-#include "file-utilities.h"
-#include "window.h"
 
 #define CONFIG_FILENAME "clownmdemu-frontend.ini"
 
@@ -43,162 +29,18 @@
 #define FRAMEBUFFER_WIDTH 320
 #define FRAMEBUFFER_HEIGHT (240 * 2) // *2 because of double-resolution mode.
 
-#ifndef __EMSCRIPTEN__
-#define FILE_PATH_SUPPORT
-#endif
-
-struct Input
-{
-	unsigned int bound_joypad;
-	unsigned char buttons[CLOWNMDEMU_BUTTON_MAX];
-	unsigned char fast_forward;
-	unsigned char rewind;
-};
-
-struct ControllerInput
-{
-	SDL_JoystickID joystick_instance_id;
-	Sint16 left_stick_x;
-	Sint16 left_stick_y;
-	bool left_stick[4];
-	bool dpad[4];
-	bool left_trigger;
-	bool right_trigger;
-	Input input;
-
-	struct ControllerInput *next;
-};
-
-#ifdef FILE_PATH_SUPPORT
-struct RecentSoftware
-{
-	DoublyLinkedList_Entry list;
-
-	bool is_cd_file;
-	char path[1];
-};
-#endif
-
-enum InputBinding
-{
-	INPUT_BINDING_NONE,
-	INPUT_BINDING_CONTROLLER_UP,
-	INPUT_BINDING_CONTROLLER_DOWN,
-	INPUT_BINDING_CONTROLLER_LEFT,
-	INPUT_BINDING_CONTROLLER_RIGHT,
-	INPUT_BINDING_CONTROLLER_A,
-	INPUT_BINDING_CONTROLLER_B,
-	INPUT_BINDING_CONTROLLER_C,
-	INPUT_BINDING_CONTROLLER_START,
-	INPUT_BINDING_PAUSE,
-	INPUT_BINDING_RESET,
-	INPUT_BINDING_FAST_FORWARD,
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	INPUT_BINDING_REWIND,
-#endif
-	INPUT_BINDING_QUICK_SAVE_STATE,
-	INPUT_BINDING_QUICK_LOAD_STATE,
-	INPUT_BINDING_TOGGLE_FULLSCREEN,
-	INPUT_BINDING_TOGGLE_CONTROL_PAD
-};
-
-#define INPUT_BINDING__TOTAL (INPUT_BINDING_TOGGLE_CONTROL_PAD + 1)
-
-static Input keyboard_input;
-
-static ControllerInput *controller_input_list_head;
-
-static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-static InputBinding keyboard_bindings_cached[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-static bool key_pressed[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-
-static DoublyLinkedList recent_software_list;
-static char *drag_and_drop_filename;
-
-static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
-static bool emulator_paused;
-static bool emulator_frame_advance;
-
-static bool quick_save_exists;
-static EmulatorInstance::State quick_save_state;
-
-static float dpi_scale;
-static unsigned int frame_counter;
-static ImFont *monospace_font;
-
-static bool use_vsync;
-static bool integer_screen_scaling;
-static bool tall_double_resolution_mode;
-
-static ImGuiStyle style_backup;
-
-static Frontend::FrameRateCallback frame_rate_callback;
-
-static DebugLog debug_log(dpi_scale, monospace_font);
-static AudioOutput audio_output(debug_log);
-static Window window(debug_log);
-static FileUtilities file_utilities(debug_log, window);
-
-static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
-static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
-
-static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
-
-static DebugFM debug_fm(emulator, monospace_font);
-static DebugFrontend debug_frontend(audio_output, window, GetUpscaledFramebufferSize);
-static DebugM68k debug_m68k(monospace_font);
-static DebugMemory debug_memory(monospace_font);
-static DebugPSG debug_psg(emulator, monospace_font);
-static DebugVDP debug_vdp(debug_log, dpi_scale, emulator, file_utilities, frame_counter, monospace_font, window);
-static DebugZ80 debug_z80(emulator, monospace_font);
-
-// Manages whether the program exits or not.
-static bool quit;
-
-// Used for tracking when to pop the emulation display out into its own little window.
-static bool pop_out;
-
-static bool debug_log_active;
-static bool debug_frontend_active;
-static bool m68k_status;
-static bool mcd_m68k_status;
-static bool z80_status;
-static bool m68k_ram_viewer;
-static bool z80_ram_viewer;
-static bool word_ram_viewer;
-static bool prg_ram_viewer;
-static bool vdp_registers;
-static bool window_plane_viewer;
-static bool plane_a_viewer;
-static bool plane_b_viewer;
-static bool vram_viewer;
-static bool cram_viewer;
-static bool fm_status;
-static bool psg_status;
-static bool other_status;
-static bool debugging_toggles_menu;
-static bool disassembler;
-static bool options_menu;
-static bool about_menu;
-
-#ifndef NDEBUG
-static bool dear_imgui_demo_window;
-#endif
-
-static bool emulator_on, emulator_running;
-
 
 ///////////
 // Fonts //
 ///////////
 
-static unsigned int CalculateFontSize()
+unsigned int Frontend::CalculateFontSize()
 {
 	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
 	return static_cast<unsigned int>(16.0f * dpi_scale);
 }
 
-static void ReloadFonts(const unsigned int font_size)
+void Frontend::ReloadFonts(const unsigned int font_size)
 {
 	ImGuiIO &io = ImGui::GetIO();
 
@@ -217,7 +59,7 @@ static void ReloadFonts(const unsigned int font_size)
 // Emulator Functionality //
 ////////////////////////////
 
-static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
+cc_bool Frontend::ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
 	SDL_assert(player_id < 2);
 
@@ -243,7 +85,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 }
 
 #ifdef FILE_PATH_SUPPORT
-static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
+void Frontend::AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
 	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
@@ -285,10 +127,7 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 }
 #endif
 
-// Manages whether the emulator runs at a higher speed or not.
-static bool fast_forward_in_progress;
-
-static void UpdateFastForwardStatus()
+void Frontend::UpdateFastForwardStatus()
 {
 	const bool previous_fast_forward_in_progress = fast_forward_in_progress;
 
@@ -306,7 +145,7 @@ static void UpdateFastForwardStatus()
 }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-static void UpdateRewindStatus()
+void Frontend::UpdateRewindStatus()
 {
 	emulator.rewind_in_progress = keyboard_input.rewind;
 
@@ -320,11 +159,7 @@ static void UpdateRewindStatus()
 // Upscaled Framebuffer //
 //////////////////////////
 
-static SDL_Texture *framebuffer_texture_upscaled;
-static unsigned int framebuffer_texture_upscaled_width;
-static unsigned int framebuffer_texture_upscaled_height;
-
-static void RecreateUpscaledFramebuffer(const unsigned int display_width, const unsigned int display_height)
+void Frontend::RecreateUpscaledFramebuffer(const unsigned int display_width, const unsigned int display_height)
 {
 	static unsigned int previous_framebuffer_size_factor = 0;
 
@@ -354,7 +189,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 	}
 }
 
-static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
+bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
 {
 	if (framebuffer_texture_upscaled == nullptr)
 		return false;
@@ -368,13 +203,13 @@ static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height
 // Misc. //
 ///////////
 
-static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
+void Frontend::LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
 {
 	quick_save_exists = false;
 	emulator.LoadCartridgeFile(file_buffer, file_size);
 }
 
-static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
+bool Frontend::LoadCartridgeFile(const char* const path, SDL_RWops* const file)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
@@ -398,7 +233,7 @@ static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
 	return true;
 }
 
-static bool LoadCartridgeFile(const char* const path)
+bool Frontend::LoadCartridgeFile(const char* const path)
 {
 	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
 
@@ -412,7 +247,7 @@ static bool LoadCartridgeFile(const char* const path)
 	return LoadCartridgeFile(path, file);
 }
 
-static bool LoadCDFile(const char* const path, SDL_RWops* const file)
+bool Frontend::LoadCDFile(const char* const path, SDL_RWops* const file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
@@ -426,7 +261,7 @@ static bool LoadCDFile(const char* const path, SDL_RWops* const file)
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool LoadCDFile(const char* const path)
+bool Frontend::LoadCDFile(const char* const path)
 {
 	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
 
@@ -441,7 +276,7 @@ static bool LoadCDFile(const char* const path)
 }
 #endif
 
-static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
+bool Frontend::LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
 {
 	if (!emulator.LoadSaveState(file_buffer, file_size))
 	{
@@ -455,7 +290,7 @@ static bool LoadSaveState(const unsigned char* const file_buffer, const std::siz
 	return true;
 }
 
-static bool LoadSaveState(SDL_RWops* const file)
+bool Frontend::LoadSaveState(SDL_RWops* const file)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
@@ -476,7 +311,7 @@ static bool LoadSaveState(SDL_RWops* const file)
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool CreateSaveState(const char* const save_state_path)
+bool Frontend::CreateSaveState(const char* const save_state_path)
 {
 	bool success = true;
 
@@ -496,7 +331,7 @@ static bool CreateSaveState(const char* const save_state_path)
 }
 #endif
 
-static void SetAudioPALMode(const bool enabled)
+void Frontend::SetAudioPALMode(const bool enabled)
 {
 	frame_rate_callback(enabled);
 	audio_output.SetPALMode(enabled);
@@ -507,7 +342,7 @@ static void SetAudioPALMode(const bool enabled)
 // Tooltip //
 /////////////
 
-static void DoToolTip(const char* const text)
+void Frontend::DoToolTip(const char* const text)
 {
 	if (ImGui::IsItemHovered())
 	{
@@ -522,7 +357,7 @@ static void DoToolTip(const char* const text)
 // INI //
 /////////
 
-static char* INIReadCallback(char* const buffer, const int length, void* const user)
+char* Frontend::INIReadCallback(char* const buffer, const int length, void* const user)
 {
 	SDL_RWops* const sdl_rwops = static_cast<SDL_RWops*>(user);
 
@@ -551,29 +386,31 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 	return buffer;
 }
 
-static int INIParseCallback(void* const /*user*/, const char* const section, const char* const name, const char* const value)
+int Frontend::INIParseCallback(void* const user, const char* const section, const char* const name, const char* const value)
 {
+	Frontend* const frontend = static_cast<Frontend*>(user);
+
 	if (SDL_strcmp(section, "Miscellaneous") == 0)
 	{
 		const bool state = SDL_strcmp(value, "on") == 0;
 
 		if (SDL_strcmp(name, "vsync") == 0)
-			use_vsync = state;
+			frontend->use_vsync = state;
 		else if (SDL_strcmp(name, "integer-screen-scaling") == 0)
-			integer_screen_scaling = state;
+			frontend->integer_screen_scaling = state;
 		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
-			tall_double_resolution_mode = state;
+			frontend->tall_double_resolution_mode = state;
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
-			audio_output.SetLowPassFilter(state);
+			frontend->audio_output.SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
-			emulator.clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
+			frontend->emulator.clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
 		else if (SDL_strcmp(name, "japanese") == 0)
-			emulator.clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
+			frontend->emulator.clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
 	#ifdef FILE_PICKER_POSIX
 		else if (SDL_strcmp(name, "last-directory") == 0)
-			file_utilities.last_file_dialog_directory = SDL_strdup(value);
+			frontend->file_utilities.last_file_dialog_directory = SDL_strdup(value);
 		else if (SDL_strcmp(name, "prefer-kdialog") == 0)
-			file_utilities.prefer_kdialog = state;
+			frontend->file_utilities.prefer_kdialog = state;
 	#endif
 	}
 	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
@@ -659,7 +496,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 					input_binding = INPUT_BINDING_NONE;
 			}
 
-			keyboard_bindings[scancode] = input_binding;
+			frontend->keyboard_bindings[scancode] = input_binding;
 		}
 
 	}
@@ -675,7 +512,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		else if (SDL_strcmp(name, "path") == 0)
 		{
 			if (value[0] != '\0')
-				AddToRecentSoftware(value, is_cd_file, true);
+				frontend->AddToRecentSoftware(value, is_cd_file, true);
 		}
 	}
 #endif
@@ -688,7 +525,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 // Configuration //
 ///////////////////
 
-static void LoadConfiguration()
+void Frontend::LoadConfiguration()
 {
 	// Set default settings.
 
@@ -717,7 +554,7 @@ static void LoadConfiguration()
 	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (file == nullptr || ini_parse_stream(INIReadCallback, file, INIParseCallback, nullptr) != 0)
+	if (file == nullptr || ini_parse_stream(INIReadCallback, file, INIParseCallback, this) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (std::size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
@@ -750,7 +587,7 @@ static void LoadConfiguration()
 	SDL_RenderSetVSync(window.renderer, use_vsync);
 }
 
-static void SaveConfiguration()
+void Frontend::SaveConfiguration()
 {
 	// Save configuration file:
 	SDL_RWops *file = SDL_RWFromFile(CONFIG_FILENAME, "w");
@@ -912,7 +749,7 @@ static void SaveConfiguration()
 // Main function //
 ///////////////////
 
-static void PreEventStuff()
+void Frontend::PreEventStuff()
 {
 	emulator_on = emulator.IsCartridgeFileLoaded() || emulator.IsCDFileLoaded();
 	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen()
@@ -924,7 +761,19 @@ static void PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback_param)
+Frontend::Frontend(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback_param)
+	: debug_log(dpi_scale, monospace_font)
+	, audio_output(debug_log)
+	, window(debug_log)
+	, file_utilities(debug_log, window)
+	, emulator(audio_output, debug_log, window, [this](cc_u8f player_id, ClownMDEmu_Button button_id) { return ReadInputCallback(player_id, button_id); })
+	, debug_fm(emulator, monospace_font)
+	, debug_frontend(audio_output, window, [this](unsigned int &width, unsigned int &height) { return GetUpscaledFramebufferSize(width, height); })
+	, debug_m68k(monospace_font)
+	, debug_memory(monospace_font)
+	, debug_psg(emulator, monospace_font)
+	, debug_vdp(debug_log, dpi_scale, emulator, file_utilities, frame_counter, monospace_font, window)
+	, debug_z80(emulator, monospace_font)
 {
 	frame_rate_callback = frame_rate_callback_param;
 
@@ -1055,16 +904,16 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 			PreEventStuff();
 
-			return true;
+			return;
 		}
 
 		SDL_Quit();
 	}
 
-	return false;
+	throw std::runtime_error("Bad things, man...");
 }
 
-void Frontend::Deinitialise()
+Frontend::~Frontend()
 {
 	debug_log.ForceConsoleOutput(true);
 
@@ -1731,7 +1580,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile("Load Cartridge File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile("Load Cartridge File", [this](const char* const path, SDL_RWops* const file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -1758,7 +1607,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile("Load CD File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile("Load CD File", [this](const char* const path, SDL_RWops* const file)
 					{
 						if (LoadCDFile(path, file))
 						{
@@ -1857,7 +1706,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 				#ifdef FILE_PATH_SUPPORT
-					file_utilities.CreateSaveFileDialog("Create Save State", CreateSaveState);
+					file_utilities.CreateSaveFileDialog("Create Save State", [this](const char* const path){ return CreateSaveState(path); });
 				#else
 					file_utilities.SaveFile("Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
@@ -1885,7 +1734,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile("Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
+					file_utilities.LoadFile("Load Save State", [this](const char* /*const path*/, SDL_RWops* const file)
 					{
 						LoadSaveState(file);
 						SDL_RWclose(file);
@@ -2493,13 +2342,10 @@ void Frontend::Update()
 				for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
 					sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
 
-				SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
-					[](const void* const a, const void* const b)
+				std::sort(&sorted_scancodes[0],&sorted_scancodes[CC_COUNT_OF(sorted_scancodes)],
+					[this](const SDL_Scancode binding_1, const SDL_Scancode binding_2)
 				{
-					const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
-					const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
-
-					return keyboard_bindings[*binding_1] - keyboard_bindings[*binding_2];
+					return keyboard_bindings[binding_1] - keyboard_bindings[binding_2];
 				}
 				);
 			}
