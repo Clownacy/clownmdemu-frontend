@@ -10,7 +10,6 @@
 
 #include "audio-output.h"
 #include "debug-log.h"
-#include "file-utilities.h"
 #include "window.h"
 
 class EmulatorInstance
