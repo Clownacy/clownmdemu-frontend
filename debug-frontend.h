@@ -14,7 +14,7 @@ public:
 private:
 	const AudioOutput &audio_output;
 	const Window &window;
-	const GetUpscaledFramebufferSize &get_upscaled_framebuffer_size;
+	const GetUpscaledFramebufferSize get_upscaled_framebuffer_size;
 
 public:
 	unsigned int output_width, output_height;
