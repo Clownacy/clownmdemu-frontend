@@ -92,7 +92,7 @@ void DebugFrontend::Display(bool &open)
 
 			unsigned int texture_width, texture_height;
 			if (get_upscaled_framebuffer_size(texture_width, texture_height))
-				ImGui::Text("%" CC_PRIuFAST32 "x%" CC_PRIuFAST32, texture_width, texture_height);
+				ImGui::Text("%ux%u", texture_width, texture_height);
 			else
 				ImGui::TextUnformatted("N/A");
 
