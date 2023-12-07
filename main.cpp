@@ -94,12 +94,6 @@ static void FrameRateCallback(const bool pal_mode)
 }
 #endif
 
-static Frontend* CreateFrontend(const int argc, char** const argv, const Frontend::FrameRateCallback &frame_rate_callback)
-{
-	static Frontend frontend(argc, argv, frame_rate_callback);
-	return &frontend;
-}
-
 int main(const int argc, char** const argv)
 {
 #ifdef __EMSCRIPTEN__
@@ -117,7 +111,7 @@ int main(const int argc, char** const argv)
 		});
 	}, 0);
 #else
-	frontend = CreateFrontend(argc, argv, FrameRateCallback);
+	frontend = Frontend::Singleton(argc, argv, FrameRateCallback);
 
 	while (!frontend->WantsToQuit())
 	{
