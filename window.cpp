@@ -81,8 +81,7 @@ static T* NullThrowSDL(T* const pointer)
 }
 
 WindowInner::WindowInner(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
-	: debug_log(debug_log)
-	, sdl_window(NullThrowSDL(CreateWindow(window_title, window_width, window_height)), SDL_DestroyWindow)
+	: sdl_window(NullThrowSDL(CreateWindow(window_title, window_width, window_height)), SDL_DestroyWindow)
 	, renderer(NullThrowSDL(CreateRenderer(GetSDLWindow())), SDL_DestroyRenderer)
 	, framebuffer_texture(NullThrowSDL(CreateFramebufferTexture(debug_log, GetRenderer(), framebuffer_width, framebuffer_height)), SDL_DestroyTexture)
 {

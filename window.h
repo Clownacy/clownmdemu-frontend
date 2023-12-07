@@ -9,10 +9,6 @@
 
 class WindowInner
 {
-private:
-	DebugLog &debug_log;
-	bool fullscreen;
-
 public:
 	std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> sdl_window;
 	std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer;
@@ -20,13 +16,6 @@ public:
 
 	WindowInner(DebugLog &debug_log, const char *window_title, int window_width, int window_height, int framebuffer_width, int framebuffer_height);
 
-	void SetFullscreen(bool enabled)
-	{
-		fullscreen = enabled;
-		SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-	}
-	bool GetFullscreen() const { return (SDL_GetWindowFlags(GetSDLWindow()) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0; }
-	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL_Window* GetSDLWindow() const { return sdl_window.get(); }
 	SDL_Renderer* GetRenderer() const { return renderer.get(); }
 	SDL_Texture* GetFramebufferTexture() const { return framebuffer_texture.get(); }
@@ -36,8 +25,8 @@ class Window
 {
 private:
 	DebugLog &debug_log;
-	bool fullscreen;
-	WindowInner *window;
+	bool fullscreen = false;
+	WindowInner *window = nullptr;
 
 public:
 	Window(DebugLog &debug_log) : debug_log(debug_log) {};
@@ -50,6 +39,7 @@ public:
 	void Deinitialise()
 	{
 		delete window;
+		window = nullptr;
 	}
 
 	float GetDPIScale() const;
