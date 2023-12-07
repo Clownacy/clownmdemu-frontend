@@ -52,6 +52,9 @@ private:
 	State state_rewind_buffer[1];
 #endif
 
+	unsigned int current_screen_width;
+	unsigned int current_screen_height;
+
 	static cc_u8f CartridgeReadCallback(void *user_data, cc_u32f address);
 	static void CartridgeWrittenCallback(void *user_data, cc_u32f address, cc_u8f value);
 	static void ColourUpdatedCallback(void *user_data, cc_u16f index, cc_u16f colour);
@@ -64,8 +67,6 @@ private:
 
 public:
 	ClownMDEmu_Configuration clownmdemu_configuration;
-	unsigned int current_screen_width;
-	unsigned int current_screen_height;
 
 	State *state;
 
@@ -91,6 +92,9 @@ public:
 	void Rewind(const bool active) { rewind_in_progress = active; }
 	bool RewindingExhausted() const { return IsRewinding() && state_rewind_remaining == 0; }
 #endif
+
+	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
+	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 }
 ;
 

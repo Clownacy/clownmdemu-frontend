@@ -2008,7 +2008,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			switch (emulator.current_screen_height)
+			switch (emulator.GetCurrentScreenHeight())
 			{
 				default:
 					assert(false);
@@ -2037,7 +2037,7 @@ void Frontend::Update()
 			unsigned int destination_width_scaled;
 			unsigned int destination_height_scaled;
 
-			ImVec2 uv1 = {static_cast<float>(emulator.current_screen_width) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(emulator.current_screen_height) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
+			ImVec2 uv1 = {static_cast<float>(emulator.GetCurrentScreenWidth()) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(emulator.GetCurrentScreenHeight()) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
 
 			if (integer_screen_scaling)
 			{
@@ -2079,8 +2079,8 @@ void Frontend::Update()
 					SDL_Rect framebuffer_rect;
 					framebuffer_rect.x = 0;
 					framebuffer_rect.y = 0;
-					framebuffer_rect.w = emulator.current_screen_width;
-					framebuffer_rect.h = emulator.current_screen_height;
+					framebuffer_rect.w = emulator.GetCurrentScreenWidth();
+					framebuffer_rect.h = emulator.GetCurrentScreenHeight();
 
 					SDL_Rect upscaled_framebuffer_rect;
 					upscaled_framebuffer_rect.x = 0;
