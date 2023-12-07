@@ -301,7 +301,7 @@ static void UpdateFastForwardStatus()
 	{
 		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
 		if (use_vsync)
-			SDL_RenderSetVSync(window.renderer, !fast_forward_in_progress);
+			SDL_RenderSetVSync(window.GetRenderer(), !fast_forward_in_progress);
 	}
 }
 
@@ -339,7 +339,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 
 		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-		framebuffer_texture_upscaled = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
+		framebuffer_texture_upscaled = SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
 
 		if (framebuffer_texture_upscaled == nullptr)
 		{
@@ -693,7 +693,7 @@ static void LoadConfiguration()
 	// Set default settings.
 
 	// Default V-sync.
-	const int display_index = SDL_GetWindowDisplayIndex(window.sdl);
+	const int display_index = SDL_GetWindowDisplayIndex(window.GetSDLWindow());
 
 	if (display_index >= 0)
 	{
@@ -747,7 +747,7 @@ static void LoadConfiguration()
 		SDL_RWclose(file);
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_RenderSetVSync(window.renderer, use_vsync);
+	SDL_RenderSetVSync(window.GetRenderer(), use_vsync);
 }
 
 static void SaveConfiguration()
@@ -1007,7 +1007,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 			// We shouldn't resize the window if something is overriding its size.
 			// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
 			int window_width, window_height;
-			SDL_GetWindowSize(window.sdl, &window_width, &window_height);
+			SDL_GetWindowSize(window.GetSDLWindow(), &window_width, &window_height);
 
 			if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
 			{
@@ -1019,12 +1019,12 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 			#else
 				const float window_size_scale = 1.0f;
 			#endif
-				SDL_SetWindowSize(window.sdl, static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
+				SDL_SetWindowSize(window.GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
 			}
 
 			// Setup Platform/Renderer backends
-			ImGui_ImplSDL2_InitForSDLRenderer(window.sdl, window.renderer);
-			ImGui_ImplSDLRenderer2_Init(window.renderer);
+			ImGui_ImplSDL2_InitForSDLRenderer(window.GetSDLWindow(), window.GetRenderer());
+			ImGui_ImplSDLRenderer2_Init(window.GetRenderer());
 
 			// Load fonts
 			ReloadFonts(font_size);
@@ -1049,7 +1049,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 				LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
 
 			// We are now ready to show the window
-			SDL_ShowWindow(window.sdl);
+			SDL_ShowWindow(window.GetSDLWindow());
 
 			debug_log.ForceConsoleOutput(false);
 
@@ -1999,7 +1999,7 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			SDL_Texture *selected_framebuffer_texture = window.framebuffer_texture;
+			SDL_Texture *selected_framebuffer_texture = window.GetFramebufferTexture();
 
 			const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
 			const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
@@ -2088,13 +2088,13 @@ void Frontend::Update()
 					upscaled_framebuffer_rect.h = destination_height * framebuffer_upscale_factor;
 
 					// Render to the upscaled framebuffer.
-					SDL_SetRenderTarget(window.renderer, framebuffer_texture_upscaled);
+					SDL_SetRenderTarget(window.GetRenderer(), framebuffer_texture_upscaled);
 
 					// Render.
-					SDL_RenderCopy(window.renderer, window.framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+					SDL_RenderCopy(window.GetRenderer(), window.GetFramebufferTexture(), &framebuffer_rect, &upscaled_framebuffer_rect);
 
 					// Switch back to actually rendering to the screen.
-					SDL_SetRenderTarget(window.renderer, nullptr);
+					SDL_SetRenderTarget(window.GetRenderer(), nullptr);
 
 					// Update the texture UV to suit the upscaled framebuffer.
 					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
@@ -2428,7 +2428,7 @@ void Frontend::Update()
 				ImGui::TableNextColumn();
 				if (ImGui::Checkbox("V-Sync", &use_vsync))
 					if (!fast_forward_in_progress)
-						SDL_RenderSetVSync(window.renderer, use_vsync);
+						SDL_RenderSetVSync(window.GetRenderer(), use_vsync);
 				DoToolTip("Prevents screen tearing.");
 
 				ImGui::TableNextColumn();
@@ -2806,14 +2806,14 @@ void Frontend::Update()
 
 	file_utilities.DisplayFileDialog(drag_and_drop_filename);
 
-	SDL_RenderClear(window.renderer);
+	SDL_RenderClear(window.GetRenderer());
 
 	// Render Dear ImGui.
 	ImGui::Render();
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 
 	// Finally display the rendered frame to the user.
-	SDL_RenderPresent(window.renderer);
+	SDL_RenderPresent(window.GetRenderer());
 
 	PreEventStuff();
 }

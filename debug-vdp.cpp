@@ -40,7 +40,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 		if (plane_viewer.texture == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_viewer.texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_viewer.texture = SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
 
 			if (plane_viewer.texture == nullptr)
 			{
@@ -209,7 +209,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 			vram_viewer.texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_viewer.texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_viewer.texture_width), static_cast<int>(vram_viewer.texture_height));
+			vram_viewer.texture = SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_viewer.texture_width), static_cast<int>(vram_viewer.texture_height));
 
 			if (vram_viewer.texture == nullptr)
 			{

@@ -25,7 +25,7 @@ void DebugFrontend::Display(bool &open)
 			ImGui::TableNextColumn();
 
 			SDL_RendererInfo info;
-			if (SDL_GetRendererInfo(window.renderer, &info) == 0)
+			if (SDL_GetRendererInfo(window.GetRenderer(), &info) == 0)
 				ImGui::TextUnformatted(info.name);
 			else
 				ImGui::TextUnformatted("Unknown");

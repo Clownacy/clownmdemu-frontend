@@ -1,5 +1,7 @@
 #include "window.h"
 
+#include <stdexcept>
+
 float Window::GetDPIScale() const
 {
 	// TODO: Make the DPI scale two-dimensional.
@@ -14,8 +16,8 @@ float Window::GetDPIScale() const
 		dpi_scale = ddpi / 96.0f;
 #else
 	int window_width, renderer_width;
-	SDL_GetWindowSize(sdl, &window_width, nullptr);
-	SDL_GetRendererOutputSize(renderer, &renderer_width, nullptr);
+	SDL_GetWindowSize(GetSDLWindow(), &window_width, nullptr);
+	SDL_GetRendererOutputSize(GetRenderer(), &renderer_width, nullptr);
 
 	dpi_scale = static_cast<float>(renderer_width) / CC_MAX(1, window_width); // Prevent a division by 0.
 #endif
@@ -24,9 +26,9 @@ float Window::GetDPIScale() const
 	return CC_MAX(1.0f, dpi_scale);
 }
 
-bool Window::Initialise(const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
+static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height)
 {
-	sdl = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
+	return SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
 #ifndef _WIN32
 		// This currently does nothing on Windows, so we use our own custom implementation.
 		// However, in case this ever does do something in the future, avoid using it on Windows.
@@ -34,76 +36,70 @@ bool Window::Initialise(const char* const window_title, const int window_width, 
 		| SDL_WINDOW_ALLOW_HIGHDPI
 #endif
 	);
-
-	if (sdl == nullptr)
-	{
-		debug_log.Log("SDL_CreateWindow failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		// Use batching even if the user forces a specific rendering backend (wtf SDL).
-		//
-		// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
-		// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
-		// for backwards compatibility reasons. Setting this hint prevents that.
-		//
-		// Normally if a user is setting an environment variable to force a specific rendering
-		// backend, then they're expected to set another environment variable to set this hint too,
-		// but I might as well just do it myself and save everyone else the hassle.
-		SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
-
-		// Create renderer
-		renderer = SDL_CreateRenderer(sdl, -1, SDL_RENDERER_TARGETTEXTURE);
-
-		if (renderer == nullptr)
-		{
-			debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Create framebuffer texture
-			// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_width, framebuffer_height);
-
-			if (framebuffer_texture == nullptr)
-			{
-				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-			}
-			else
-			{
-				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
-					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-				return true;
-			}
-		}
-
-		SDL_DestroyWindow(sdl);
-	}
-
-	return false;
 }
 
-void Window::Deinitialise()
+static SDL_Renderer* CreateRenderer(SDL_Window* const window)
 {
-	SDL_DestroyTexture(framebuffer_texture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(sdl);
+	// Use batching even if the user forces a specific rendering backend (wtf SDL).
+	//
+	// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
+	// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
+	// for backwards compatibility reasons. Setting this hint prevents that.
+	//
+	// Normally if a user is setting an environment variable to force a specific rendering
+	// backend, then they're expected to set another environment variable to set this hint too,
+	// but I might as well just do it myself and save everyone else the hassle.
+	SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
+
+	return SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
+}
+
+static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
+{
+	// Create framebuffer texture
+	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+	SDL_Texture* const framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_width, framebuffer_height);
+
+	if (framebuffer_texture != nullptr)
+	{
+		// Disable blending, since we don't need it
+		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
+			debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+	}
+
+	return framebuffer_texture;
+}
+
+template<typename T>
+static T* NullThrowSDL(T* const pointer)
+{
+	if (pointer == nullptr)
+		throw std::runtime_error(SDL_GetError());
+
+	return pointer;
+}
+
+WindowInner::WindowInner(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
+	: debug_log(debug_log)
+	, sdl_window(NullThrowSDL(CreateWindow(window_title, window_width, window_height)), SDL_DestroyWindow)
+	, renderer(NullThrowSDL(CreateRenderer(GetSDLWindow())), SDL_DestroyRenderer)
+	, framebuffer_texture(NullThrowSDL(CreateFramebufferTexture(debug_log, GetRenderer(), framebuffer_width, framebuffer_height)), SDL_DestroyTexture)
+{
+
 }
 
 void Window::ShowWarningMessageBox(const char* const message) const
 {
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", message, sdl);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", message, GetSDLWindow());
 }
 
 void Window::ShowErrorMessageBox(const char* const message) const
 {
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message, sdl);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message, GetSDLWindow());
 }
 
 void Window::ShowFatalMessageBox(const char* const message) const
 {
-	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message, sdl);
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message, GetSDLWindow());
 }
