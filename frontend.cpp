@@ -709,10 +709,6 @@ void Frontend::SaveConfiguration()
 					case INPUT_BINDING_TOGGLE_CONTROL_PAD:
 						binding_string = "INPUT_BINDING_TOGGLE_CONTROL_PAD";
 						break;
-
-					case INPUT_BINDING__TOTAL:
-						SDL_assert(false);
-						break;
 				}
 
 				char *buffer;
@@ -766,8 +762,7 @@ void Frontend::PreEventStuff()
 }
 
 Frontend::Frontend(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback_param)
-	: monospace_font(nullptr)
-	, debug_log(dpi_scale, monospace_font)
+	: debug_log(dpi_scale, monospace_font)
 	, audio_output(debug_log)
 	, window(debug_log)
 	, file_utilities(debug_log, window)
