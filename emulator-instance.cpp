@@ -91,44 +91,28 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 	static cc_u8l sector_buffer[2048];
 
 	if (emulator->cd_file != nullptr)
+	{
 		SDL_RWread(emulator->cd_file, sector_buffer, 2048, 1);
 
-	if (emulator->sector_size_2352)
-		SDL_RWseek(emulator->cd_file, 2352 - 2048, SEEK_CUR);
+		if (emulator->sector_size_2352)
+			SDL_RWseek(emulator->cd_file, 2352 - 2048, SEEK_CUR);
+	}
 
 	return sector_buffer;
 }
 
 EmulatorInstance::EmulatorInstance(
-	AudioOutput &audio_output,
 	DebugLog &debug_log,
 	Window &window,
 	const InputCallback &input_callback
-) :
-	audio_output(audio_output),
-	window(window),
-	input_callback(input_callback),
-	callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback})
+)
+	: audio_output()
+	, window(window)
+	, input_callback(input_callback)
+	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, CDSeekCallback, CDSectorReadCallback})
 {
 	// This should be called before any other clownmdemu functions are called!
 	ClownMDEmu_SetErrorCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &debug_log);
-
-	// Initialise the clownmdemu configuration struct.
-	clownmdemu_configuration.vdp.sprites_disabled = cc_false;
-	clownmdemu_configuration.vdp.window_disabled = cc_false;
-	clownmdemu_configuration.vdp.planes_disabled[0] = cc_false;
-	clownmdemu_configuration.vdp.planes_disabled[1] = cc_false;
-	clownmdemu_configuration.fm.fm_channels_disabled[0] = cc_false;
-	clownmdemu_configuration.fm.fm_channels_disabled[1] = cc_false;
-	clownmdemu_configuration.fm.fm_channels_disabled[2] = cc_false;
-	clownmdemu_configuration.fm.fm_channels_disabled[3] = cc_false;
-	clownmdemu_configuration.fm.fm_channels_disabled[4] = cc_false;
-	clownmdemu_configuration.fm.fm_channels_disabled[5] = cc_false;
-	clownmdemu_configuration.fm.dac_channel_disabled = cc_false;
-	clownmdemu_configuration.psg.tone_disabled[0] = cc_false;
-	clownmdemu_configuration.psg.tone_disabled[1] = cc_false;
-	clownmdemu_configuration.psg.tone_disabled[2] = cc_false;
-	clownmdemu_configuration.psg.noise_disabled = cc_false;
 
 	// Initialise persistent data such as lookup tables.
 	if (!clownmdemu_initialised)
@@ -136,6 +120,8 @@ EmulatorInstance::EmulatorInstance(
 		clownmdemu_initialised = true;
 		ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
 	}
+
+	HardResetConsole();
 }
 
 EmulatorInstance::~EmulatorInstance()

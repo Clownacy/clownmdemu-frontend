@@ -19,7 +19,6 @@
 #include "inconsolata-regular.h"
 #include "noto-sans-regular.h"
 
-#include "audio-output.h"
 #include "debug-fm.h"
 #include "debug-frontend.h"
 #include "debug-log.h"
@@ -115,7 +114,7 @@ static bool key_pressed[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an i
 static DoublyLinkedList recent_software_list;
 static char *drag_and_drop_filename;
 
-static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
+static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator->
 static bool emulator_paused;
 static bool emulator_frame_advance;
 
@@ -135,22 +134,17 @@ static ImGuiStyle style_backup;
 static Frontend::FrameRateCallback frame_rate_callback;
 
 static DebugLog debug_log(dpi_scale, monospace_font);
-static AudioOutput audio_output(debug_log);
-static Window window(debug_log);
 static FileUtilities file_utilities(debug_log);
+static Window window(debug_log);
 
-static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id);
-static EmulatorInstance emulator(audio_output, debug_log, window, ReadInputCallback);
-
-static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
-
-static DebugFM debug_fm(emulator, monospace_font);
-static DebugFrontend debug_frontend(audio_output, window, GetUpscaledFramebufferSize);
-static DebugM68k debug_m68k(monospace_font);
-static DebugMemory debug_memory(monospace_font);
-static DebugPSG debug_psg(emulator, monospace_font);
-static DebugVDP debug_vdp(debug_log, dpi_scale, emulator, file_utilities, frame_counter, monospace_font, window);
-static DebugZ80 debug_z80(emulator, monospace_font);
+static EmulatorInstance *emulator;
+static DebugFM *debug_fm;
+static DebugFrontend *debug_frontend;
+static DebugM68k *debug_m68k;
+static DebugMemory *debug_memory;
+static DebugPSG *debug_psg;
+static DebugVDP *debug_vdp;
+static DebugZ80 *debug_z80;
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -313,7 +307,7 @@ static void UpdateRewindStatus()
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
 		will_rewind |= controller_input->input.rewind != 0;
 
-	emulator.Rewind(will_rewind);
+	emulator->Rewind(will_rewind);
 }
 #endif
 
@@ -373,7 +367,7 @@ static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height
 static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
 {
 	quick_save_exists = false;
-	emulator.LoadCartridgeFile(file_buffer, file_size);
+	emulator->LoadCartridgeFile(file_buffer, file_size);
 }
 
 static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
@@ -423,7 +417,7 @@ static bool LoadCDFile(const char* const path, SDL_RWops* const file)
 	static_cast<void>(path);
 #endif
 
-	emulator.LoadCDFile(file);
+	emulator->LoadCDFile(file);
 	return true;
 }
 
@@ -445,7 +439,7 @@ static bool LoadCDFile(const char* const path)
 
 static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
 {
-	if (!emulator.LoadSaveState(file_buffer, file_size))
+	if (!emulator->LoadSaveState(file_buffer, file_size))
 	{
 		debug_log.Log("Could not load save state file");
 		window.ShowErrorMessageBox("Could not load save state file.");
@@ -484,7 +478,7 @@ static bool CreateSaveState(const char* const save_state_path)
 
 	SDL_RWops* const file = SDL_RWFromFile(save_state_path, "wb");
 
-	if (file == nullptr || !emulator.CreateSaveState(file))
+	if (file == nullptr || !emulator->CreateSaveState(file))
 	{
 		debug_log.Log("Could not create save state file");
 		window.ShowErrorMessageBox("Could not create save state file.");
@@ -501,7 +495,7 @@ static bool CreateSaveState(const char* const save_state_path)
 static void SetAudioPALMode(const bool enabled)
 {
 	frame_rate_callback(enabled);
-	audio_output.SetPALMode(enabled);
+	emulator->SetPALMode(enabled);
 }
 
 
@@ -566,11 +560,11 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
 			tall_double_resolution_mode = state;
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
-			audio_output.SetLowPassFilter(state);
+			emulator->SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
-			emulator.clownmdemu_configuration.general.tv_standard = state ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
+			emulator->SetPALMode(state);
 		else if (SDL_strcmp(name, "japanese") == 0)
-			emulator.clownmdemu_configuration.general.region = state ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS;
+			emulator->SetDomestic(state);
 	#ifdef FILE_PICKER_POSIX
 		else if (SDL_strcmp(name, "last-directory") == 0)
 			file_utilities.last_file_dialog_directory = SDL_strdup(value);
@@ -709,12 +703,12 @@ static void LoadConfiguration()
 	}
 
 	// Default other settings.
-	audio_output.SetLowPassFilter(true);
+	emulator->SetLowPassFilter(true);
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
 
-	emulator.clownmdemu_configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
-	emulator.clownmdemu_configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
+	emulator->SetDomestic(false);
+	emulator->SetPALMode(false);
 
 	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
 
@@ -777,9 +771,9 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", audio_output.GetLowPassFilter());
-		PRINT_BOOLEAN_OPTION(file, "pal", emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-		PRINT_BOOLEAN_OPTION(file, "japanese", emulator.clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC);
+		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
+		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
 
 	#ifdef FILE_PICKER_POSIX
 		if (file_utilities.last_file_dialog_directory != nullptr)
@@ -916,10 +910,10 @@ static void SaveConfiguration()
 
 static void PreEventStuff()
 {
-	emulator_on = emulator.IsCartridgeFileLoaded() || emulator.IsCDFileLoaded();
+	emulator_on = emulator->IsCartridgeFileLoaded() || emulator->IsCDFileLoaded();
 	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen()
 	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-		&& !emulator.RewindingExhausted()
+		&& !emulator->RewindingExhausted()
 	#endif
 		;
 
@@ -938,6 +932,15 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	}
 	else
 	{
+		emulator = new EmulatorInstance(debug_log, window, ReadInputCallback);
+		debug_fm = new DebugFM(*emulator, monospace_font);
+		debug_frontend = new DebugFrontend(*emulator, window, GetUpscaledFramebufferSize);
+		debug_m68k = new DebugM68k(monospace_font);
+		debug_memory = new DebugMemory(monospace_font);
+		debug_psg = new DebugPSG(*emulator, monospace_font);
+		debug_vdp = new DebugVDP(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, window);
+		debug_z80 = new DebugZ80(*emulator, monospace_font);
+
 		if (!window.Initialise("clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
 		{
 			debug_log.Log("window.Initialise failed");
@@ -945,18 +948,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		}
 		else
 		{
-			// Intiialise audio if we can (but it's okay if it fails).
-			if (!audio_output.Initialise())
-			{
-				debug_log.Log("InitialiseAudio failed");
-				window.ShowWarningMessageBox("Unable to initialise audio subsystem: the program will not output audio!");
-			}
-			else
-			{
-				// Initialise resamplers.
-				SetAudioPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-			}
-
 			dpi_scale = window.GetDPIScale();
 
 			DoublyLinkedList_Initialise(&recent_software_list);
@@ -1089,8 +1080,16 @@ void Frontend::Deinitialise()
 	}
 #endif
 
-	audio_output.Deinitialise();
 	window.Deinitialise();
+
+	delete debug_z80;
+	delete debug_vdp;
+	delete debug_psg;
+	delete debug_memory;
+	delete debug_m68k;
+	delete debug_frontend;
+	delete debug_fm;
+	delete emulator;
 
 	SDL_Quit();
 }
@@ -1163,21 +1162,21 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 					case INPUT_BINDING_RESET:
 						// Soft-reset console
-						emulator.SoftResetConsole();
+						emulator->SoftResetConsole();
 						emulator_paused = false;
 						break;
 
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						// Save save state
 						quick_save_exists = true;
-						quick_save_state = emulator.CurrentState();
+						quick_save_state = emulator->CurrentState();
 						break;
 
 					case INPUT_BINDING_QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_exists)
 						{
-							emulator.OverwriteCurrentState(quick_save_state);
+							emulator->OverwriteCurrentState(quick_save_state);
 							emulator_paused = false;
 						}
 
@@ -1363,7 +1362,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 					// Load save state
 					if (quick_save_exists)
 					{
-						emulator.OverwriteCurrentState(quick_save_state);
+						emulator->OverwriteCurrentState(quick_save_state);
 
 						emulator_paused = false;
 
@@ -1375,7 +1374,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 					// Save save state
 					quick_save_exists = true;
-					quick_save_state = emulator.CurrentState();
+					quick_save_state = emulator->CurrentState();
 
 					SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
 					break;
@@ -1620,7 +1619,7 @@ void Frontend::Update()
 
 	if (emulator_running)
 	{
-		emulator.Update();
+		emulator->Update();
 		++frame_counter;
 	}
 
@@ -1638,7 +1637,7 @@ void Frontend::Update()
 
 		if (file_buffer != nullptr)
 		{
-			if (emulator.ValidateSaveState(file_buffer, file_size))
+			if (emulator->ValidateSaveState(file_buffer, file_size))
 			{
 				if (emulator_on)
 					LoadSaveState(file_buffer, file_size);
@@ -1744,12 +1743,12 @@ void Frontend::Update()
 					});
 				}
 
-				if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, emulator.IsCartridgeFileLoaded()))
+				if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, emulator->IsCartridgeFileLoaded()))
 				{
-					emulator.UnloadCartridgeFile();
+					emulator->UnloadCartridgeFile();
 
-					if (emulator.IsCDFileLoaded())
-						emulator.HardResetConsole();
+					if (emulator->IsCDFileLoaded())
+						emulator->HardResetConsole();
 
 					emulator_paused = false;
 				}
@@ -1772,12 +1771,12 @@ void Frontend::Update()
 					});
 				}
 
-				if (ImGui::MenuItem("Unload CD File", nullptr, false, emulator.IsCDFileLoaded()))
+				if (ImGui::MenuItem("Unload CD File", nullptr, false, emulator->IsCDFileLoaded()))
 				{
-					emulator.UnloadCDFile();
+					emulator->UnloadCDFile();
 
-					if (emulator.IsCartridgeFileLoaded())
-						emulator.HardResetConsole();
+					if (emulator->IsCartridgeFileLoaded())
+						emulator->HardResetConsole();
 
 					emulator_paused = false;
 				}
@@ -1788,7 +1787,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Reset", nullptr, false, emulator_on))
 				{
-					emulator.SoftResetConsole();
+					emulator->SoftResetConsole();
 					emulator_paused = false;
 				}
 
@@ -1842,12 +1841,12 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 				{
 					quick_save_exists = true;
-					quick_save_state = emulator.CurrentState();
+					quick_save_state = emulator->CurrentState();
 				}
 
 				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_exists))
 				{
-					emulator.OverwriteCurrentState(quick_save_state);
+					emulator->OverwriteCurrentState(quick_save_state);
 
 					emulator_paused = false;
 				}
@@ -1862,7 +1861,7 @@ void Frontend::Update()
 					file_utilities.SaveFile(window, "Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
 						// Inefficient, but it's the only way...
-						const std::size_t save_state_size = emulator.GetSaveStateSize();
+						const std::size_t save_state_size = emulator->GetSaveStateSize();
 						void* const save_state_buffer = SDL_malloc(save_state_size);
 
 						if (save_state_buffer == nullptr)
@@ -1872,7 +1871,7 @@ void Frontend::Update()
 
 						if (file != nullptr)
 						{
-							emulator.CreateSaveState(file);
+							emulator->CreateSaveState(file);
 							SDL_RWclose(file);
 
 							callback(save_state_buffer, save_state_size);
@@ -1988,7 +1987,7 @@ void Frontend::Update()
 		// Weird behaviour - I know.
 		const ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
 
-		// Create an invisible button which detects when input is intended for the emulator.
+		// Create an invisible button which detects when input is intended for the emulator->
 		// We do this cursor stuff so that the framebuffer is drawn over the button.
 		const ImVec2 cursor = ImGui::GetCursorPos();
 		ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
@@ -2007,7 +2006,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			switch (emulator.GetCurrentScreenHeight())
+			switch (emulator->GetCurrentScreenHeight())
 			{
 				default:
 					assert(false);
@@ -2036,7 +2035,7 @@ void Frontend::Update()
 			unsigned int destination_width_scaled;
 			unsigned int destination_height_scaled;
 
-			ImVec2 uv1 = {static_cast<float>(emulator.GetCurrentScreenWidth()) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(emulator.GetCurrentScreenHeight()) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
+			ImVec2 uv1 = {static_cast<float>(emulator->GetCurrentScreenWidth()) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(emulator->GetCurrentScreenHeight()) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
 
 			if (integer_screen_scaling)
 			{
@@ -2078,8 +2077,8 @@ void Frontend::Update()
 					SDL_Rect framebuffer_rect;
 					framebuffer_rect.x = 0;
 					framebuffer_rect.y = 0;
-					framebuffer_rect.w = emulator.GetCurrentScreenWidth();
-					framebuffer_rect.h = emulator.GetCurrentScreenHeight();
+					framebuffer_rect.w = emulator->GetCurrentScreenWidth();
+					framebuffer_rect.h = emulator->GetCurrentScreenHeight();
 
 					SDL_Rect upscaled_framebuffer_rect;
 					upscaled_framebuffer_rect.x = 0;
@@ -2100,8 +2099,8 @@ void Frontend::Update()
 					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
 					uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
 
-					debug_frontend.upscale_width = upscaled_framebuffer_rect.w;
-					debug_frontend.upscale_height = upscaled_framebuffer_rect.h;
+					debug_frontend->upscale_width = upscaled_framebuffer_rect.w;
+					debug_frontend->upscale_height = upscaled_framebuffer_rect.h;
 				}
 			}
 
@@ -2112,8 +2111,8 @@ void Frontend::Update()
 			// Draw the upscaled framebuffer in the window.
 			ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 
-			debug_frontend.output_width = destination_width_scaled;
-			debug_frontend.output_height = destination_height_scaled;
+			debug_frontend->output_width = destination_width_scaled;
+			debug_frontend->output_height = destination_height_scaled;
 		}
 	}
 
@@ -2123,52 +2122,52 @@ void Frontend::Update()
 		debug_log.Display(debug_log_active);
 
 	if (debug_frontend_active)
-		debug_frontend.Display(debug_frontend_active);
+		debug_frontend->Display(debug_frontend_active);
 
 	if (m68k_status)
-		debug_m68k.Display(m68k_status, "Main 68000 Registers", emulator.CurrentState().clownmdemu.m68k);
+		debug_m68k->Display(m68k_status, "Main 68000 Registers", emulator->CurrentState().clownmdemu.m68k);
 
 	if (mcd_m68k_status)
-		debug_m68k.Display(mcd_m68k_status, "Sub 68000 Registers", emulator.CurrentState().clownmdemu.mcd_m68k);
+		debug_m68k->Display(mcd_m68k_status, "Sub 68000 Registers", emulator->CurrentState().clownmdemu.mcd_m68k);
 
 	if (z80_status)
-		debug_z80.Display(z80_status);
+		debug_z80->Display(z80_status);
 
 	if (m68k_ram_viewer)
-		debug_memory.Display(m68k_ram_viewer, "WORK-RAM", emulator.CurrentState().clownmdemu.m68k_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.m68k_ram));
+		debug_memory->Display(m68k_ram_viewer, "WORK-RAM", emulator->CurrentState().clownmdemu.m68k_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.m68k_ram));
 
 	if (z80_ram_viewer)
-		debug_memory.Display(z80_ram_viewer, "SOUND-RAM", emulator.CurrentState().clownmdemu.z80_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.z80_ram));
+		debug_memory->Display(z80_ram_viewer, "SOUND-RAM", emulator->CurrentState().clownmdemu.z80_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.z80_ram));
 
 	if (prg_ram_viewer)
-		debug_memory.Display(prg_ram_viewer, "PRG-RAM", emulator.CurrentState().clownmdemu.prg_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.prg_ram));
+		debug_memory->Display(prg_ram_viewer, "PRG-RAM", emulator->CurrentState().clownmdemu.prg_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.prg_ram));
 
 	if (word_ram_viewer)
-		debug_memory.Display(word_ram_viewer, "WORD-RAM", emulator.CurrentState().clownmdemu.word_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.word_ram));
+		debug_memory->Display(word_ram_viewer, "WORD-RAM", emulator->CurrentState().clownmdemu.word_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.word_ram));
 
 	if (vdp_registers)
-		debug_vdp.DisplayRegisters(vdp_registers);
+		debug_vdp->DisplayRegisters(vdp_registers);
 
 	if (window_plane_viewer)
-		debug_vdp.DisplayWindowPlane(window_plane_viewer);
+		debug_vdp->DisplayWindowPlane(window_plane_viewer);
 
 	if (plane_a_viewer)
-		debug_vdp.DisplayPlaneA(plane_a_viewer);
+		debug_vdp->DisplayPlaneA(plane_a_viewer);
 
 	if (plane_b_viewer)
-		debug_vdp.DisplayPlaneB(plane_b_viewer);
+		debug_vdp->DisplayPlaneB(plane_b_viewer);
 
 	if (vram_viewer)
-		debug_vdp.DisplayVRAM(vram_viewer);
+		debug_vdp->DisplayVRAM(vram_viewer);
 
 	if (cram_viewer)
-		debug_vdp.DisplayCRAM(cram_viewer);
+		debug_vdp->DisplayCRAM(cram_viewer);
 
 	if (fm_status)
-		debug_fm.Display(fm_status);
+		debug_fm->Display(fm_status);
 
 	if (psg_status)
-		debug_psg.Display(psg_status);
+		debug_psg->Display(psg_status);
 
 	if (other_status)
 	{
@@ -2176,7 +2175,7 @@ void Frontend::Update()
 		{
 			if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
 			{
-				const ClownMDEmu_State &clownmdemu_state = emulator.CurrentState().clownmdemu;
+				const ClownMDEmu_State &clownmdemu_state = emulator->CurrentState().clownmdemu;
 
 				cc_u8f i;
 
@@ -2288,7 +2287,7 @@ void Frontend::Update()
 
 			if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
 			{
-				VDP_Configuration &vdp = emulator.clownmdemu_configuration.vdp;
+				VDP_Configuration &vdp = emulator->GetConfigurationVDP();
 
 				ImGui::TableNextColumn();
 				temp = !vdp.sprites_disabled;
@@ -2317,7 +2316,7 @@ void Frontend::Update()
 
 			if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
 			{
-				FM_Configuration &fm = emulator.clownmdemu_configuration.fm;
+				FM_Configuration &fm = emulator->GetConfigurationFM();
 
 				char buffer[] = "FM1";
 
@@ -2342,7 +2341,7 @@ void Frontend::Update()
 
 			if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
 			{
-				PSG_Configuration &psg = emulator.clownmdemu_configuration.psg;
+				PSG_Configuration &psg = emulator->GetConfigurationPSG();
 
 				char buffer[] = "PSG1";
 
@@ -2368,7 +2367,7 @@ void Frontend::Update()
 	}
 
 	if (disassembler)
-		Disassembler(disassembler, emulator, monospace_font);
+		Disassembler(disassembler, *emulator, monospace_font);
 
 	if (options_menu)
 	{
@@ -2380,42 +2379,30 @@ void Frontend::Update()
 
 			if (ImGui::BeginTable("Console Options", 3))
 			{
-				ClownMDEmu_Configuration &configuration = emulator.clownmdemu_configuration;
-
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("TV Standard:");
 				DoToolTip("Some games only work with a certain TV standard.");
 				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("NTSC", configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_NTSC))
-				{
-					if (configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_NTSC)
-					{
-						configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_NTSC;
-						SetAudioPALMode(false);
-					}
-				}
+				if (ImGui::RadioButton("NTSC", !emulator->GetPALMode()))
+					if (emulator->GetPALMode())
+						emulator->SetPALMode(false);
 				DoToolTip("60 FPS");
 				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("PAL", configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL))
-				{
-					if (configuration.general.tv_standard != CLOWNMDEMU_TV_STANDARD_PAL)
-					{
-						configuration.general.tv_standard = CLOWNMDEMU_TV_STANDARD_PAL;
-						SetAudioPALMode(true);
-					}
-				}
+				if (ImGui::RadioButton("PAL", emulator->GetPALMode()))
+					if (!emulator->GetPALMode())
+						emulator->SetPALMode(true);
 				DoToolTip("50 FPS");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Region:");
 				DoToolTip("Some games only work with a certain region.");
 				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("Japan", configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC))
-					configuration.general.region = CLOWNMDEMU_REGION_DOMESTIC;
+				if (ImGui::RadioButton("Japan", emulator->GetDomestic()))
+					emulator->SetDomestic(true);
 				DoToolTip("Games may show Japanese text.");
 				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("Elsewhere", configuration.general.region == CLOWNMDEMU_REGION_OVERSEAS))
-					configuration.general.region = CLOWNMDEMU_REGION_OVERSEAS;
+				if (ImGui::RadioButton("Elsewhere", !emulator->GetDomestic()))
+					emulator->SetDomestic(false);
 				DoToolTip("Games may show English text.");
 
 				ImGui::EndTable();
@@ -2452,9 +2439,9 @@ void Frontend::Update()
 			if (ImGui::BeginTable("Audio Options", 2))
 			{
 				ImGui::TableNextColumn();
-				bool low_pass_filter = audio_output.GetLowPassFilter();
+				bool low_pass_filter = emulator->GetLowPassFilter();
 				if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
-					audio_output.SetLowPassFilter(low_pass_filter);
+					emulator->SetLowPassFilter(low_pass_filter);
 				DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
 
 				ImGui::EndTable();
@@ -2704,7 +2691,7 @@ void Frontend::Update()
 
 			ImGui::SeparatorText("clownmdemu-frontend " VERSION);
 
-			ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
+			ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator-> Created by Clownacy.");
 			const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
 			if (ImGui::Button(url))
 				SDL_OpenURL(url);

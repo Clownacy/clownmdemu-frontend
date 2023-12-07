@@ -29,7 +29,7 @@ void DebugPSG::Display(bool &open)
 		}
 
 		// Channels.
-		const cc_u32f psg_clock = (emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_MASTER_CLOCK_PAL : CLOWNMDEMU_MASTER_CLOCK_NTSC) / 15 / 16;
+		const cc_u32f psg_clock = (emulator.GetPALMode() ? CLOWNMDEMU_MASTER_CLOCK_PAL : CLOWNMDEMU_MASTER_CLOCK_NTSC) / 15 / 16;
 
 		// Tone channels.
 		ImGui::SeparatorText("Tone Channels");

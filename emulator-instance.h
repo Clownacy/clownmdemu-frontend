@@ -27,13 +27,14 @@ private:
 	static bool clownmdemu_initialised;
 	static ClownMDEmu_Constant clownmdemu_constant;
 
-	AudioOutput &audio_output;
+	AudioOutputInner audio_output;
 	Window &window;
 	const InputCallback input_callback;
 	ClownMDEmu_Callbacks callbacks;
 
+	ClownMDEmu_Configuration clownmdemu_configuration = {};
 	ClownMDEmu clownmdemu;
-	State *state;
+	State *state = &state_rewind_buffer[0];
 
 	unsigned char *rom_buffer = nullptr;
 	std::size_t rom_buffer_size = 0;
@@ -45,9 +46,9 @@ private:
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	State state_rewind_buffer[60 * 10]; // Roughly 30 seconds of rewinding at 60FPS
-	std::size_t state_rewind_index;
-	std::size_t state_rewind_remaining;
-	bool rewind_in_progress;
+	std::size_t state_rewind_index = 0;
+	std::size_t state_rewind_remaining = 0;
+	bool rewind_in_progress = false;
 #else
 	State state_rewind_buffer[1];
 #endif
@@ -66,9 +67,7 @@ private:
 	static const cc_u8l* CDSectorReadCallback(void *user_data);
 
 public:
-	ClownMDEmu_Configuration clownmdemu_configuration;
-
-	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, Window &window, const InputCallback &input_callback);
+	EmulatorInstance(DebugLog &debug_log, Window &window, const InputCallback &input_callback);
 	~EmulatorInstance();
 	void Update();
 	void SoftResetConsole();
@@ -101,6 +100,27 @@ public:
 		buffer = rom_buffer;
 		size = rom_buffer_size;
 	}
+
+	bool GetPALMode() const { return clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
+
+	void SetPALMode(const bool enabled)
+	{
+		clownmdemu_configuration.general.tv_standard = enabled ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
+		audio_output.SetPALMode(enabled);
+	}
+
+	bool GetDomestic() const { return clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
+	void SetDomestic(const bool enabled) { clownmdemu_configuration.general.region = enabled ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS; }
+	bool GetLowPassFilter() const { return audio_output.GetLowPassFilter(); }
+	void SetLowPassFilter(const bool enabled) { audio_output.SetLowPassFilter(enabled); }
+	VDP_Configuration& GetConfigurationVDP() { return clownmdemu_configuration.vdp; }
+	FM_Configuration& GetConfigurationFM() { return clownmdemu_configuration.fm; }
+	PSG_Configuration& GetConfigurationPSG() { return clownmdemu_configuration.psg; }
+
+	cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
+	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
+	cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
+	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
 };
 
 #endif /* EMULATOR_INSTANCE_H */

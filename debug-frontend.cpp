@@ -107,25 +107,25 @@ void DebugFrontend::Display(bool &open)
 			ImGui::TextUnformatted("Sample Rate");
 			DoToolTip("The number of audio frames played per second.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetSampleRate());
+			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioSampleRate());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Buffer Frames");
 			DoToolTip("The number of audio frames that are pulled from the buffer in a single batch.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetTotalBufferFrames());
+			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");
 			DoToolTip("The number of buffered audio frames that the audio system tries to maintain.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetTargetFrames());
+			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioTargetFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Average Frames");
 			DoToolTip("The current average number of buffered audio frames.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, audio_output.GetAverageFrames());
+			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioAverageFrames());
 
 			ImGui::EndTable();
 		}
