@@ -11,7 +11,7 @@
 #include "audio-device.h"
 #include "debug-log.h"
 
-class AudioOutputInner
+class AudioOutput
 {
 private:
 	static Mixer_Constant mixer_constant;
@@ -31,8 +31,8 @@ private:
 	const Mixer mixer = {&mixer_constant, &mixer_state};
 
 public:
-	AudioOutputInner();
-	~AudioOutputInner();
+	AudioOutput();
+	~AudioOutput();
 	void MixerBegin();
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);
@@ -57,47 +57,6 @@ public:
 	}
 
 	bool GetLowPassFilter() const { return low_pass_filter; }
-};
-
-class AudioOutput
-{
-private:
-	AudioOutputInner *inner = nullptr;
-
-public:
-	AudioOutput(DebugLog &/*debug_log*/) {}
-	bool Initialise()
-	{
-		inner = new AudioOutputInner();
-		return inner != nullptr;
-	}
-	void Deinitialise()
-	{
-		delete inner;
-		inner = nullptr;
-	}
-	void MixerBegin() { inner->MixerBegin(); };
-	void MixerEnd() { inner->MixerEnd(); };
-	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples) { return inner->MixerAllocateFMSamples(total_samples); };
-	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples) { return inner->MixerAllocatePSGSamples(total_samples); };
-	cc_u32f GetAverageFrames() const { return inner->GetAverageFrames(); };
-	cc_u32f GetTargetFrames() const { return inner->GetTargetFrames(); } // 50ms
-	cc_u32f GetTotalBufferFrames() const { return inner->GetTotalBufferFrames(); }
-	cc_u32f GetSampleRate() const { return inner->GetSampleRate(); }
-
-	void SetPALMode(const bool enabled)
-	{
-		inner->SetPALMode(enabled);
-	}
-
-	bool GetPALMode() const { return inner->GetPALMode(); }
-
-	void SetLowPassFilter(const bool enabled)
-	{
-		inner->SetLowPassFilter(enabled);
-	}
-
-	bool GetLowPassFilter() const { return inner->GetLowPassFilter(); }
 };
 
 #endif /* AUDIO_OUTPUT_H */

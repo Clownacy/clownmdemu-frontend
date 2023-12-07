@@ -15,10 +15,10 @@
 #define MIXER_MEMSET SDL_memset
 #include "clownmdemu-frontend-common/mixer.h"
 
-Mixer_Constant AudioOutputInner::mixer_constant;
-bool AudioOutputInner::mixer_constant_initialised;
+Mixer_Constant AudioOutput::mixer_constant;
+bool AudioOutput::mixer_constant_initialised;
 
-AudioOutputInner::AudioOutputInner()
+AudioOutput::AudioOutput()
 	: device(MIXER_FM_CHANNEL_COUNT, sample_rate, total_buffer_frames)
 {
 	// Initialise the mixer.
@@ -31,12 +31,12 @@ AudioOutputInner::AudioOutputInner()
 	Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
 }
 
-AudioOutputInner::~AudioOutputInner()
+AudioOutput::~AudioOutput()
 {
 	Mixer_State_Deinitialise(&mixer_state);
 }
 
-void AudioOutputInner::MixerBegin()
+void AudioOutput::MixerBegin()
 {
 	if (mixer_update_pending)
 	{
@@ -48,7 +48,7 @@ void AudioOutputInner::MixerBegin()
 	Mixer_Begin(&mixer);
 }
 
-void AudioOutputInner::MixerEnd()
+void AudioOutput::MixerEnd()
 {
 	const cc_u32f target_frames = GetTargetFrames();
 	const cc_u32f queued_frames = device.GetTotalQueuedFrames();
@@ -61,7 +61,7 @@ void AudioOutputInner::MixerEnd()
 	{
 		const auto callback = [](void* const user_data, Sint16* const audio_samples, const std::size_t total_frames)
 		{
-			AudioOutputInner *audio_output = static_cast<AudioOutputInner*>(user_data);
+			AudioOutput *audio_output = static_cast<AudioOutput*>(user_data);
 
 			audio_output->device.QueueFrames(audio_samples, total_frames);
 		};
@@ -73,17 +73,17 @@ void AudioOutputInner::MixerEnd()
 	}
 }
 
-cc_s16l* AudioOutputInner::MixerAllocateFMSamples(const std::size_t total_frames)
+cc_s16l* AudioOutput::MixerAllocateFMSamples(const std::size_t total_frames)
 {
 	return Mixer_AllocateFMSamples(&mixer, total_frames);
 }
 
-cc_s16l* AudioOutputInner::MixerAllocatePSGSamples(const std::size_t total_frames)
+cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_frames)
 {
 	return Mixer_AllocatePSGSamples(&mixer, total_frames);
 }
 
-cc_u32f AudioOutputInner::GetAverageFrames() const
+cc_u32f AudioOutput::GetAverageFrames() const
 {
 	cc_u32f average_queued_frames = 0;
 

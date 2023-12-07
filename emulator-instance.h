@@ -27,7 +27,7 @@ private:
 	static bool clownmdemu_initialised;
 	static ClownMDEmu_Constant clownmdemu_constant;
 
-	AudioOutputInner audio_output;
+	AudioOutput audio_output;
 	Window &window;
 	const InputCallback input_callback;
 	ClownMDEmu_Callbacks callbacks;
