@@ -35,7 +35,6 @@ private:
 
 	ClownMDEmu_Configuration clownmdemu_configuration = {};
 	ClownMDEmu clownmdemu;
-	State *state = &state_rewind_buffer[0];
 
 	unsigned char *rom_buffer = nullptr;
 	std::size_t rom_buffer_size = 0;
@@ -46,13 +45,15 @@ private:
 	int framebuffer_texture_pitch;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	std::array<State, 60 * 10>state_rewind_buffer; // Roughly 30 seconds of rewinding at 60FPS
+	std::array<State, 60 * 10> state_rewind_buffer; // Roughly 30 seconds of rewinding at 60FPS
 	std::size_t state_rewind_index = 0;
 	std::size_t state_rewind_remaining = 0;
 	bool rewind_in_progress = false;
 #else
-	State state_rewind_buffer[1];
+	std::array<State, 1> state_rewind_buffer;
 #endif
+
+	State *state = &state_rewind_buffer[0];
 
 	unsigned int current_screen_width;
 	unsigned int current_screen_height;
@@ -94,7 +95,7 @@ public:
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 	const State& CurrentState() const { return *state; }
-	const void OverwriteCurrentState(const State &new_state) { *state = new_state; }
+	void OverwriteCurrentState(const State &new_state) { *state = new_state; }
 
 	void GetROMBuffer(const unsigned char *&buffer, std::size_t &size) const
 	{

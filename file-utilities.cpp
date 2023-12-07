@@ -462,6 +462,7 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 void FileUtilities::LoadFile(const Window &window, const char* const title, const std::function<bool(const char* const path, SDL_RWops *file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
+	static_cast<void>(window);
 	static_cast<void>(title);
 
 	struct CallbackHolder
@@ -505,6 +506,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 void FileUtilities::SaveFile(const Window &window, const char* const title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
+	static_cast<void>(window);
 	static_cast<void>(title);
 
 	callback([](const void* const data, const std::size_t data_size)

@@ -1,6 +1,7 @@
 #include "audio-device.h"
 
 #include <stdexcept>
+#include <string>
 
 AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames)
 	: channels(channels)

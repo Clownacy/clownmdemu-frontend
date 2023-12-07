@@ -98,10 +98,9 @@ enum InputBinding
 	INPUT_BINDING_QUICK_SAVE_STATE,
 	INPUT_BINDING_QUICK_LOAD_STATE,
 	INPUT_BINDING_TOGGLE_FULLSCREEN,
-	INPUT_BINDING_TOGGLE_CONTROL_PAD
+	INPUT_BINDING_TOGGLE_CONTROL_PAD,
+	INPUT_BINDING__TOTAL
 };
-
-#define INPUT_BINDING__TOTAL (INPUT_BINDING_TOGGLE_CONTROL_PAD + 1)
 
 static Input keyboard_input;
 
@@ -562,7 +561,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 		else if (SDL_strcmp(name, "low-pass-filter") == 0)
 			emulator->SetLowPassFilter(state);
 		else if (SDL_strcmp(name, "pal") == 0)
-			emulator->SetPALMode(state);
+			SetAudioPALMode(state);
 		else if (SDL_strcmp(name, "japanese") == 0)
 			emulator->SetDomestic(state);
 	#ifdef FILE_PICKER_POSIX
@@ -708,7 +707,7 @@ static void LoadConfiguration()
 	tall_double_resolution_mode = false;
 
 	emulator->SetDomestic(false);
-	emulator->SetPALMode(false);
+	SetAudioPALMode(false);
 
 	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
 
@@ -867,6 +866,10 @@ static void SaveConfiguration()
 
 					case INPUT_BINDING_TOGGLE_CONTROL_PAD:
 						binding_string = "INPUT_BINDING_TOGGLE_CONTROL_PAD";
+						break;
+
+					case INPUT_BINDING__TOTAL:
+						SDL_assert(false);
 						break;
 				}
 
@@ -2385,12 +2388,12 @@ void Frontend::Update()
 				ImGui::TableNextColumn();
 				if (ImGui::RadioButton("NTSC", !emulator->GetPALMode()))
 					if (emulator->GetPALMode())
-						emulator->SetPALMode(false);
+						SetAudioPALMode(false);
 				DoToolTip("60 FPS");
 				ImGui::TableNextColumn();
 				if (ImGui::RadioButton("PAL", emulator->GetPALMode()))
 					if (!emulator->GetPALMode())
-						emulator->SetPALMode(true);
+						SetAudioPALMode(true);
 				DoToolTip("50 FPS");
 
 				ImGui::TableNextColumn();
