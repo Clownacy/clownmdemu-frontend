@@ -1,13 +1,15 @@
 #ifndef DEBUG_FRONTEND_H
 #define DEBUG_FRONTEND_H
 
+#include <functional>
+
 #include "audio-output.h"
 #include "window.h"
 
 class DebugFrontend
 {
 public:
-	typedef bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
+	typedef std::function<bool(unsigned int &width, unsigned int &height)> GetUpscaledFramebufferSize;
 
 private:
 	const AudioOutput &audio_output;
