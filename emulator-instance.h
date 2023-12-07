@@ -45,7 +45,7 @@ private:
 	int framebuffer_texture_pitch;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	std::array<State, 60 * 10> state_rewind_buffer; // Roughly 30 seconds of rewinding at 60FPS
+	std::array<State, 60 * 10> state_rewind_buffer; // Roughly 10 seconds of rewinding at 60FPS
 	std::size_t state_rewind_index = 0;
 	std::size_t state_rewind_remaining = 0;
 	bool rewind_in_progress = false;
