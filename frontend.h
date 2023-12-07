@@ -209,18 +209,9 @@ private:
 	void SaveConfiguration();
 	void PreEventStuff();
 
+public:
 	Frontend(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
 	~Frontend();
-	Frontend(const Frontend&) = delete;
-	Frontend& operator=(const Frontend&) = delete;
-
-public:
-	static Frontend* Singleton(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback)
-	{
-		static Frontend frontend(argc, argv, frame_rate_callback);
-		return &frontend;
-	}
-
 	void HandleEvent(const SDL_Event &event);
 	void Update();
 	bool WantsToQuit();
