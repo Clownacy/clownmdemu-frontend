@@ -765,9 +765,8 @@ void Frontend::PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-Frontend::Frontend(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback)
+Frontend::Frontend(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback_param)
 	: monospace_font(nullptr)
-	, frame_rate_callback(frame_rate_callback)
 	, debug_log(dpi_scale, monospace_font)
 	, audio_output(debug_log)
 	, window(debug_log)
@@ -781,6 +780,8 @@ Frontend::Frontend(const int argc, char** const argv, const FrameRateCallback &f
 	, debug_vdp(debug_log, dpi_scale, emulator, file_utilities, frame_counter, monospace_font, window)
 	, debug_z80(emulator, monospace_font)
 {
+	frame_rate_callback = frame_rate_callback_param;
+
 	if (!window.Initialise("clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
 	{
 		debug_log.Log("window.Initialise failed");
