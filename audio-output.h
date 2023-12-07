@@ -23,7 +23,7 @@ private:
 
 	bool pal_mode = false;
 	bool low_pass_filter = true;
-	bool mixer_update_pending = true;
+	bool mixer_update_pending = false;
 	cc_u32f rolling_average_buffer[0x10] = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 

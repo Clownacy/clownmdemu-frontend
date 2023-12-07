@@ -27,6 +27,8 @@ AudioOutputInner::AudioOutputInner()
 		mixer_constant_initialised = true;
 		Mixer_Constant_Initialise(&mixer_constant);
 	}
+
+	Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
 }
 
 AudioOutputInner::~AudioOutputInner()
