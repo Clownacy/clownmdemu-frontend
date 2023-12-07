@@ -11,9 +11,6 @@ private:
 	DebugLog &debug_log;
 	bool fullscreen;
 
-	bool InitialiseFramebuffer(int width, int height);
-	void DeinitialiseFramebuffer();
-
 public:
 	SDL_Window *sdl;
 	SDL_Renderer *renderer;

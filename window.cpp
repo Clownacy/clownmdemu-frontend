@@ -56,9 +56,29 @@ bool Window::Initialise(const char* const window_title, const int window_width, 
 		renderer = SDL_CreateRenderer(sdl, -1, SDL_RENDERER_TARGETTEXTURE);
 
 		if (renderer == nullptr)
+		{
 			debug_log.Log("SDL_CreateRenderer failed with the following message - '%s'", SDL_GetError());
-		else if (InitialiseFramebuffer(framebuffer_width, framebuffer_height))
-			return true;
+		}
+		else
+		{
+			// Create framebuffer texture
+			// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
+			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+			framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_width, framebuffer_height);
+
+			if (framebuffer_texture == nullptr)
+			{
+				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				// Disable blending, since we don't need it
+				if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
+					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
+				return true;
+			}
+		}
 
 		SDL_DestroyWindow(sdl);
 	}
@@ -68,37 +88,9 @@ bool Window::Initialise(const char* const window_title, const int window_width, 
 
 void Window::Deinitialise()
 {
-	DeinitialiseFramebuffer();
+	SDL_DestroyTexture(framebuffer_texture);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(sdl);
-}
-
-bool Window::InitialiseFramebuffer(const int width, const int height)
-{
-	// Create framebuffer texture
-	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-	framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-
-	if (framebuffer_texture == nullptr)
-	{
-		debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-	}
-	else
-	{
-		// Disable blending, since we don't need it
-		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
-			debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-		return true;
-	}
-
-	return false;
-}
-
-void Window::DeinitialiseFramebuffer()
-{
-	SDL_DestroyTexture(framebuffer_texture);
 }
 
 void Window::ShowWarningMessageBox(const char* const message) const
