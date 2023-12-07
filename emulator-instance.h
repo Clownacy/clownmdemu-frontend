@@ -15,14 +15,13 @@
 class EmulatorInstance
 {
 public:
-	typedef std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> InputCallback;
+	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
 
 	struct State
 	{
 		ClownMDEmu_State clownmdemu;
 		Uint32 colours[3 * 4 * 16];
 	};
-
 
 private:
 	static bool clownmdemu_initialised;

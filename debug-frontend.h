@@ -9,7 +9,7 @@
 class DebugFrontend
 {
 public:
-	typedef std::function<bool(unsigned int &width, unsigned int &height)> GetUpscaledFramebufferSize;
+	using GetUpscaledFramebufferSize = std::function<bool(unsigned int &width, unsigned int &height)>;
 
 private:
 	const AudioOutput &audio_output;
