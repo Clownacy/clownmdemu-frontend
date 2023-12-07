@@ -134,8 +134,8 @@ static Frontend::FrameRateCallback frame_rate_callback;
 
 static DebugLog debug_log(dpi_scale, monospace_font);
 static FileUtilities file_utilities(debug_log);
-static Window window(debug_log);
 
+static Window *window;
 static EmulatorInstance *emulator;
 static DebugFM *debug_fm;
 static DebugFrontend *debug_frontend;
@@ -294,7 +294,7 @@ static void UpdateFastForwardStatus()
 	{
 		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
 		if (use_vsync)
-			SDL_RenderSetVSync(window.GetRenderer(), !fast_forward_in_progress);
+			SDL_RenderSetVSync(window->GetRenderer(), !fast_forward_in_progress);
 	}
 }
 
@@ -334,7 +334,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 
 		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
 		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-		framebuffer_texture_upscaled = SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
+		framebuffer_texture_upscaled = SDL_CreateTexture(window->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
 
 		if (framebuffer_texture_upscaled == nullptr)
 		{
@@ -378,7 +378,7 @@ static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
 	if (file_buffer == nullptr)
 	{
 		debug_log.Log("Could not load the cartridge file");
-		window.ShowErrorMessageBox("Failed to load the cartridge file.");
+		window->ShowErrorMessageBox("Failed to load the cartridge file.");
 		return false;
 	}
 
@@ -400,7 +400,7 @@ static bool LoadCartridgeFile(const char* const path)
 	if (file == nullptr)
 	{
 		debug_log.Log("Could not load the cartridge file");
-		window.ShowErrorMessageBox("Failed to load the cartridge file.");
+		window->ShowErrorMessageBox("Failed to load the cartridge file.");
 		return false;
 	}
 
@@ -428,7 +428,7 @@ static bool LoadCDFile(const char* const path)
 	if (file == nullptr)
 	{
 		debug_log.Log("Could not load the CD file");
-		window.ShowErrorMessageBox("Failed to load the CD file.");
+		window->ShowErrorMessageBox("Failed to load the CD file.");
 		return false;
 	}
 
@@ -441,7 +441,7 @@ static bool LoadSaveState(const unsigned char* const file_buffer, const std::siz
 	if (!emulator->LoadSaveState(file_buffer, file_size))
 	{
 		debug_log.Log("Could not load save state file");
-		window.ShowErrorMessageBox("Could not load save state file.");
+		window->ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
@@ -459,7 +459,7 @@ static bool LoadSaveState(SDL_RWops* const file)
 	if (file_buffer == nullptr)
 	{
 		debug_log.Log("Could not load save state file");
-		window.ShowErrorMessageBox("Could not load save state file.");
+		window->ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
@@ -480,7 +480,7 @@ static bool CreateSaveState(const char* const save_state_path)
 	if (file == nullptr || !emulator->CreateSaveState(file))
 	{
 		debug_log.Log("Could not create save state file");
-		window.ShowErrorMessageBox("Could not create save state file.");
+		window->ShowErrorMessageBox("Could not create save state file.");
 		success = false;
 	}
 
@@ -688,7 +688,7 @@ static void LoadConfiguration()
 	// Set default settings.
 
 	// Default V-sync.
-	const int display_index = SDL_GetWindowDisplayIndex(window.GetSDLWindow());
+	const int display_index = SDL_GetWindowDisplayIndex(window->GetSDLWindow());
 
 	if (display_index >= 0)
 	{
@@ -742,7 +742,7 @@ static void LoadConfiguration()
 		SDL_RWclose(file);
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_RenderSetVSync(window.GetRenderer(), use_vsync);
+	SDL_RenderSetVSync(window->GetRenderer(), use_vsync);
 }
 
 static void SaveConfiguration()
@@ -935,126 +935,117 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	}
 	else
 	{
-		emulator = new EmulatorInstance(debug_log, window, ReadInputCallback);
+		window = new Window(debug_log, "clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+		emulator = new EmulatorInstance(debug_log, *window, ReadInputCallback);
 		debug_fm = new DebugFM(*emulator, monospace_font);
-		debug_frontend = new DebugFrontend(*emulator, window, GetUpscaledFramebufferSize);
+		debug_frontend = new DebugFrontend(*emulator, *window, GetUpscaledFramebufferSize);
 		debug_m68k = new DebugM68k(monospace_font);
 		debug_memory = new DebugMemory(monospace_font);
 		debug_psg = new DebugPSG(*emulator, monospace_font);
-		debug_vdp = new DebugVDP(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, window);
+		debug_vdp = new DebugVDP(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, *window);
 		debug_z80 = new DebugZ80(*emulator, monospace_font);
 
-		if (!window.Initialise("clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
+		dpi_scale = window->GetDPIScale();
+
+		DoublyLinkedList_Initialise(&recent_software_list);
+		LoadConfiguration();
+
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO &io = ImGui::GetIO();
+		ImGuiStyle &style = ImGui::GetStyle();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.IniFilename = "clownmdemu-frontend-imgui.ini";
+
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		//ImGui::StyleColorsLight();
+		//ImGui::StyleColorsClassic();
+
+		style.WindowBorderSize = 0.0f;
+		style.PopupBorderSize = 0.0f;
+		style.ChildBorderSize = 0.0f;
+		style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+		style.TabRounding = 0.0f;
+		style.ScrollbarRounding = 0.0f;
+
+		ImVec4* colors = style.Colors;
+		colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 0.94f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.35f, 0.35f, 0.35f, 0.54f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.69f, 0.69f, 0.69f, 0.40f);
+		colors[ImGuiCol_FrameBgActive] = ImVec4(0.69f, 0.69f, 0.69f, 0.67f);
+		colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+		colors[ImGuiCol_CheckMark] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
+		colors[ImGuiCol_SliderGrab] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.41f, 0.41f, 0.41f, 0.63f);
+		colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+		colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
+		colors[ImGuiCol_Header] = ImVec4(0.38f, 0.38f, 0.38f, 0.39f);
+		colors[ImGuiCol_HeaderHovered] = ImVec4(0.38f, 0.38f, 0.38f, 0.80f);
+		colors[ImGuiCol_HeaderActive] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+		colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
+		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.56f, 0.56f, 0.56f, 0.78f);
+		colors[ImGuiCol_SeparatorActive] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
+		colors[ImGuiCol_ResizeGrip] = ImVec4(0.51f, 0.51f, 0.51f, 0.43f);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.79f);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
+		colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+
+		style_backup = style;
+
+		// Apply DPI scale.
+		style.ScaleAllSizes(dpi_scale);
+
+		const unsigned int font_size = CalculateFontSize();
+
+		// We shouldn't resize the window if something is overriding its size.
+		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
+		int window_width, window_height;
+		SDL_GetWindowSize(window->GetSDLWindow(), &window_width, &window_height);
+
+		if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
 		{
-			debug_log.Log("window.Initialise failed");
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
+			// Resize the window so that there's room for the menu bar.
+			const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
+		#ifdef _WIN32
+			// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
+			const float window_size_scale = (SDL_GetWindowFlags(window->sdl) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
+		#else
+			const float window_size_scale = 1.0f;
+		#endif
+			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
 		}
+
+		// Setup Platform/Renderer backends
+		ImGui_ImplSDL2_InitForSDLRenderer(window->GetSDLWindow(), window->GetRenderer());
+		ImGui_ImplSDLRenderer2_Init(window->GetRenderer());
+
+		// Load fonts
+		ReloadFonts(font_size);
+
+		// If the user passed the path to the software on the command line, then load it here, automatically.
+		// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
+		if (argc > 1)
+			LoadCartridgeFile(argv[1]);
 		else
-		{
-			dpi_scale = window.GetDPIScale();
+			LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
 
-			DoublyLinkedList_Initialise(&recent_software_list);
-			LoadConfiguration();
+		// We are now ready to show the window
+		SDL_ShowWindow(window->GetSDLWindow());
 
-			// Setup Dear ImGui context
-			IMGUI_CHECKVERSION();
-			ImGui::CreateContext();
-			ImGuiIO &io = ImGui::GetIO();
-			ImGuiStyle &style = ImGui::GetStyle();
-			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-			io.IniFilename = "clownmdemu-frontend-imgui.ini";
+		debug_log.ForceConsoleOutput(false);
 
-			// Setup Dear ImGui style
-			ImGui::StyleColorsDark();
-			//ImGui::StyleColorsLight();
-			//ImGui::StyleColorsClassic();
+		PreEventStuff();
 
-			style.WindowBorderSize = 0.0f;
-			style.PopupBorderSize = 0.0f;
-			style.ChildBorderSize = 0.0f;
-			style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-			style.TabRounding = 0.0f;
-			style.ScrollbarRounding = 0.0f;
-
-			ImVec4* colors = style.Colors;
-			colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
-			colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 0.94f);
-			colors[ImGuiCol_FrameBg] = ImVec4(0.35f, 0.35f, 0.35f, 0.54f);
-			colors[ImGuiCol_FrameBgHovered] = ImVec4(0.69f, 0.69f, 0.69f, 0.40f);
-			colors[ImGuiCol_FrameBgActive] = ImVec4(0.69f, 0.69f, 0.69f, 0.67f);
-			colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
-			colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-			colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-			colors[ImGuiCol_MenuBarBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-			colors[ImGuiCol_CheckMark] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
-			colors[ImGuiCol_SliderGrab] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-			colors[ImGuiCol_SliderGrabActive] = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
-			colors[ImGuiCol_Button] = ImVec4(0.41f, 0.41f, 0.41f, 0.63f);
-			colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-			colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
-			colors[ImGuiCol_Header] = ImVec4(0.38f, 0.38f, 0.38f, 0.39f);
-			colors[ImGuiCol_HeaderHovered] = ImVec4(0.38f, 0.38f, 0.38f, 0.80f);
-			colors[ImGuiCol_HeaderActive] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-			colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
-			colors[ImGuiCol_SeparatorHovered] = ImVec4(0.56f, 0.56f, 0.56f, 0.78f);
-			colors[ImGuiCol_SeparatorActive] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
-			colors[ImGuiCol_ResizeGrip] = ImVec4(0.51f, 0.51f, 0.51f, 0.43f);
-			colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.79f);
-			colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
-			colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
-			colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
-			colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-
-			style_backup = style;
-
-			// Apply DPI scale.
-			style.ScaleAllSizes(dpi_scale);
-
-			const unsigned int font_size = CalculateFontSize();
-
-			// We shouldn't resize the window if something is overriding its size.
-			// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
-			int window_width, window_height;
-			SDL_GetWindowSize(window.GetSDLWindow(), &window_width, &window_height);
-
-			if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
-			{
-				// Resize the window so that there's room for the menu bar.
-				const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-			#ifdef _WIN32
-				// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
-				const float window_size_scale = (SDL_GetWindowFlags(window.sdl) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
-			#else
-				const float window_size_scale = 1.0f;
-			#endif
-				SDL_SetWindowSize(window.GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
-			}
-
-			// Setup Platform/Renderer backends
-			ImGui_ImplSDL2_InitForSDLRenderer(window.GetSDLWindow(), window.GetRenderer());
-			ImGui_ImplSDLRenderer2_Init(window.GetRenderer());
-
-			// Load fonts
-			ReloadFonts(font_size);
-
-			// If the user passed the path to the software on the command line, then load it here, automatically.
-			// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
-			if (argc > 1)
-				LoadCartridgeFile(argv[1]);
-			else
-				LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
-
-			// We are now ready to show the window
-			SDL_ShowWindow(window.GetSDLWindow());
-
-			debug_log.ForceConsoleOutput(false);
-
-			PreEventStuff();
-
-			return true;
-		}
-
-		SDL_Quit();
+		return true;
 	}
 
 	return false;
@@ -1083,8 +1074,6 @@ void Frontend::Deinitialise()
 	}
 #endif
 
-	window.Deinitialise();
-
 	delete debug_z80;
 	delete debug_vdp;
 	delete debug_psg;
@@ -1093,6 +1082,7 @@ void Frontend::Deinitialise()
 	delete debug_frontend;
 	delete debug_fm;
 	delete emulator;
+	delete window;
 
 	SDL_Quit();
 }
@@ -1124,14 +1114,14 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 			if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & KMOD_ALT) != 0)
 			{
-				window.ToggleFullscreen();
+				window->ToggleFullscreen();
 				break;
 			}
 
 			if (event.key.keysym.sym == SDLK_ESCAPE)
 			{
 				// Exit fullscreen
-				window.SetFullscreen(false);
+				window->SetFullscreen(false);
 			}
 
 			// Prevent invalid memory accesses due to future API expansions.
@@ -1142,7 +1132,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 			switch (keyboard_bindings[event.key.keysym.scancode])
 			{
 				case INPUT_BINDING_TOGGLE_FULLSCREEN:
-					window.ToggleFullscreen();
+					window->ToggleFullscreen();
 					break;
 
 				case INPUT_BINDING_TOGGLE_CONTROL_PAD:
@@ -1609,7 +1599,7 @@ void Frontend::Update()
 	ImGuiIO &io = ImGui::GetIO();
 
 	// Handle dynamic DPI support
-	const float new_dpi = window.GetDPIScale();
+	const float new_dpi = window->GetDPIScale();
 
 	if (dpi_scale != new_dpi) // 96 DPI appears to be the "normal" DPI
 	{
@@ -1679,7 +1669,7 @@ void Frontend::Update()
 	// Prevent the window from getting too small or we'll get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
-	const bool show_menu_bar = !window.GetFullscreen()
+	const bool show_menu_bar = !window->GetFullscreen()
 							|| pop_out
 							|| debug_log_active
 							|| debug_frontend_active
@@ -1720,7 +1710,7 @@ void Frontend::Update()
 	if (show_menu_bar)
 		window_flags |= ImGuiWindowFlags_MenuBar;
 
-	// Tweak the style so that the display fill the window.
+	// Tweak the style so that the display fill the window->
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	const bool not_collapsed = ImGui::Begin("Display", nullptr, window_flags);
 	ImGui::PopStyleVar();
@@ -1733,7 +1723,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(window, "Load Cartridge File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const char* const path, SDL_RWops* const file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -1760,7 +1750,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(window, "Load CD File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL_RWops* const file)
 					{
 						if (LoadCDFile(path, file))
 						{
@@ -1859,7 +1849,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 				#ifdef FILE_PATH_SUPPORT
-					file_utilities.CreateSaveFileDialog(window, "Create Save State", CreateSaveState);
+					file_utilities.CreateSaveFileDialog(*window, "Create Save State", CreateSaveState);
 				#else
 					file_utilities.SaveFile(window, "Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
@@ -1887,7 +1877,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(window, "Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
+					file_utilities.LoadFile(*window, "Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
 					{
 						LoadSaveState(file);
 						SDL_RWclose(file);
@@ -1949,8 +1939,8 @@ void Frontend::Update()
 
 			if (ImGui::BeginMenu("Misc."))
 			{
-				if (ImGui::MenuItem("Fullscreen", nullptr, window.GetFullscreen()))
-					window.ToggleFullscreen();
+				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
+					window->ToggleFullscreen();
 
 				ImGui::MenuItem("Display Window", nullptr, &pop_out);
 
@@ -2001,7 +1991,7 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			SDL_Texture *selected_framebuffer_texture = window.GetFramebufferTexture();
+			SDL_Texture *selected_framebuffer_texture = window->GetFramebufferTexture();
 
 			const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
 			const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
@@ -2090,13 +2080,13 @@ void Frontend::Update()
 					upscaled_framebuffer_rect.h = destination_height * framebuffer_upscale_factor;
 
 					// Render to the upscaled framebuffer.
-					SDL_SetRenderTarget(window.GetRenderer(), framebuffer_texture_upscaled);
+					SDL_SetRenderTarget(window->GetRenderer(), framebuffer_texture_upscaled);
 
 					// Render.
-					SDL_RenderCopy(window.GetRenderer(), window.GetFramebufferTexture(), &framebuffer_rect, &upscaled_framebuffer_rect);
+					SDL_RenderCopy(window->GetRenderer(), window->GetFramebufferTexture(), &framebuffer_rect, &upscaled_framebuffer_rect);
 
 					// Switch back to actually rendering to the screen.
-					SDL_SetRenderTarget(window.GetRenderer(), nullptr);
+					SDL_SetRenderTarget(window->GetRenderer(), nullptr);
 
 					// Update the texture UV to suit the upscaled framebuffer.
 					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
@@ -2111,7 +2101,7 @@ void Frontend::Update()
 			ImGui::SetCursorPosX(static_cast<float>(static_cast<int>(ImGui::GetCursorPosX()) + (static_cast<int>(size_of_display_region.x) - destination_width_scaled) / 2));
 			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
-			// Draw the upscaled framebuffer in the window.
+			// Draw the upscaled framebuffer in the window->
 			ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 
 			debug_frontend->output_width = destination_width_scaled;
@@ -2418,7 +2408,7 @@ void Frontend::Update()
 				ImGui::TableNextColumn();
 				if (ImGui::Checkbox("V-Sync", &use_vsync))
 					if (!fast_forward_in_progress)
-						SDL_RenderSetVSync(window.GetRenderer(), use_vsync);
+						SDL_RenderSetVSync(window->GetRenderer(), use_vsync);
 				DoToolTip("Prevents screen tearing.");
 
 				ImGui::TableNextColumn();
@@ -2796,14 +2786,14 @@ void Frontend::Update()
 
 	file_utilities.DisplayFileDialog(drag_and_drop_filename);
 
-	SDL_RenderClear(window.GetRenderer());
+	SDL_RenderClear(window->GetRenderer());
 
 	// Render Dear ImGui.
 	ImGui::Render();
 	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
 
 	// Finally display the rendered frame to the user.
-	SDL_RenderPresent(window.GetRenderer());
+	SDL_RenderPresent(window->GetRenderer());
 
 	PreEventStuff();
 }
