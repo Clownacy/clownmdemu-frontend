@@ -58,7 +58,6 @@ private:
 	static void FMAudioCallback(void *user_data, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void PSGAudioCallback(void *user_data, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
 	static void CDSeekCallback(void *user_data, cc_u32f sector_index);
-	const cc_u8l* CDSectorReadCallback();
 	static const cc_u8l* CDSectorReadCallback(void *user_data);
 
 public:
