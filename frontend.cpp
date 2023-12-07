@@ -1064,6 +1064,36 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	return false;
 }
 
+void Frontend::Deinitialise()
+{
+	debug_log.ForceConsoleOutput(true);
+
+	SDL_DestroyTexture(framebuffer_texture_upscaled);
+
+	audio_output.Deinitialise();
+
+	ImGui_ImplSDLRenderer2_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+
+	SaveConfiguration();
+
+#ifdef FILE_PATH_SUPPORT
+	// Free recent software list.
+	while (recent_software_list.head != nullptr)
+	{
+		RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.head);
+
+		DoublyLinkedList_Remove(&recent_software_list, recent_software_list.head);
+		SDL_free(recent_software);
+	}
+#endif
+
+	window.Deinitialise();
+
+	SDL_Quit();
+}
+
 void Frontend::HandleEvent(const SDL_Event &event)
 {
 	ImGuiIO &io = ImGui::GetIO();
@@ -2786,36 +2816,6 @@ void Frontend::Update()
 	SDL_RenderPresent(window.renderer);
 
 	PreEventStuff();
-}
-
-void Frontend::Deinitialise()
-{
-	debug_log.ForceConsoleOutput(true);
-
-	SDL_DestroyTexture(framebuffer_texture_upscaled);
-
-	audio_output.Deinitialise();
-
-	ImGui_ImplSDLRenderer2_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
-
-	SaveConfiguration();
-
-#ifdef FILE_PATH_SUPPORT
-	// Free recent software list.
-	while (recent_software_list.head != nullptr)
-	{
-		RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.head);
-
-		DoublyLinkedList_Remove(&recent_software_list, recent_software_list.head);
-		SDL_free(recent_software);
-	}
-#endif
-
-	window.Deinitialise();
-
-	SDL_Quit();
 }
 
 bool Frontend::WantsToQuit()
