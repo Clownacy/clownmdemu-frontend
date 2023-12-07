@@ -23,8 +23,6 @@ public:
 		Uint32 colours[3 * 4 * 16];
 	};
 
-	unsigned char *rom_buffer;
-	std::size_t rom_buffer_size;
 
 private:
 	static bool clownmdemu_initialised;
@@ -38,7 +36,9 @@ private:
 	ClownMDEmu clownmdemu;
 	State *state;
 
-	SDL_RWops *cd_file;
+	unsigned char *rom_buffer = nullptr;
+	std::size_t rom_buffer_size = 0;
+	SDL_RWops *cd_file = nullptr;
 	bool sector_size_2352;
 		
 	Uint32 *framebuffer_texture_pixels;
@@ -94,9 +94,14 @@ public:
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
-	const State& CurrentState() const { return *state; };
-	const void OverwriteCurrentState(const State &new_state) { *state = new_state; };
-}
-;
+	const State& CurrentState() const { return *state; }
+	const void OverwriteCurrentState(const State &new_state) { *state = new_state; }
+
+	void GetROMBuffer(const unsigned char *&buffer, std::size_t &size) const
+	{
+		buffer = rom_buffer;
+		size = rom_buffer_size;
+	}
+};
 
 #endif /* EMULATOR_INSTANCE_H */

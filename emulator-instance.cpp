@@ -141,13 +141,9 @@ EmulatorInstance::EmulatorInstance(
 EmulatorInstance::~EmulatorInstance()
 {
 	SDL_free(rom_buffer);
-	rom_buffer = nullptr;
 
 	if (cd_file != nullptr)
-	{
 		SDL_RWclose(cd_file);
-		cd_file = nullptr;
-	}
 }
 
 void EmulatorInstance::Update()

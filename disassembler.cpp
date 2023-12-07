@@ -16,18 +16,24 @@ static long ReadCallback(void* const user_data)
 	{
 		default:
 		case 0:
+		{
 			// ROM
-			if (emulator->rom_buffer_size == 0)
+			const unsigned char *rom_buffer;
+			std::size_t rom_buffer_size;
+			emulator->GetROMBuffer(rom_buffer, rom_buffer_size);
+
+			if (rom_buffer_size == 0)
 			{
 				value = 0;
 			}
 			else
 			{
-				address %= emulator->rom_buffer_size;
-				value = (emulator->rom_buffer[address + 0] << 8) | emulator->rom_buffer[address + 1];
+				address %= rom_buffer_size;
+				value = (rom_buffer[address + 0] << 8) | rom_buffer[address + 1];
 			}
 
 			break;
+		}
 
 		case 1:
 			// WORK-RAM
