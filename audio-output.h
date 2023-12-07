@@ -3,13 +3,12 @@
 
 #include <cstddef>
 
-#include "SDL.h"
-
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#define MIXER_FORMAT Sint16
+#define MIXER_FORMAT cc_s16l
 #include "clownmdemu-frontend-common/mixer.h"
 
+#include "audio-device.h"
 #include "debug-log.h"
 
 class AudioOutputInner
@@ -18,14 +17,14 @@ private:
 	static Mixer_Constant mixer_constant;
 	static bool mixer_constant_initialised;
 
-	SDL_AudioDeviceID device;
+	AudioDevice device;
+	cc_u32f total_buffer_frames;
+	cc_u32f sample_rate;
 
-	cc_u32f total_buffer_frames = false;
-	cc_u32f sample_rate = false;
 	bool pal_mode = false;
 	bool low_pass_filter = true;
-	bool mixer_update_pending = false;
-	Uint32 rolling_average_buffer[0x10] = {0};
+	bool mixer_update_pending = true;
+	cc_u32f rolling_average_buffer[0x10] = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
 	Mixer_State mixer_state;
@@ -36,8 +35,8 @@ public:
 	~AudioOutputInner();
 	void MixerBegin();
 	void MixerEnd();
-	cc_s16l* MixerAllocateFMSamples(std::size_t total_samples);
-	cc_s16l* MixerAllocatePSGSamples(std::size_t total_samples);
+	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);
+	cc_s16l* MixerAllocatePSGSamples(std::size_t total_frames);
 	cc_u32f GetAverageFrames() const;
 	cc_u32f GetTargetFrames() const { return CC_MAX(total_buffer_frames * 2, sample_rate / 20); } // 50ms
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
