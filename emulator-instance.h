@@ -47,6 +47,7 @@ private:
 	State state_rewind_buffer[60 * 10]; // Roughly 30 seconds of rewinding at 60FPS
 	std::size_t state_rewind_index;
 	std::size_t state_rewind_remaining;
+	bool rewind_in_progress;
 #else
 	State state_rewind_buffer[1];
 #endif
@@ -65,7 +66,6 @@ public:
 	ClownMDEmu_Configuration clownmdemu_configuration;
 	unsigned int current_screen_width;
 	unsigned int current_screen_height;
-	bool rewind_in_progress;
 
 	State *state;
 
@@ -87,7 +87,9 @@ public:
 	bool IsCDFileLoaded() const { return cd_file != nullptr; }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	bool RewindingExhausted() const { return rewind_in_progress && state_rewind_remaining == 0; }
+	bool IsRewinding() const { return rewind_in_progress; }
+	void Rewind(const bool active) { rewind_in_progress = active; }
+	bool RewindingExhausted() const { return IsRewinding() && state_rewind_remaining == 0; }
 #endif
 }
 ;

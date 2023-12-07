@@ -308,10 +308,12 @@ static void UpdateFastForwardStatus()
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static void UpdateRewindStatus()
 {
-	emulator.rewind_in_progress = keyboard_input.rewind;
+	bool will_rewind = keyboard_input.rewind;
 
 	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
-		emulator.rewind_in_progress |= controller_input->input.rewind != 0;
+		will_rewind |= controller_input->input.rewind != 0;
+
+	emulator.Rewind(will_rewind);
 }
 #endif
 

@@ -178,7 +178,7 @@ void EmulatorInstance::Update()
 	// and when not rewinding, we go forwards through it.
 	std::size_t from_index, to_index;
 
-	if (rewind_in_progress)
+	if (IsRewinding())
 	{
 		--state_rewind_remaining;
 
