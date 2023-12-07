@@ -226,9 +226,9 @@ public:
 	bool WantsToQuit();
 	bool IsFastForwarding();
 	template<typename T>
-	T DivideByPALFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(value); }
+	static T DivideByPALFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(value); }
 	template<typename T>
-	T DivideByNTSCFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(value); }
+	static T DivideByNTSCFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(value); }
 };
 
 #endif /* FRONTEND_H */

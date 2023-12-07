@@ -1701,7 +1701,7 @@ void Frontend::Update()
 				#ifdef FILE_PATH_SUPPORT
 					file_utilities.CreateSaveFileDialog("Create Save State", [this](const char* const path){ return CreateSaveState(path); });
 				#else
-					file_utilities.SaveFile("Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
+					file_utilities.SaveFile("Create Save State", [this](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
 						// Inefficient, but it's the only way...
 						const std::size_t save_state_size = emulator.GetSaveStateSize();
