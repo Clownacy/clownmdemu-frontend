@@ -1170,15 +1170,14 @@ void Frontend::HandleEvent(const SDL_Event &event)
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						// Save save state
 						quick_save_exists = true;
-						quick_save_state = *emulator.state;
+						quick_save_state = emulator.CurrentState();
 						break;
 
 					case INPUT_BINDING_QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_exists)
 						{
-							*emulator.state = quick_save_state;
-
+							emulator.OverwriteCurrentState(quick_save_state);
 							emulator_paused = false;
 						}
 
@@ -1364,7 +1363,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 					// Load save state
 					if (quick_save_exists)
 					{
-						*emulator.state = quick_save_state;
+						emulator.OverwriteCurrentState(quick_save_state);
 
 						emulator_paused = false;
 
@@ -1376,7 +1375,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
 					// Save save state
 					quick_save_exists = true;
-					quick_save_state = *emulator.state;
+					quick_save_state = emulator.CurrentState();
 
 					SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
 					break;
@@ -1843,12 +1842,12 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 				{
 					quick_save_exists = true;
-					quick_save_state = *emulator.state;
+					quick_save_state = emulator.CurrentState();
 				}
 
 				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_exists))
 				{
-					*emulator.state = quick_save_state;
+					emulator.OverwriteCurrentState(quick_save_state);
 
 					emulator_paused = false;
 				}
@@ -2127,25 +2126,25 @@ void Frontend::Update()
 		debug_frontend.Display(debug_frontend_active);
 
 	if (m68k_status)
-		debug_m68k.Display(m68k_status, "Main 68000 Registers", emulator.state->clownmdemu.m68k);
+		debug_m68k.Display(m68k_status, "Main 68000 Registers", emulator.CurrentState().clownmdemu.m68k);
 
 	if (mcd_m68k_status)
-		debug_m68k.Display(mcd_m68k_status, "Sub 68000 Registers", emulator.state->clownmdemu.mcd_m68k);
+		debug_m68k.Display(mcd_m68k_status, "Sub 68000 Registers", emulator.CurrentState().clownmdemu.mcd_m68k);
 
 	if (z80_status)
 		debug_z80.Display(z80_status);
 
 	if (m68k_ram_viewer)
-		debug_memory.Display(m68k_ram_viewer, "WORK-RAM", emulator.state->clownmdemu.m68k_ram, CC_COUNT_OF(emulator.state->clownmdemu.m68k_ram));
+		debug_memory.Display(m68k_ram_viewer, "WORK-RAM", emulator.CurrentState().clownmdemu.m68k_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.m68k_ram));
 
 	if (z80_ram_viewer)
-		debug_memory.Display(z80_ram_viewer, "SOUND-RAM", emulator.state->clownmdemu.z80_ram, CC_COUNT_OF(emulator.state->clownmdemu.z80_ram));
+		debug_memory.Display(z80_ram_viewer, "SOUND-RAM", emulator.CurrentState().clownmdemu.z80_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.z80_ram));
 
 	if (prg_ram_viewer)
-		debug_memory.Display(prg_ram_viewer, "PRG-RAM", emulator.state->clownmdemu.prg_ram, CC_COUNT_OF(emulator.state->clownmdemu.prg_ram));
+		debug_memory.Display(prg_ram_viewer, "PRG-RAM", emulator.CurrentState().clownmdemu.prg_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.prg_ram));
 
 	if (word_ram_viewer)
-		debug_memory.Display(word_ram_viewer, "WORD-RAM", emulator.state->clownmdemu.word_ram, CC_COUNT_OF(emulator.state->clownmdemu.word_ram));
+		debug_memory.Display(word_ram_viewer, "WORD-RAM", emulator.CurrentState().clownmdemu.word_ram, CC_COUNT_OF(emulator.CurrentState().clownmdemu.word_ram));
 
 	if (vdp_registers)
 		debug_vdp.DisplayRegisters(vdp_registers);
@@ -2177,7 +2176,7 @@ void Frontend::Update()
 		{
 			if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
 			{
-				const ClownMDEmu_State &clownmdemu_state = emulator.state->clownmdemu;
+				const ClownMDEmu_State &clownmdemu_state = emulator.CurrentState().clownmdemu;
 
 				cc_u8f i;
 

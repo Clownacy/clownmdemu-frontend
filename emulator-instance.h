@@ -36,6 +36,7 @@ private:
 	ClownMDEmu_Callbacks callbacks;
 
 	ClownMDEmu clownmdemu;
+	State *state;
 
 	SDL_RWops *cd_file;
 	bool sector_size_2352;
@@ -68,8 +69,6 @@ private:
 public:
 	ClownMDEmu_Configuration clownmdemu_configuration;
 
-	State *state;
-
 	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, Window &window, const InputCallback &input_callback);
 	~EmulatorInstance();
 	void Update();
@@ -95,6 +94,8 @@ public:
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
+	const State& CurrentState() const { return *state; };
+	const void OverwriteCurrentState(const State &new_state) { *state = new_state; };
 }
 ;
 

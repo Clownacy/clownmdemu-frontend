@@ -4,7 +4,7 @@ void DebugPSG::Display(bool &open)
 {
 	if (ImGui::Begin("PSG", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const PSG_State &psg = emulator.state->clownmdemu.psg;
+		const PSG_State &psg = emulator.CurrentState().clownmdemu.psg;
 
 		// Latched command.
 		ImGui::SeparatorText("Latched Command");

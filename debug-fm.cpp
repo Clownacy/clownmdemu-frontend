@@ -11,7 +11,7 @@ void DebugFM::Display(bool &open)
 			{"L", "L+R"}
 		};
 
-		const FM_State &fm = emulator.state->clownmdemu.fm;
+		const FM_State &fm = emulator.CurrentState().clownmdemu.fm;
 
 		ImGui::SeparatorText("FM Channels");
 

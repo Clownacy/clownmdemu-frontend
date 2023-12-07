@@ -8,6 +8,7 @@ static int current_memory;
 static long ReadCallback(void* const user_data)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+	const ClownMDEmu_State &clownmdemu = emulator->CurrentState().clownmdemu;
 
 	long value;
 
@@ -30,32 +31,32 @@ static long ReadCallback(void* const user_data)
 
 		case 1:
 			// WORK-RAM
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.m68k_ram) * 2;
-			value = emulator->state->clownmdemu.m68k_ram[address / 2];
+			address %= CC_COUNT_OF(clownmdemu.m68k_ram) * 2;
+			value = clownmdemu.m68k_ram[address / 2];
 			break;
 
 		case 2:
 			// PRG-RAM
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.prg_ram) * 2;
-			value = emulator->state->clownmdemu.prg_ram[address / 2];
+			address %= CC_COUNT_OF(clownmdemu.prg_ram) * 2;
+			value = clownmdemu.prg_ram[address / 2];
 			break;
 
 		case 3:
 			// WORD-RAM (1M) Bank 1
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2 / 2;
-			value = emulator->state->clownmdemu.word_ram[address / 2 * 2 + 0];
+			address %= CC_COUNT_OF(clownmdemu.word_ram) * 2 / 2;
+			value = clownmdemu.word_ram[address / 2 * 2 + 0];
 			break;
 
 		case 4:
 			// WORD-RAM (1M) Bank 2
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2 / 2;
-			value = emulator->state->clownmdemu.word_ram[address / 2 * 2 + 1];
+			address %= CC_COUNT_OF(clownmdemu.word_ram) * 2 / 2;
+			value = clownmdemu.word_ram[address / 2 * 2 + 1];
 			break;
 
 		case 5:
 			// WORD-RAM (2M)
-			address %= CC_COUNT_OF(emulator->state->clownmdemu.word_ram) * 2;
-			value = emulator->state->clownmdemu.word_ram[address / 2];
+			address %= CC_COUNT_OF(clownmdemu.word_ram) * 2;
+			value = clownmdemu.word_ram[address / 2];
 			break;
 	}
 

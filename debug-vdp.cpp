@@ -32,7 +32,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 	if (ImGui::Begin(name, &open))
 	{
-		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
@@ -94,7 +94,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
 
-								const Uint32 *palette_line = &emulator.state->colours[palette_index];
+								const Uint32 *palette_line = &emulator.CurrentState().colours[palette_index];
 
 								const cc_u8l *tile_pointer = &vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
 
@@ -160,17 +160,17 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 void DebugVDP::DisplayWindowPlane(bool &open)
 {
-	DisplayPlane(open, "Window Plane", window_plane_data, emulator.state->clownmdemu.vdp.window_address);
+	DisplayPlane(open, "Window Plane", window_plane_data, emulator.CurrentState().clownmdemu.vdp.window_address);
 }
 
 void DebugVDP::DisplayPlaneA(bool &open)
 {
-	DisplayPlane(open, "Plane A", plane_a_data, emulator.state->clownmdemu.vdp.plane_a_address);
+	DisplayPlane(open, "Plane A", plane_a_data, emulator.CurrentState().clownmdemu.vdp.plane_a_address);
 }
 
 void DebugVDP::DisplayPlaneB(bool &open)
 {
-	DisplayPlane(open, "Plane B", plane_b_data, emulator.state->clownmdemu.vdp.plane_b_address);
+	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address);
 }
 
 void DebugVDP::DisplayVRAM(bool &open)
@@ -188,7 +188,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 
 	if (ImGui::Begin("VRAM", &open))
 	{
-		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
 		const std::size_t tile_width = 8;
 		const std::size_t tile_height = vdp.double_resolution_enabled ? 16 : 8;
@@ -228,7 +228,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 			file_utilities.SaveFile("Save VRAM Dump",
 			[this](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 			{
-				const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+				const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
 				return callback(vdp.vram, sizeof(vdp.vram));
 			});
@@ -271,7 +271,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 				vram_viewer.cache_frame_counter = frame_counter;
 
 				// Select the correct palette line.
-				const Uint32 *selected_palette = &emulator.state->colours[vram_viewer.brightness_index + vram_viewer.palette_line];
+				const Uint32 *selected_palette = &emulator.CurrentState().colours[vram_viewer.brightness_index + vram_viewer.palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
@@ -419,7 +419,7 @@ void DebugVDP::DisplayCRAM(bool &open)
 		{
 			ImGui::PushID(j);
 
-			const cc_u16f value = emulator.state->clownmdemu.vdp.cram[j];
+			const cc_u16f value = emulator.CurrentState().clownmdemu.vdp.cram[j];
 			const cc_u16f blue = (value >> 9) & 7;
 			const cc_u16f green = (value >> 5) & 7;
 			const cc_u16f red = (value >> 1) & 7;
@@ -480,7 +480,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 {
 	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const VDP_State &vdp = emulator.state->clownmdemu.vdp;
+		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
 		ImGui::SeparatorText("Miscellaneous");
 
