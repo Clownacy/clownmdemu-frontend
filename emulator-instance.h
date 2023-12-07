@@ -16,6 +16,8 @@
 class EmulatorInstance
 {
 public:
+	typedef std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> InputCallback;
+
 	struct State
 	{
 		ClownMDEmu_State clownmdemu;
@@ -31,7 +33,7 @@ private:
 
 	AudioOutput &audio_output;
 	Window &window;
-	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> input_callback;
+	const InputCallback input_callback;
 	ClownMDEmu_Callbacks callbacks;
 
 	ClownMDEmu clownmdemu;
@@ -68,7 +70,7 @@ public:
 
 	State *state;
 
-	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, Window &window, const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> &input_callback);
+	EmulatorInstance(AudioOutput &audio_output, DebugLog &debug_log, Window &window, const InputCallback &input_callback);
 	~EmulatorInstance();
 	void Update();
 	void SoftResetConsole();

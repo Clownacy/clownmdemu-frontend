@@ -103,7 +103,7 @@ EmulatorInstance::EmulatorInstance(
 	AudioOutput &audio_output,
 	DebugLog &debug_log,
 	Window &window,
-	const std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)> &input_callback
+	const InputCallback &input_callback
 ) :
 	audio_output(audio_output),
 	window(window),
