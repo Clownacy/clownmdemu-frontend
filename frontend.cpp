@@ -782,137 +782,126 @@ Frontend::Frontend(const int argc, char** const argv, const FrameRateCallback &f
 {
 	frame_rate_callback = frame_rate_callback_param;
 
-	// Initialise SDL2
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+	if (!window.Initialise("clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
 	{
-		debug_log.Log("SDL_Init failed with the following message - '%s'", SDL_GetError());
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
+		debug_log.Log("window.Initialise failed");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
 	}
 	else
 	{
-		if (!window.Initialise("clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT))
+		dpi_scale = window.GetDPIScale();
+
+		DoublyLinkedList_Initialise(&recent_software_list);
+		LoadConfiguration();
+
+		// Setup Dear ImGui context
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO &io = ImGui::GetIO();
+		ImGuiStyle &style = ImGui::GetStyle();
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.IniFilename = "clownmdemu-frontend-imgui.ini";
+
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		//ImGui::StyleColorsLight();
+		//ImGui::StyleColorsClassic();
+
+		style.WindowBorderSize = 0.0f;
+		style.PopupBorderSize = 0.0f;
+		style.ChildBorderSize = 0.0f;
+		style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+		style.TabRounding = 0.0f;
+		style.ScrollbarRounding = 0.0f;
+
+		ImVec4* colors = style.Colors;
+		colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
+		colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 0.94f);
+		colors[ImGuiCol_FrameBg] = ImVec4(0.35f, 0.35f, 0.35f, 0.54f);
+		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.69f, 0.69f, 0.69f, 0.40f);
+		colors[ImGuiCol_FrameBgActive] = ImVec4(0.69f, 0.69f, 0.69f, 0.67f);
+		colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
+		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+		colors[ImGuiCol_MenuBarBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+		colors[ImGuiCol_CheckMark] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
+		colors[ImGuiCol_SliderGrab] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
+		colors[ImGuiCol_Button] = ImVec4(0.41f, 0.41f, 0.41f, 0.63f);
+		colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+		colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
+		colors[ImGuiCol_Header] = ImVec4(0.38f, 0.38f, 0.38f, 0.39f);
+		colors[ImGuiCol_HeaderHovered] = ImVec4(0.38f, 0.38f, 0.38f, 0.80f);
+		colors[ImGuiCol_HeaderActive] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+		colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
+		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.56f, 0.56f, 0.56f, 0.78f);
+		colors[ImGuiCol_SeparatorActive] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
+		colors[ImGuiCol_ResizeGrip] = ImVec4(0.51f, 0.51f, 0.51f, 0.43f);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.79f);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
+		colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+
+		style_backup = style;
+
+		// Apply DPI scale.
+		style.ScaleAllSizes(dpi_scale);
+
+		const unsigned int font_size = CalculateFontSize();
+
+		// We shouldn't resize the window if something is overriding its size.
+		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
+		int window_width, window_height;
+		SDL_GetWindowSize(window.sdl, &window_width, &window_height);
+
+		if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
 		{
-			debug_log.Log("window.Initialise failed");
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise video subsystem. The program will now close.", nullptr);
+			// Resize the window so that there's room for the menu bar.
+			const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
+		#ifdef _WIN32
+			// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
+			const float window_size_scale = (SDL_GetWindowFlags(window.sdl) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
+		#else
+			const float window_size_scale = 1.0f;
+		#endif
+			SDL_SetWindowSize(window.sdl, static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
+		}
+
+		// Setup Platform/Renderer backends
+		ImGui_ImplSDL2_InitForSDLRenderer(window.sdl, window.renderer);
+		ImGui_ImplSDLRenderer2_Init(window.renderer);
+
+		// Load fonts
+		ReloadFonts(font_size);
+
+		// Intiialise audio if we can (but it's okay if it fails).
+		if (!audio_output.Initialise())
+		{
+			debug_log.Log("InitialiseAudio failed");
+			window.ShowWarningMessageBox("Unable to initialise audio subsystem: the program will not output audio!");
 		}
 		else
 		{
-			dpi_scale = window.GetDPIScale();
-
-			DoublyLinkedList_Initialise(&recent_software_list);
-			LoadConfiguration();
-
-			// Setup Dear ImGui context
-			IMGUI_CHECKVERSION();
-			ImGui::CreateContext();
-			ImGuiIO &io = ImGui::GetIO();
-			ImGuiStyle &style = ImGui::GetStyle();
-			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-			io.IniFilename = "clownmdemu-frontend-imgui.ini";
-
-			// Setup Dear ImGui style
-			ImGui::StyleColorsDark();
-			//ImGui::StyleColorsLight();
-			//ImGui::StyleColorsClassic();
-
-			style.WindowBorderSize = 0.0f;
-			style.PopupBorderSize = 0.0f;
-			style.ChildBorderSize = 0.0f;
-			style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-			style.TabRounding = 0.0f;
-			style.ScrollbarRounding = 0.0f;
-
-			ImVec4* colors = style.Colors;
-			colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
-			colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 0.94f);
-			colors[ImGuiCol_FrameBg] = ImVec4(0.35f, 0.35f, 0.35f, 0.54f);
-			colors[ImGuiCol_FrameBgHovered] = ImVec4(0.69f, 0.69f, 0.69f, 0.40f);
-			colors[ImGuiCol_FrameBgActive] = ImVec4(0.69f, 0.69f, 0.69f, 0.67f);
-			colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
-			colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-			colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-			colors[ImGuiCol_MenuBarBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-			colors[ImGuiCol_CheckMark] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
-			colors[ImGuiCol_SliderGrab] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-			colors[ImGuiCol_SliderGrabActive] = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
-			colors[ImGuiCol_Button] = ImVec4(0.41f, 0.41f, 0.41f, 0.63f);
-			colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-			colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
-			colors[ImGuiCol_Header] = ImVec4(0.38f, 0.38f, 0.38f, 0.39f);
-			colors[ImGuiCol_HeaderHovered] = ImVec4(0.38f, 0.38f, 0.38f, 0.80f);
-			colors[ImGuiCol_HeaderActive] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-			colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
-			colors[ImGuiCol_SeparatorHovered] = ImVec4(0.56f, 0.56f, 0.56f, 0.78f);
-			colors[ImGuiCol_SeparatorActive] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
-			colors[ImGuiCol_ResizeGrip] = ImVec4(0.51f, 0.51f, 0.51f, 0.43f);
-			colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.79f);
-			colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
-			colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
-			colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
-			colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-
-			style_backup = style;
-
-			// Apply DPI scale.
-			style.ScaleAllSizes(dpi_scale);
-
-			const unsigned int font_size = CalculateFontSize();
-
-			// We shouldn't resize the window if something is overriding its size.
-			// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
-			int window_width, window_height;
-			SDL_GetWindowSize(window.sdl, &window_width, &window_height);
-
-			if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
-			{
-				// Resize the window so that there's room for the menu bar.
-				const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-			#ifdef _WIN32
-				// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
-				const float window_size_scale = (SDL_GetWindowFlags(window.sdl) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
-			#else
-				const float window_size_scale = 1.0f;
-			#endif
-				SDL_SetWindowSize(window.sdl, static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
-			}
-
-			// Setup Platform/Renderer backends
-			ImGui_ImplSDL2_InitForSDLRenderer(window.sdl, window.renderer);
-			ImGui_ImplSDLRenderer2_Init(window.renderer);
-
-			// Load fonts
-			ReloadFonts(font_size);
-
-			// Intiialise audio if we can (but it's okay if it fails).
-			if (!audio_output.Initialise())
-			{
-				debug_log.Log("InitialiseAudio failed");
-				window.ShowWarningMessageBox("Unable to initialise audio subsystem: the program will not output audio!");
-			}
-			else
-			{
-				// Initialise resamplers.
-				SetAudioPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-			}
-
-			// If the user passed the path to the software on the command line, then load it here, automatically.
-			// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
-			if (argc > 1)
-				LoadCartridgeFile(argv[1]);
-			else
-				LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
-
-			// We are now ready to show the window
-			SDL_ShowWindow(window.sdl);
-
-			debug_log.ForceConsoleOutput(false);
-
-			PreEventStuff();
-
-			return;
+			// Initialise resamplers.
+			SetAudioPALMode(emulator.clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		}
 
-		SDL_Quit();
+		// If the user passed the path to the software on the command line, then load it here, automatically.
+		// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
+		if (argc > 1)
+			LoadCartridgeFile(argv[1]);
+		else
+			LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
+
+		// We are now ready to show the window
+		SDL_ShowWindow(window.sdl);
+
+		debug_log.ForceConsoleOutput(false);
+
+		PreEventStuff();
+
+		return;
 	}
 
 	throw std::runtime_error("Bad things, man...");

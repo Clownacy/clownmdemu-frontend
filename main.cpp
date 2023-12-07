@@ -5,6 +5,8 @@
 #include <emscripten/html5.h>
 #endif
 
+#include "SDL.h"
+
 #include "frontend.h"
 
 static Frontend *frontend;
@@ -22,6 +24,8 @@ static void Terminate()
 	EM_ASM({
 		FS.syncfs(false, function (err) {});
 	}, 0);
+
+	SDL_Quit();
 }
 
 static void FrameRateCallback(const bool pal_mode)
@@ -96,6 +100,14 @@ static void FrameRateCallback(const bool pal_mode)
 
 int main(const int argc, char** const argv)
 {
+	// Initialise SDL2
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+	{
+		fprintf(stderr, "SDL_Init failed with the following message - '%s'", SDL_GetError());
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
+		return EXIT_FAILURE;
+	}
+
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(argc);
 	static_cast<void>(argv);
@@ -142,6 +154,8 @@ int main(const int argc, char** const argv)
 
 		frontend->Update();
 	}
+
+	SDL_Quit();
 #endif
 
 	return EXIT_SUCCESS;
