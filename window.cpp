@@ -14,7 +14,7 @@ float Window::GetDPIScale() const
 	dpi_scale = 1.0f;
 
 	float ddpi;
-	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(sdl), &ddpi, nullptr, nullptr) == 0)
+	if (SDL_GetDisplayDPI(SDL_GetWindowDisplayIndex(GetSDLWindow()), &ddpi, nullptr, nullptr) == 0)
 		dpi_scale = ddpi / 96.0f;
 #else
 	int window_width, renderer_width;

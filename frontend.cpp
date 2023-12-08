@@ -1017,7 +1017,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 			const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
 		#ifdef _WIN32
 			// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
-			const float window_size_scale = (SDL_GetWindowFlags(window->sdl) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
+			const float window_size_scale = (SDL_GetWindowFlags(window->GetSDLWindow()) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
 		#else
 			const float window_size_scale = 1.0f;
 		#endif
