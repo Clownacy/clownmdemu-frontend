@@ -407,7 +407,7 @@ static bool LoadCartridgeFile(const char* const path)
 	return LoadCartridgeFile(path, file);
 }
 
-static bool LoadCDFile(const char* const path, SDL_RWops* const file)
+static void LoadCDFile(const char* const path, SDL_RWops* const file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
@@ -417,7 +417,6 @@ static bool LoadCDFile(const char* const path, SDL_RWops* const file)
 #endif
 
 	emulator->LoadCDFile(file);
-	return true;
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -432,7 +431,8 @@ static bool LoadCDFile(const char* const path)
 		return false;
 	}
 
-	return LoadCDFile(path, file);
+	LoadCDFile(path, file);
+	return true;
 }
 #endif
 
@@ -1752,15 +1752,9 @@ void Frontend::Update()
 				{
 					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL_RWops* const file)
 					{
-						if (LoadCDFile(path, file))
-						{
-							emulator_paused = false;
-							return true;
-						}
-						else
-						{
-							return false;
-						}
+						LoadCDFile(path, file);
+						emulator_paused = false;
+						return true;
 					});
 				}
 

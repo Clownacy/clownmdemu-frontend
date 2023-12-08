@@ -17,8 +17,8 @@ private:
 	const GetUpscaledFramebufferSize get_upscaled_framebuffer_size;
 
 public:
-	unsigned int output_width, output_height;
-	unsigned int upscale_width, upscale_height;
+	unsigned int output_width = 0, output_height = 0;
+	unsigned int upscale_width = 0, upscale_height = 0;
 
 	DebugFrontend(const EmulatorInstance &emulator, Window &window, const GetUpscaledFramebufferSize &get_upscaled_framebuffer_size)
 		: emulator(emulator)

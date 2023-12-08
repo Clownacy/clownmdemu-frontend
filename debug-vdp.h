@@ -26,12 +26,12 @@ private:
 
 	struct
 	{
-		SDL_Texture *texture;
-		std::size_t texture_width;
-		std::size_t texture_height;
-		int brightness_index;
-		int palette_line;
-		unsigned int cache_frame_counter;
+		SDL_Texture *texture = nullptr;
+		std::size_t texture_width = 0;
+		std::size_t texture_height = 0;
+		int brightness_index = 0;
+		int palette_line = 0;
+		unsigned int cache_frame_counter = 0;
 	} vram_viewer;
 
 	struct
@@ -41,9 +41,9 @@ private:
 
 	struct PlaneViewer
 	{
-		int scale;
-		SDL_Texture *texture;
-		unsigned int cache_frame_counter;
+		int scale = 0;
+		SDL_Texture *texture = nullptr;
+		unsigned int cache_frame_counter = 0;
 	} window_plane_data, plane_a_data, plane_b_data;
 
 	void DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address);

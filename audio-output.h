@@ -1,6 +1,7 @@
 #ifndef AUDIO_OUTPUT_H
 #define AUDIO_OUTPUT_H
 
+#include <array>
 #include <cstddef>
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -9,7 +10,6 @@
 #include "clownmdemu-frontend-common/mixer.h"
 
 #include "audio-device.h"
-#include "debug-log.h"
 
 class AudioOutput
 {
@@ -24,7 +24,7 @@ private:
 	bool pal_mode = false;
 	bool low_pass_filter = true;
 	bool mixer_update_pending = false;
-	cc_u32f rolling_average_buffer[0x10] = {0};
+	std::array<cc_u32f, 0x10>rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
 	Mixer_State mixer_state;

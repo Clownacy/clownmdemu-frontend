@@ -26,16 +26,16 @@ private:
 	using PopupCallback = std::function<bool(const char *path)>;
 
 	DebugLog &debug_log;
-	const char *active_file_picker_popup;
+	const char *active_file_picker_popup = nullptr;
 	PopupCallback popup_callback;
-	bool is_save_dialog;
+	bool is_save_dialog = false;
 
 	void CreateFileDialog(const Window &window, const char *title, const PopupCallback &callback, bool save);
 
 public:
 #ifdef FILE_PICKER_POSIX
 	char *last_file_dialog_directory = nullptr;
-	bool prefer_kdialog;
+	bool prefer_kdialog = false;
 #endif
 
 #ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS

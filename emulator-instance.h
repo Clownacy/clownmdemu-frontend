@@ -39,10 +39,10 @@ private:
 	unsigned char *rom_buffer = nullptr;
 	std::size_t rom_buffer_size = 0;
 	SDL_RWops *cd_file = nullptr;
-	bool sector_size_2352;
+	bool sector_size_2352 = false;
 		
-	Uint32 *framebuffer_texture_pixels;
-	int framebuffer_texture_pitch;
+	Uint32 *framebuffer_texture_pixels = nullptr;
+	int framebuffer_texture_pitch = 0;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	std::array<State, 60 * 10> state_rewind_buffer; // Roughly 10 seconds of rewinding at 60FPS
@@ -55,8 +55,8 @@ private:
 
 	State *state = &state_rewind_buffer[0];
 
-	unsigned int current_screen_width;
-	unsigned int current_screen_height;
+	unsigned int current_screen_width = 0;
+	unsigned int current_screen_height = 0;
 
 	static cc_u8f CartridgeReadCallback(void *user_data, cc_u32f address);
 	static void CartridgeWrittenCallback(void *user_data, cc_u32f address, cc_u8f value);

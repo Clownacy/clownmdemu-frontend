@@ -7,7 +7,7 @@ static int current_memory;
 
 static long ReadCallback(void* const user_data)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+	const EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 	const ClownMDEmu_State &clownmdemu = emulator->CurrentState().clownmdemu;
 
 	long value;

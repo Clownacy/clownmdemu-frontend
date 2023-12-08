@@ -1,5 +1,7 @@
 #include "audio-output.h"
 
+#include <numeric>
+
 #include "SDL.h"
 
 #define CLOWNRESAMPLER_ASSERT SDL_assert
@@ -59,7 +61,7 @@ void AudioOutput::MixerEnd()
 	// If there is too much audio, just drop it because the dynamic rate control will be unable to handle it.
 	if (queued_frames < target_frames * 2)
 	{
-		const auto callback = [](void* const user_data, Sint16* const audio_samples, const std::size_t total_frames)
+		const auto callback = [](void* const user_data, const cc_s16l* const audio_samples, const std::size_t total_frames)
 		{
 			AudioOutput *audio_output = static_cast<AudioOutput*>(user_data);
 
@@ -85,12 +87,5 @@ cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_frames)
 
 cc_u32f AudioOutput::GetAverageFrames() const
 {
-	cc_u32f average_queued_frames = 0;
-
-	for (const auto value : rolling_average_buffer)
-		average_queued_frames += value;
-
-	average_queued_frames /= CC_COUNT_OF(rolling_average_buffer);
-
-	return average_queued_frames;
+	return std::accumulate(rolling_average_buffer.cbegin(), rolling_average_buffer.cend(), cc_u32f(0)) / CC_COUNT_OF(rolling_average_buffer);
 }

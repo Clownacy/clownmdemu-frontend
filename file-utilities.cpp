@@ -138,11 +138,12 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 					#define GROW_SIZE 0x100
 						// Read the whole path returned by Zenity/kdialog.
 						// This is very complicated due to handling arbitrarily long paths.
-						std::size_t path_buffer_length = 0;
 						char *path_buffer = static_cast<char*>(SDL_malloc(GROW_SIZE + 1)); // '+1' for the null character.
 
 						if (path_buffer != nullptr)
 						{
+							std::size_t path_buffer_length = 0;
+
 							for (;;)
 							{
 								const std::size_t path_length = std::fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
@@ -470,7 +471,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 		std::function<bool(const char* const path, SDL_RWops *file)> callback;
 	};
 
-	CallbackHolder* const holder = (CallbackHolder*)SDL_malloc(sizeof(CallbackHolder));
+	CallbackHolder* const holder = static_cast<CallbackHolder*>(SDL_malloc(sizeof(CallbackHolder)));
 
 	if (holder != nullptr)
 	{
