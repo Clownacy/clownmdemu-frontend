@@ -1056,7 +1056,8 @@ void Frontend::Deinitialise()
 {
 	debug_log.ForceConsoleOutput(true);
 
-	SDL_DestroyTexture(framebuffer_texture_upscaled);
+	if (framebuffer_texture_upscaled != nullptr)
+		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
 	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
