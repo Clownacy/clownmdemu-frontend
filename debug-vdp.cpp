@@ -1,5 +1,6 @@
 #include "debug-vdp.h"
 
+#include <array>
 #include <cstddef>
 #include <functional>
 
@@ -609,7 +610,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Horizontal Scrolling Mode");
 			ImGui::TableNextColumn();
-			const char* const horizontal_scrolling_modes[3] = {
+			const std::array<const char*, 3> horizontal_scrolling_modes = {
 				"Whole Screen",
 				"1-Tile Rows",
 				"1-Pixel Rows"
@@ -619,7 +620,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Vertical Scrolling Mode");
 			ImGui::TableNextColumn();
-			const char* const vertical_scrolling_modes[2] = {
+			const std::array<const char*, 2> vertical_scrolling_modes = {
 				"Whole Screen",
 				"2-Tile Columns"
 			};

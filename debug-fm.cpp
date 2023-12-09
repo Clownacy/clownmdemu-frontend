@@ -1,15 +1,16 @@
 #include "debug-fm.h"
 
+#include <array>
 #include <cstddef>
 
 void DebugFM::Display(bool &open)
 {
 	if (ImGui::Begin("FM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const char* const pannings[2][2] = {
+		const std::array<std::array<const char*, 2>, 2> pannings = {{
 			{"Mute", "R"},
 			{"L", "L+R"}
-		};
+		}};
 
 		const FM_State &fm = emulator.CurrentState().clownmdemu.fm;
 

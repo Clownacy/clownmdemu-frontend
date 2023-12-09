@@ -1,5 +1,6 @@
 #include "frontend.h"
 
+#include <array>
 #include <cerrno>
 #include <climits> // For INT_MAX.
 #include <cstddef>
@@ -49,7 +50,7 @@
 struct Input
 {
 	unsigned int bound_joypad;
-	unsigned char buttons[CLOWNMDEMU_BUTTON_MAX];
+	std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons;
 	unsigned char fast_forward;
 	unsigned char rewind;
 };
@@ -59,8 +60,8 @@ struct ControllerInput
 	SDL_JoystickID joystick_instance_id;
 	Sint16 left_stick_x;
 	Sint16 left_stick_y;
-	bool left_stick[4];
-	bool dpad[4];
+	std::array<bool, 4> left_stick;
+	std::array<bool, 4> dpad;
 	bool left_trigger;
 	bool right_trigger;
 	Input input;
@@ -106,9 +107,9 @@ static Input keyboard_input;
 
 static ControllerInput *controller_input_list_head;
 
-static InputBinding keyboard_bindings[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-static InputBinding keyboard_bindings_cached[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-static bool key_pressed[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 static DoublyLinkedList recent_software_list;
 static char *drag_and_drop_filename;
@@ -588,7 +589,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 			if (errno != ERANGE && string_end >= SDL_strchr(value, '\0'))
 			{
 				// Legacy numerical input bindings.
-				static const InputBinding input_bindings[17] = {
+				static const std::array<InputBinding, 17> input_bindings = {
 					INPUT_BINDING_NONE,
 					INPUT_BINDING_CONTROLLER_UP,
 					INPUT_BINDING_CONTROLLER_DOWN,
@@ -1507,12 +1508,12 @@ void Frontend::HandleEvent(const SDL_Event &event)
 								else
 								{
 									// This is a list of directions expressed as unit vectors.
-									static const float directions[4][2] = {
+									static const std::array<std::array<float, 2>, 4> directions = {{
 										{ 0.0f, -1.0f}, // Up
 										{ 0.0f,  1.0f}, // Down
 										{-1.0f,  0.0f}, // Left
 										{ 1.0f,  0.0f}  // Right
-									};
+									}};
 
 									// Perform dot product of stick's direction vector with other direction vector.
 									const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
@@ -1521,7 +1522,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 									controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (static_cast<float>(CC_PI) / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
 								}
 
-								static const unsigned int buttons[4] = {
+								static const std::array<unsigned int, 4> buttons = {
 									CLOWNMDEMU_BUTTON_UP,
 									CLOWNMDEMU_BUTTON_DOWN,
 									CLOWNMDEMU_BUTTON_LEFT,

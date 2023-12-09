@@ -1,5 +1,7 @@
 #include "emulator-instance.h"
 
+#include <array>
+
 bool EmulatorInstance::clownmdemu_initialised;
 ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant;
 
@@ -88,17 +90,17 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	static cc_u8l sector_buffer[2048];
+	static std::array<cc_u8l, 2048> sector_buffer;
 
 	if (emulator->cd_file != nullptr)
 	{
-		SDL_RWread(emulator->cd_file, sector_buffer, 2048, 1);
+		SDL_RWread(emulator->cd_file, &sector_buffer, 2048, 1);
 
 		if (emulator->sector_size_2352)
 			SDL_RWseek(emulator->cd_file, 2352 - 2048, SEEK_CUR);
 	}
 
-	return sector_buffer;
+	return &sector_buffer[0];
 }
 
 EmulatorInstance::EmulatorInstance(
@@ -238,12 +240,12 @@ void EmulatorInstance::LoadCDFile(SDL_RWops* const file)
 	// Detect if the sector size is 2048 bytes or 2352 bytes.
 	sector_size_2352 = false;
 
-	unsigned char buffer[0x10];
-	if (SDL_RWread(cd_file, buffer, sizeof(buffer), 1) == 1)
+	std::array<unsigned char, 0x10> buffer;
+	if (SDL_RWread(cd_file, &buffer, sizeof(buffer), 1) == 1)
 	{
-		static const unsigned char sector_header[0x10] = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
+		static const std::array<unsigned char, 0x10> sector_header = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
 
-		if (SDL_memcmp(buffer, sector_header, sizeof(sector_header)) == 0)
+		if (SDL_memcmp(&buffer, &sector_header, sizeof(sector_header)) == 0)
 			sector_size_2352 = true;
 	}
 
@@ -256,11 +258,11 @@ void EmulatorInstance::UnloadCDFile()
 	cd_file = nullptr;
 }
 
-static const char save_state_magic[8] = "CMDEFSS"; // Clownacy Mega Drive Emulator Frontend Save State
+static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
 
 bool EmulatorInstance::ValidateSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
 {
-	return file_size == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer, save_state_magic, sizeof(save_state_magic)) == 0;
+	return file_size == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer, &save_state_magic, sizeof(save_state_magic)) == 0;
 }
 
 bool EmulatorInstance::LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
@@ -288,7 +290,7 @@ bool EmulatorInstance::CreateSaveState(SDL_RWops* const file)
 {
 	bool success = false;
 
-	if (SDL_RWwrite(file, save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, state, sizeof(*state), 1) == 1)
+	if (SDL_RWwrite(file, &save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, state, sizeof(*state), 1) == 1)
 		success = true;
 
 	return success;
