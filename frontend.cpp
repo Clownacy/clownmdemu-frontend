@@ -11,7 +11,9 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
+#ifdef FILE_PATH_SUPPORT
 #include "libraries/doubly-linked-list/doubly-linked-list.h"
+#endif
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
@@ -111,7 +113,9 @@ static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings; // TODO: `
 static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
+#ifdef FILE_PATH_SUPPORT
 static DoublyLinkedList recent_software_list;
+#endif
 static char *drag_and_drop_filename;
 
 static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator->
@@ -948,7 +952,9 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		dpi_scale = window->GetDPIScale();
 
+#ifdef FILE_PATH_SUPPORT
 		DoublyLinkedList_Initialise(&recent_software_list);
+#endif
 		LoadConfiguration();
 
 		// Setup Dear ImGui context
