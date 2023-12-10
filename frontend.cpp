@@ -117,7 +117,7 @@ static std::list<RecentSoftware> recent_software_list;
 #endif
 static char *drag_and_drop_filename;
 
-static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator->
+static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
 static bool emulator_paused;
 static bool emulator_frame_advance;
 
