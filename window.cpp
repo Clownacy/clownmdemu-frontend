@@ -30,7 +30,7 @@ float Window::GetDPIScale() const
 
 static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height)
 {
-	return SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
+	SDL_Window* const window = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN
 #ifndef _WIN32
 		// This currently does nothing on Windows, so we use our own custom implementation.
 		// However, in case this ever does do something in the future, avoid using it on Windows.
@@ -38,6 +38,11 @@ static SDL_Window* CreateWindow(const char* const window_title, const int window
 		| SDL_WINDOW_ALLOW_HIGHDPI
 #endif
 	);
+
+	if (window == nullptr)
+		throw std::runtime_error(std::string("SDL_CreateWindow failed with the following message - '") + SDL_GetError() + "'");
+
+	return window;
 }
 
 static SDL_Renderer* CreateRenderer(SDL_Window* const window)
@@ -53,7 +58,12 @@ static SDL_Renderer* CreateRenderer(SDL_Window* const window)
 	// but I might as well just do it myself and save everyone else the hassle.
 	SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
 
-	return SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
+	SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
+
+	if (renderer == nullptr)
+		throw std::runtime_error(std::string("SDL_CreateRenderer failed with the following message - '") + SDL_GetError() + "'");
+
+	return renderer;
 }
 
 static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
@@ -63,7 +73,11 @@ static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* 
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 	SDL_Texture* const framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_width, framebuffer_height);
 
-	if (framebuffer_texture != nullptr)
+	if (framebuffer_texture == nullptr)
+	{
+		throw std::runtime_error(std::string("SDL_CreateTexture failed with the following message - '") + SDL_GetError() + "'");
+	}
+	else
 	{
 		// Disable blending, since we don't need it
 		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
@@ -73,19 +87,10 @@ static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* 
 	return framebuffer_texture;
 }
 
-template<typename T>
-static T* NullThrowSDL(T* const pointer)
-{
-	if (pointer == nullptr)
-		throw std::runtime_error(SDL_GetError());
-
-	return pointer;
-}
-
 Window::Window(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
-	: sdl_window(NullThrowSDL(CreateWindow(window_title, window_width, window_height)))
-	, renderer(NullThrowSDL(CreateRenderer(GetSDLWindow())))
-	, framebuffer_texture(NullThrowSDL(CreateFramebufferTexture(debug_log, GetRenderer(), framebuffer_width, framebuffer_height)))
+	: sdl_window(CreateWindow(window_title, window_width, window_height))
+	, renderer(CreateRenderer(GetSDLWindow()))
+	, framebuffer_texture(CreateFramebufferTexture(debug_log, GetRenderer(), framebuffer_width, framebuffer_height))
 {
 
 }
