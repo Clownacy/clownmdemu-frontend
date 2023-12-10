@@ -399,15 +399,7 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 
 bool FileUtilities::FileExists(const char* const filename)
 {
-	SDL_RWops* const file = SDL_RWFromFile(filename, "rb");
-
-	if (file != nullptr)
-	{
-		SDL_RWclose(file);
-		return true;
-	}
-
-	return false;
+	return SDL::RWops(SDL_RWFromFile(filename, "rb")) != nullptr;
 }
 
 void FileUtilities::LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size)
@@ -458,7 +450,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 
 	struct CallbackHolder
 	{
-		std::function<bool(const char* const path, SDL_RWops *file)> callback;
+		std::function<bool(const char* const path, SDL::RWops &file)> callback;
 	};
 
 	CallbackHolder* const holder = static_cast<CallbackHolder*>(SDL_malloc(sizeof(CallbackHolder)));
@@ -470,7 +462,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 		const auto call_callback = [](const std::string &/*filename*/, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
 			CallbackHolder* const holder = static_cast<CallbackHolder*>(user_data);
-			SDL_RWops* const file = SDL_RWFromConstMem(buffer.data(), buffer.size());
+			SDL::RWops file = SDL::RWops(SDL_RWFromConstMem(buffer.data(), buffer.size()));
 
 			if (file != nullptr)
 			{
@@ -510,14 +502,12 @@ void FileUtilities::SaveFile(const Window &window, const char* const title, cons
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			SDL_RWops* const file = SDL_RWFromFile(path, "wb");
+			const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "wb"));
 
 			if (file == nullptr)
 				return false;
 
-			const bool success = SDL_RWwrite(file, data, 1, data_size) == data_size;
-
-			SDL_RWclose(file);
+			const bool success = SDL_RWwrite(file.get(), data, 1, data_size) == data_size;
 
 			return success;
 		};
