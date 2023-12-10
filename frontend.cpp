@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <climits> // For INT_MAX.
 #include <cstddef>
+#include <forward_list>
 #include <functional>
 #include <iterator>
 #include <list>
@@ -51,24 +52,24 @@
 
 struct Input
 {
-	unsigned int bound_joypad;
-	std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons;
-	unsigned char fast_forward;
-	unsigned char rewind;
+	unsigned int bound_joypad = 0;
+	std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons = {0};
+	unsigned char fast_forward = 0;
+	unsigned char rewind = 0;
 };
 
 struct ControllerInput
 {
 	SDL_JoystickID joystick_instance_id;
-	Sint16 left_stick_x;
-	Sint16 left_stick_y;
-	std::array<bool, 4> left_stick;
-	std::array<bool, 4> dpad;
-	bool left_trigger;
-	bool right_trigger;
+	Sint16 left_stick_x = 0;
+	Sint16 left_stick_y = 0;
+	std::array<bool, 4> left_stick = {false};
+	std::array<bool, 4> dpad = {false};
+	bool left_trigger = false;
+	bool right_trigger = false;
 	Input input;
 
-	struct ControllerInput *next;
+	ControllerInput(SDL_JoystickID joystick_instance_id) : joystick_instance_id(joystick_instance_id) {}
 };
 
 #ifdef FILE_PATH_SUPPORT
@@ -105,7 +106,7 @@ enum InputBinding
 
 static Input keyboard_input;
 
-static ControllerInput *controller_input_list_head;
+static std::forward_list<ControllerInput> controller_input_list;
 
 static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
@@ -230,9 +231,9 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 	{
 		// Then, try to obtain the input from the controllers.
-		for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
-			if (controller_input->input.bound_joypad == player_id)
-				value |= controller_input->input.buttons[button_id] != 0 ? cc_true : cc_false;
+		for (const auto &controller_input : controller_input_list)
+			if (controller_input.input.bound_joypad == player_id)
+				value |= controller_input.input.buttons[button_id] != 0 ? cc_true : cc_false;
 	}
 
 	return value;
@@ -278,8 +279,8 @@ static void UpdateFastForwardStatus()
 
 	fast_forward_in_progress = keyboard_input.fast_forward;
 
-	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
-		fast_forward_in_progress |= controller_input->input.fast_forward != 0;
+	for (const auto &controller_input : controller_input_list)
+		fast_forward_in_progress |= controller_input.input.fast_forward != 0;
 
 	if (previous_fast_forward_in_progress != fast_forward_in_progress)
 	{
@@ -294,8 +295,8 @@ static void UpdateRewindStatus()
 {
 	bool will_rewind = keyboard_input.rewind;
 
-	for (ControllerInput *controller_input = controller_input_list_head; controller_input != nullptr; controller_input = controller_input->next)
-		will_rewind |= controller_input->input.rewind != 0;
+	for (const auto &controller_input : controller_input_list)
+		will_rewind |= controller_input.input.rewind != 0;
 
 	emulator->Rewind(will_rewind);
 }
@@ -1264,20 +1265,14 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				}
 				else
 				{
-					ControllerInput *controller_input = static_cast<ControllerInput*>(SDL_calloc(sizeof(ControllerInput), 1));
-
-					if (controller_input == nullptr)
+					try
+					{
+						controller_input_list.emplace_front(joystick_instance_id);
+						break;
+					}
+					catch (std::bad_alloc&)
 					{
 						debug_log.Log("Could not allocate memory for the new ControllerInput struct");
-					}
-					else
-					{
-						controller_input->joystick_instance_id = joystick_instance_id;
-
-						controller_input->next = controller_input_list_head;
-						controller_input_list_head = controller_input;
-
-						break;
 					}
 				}
 
@@ -1301,23 +1296,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				SDL_GameControllerClose(controller);
 			}
 
-			for (ControllerInput **controller_input_pointer = &controller_input_list_head; ; controller_input_pointer = &(*controller_input_pointer)->next)
-			{
-				if ((*controller_input_pointer) == nullptr)
-				{
-					debug_log.Log("Received an SDL_CONTROLLERDEVICEREMOVED event for an unrecognised controller");
-					break;
-				}
-
-				ControllerInput *controller_input = *controller_input_pointer;
-
-				if (controller_input->joystick_instance_id == event.cdevice.which)
-				{
-					*controller_input_pointer = controller_input->next;
-					SDL_free(controller_input);
-					break;
-				}
-			}
+			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.cdevice.which;});
 
 			break;
 		}
@@ -1363,21 +1342,14 @@ void Frontend::HandleEvent(const SDL_Event &event)
 			const bool pressed = event.cbutton.state == SDL_PRESSED;
 
 			// Look for the controller that this event belongs to.
-			for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
+			for (auto &controller_input : controller_input_list)
 			{
-				// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
-				if (controller_input == nullptr)
-				{
-					debug_log.Log("Received an SDL_CONTROLLERBUTTONDOWN/SDL_CONTROLLERBUTTONUP event for an unrecognised controller");
-					break;
-				}
-
 				// Check if the current controller is the one that matches this event.
-				if (controller_input->joystick_instance_id == event.cbutton.which)
+				if (controller_input.joystick_instance_id == event.cbutton.which)
 				{
 					switch (event.cbutton.button)
 					{
-						#define DO_BUTTON(state, code) case code: controller_input->input.buttons[state] = pressed; break
+						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
 
 						DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
 						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
@@ -1419,10 +1391,10 @@ void Frontend::HandleEvent(const SDL_Event &event)
 									break;
 							}
 
-							controller_input->dpad[direction] = pressed;
+							controller_input.dpad[direction] = pressed;
 
 							// Combine D-pad and left stick values into final joypad D-pad inputs.
-							controller_input->input.buttons[button] = controller_input->left_stick[direction] || controller_input->dpad[direction];
+							controller_input.input.buttons[button] = controller_input.left_stick[direction] || controller_input.dpad[direction];
 
 							break;
 						}
@@ -1431,7 +1403,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 							// Toggle which joypad the controller is bound to.
 							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 								if (pressed)
-									controller_input->input.bound_joypad ^= 1;
+									controller_input.input.bound_joypad ^= 1;
 
 							break;
 
@@ -1448,17 +1420,10 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 		case SDL_CONTROLLERAXISMOTION:
 			// Look for the controller that this event belongs to.
-			for (ControllerInput *controller_input = controller_input_list_head; ; controller_input = controller_input->next)
+			for (auto &controller_input : controller_input_list)
 			{
-				// If we've reached the end of the list, then somehow we've received an event for a controller that we haven't registered.
-				if (controller_input == nullptr)
-				{
-					debug_log.Log("Received an SDL_CONTROLLERAXISMOTION event for an unrecognised controller");
-					break;
-				}
-
 				// Check if the current controller is the one that matches this event.
-				if (controller_input->joystick_instance_id == event.caxis.which)
+				if (controller_input.joystick_instance_id == event.caxis.which)
 				{
 					switch (event.caxis.axis)
 					{
@@ -1466,17 +1431,17 @@ void Frontend::HandleEvent(const SDL_Event &event)
 						case SDL_CONTROLLER_AXIS_LEFTY:
 						{
 							if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-								controller_input->left_stick_x = event.caxis.value;
+								controller_input.left_stick_x = event.caxis.value;
 							else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-								controller_input->left_stick_y = event.caxis.value;
+								controller_input.left_stick_y = event.caxis.value;
 
 							// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
 
 							// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
-							const float magnitude = SDL_sqrtf(static_cast<float>(controller_input->left_stick_x * controller_input->left_stick_x + controller_input->left_stick_y * controller_input->left_stick_y));
+							const float magnitude = SDL_sqrtf(static_cast<float>(controller_input.left_stick_x * controller_input.left_stick_x + controller_input.left_stick_y * controller_input.left_stick_y));
 
-							const float left_stick_x_unit = controller_input->left_stick_x / magnitude;
-							const float left_stick_y_unit = controller_input->left_stick_y / magnitude;
+							const float left_stick_x_unit = controller_input.left_stick_x / magnitude;
+							const float left_stick_y_unit = controller_input.left_stick_y / magnitude;
 
 							// Now that we have the stick's direction in the form of a unit vector,
 							// we can create a dot product of it with another directional unit vector
@@ -1486,7 +1451,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 								// Apply a deadzone.
 								if (magnitude < 32768.0f / 4.0f)
 								{
-									controller_input->left_stick[i] = false;
+									controller_input.left_stick[i] = false;
 								}
 								else
 								{
@@ -1502,7 +1467,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 									const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
 
 									// If the stick is within 67.5 degrees of the specified direction, then this will be true.
-									controller_input->left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (static_cast<float>(CC_PI) / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
+									controller_input.left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (static_cast<float>(CC_PI) / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
 								}
 
 								static const std::array<unsigned int, 4> buttons = {
@@ -1513,7 +1478,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 								};
 
 								// Combine D-pad and left stick values into final joypad D-pad inputs.
-								controller_input->input.buttons[buttons[i]] = controller_input->left_stick[i] || controller_input->dpad[i];
+								controller_input.input.buttons[buttons[i]] = controller_input.left_stick[i] || controller_input.dpad[i];
 							}
 
 							break;
@@ -1531,24 +1496,24 @@ void Frontend::HandleEvent(const SDL_Event &event)
 							#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 								if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
 								{
-									if (controller_input->left_trigger != held)
+									if (controller_input.left_trigger != held)
 									{
-										controller_input->input.rewind = held;
+										controller_input.input.rewind = held;
 										UpdateRewindStatus();
 									}
 
-									controller_input->left_trigger = held;
+									controller_input.left_trigger = held;
 								}
 								else
 							#endif
 								{
-									if (controller_input->right_trigger != held)
+									if (controller_input.right_trigger != held)
 									{
-										controller_input->input.fast_forward = held;
+										controller_input.input.fast_forward = held;
 										UpdateFastForwardStatus();
 									}
 
-									controller_input->right_trigger = held;
+									controller_input.right_trigger = held;
 								}
 							}
 
