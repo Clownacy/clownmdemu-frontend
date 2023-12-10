@@ -38,24 +38,24 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
 
-		if (plane_viewer.texture == nullptr)
+		if (plane_viewer.texture.get() == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_viewer.texture = SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height);
+			plane_viewer.texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
 
-			if (plane_viewer.texture == nullptr)
+			if (plane_viewer.texture.get() == nullptr)
 			{
 				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(plane_viewer.texture, SDL_BLENDMODE_NONE) < 0)
+				if (SDL_SetTextureBlendMode(plane_viewer.texture.get(), SDL_BLENDMODE_NONE) < 0)
 					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
-		if (plane_viewer.texture != nullptr)
+		if (plane_viewer.texture.get() != nullptr)
 		{
 			ImGui::InputInt("Zoom", &plane_viewer.scale);
 			if (plane_viewer.scale < 1)
@@ -78,7 +78,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					Uint8 *plane_texture_pixels;
 					int plane_texture_pitch;
 
-					if (SDL_LockTexture(plane_viewer.texture, nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
+					if (SDL_LockTexture(plane_viewer.texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
 					{
 						const cc_u8l *plane_pointer = plane;
 
@@ -118,7 +118,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 							}
 						}
 
-						SDL_UnlockTexture(plane_viewer.texture);
+						SDL_UnlockTexture(plane_viewer.texture.get());
 					}
 				}
 
@@ -127,7 +127,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-				ImGui::Image(plane_viewer.texture, ImVec2(plane_width_in_pixels * plane_viewer.scale, plane_height_in_pixels * plane_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+				ImGui::Image(plane_viewer.texture.get(), ImVec2(plane_width_in_pixels * plane_viewer.scale, plane_height_in_pixels * plane_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 				if (ImGui::IsItemHovered())
 				{
@@ -144,7 +144,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					TileMetadata tile_metadata;
 					DecomposeTileMetadata(packed_tile_metadata, tile_metadata);
 
-					ImGui::Image(plane_viewer.texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
+					ImGui::Image(plane_viewer.texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -210,7 +210,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 			vram_viewer.texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_viewer.texture = SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_viewer.texture_width), static_cast<int>(vram_viewer.texture_height));
+			vram_viewer.texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_viewer.texture_width), static_cast<int>(vram_viewer.texture_height)));
 
 			if (vram_viewer.texture == nullptr)
 			{
@@ -219,7 +219,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(vram_viewer.texture, SDL_BLENDMODE_NONE) < 0)
+				if (SDL_SetTextureBlendMode(vram_viewer.texture.get(), SDL_BLENDMODE_NONE) < 0)
 					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
@@ -278,7 +278,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 				Uint8 *vram_texture_pixels;
 				int vram_texture_pitch;
 
-				if (SDL_LockTexture(vram_viewer.texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
+				if (SDL_LockTexture(vram_viewer.texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
 					const cc_u8l *vram_pointer = vdp.vram;
@@ -305,7 +305,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 						}
 					}
 
-					SDL_UnlockTexture(vram_viewer.texture);
+					SDL_UnlockTexture(vram_viewer.texture.get());
 				}
 			}
 
@@ -375,7 +375,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 							tile_boundary_position_bottom_right.y - tile_spacing);
 
 						// Finally, display the tile.
-						draw_list->AddImage(vram_viewer.texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+						draw_list->AddImage(vram_viewer.texture.get(), tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
 
 						if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
 						{
@@ -385,7 +385,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 							ImGui::Text("%zd/0x%zX", tile_index, tile_index);
 
 							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-							ImGui::Image(vram_viewer.texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+							ImGui::Image(vram_viewer.texture.get(), ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
 
 							ImGui::EndTooltip();
 						}

@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-#include "SDL.h"
+#include "sdl-wrapper.h"
 
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -26,7 +26,7 @@ private:
 
 	struct
 	{
-		SDL_Texture *texture = nullptr;
+		SDL::Texture texture = nullptr;
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
 		int brightness_index = 0;
@@ -42,7 +42,7 @@ private:
 	struct PlaneViewer
 	{
 		int scale = 0;
-		SDL_Texture *texture = nullptr;
+		SDL::Texture texture = nullptr;
 		unsigned int cache_frame_counter = 0;
 	} window_plane_data, plane_a_data, plane_b_data;
 
