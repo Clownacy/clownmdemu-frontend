@@ -5,15 +5,15 @@
 #include <climits> // For INT_MAX.
 #include <cstddef>
 #include <functional>
+#include <iterator>
+#include <list>
+#include <string>
 
 #include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-#ifdef FILE_PATH_SUPPORT
-#include "libraries/doubly-linked-list/doubly-linked-list.h"
-#endif
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
@@ -74,10 +74,8 @@ struct ControllerInput
 #ifdef FILE_PATH_SUPPORT
 struct RecentSoftware
 {
-	DoublyLinkedList_Entry list;
-
 	bool is_cd_file;
-	char path[1];
+	std::string path;
 };
 #endif
 
@@ -114,7 +112,7 @@ static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // 
 static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 #ifdef FILE_PATH_SUPPORT
-static DoublyLinkedList recent_software_list;
+static std::list<RecentSoftware> recent_software_list;
 #endif
 static char *drag_and_drop_filename;
 
@@ -244,41 +242,29 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
-	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
+	for (std::list<RecentSoftware>::iterator recent_software = recent_software_list.begin(); recent_software != recent_software_list.end(); ++recent_software)
 	{
-		RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
-
-		if (SDL_strcmp(recent_software->path, path) == 0)
+		if (recent_software->path == path)
 		{
-			DoublyLinkedList_Remove(&recent_software_list, entry);
-			DoublyLinkedList_PushFront(&recent_software_list, entry);
+			recent_software_list.splice(recent_software_list.begin(), recent_software_list, recent_software, std::next(recent_software));
 			return;
 		}
 	}
 
 	// If the list is 10 items long, then discard the last item before we add a new one.
-	unsigned int total_items = 0;
-
-	for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
-		++total_items;
-
-	if (total_items == 10)
-	{
-		RecentSoftware* const last_item = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.tail);
-
-		DoublyLinkedList_Remove(&recent_software_list, &last_item->list);
-		SDL_free(last_item);
-	}
+	if (recent_software_list.size() == 10)
+		recent_software_list.pop_back();
 
 	// Add the file to the list of recent software.
-	const std::size_t path_length = SDL_strlen(path);
-	RecentSoftware* const new_entry = static_cast<RecentSoftware*>(SDL_malloc(sizeof(RecentSoftware) + path_length));
-
-	if (new_entry != nullptr)
+	if (add_to_end)
 	{
-		new_entry->is_cd_file = is_cd_file;
-		SDL_memcpy(new_entry->path, path, path_length + 1);
-		(add_to_end ? DoublyLinkedList_PushBack : DoublyLinkedList_PushFront)(&recent_software_list, &new_entry->list);
+		recent_software_list.emplace_back();
+		recent_software_list.back() = {is_cd_file, path};
+	}
+	else
+	{
+		recent_software_list.emplace_front();
+		recent_software_list.front() = {is_cd_file, path};
 	}
 }
 #endif
@@ -891,18 +877,16 @@ static void SaveConfiguration()
 		// Save recent software paths.
 		PRINT_STRING(file, "\n[Recent Software]\n");
 
-		for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
+		for (const auto &recent_software : recent_software_list)
 		{
-			RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
-
 			PRINT_STRING(file, "cd = ");
-			if (recent_software->is_cd_file)
+			if (recent_software.is_cd_file)
 				PRINT_STRING(file, "true\n");
 			else
 				PRINT_STRING(file, "false\n");
 
 			PRINT_STRING(file, "path = ");
-			SDL_RWwrite(file, recent_software->path, 1, SDL_strlen(recent_software->path));
+			SDL_RWwrite(file, recent_software.path.c_str(), 1, recent_software.path.length());
 			PRINT_STRING(file, "\n");
 		}
 	#endif
@@ -952,9 +936,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		dpi_scale = window->GetDPIScale();
 
-#ifdef FILE_PATH_SUPPORT
-		DoublyLinkedList_Initialise(&recent_software_list);
-#endif
 		LoadConfiguration();
 
 		// Setup Dear ImGui context
@@ -1073,13 +1054,8 @@ void Frontend::Deinitialise()
 
 #ifdef FILE_PATH_SUPPORT
 	// Free recent software list.
-	while (recent_software_list.head != nullptr)
-	{
-		RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, recent_software_list.head);
-
-		DoublyLinkedList_Remove(&recent_software_list, recent_software_list.head);
-		SDL_free(recent_software);
-	}
+	// TODO: Once the frontend is a class, this won't be necessary.
+	recent_software_list.clear();
 #endif
 
 	delete debug_z80;
@@ -1789,41 +1765,38 @@ void Frontend::Update()
 			#ifdef FILE_PATH_SUPPORT
 				ImGui::SeparatorText("Recent Software");
 
-				if (recent_software_list.head == nullptr)
+				if (recent_software_list.empty())
 				{
 					ImGui::MenuItem("None", nullptr, false, false);
 				}
 				else
 				{
-					for (DoublyLinkedList_Entry *entry = recent_software_list.head; entry != nullptr; entry = entry->next)
+					for (const auto &recent_software : recent_software_list)
 					{
-						RecentSoftware* const recent_software = CC_STRUCT_POINTER_FROM_MEMBER_POINTER(RecentSoftware, list, entry);
-
 						// Display only the filename.
-						const char* const forward_slash = SDL_strrchr(recent_software->path, '/');
+						const auto slash_index = recent_software.path.find_last_of(
 					#ifdef _WIN32
-						const char* const backward_slash = SDL_strrchr(recent_software->path, '\\');
-						const char* const filename = CC_MAX(CC_MAX(forward_slash, backward_slash) + 1, recent_software->path);
+							"/\\");
 					#else
-						const char* const filename = CC_MAX(forward_slash + 1, recent_software->path);
+							'/');
 					#endif
 
-						if (ImGui::MenuItem(filename))
+						if (ImGui::MenuItem(&recent_software.path[slash_index == recent_software.path.npos ? 0 : slash_index + 1]))
 						{
-							if (recent_software->is_cd_file)
+							if (recent_software.is_cd_file)
 							{
-								if (LoadCDFile(recent_software->path))
+								if (LoadCDFile(recent_software.path.c_str()))
 									emulator_paused = false;
 							}
 							else
 							{
-								if (LoadCartridgeFile(recent_software->path))
+								if (LoadCartridgeFile(recent_software.path.c_str()))
 									emulator_paused = false;
 							}
 						}
 
 						// Show the full path as a tooltip.
-						DoToolTip(recent_software->path);
+						DoToolTip(recent_software.path.c_str());
 					}
 				}
 			#endif

@@ -44,8 +44,6 @@ add_executable(clownmdemu-frontend WIN32
 	"clownmdemu-frontend-common/mixer.h"
 	"inconsolata-regular.h"
 	"noto-sans-regular.h"
-	"libraries/doubly-linked-list/doubly-linked-list.c"
-	"libraries/doubly-linked-list/doubly-linked-list.h"
 	"libraries/imgui/imconfig.h"
 	"libraries/imgui/imgui.cpp"
 	"libraries/imgui/imgui.h"
