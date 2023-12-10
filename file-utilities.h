@@ -15,7 +15,7 @@
 
 #include <functional>
 
-#include "SDL.h"
+#include "sdl-wrapper.h"
 
 #include "debug-log.h"
 #include "window.h"
@@ -56,9 +56,9 @@ public:
 
 	bool FileExists(const char *filename);
 	void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size);
-	void LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size);
+	void LoadFileToBuffer(const SDL::RWops &file, unsigned char *&file_buffer, std::size_t &file_size);
 
-	void LoadFile(const Window &window, const char *title, const std::function<bool(const char* const path, SDL_RWops *file)> &callback);
+	void LoadFile(const Window &window, const char *title, const std::function<bool(const char* const path, SDL::RWops &file)> &callback);
 	void SaveFile(const Window &window, const char *title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback);
 };
 

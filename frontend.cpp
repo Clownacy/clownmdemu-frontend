@@ -361,7 +361,7 @@ static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_
 	emulator->LoadCartridgeFile(file_buffer, file_size);
 }
 
-static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
+static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
@@ -387,7 +387,7 @@ static bool LoadCartridgeFile(const char* const path, SDL_RWops* const file)
 
 static bool LoadCartridgeFile(const char* const path)
 {
-	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "rb"));
 
 	if (file == nullptr)
 	{
@@ -399,7 +399,7 @@ static bool LoadCartridgeFile(const char* const path)
 	return LoadCartridgeFile(path, file);
 }
 
-static void LoadCDFile(const char* const path, SDL_RWops* const file)
+static void LoadCDFile(const char* const path, SDL::RWops &file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
@@ -414,7 +414,7 @@ static void LoadCDFile(const char* const path, SDL_RWops* const file)
 #ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const char* const path)
 {
-	SDL_RWops* const file = SDL_RWFromFile(path, "rb");
+	SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "rb"));
 
 	if (file == nullptr)
 	{
@@ -442,7 +442,7 @@ static bool LoadSaveState(const unsigned char* const file_buffer, const std::siz
 	return true;
 }
 
-static bool LoadSaveState(SDL_RWops* const file)
+static bool LoadSaveState(const SDL::RWops &file)
 {
 	unsigned char *file_buffer;
 	std::size_t file_size;
@@ -467,7 +467,7 @@ static bool CreateSaveState(const char* const save_state_path)
 {
 	bool success = true;
 
-	SDL_RWops* const file = SDL_RWFromFile(save_state_path, "wb");
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(save_state_path, "wb"));
 
 	if (file == nullptr || !emulator->CreateSaveState(file))
 	{
@@ -475,9 +475,6 @@ static bool CreateSaveState(const char* const save_state_path)
 		window->ShowErrorMessageBox("Could not create save state file.");
 		success = false;
 	}
-
-	if (file != nullptr)
-		SDL_RWclose(file);
 
 	return success;
 }
@@ -511,14 +508,14 @@ static void DoToolTip(const char* const text)
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
-	SDL_RWops* const sdl_rwops = static_cast<SDL_RWops*>(user);
+	const SDL::RWops* const sdl_rwops = static_cast<const SDL::RWops*>(user);
 
 	int i = 0;
 
 	while (i < length - 1)
 	{
 		char character;
-		if (SDL_RWread(sdl_rwops, &character, 1, 1) == 0)
+		if (SDL_RWread(sdl_rwops->get(), &character, 1, 1) == 0)
 		{
 			if (i == 0)
 				return 0;
@@ -701,10 +698,10 @@ static void LoadConfiguration()
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
 
-	SDL_RWops* const file = SDL_RWFromFile(CONFIG_FILENAME, "r");
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(CONFIG_FILENAME, "r"));
 
 	// Load the configuration file, overwriting the above settings.
-	if (file == nullptr || ini_parse_stream(INIReadCallback, file, INIParseCallback, nullptr) != 0)
+	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::RWops*>(&file), INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
@@ -730,9 +727,6 @@ static void LoadConfiguration()
 #endif
 	}
 
-	if (file != nullptr)
-		SDL_RWclose(file);
-
 	// Apply the V-sync setting, now that it's been decided.
 	SDL_RenderSetVSync(window->GetRenderer(), use_vsync);
 }
@@ -740,7 +734,7 @@ static void LoadConfiguration()
 static void SaveConfiguration()
 {
 	// Save configuration file:
-	SDL_RWops *file = SDL_RWFromFile(CONFIG_FILENAME, "w");
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(CONFIG_FILENAME, "w"));
 
 	if (file == nullptr)
 	{
@@ -750,7 +744,7 @@ static void SaveConfiguration()
 	{
 	#define PRINT_STRING(FILE, STRING) SDL_RWwrite(FILE, STRING, sizeof(STRING) - 1, 1)
 		// Save keyboard bindings.
-		PRINT_STRING(file, "[Miscellaneous]\n");
+		PRINT_STRING(file.get(), "[Miscellaneous]\n");
 
 	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
 		PRINT_STRING(FILE, NAME " = "); \
@@ -759,25 +753,25 @@ static void SaveConfiguration()
 		else \
 			PRINT_STRING(FILE, "off\n");
 
-		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
-		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
-		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
-		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
-		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
+		PRINT_BOOLEAN_OPTION(file.get(), "vsync", use_vsync);
+		PRINT_BOOLEAN_OPTION(file.get(), "integer-screen-scaling", integer_screen_scaling);
+		PRINT_BOOLEAN_OPTION(file.get(), "tall-interlace-mode-2", tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file.get(), "low-pass-filter", emulator->GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file.get(), "pal", emulator->GetPALMode());
+		PRINT_BOOLEAN_OPTION(file.get(), "japanese", emulator->GetDomestic());
 
 	#ifdef FILE_PICKER_POSIX
 		if (file_utilities.last_file_dialog_directory != nullptr)
 		{
-			PRINT_STRING(file, "last-directory = ");
-			SDL_RWwrite(file, file_utilities.last_file_dialog_directory, SDL_strlen(file_utilities.last_file_dialog_directory), 1);
-			PRINT_STRING(file, "\n");
+			PRINT_STRING(file.get(), "last-directory = ");
+			SDL_RWwrite(file.get(), file_utilities.last_file_dialog_directory, SDL_strlen(file_utilities.last_file_dialog_directory), 1);
+			PRINT_STRING(file.get(), "\n");
 		}
-		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", file_utilities.prefer_kdialog);
+		PRINT_BOOLEAN_OPTION(file.get(), "prefer-kdialog", file_utilities.prefer_kdialog);
 	#endif
 
 		// Save keyboard bindings.
-		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
+		PRINT_STRING(file.get(), "\n[Keyboard Bindings]\n");
 
 		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
 		{
@@ -868,7 +862,7 @@ static void SaveConfiguration()
 				char *buffer;
 				if (SDL_asprintf(&buffer, "%u = %s\n", static_cast<unsigned int>(i), binding_string) != -1)
 				{
-					SDL_RWwrite(file, buffer, SDL_strlen(buffer), 1);
+					SDL_RWwrite(file.get(), buffer, SDL_strlen(buffer), 1);
 					SDL_free(buffer);
 				}
 			}
@@ -876,23 +870,21 @@ static void SaveConfiguration()
 
 	#ifdef FILE_PATH_SUPPORT
 		// Save recent software paths.
-		PRINT_STRING(file, "\n[Recent Software]\n");
+		PRINT_STRING(file.get(), "\n[Recent Software]\n");
 
 		for (const auto &recent_software : recent_software_list)
 		{
-			PRINT_STRING(file, "cd = ");
+			PRINT_STRING(file.get(), "cd = ");
 			if (recent_software.is_cd_file)
-				PRINT_STRING(file, "true\n");
+				PRINT_STRING(file.get(), "true\n");
 			else
-				PRINT_STRING(file, "false\n");
+				PRINT_STRING(file.get(), "false\n");
 
-			PRINT_STRING(file, "path = ");
-			SDL_RWwrite(file, recent_software.path.c_str(), 1, recent_software.path.length());
-			PRINT_STRING(file, "\n");
+			PRINT_STRING(file.get(), "path = ");
+			SDL_RWwrite(file.get(), recent_software.path.c_str(), 1, recent_software.path.length());
+			PRINT_STRING(file.get(), "\n");
 		}
 	#endif
-
-		SDL_RWclose(file);
 	}
 }
 
@@ -1672,11 +1664,11 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const char* const path, const SDL::RWops &file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
-						SDL_RWclose(file);
+						SDL_RWclose(file.get());
 
 						if (success)
 							emulator_paused = false;
@@ -1699,7 +1691,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL_RWops* const file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL::RWops &file)
 					{
 						LoadCDFile(path, file);
 						emulator_paused = false;
@@ -1800,12 +1792,11 @@ void Frontend::Update()
 						if (save_state_buffer == nullptr)
 							return false;
 
-						SDL_RWops* const file = SDL_RWFromMem(save_state_buffer, save_state_size);
+						const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer, save_state_size));
 
 						if (file != nullptr)
 						{
 							emulator->CreateSaveState(file);
-							SDL_RWclose(file);
 
 							callback(save_state_buffer, save_state_size);
 							SDL_free(save_state_buffer);
@@ -1817,10 +1808,9 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", [](const char* /*const path*/, SDL_RWops* const file)
+					file_utilities.LoadFile(*window, "Load Save State", [](const char* /*const path*/, SDL::RWops &file)
 					{
 						LoadSaveState(file);
-						SDL_RWclose(file);
 						return true;
 					});
 

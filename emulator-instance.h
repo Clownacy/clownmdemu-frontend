@@ -38,7 +38,7 @@ private:
 
 	unsigned char *rom_buffer = nullptr;
 	std::size_t rom_buffer_size = 0;
-	SDL_RWops *cd_file = nullptr;
+	SDL::RWops cd_file = nullptr;
 	bool sector_size_2352 = false;
 		
 	Uint32 *framebuffer_texture_pixels = nullptr;
@@ -76,12 +76,12 @@ public:
 	void HardResetConsole();
 	void LoadCartridgeFile(unsigned char *file_buffer, std::size_t file_size);
 	void UnloadCartridgeFile();
-	void LoadCDFile(SDL_RWops *file);
+	void LoadCDFile(SDL::RWops &file);
 	void UnloadCDFile();
 	bool ValidateSaveState(const unsigned char *file_buffer, std::size_t file_size);
 	bool LoadSaveState(const unsigned char *file_buffer, std::size_t file_size);
 	std::size_t GetSaveStateSize();
-	bool CreateSaveState(SDL_RWops *file);
+	bool CreateSaveState(const SDL::RWops &file);
 
 	bool IsCartridgeFileLoaded() const { return rom_buffer != nullptr; }
 	bool IsCDFileLoaded() const { return cd_file != nullptr; }

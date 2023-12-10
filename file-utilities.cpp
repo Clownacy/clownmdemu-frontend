@@ -11,8 +11,6 @@
 #include <sys/wait.h>
 #endif
 
-#include "SDL.h"
-
 #ifdef __EMSCRIPTEN__
 #include "libraries/emscripten-browser-file/emscripten_browser_file.h"
 #endif
@@ -417,24 +415,17 @@ void FileUtilities::LoadFileToBuffer(const char *filename, unsigned char *&file_
 	file_buffer = nullptr;
 	file_size = 0;
 
-	SDL_RWops *file = SDL_RWFromFile(filename, "rb");
+	SDL::RWops file = SDL::RWops(SDL_RWFromFile(filename, "rb"));
 
 	if (file == nullptr)
-	{
 		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
-	}
 	else
-	{
 		LoadFileToBuffer(file, file_buffer, file_size);
-
-		if (SDL_RWclose(file) < 0)
-			debug_log.Log("SDL_RWclose failed with the following message - '%s'", SDL_GetError());
-	}
 }
 
-void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffer, std::size_t &file_size)
+void FileUtilities::LoadFileToBuffer(const SDL::RWops &file, unsigned char *&file_buffer, std::size_t &file_size)
 {
-	const Sint64 size_s64 = SDL_RWsize(file);
+	const Sint64 size_s64 = SDL_RWsize(file.get());
 
 	if (size_s64 < 0)
 	{
@@ -454,12 +445,12 @@ void FileUtilities::LoadFileToBuffer(SDL_RWops *file, unsigned char *&file_buffe
 		{
 			file_size = size;
 
-			SDL_RWread(file, file_buffer, 1, size);
+			SDL_RWread(file.get(), file_buffer, 1, size);
 		}
 	}
 }
 
-void FileUtilities::LoadFile(const Window &window, const char* const title, const std::function<bool(const char* const path, SDL_RWops *file)> &callback)
+void FileUtilities::LoadFile(const Window &window, const char* const title, const std::function<bool(const char* const path, SDL::RWops &file)> &callback)
 {
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(window);
@@ -493,7 +484,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 #else
 	CreateOpenFileDialog(window, title, [callback](const char* const path)
 	{
-		SDL_RWops* const file = SDL_RWFromFile(path, "rb");
+		SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "rb"));
 
 		if (file == nullptr)
 			return false;

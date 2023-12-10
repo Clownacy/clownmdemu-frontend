@@ -83,7 +83,7 @@ void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f secto
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
 	if (emulator->cd_file != nullptr)
-		SDL_RWseek(emulator->cd_file, emulator->sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
+		SDL_RWseek(emulator->cd_file.get(), emulator->sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
 }
 
 const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
@@ -94,10 +94,10 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 
 	if (emulator->cd_file != nullptr)
 	{
-		SDL_RWread(emulator->cd_file, &sector_buffer, 2048, 1);
+		SDL_RWread(emulator->cd_file.get(), &sector_buffer, 2048, 1);
 
 		if (emulator->sector_size_2352)
-			SDL_RWseek(emulator->cd_file, 2352 - 2048, SEEK_CUR);
+			SDL_RWseek(emulator->cd_file.get(), 2352 - 2048, SEEK_CUR);
 	}
 
 	return &sector_buffer[0];
@@ -129,9 +129,6 @@ EmulatorInstance::EmulatorInstance(
 EmulatorInstance::~EmulatorInstance()
 {
 	SDL_free(rom_buffer);
-
-	if (cd_file != nullptr)
-		SDL_RWclose(cd_file);
 }
 
 void EmulatorInstance::Update()
@@ -233,15 +230,15 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer_size = 0;
 }
 
-void EmulatorInstance::LoadCDFile(SDL_RWops* const file)
+void EmulatorInstance::LoadCDFile(SDL::RWops &file)
 {
-	cd_file = file;
+	cd_file = std::move(file);
 
 	// Detect if the sector size is 2048 bytes or 2352 bytes.
 	sector_size_2352 = false;
 
 	std::array<unsigned char, 0x10> buffer;
-	if (SDL_RWread(cd_file, &buffer, sizeof(buffer), 1) == 1)
+	if (SDL_RWread(cd_file.get(), &buffer, sizeof(buffer), 1) == 1)
 	{
 		static const std::array<unsigned char, 0x10> sector_header = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
 
@@ -254,7 +251,7 @@ void EmulatorInstance::LoadCDFile(SDL_RWops* const file)
 
 void EmulatorInstance::UnloadCDFile()
 {
-	SDL_RWclose(cd_file);
+	SDL_RWclose(cd_file.get());
 	cd_file = nullptr;
 }
 
@@ -286,11 +283,11 @@ std::size_t EmulatorInstance::GetSaveStateSize()
 	return sizeof(save_state_magic) + sizeof(*state);
 }
 
-bool EmulatorInstance::CreateSaveState(SDL_RWops* const file)
+bool EmulatorInstance::CreateSaveState(const SDL::RWops &file)
 {
 	bool success = false;
 
-	if (SDL_RWwrite(file, &save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file, state, sizeof(*state), 1) == 1)
+	if (SDL_RWwrite(file.get(), &save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file.get(), state, sizeof(*state), 1) == 1)
 		success = true;
 
 	return success;
