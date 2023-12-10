@@ -250,9 +250,6 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 
 		if (ImGui::BeginPopupModal(active_file_picker_popup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			static int text_buffer_size;
-			static char *text_buffer = nullptr;
-
 			if (text_buffer == nullptr)
 			{
 				text_buffer_size = 0x40;
@@ -262,9 +259,11 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 
 			const ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* const data)
 			{
+				FileUtilities* const file_utilities = static_cast<FileUtilities*>(data->UserData);
+
 				if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
 				{
-					if (data->BufSize > text_buffer_size)
+					if (data->BufSize > file_utilities->text_buffer_size)
 					{
 						int new_text_buffer_size = (INT_MAX >> 1) + 1; // Largest power of 2.
 
@@ -272,12 +271,12 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 						while (data->BufSize < new_text_buffer_size >> 1)
 							new_text_buffer_size >>= 1;
 
-						char* const new_text_buffer = static_cast<char*>(SDL_realloc(text_buffer, new_text_buffer_size));
+						char* const new_text_buffer = static_cast<char*>(SDL_realloc(file_utilities->text_buffer, new_text_buffer_size));
 
 						if (new_text_buffer != nullptr)
 						{
-							data->BufSize = text_buffer_size = new_text_buffer_size;
-							data->Buf = text_buffer = new_text_buffer;
+							data->BufSize = file_utilities->text_buffer_size = new_text_buffer_size;
+							data->Buf = file_utilities->text_buffer = new_text_buffer;
 						}
 					}
 				}
@@ -296,7 +295,7 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 				ImGui::SetKeyboardFocusHere();
 
 			ImGui::TextUnformatted("Filename:");
-			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback);
+			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback, this);
 
 			// Set the text box's contents to the dropped file's path.
 			if (drag_and_drop_filename != nullptr)

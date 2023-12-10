@@ -69,7 +69,7 @@ struct ControllerInput
 	bool right_trigger = false;
 	Input input;
 
-	ControllerInput(SDL_JoystickID joystick_instance_id) : joystick_instance_id(joystick_instance_id) {}
+	ControllerInput(const SDL_JoystickID joystick_instance_id) : joystick_instance_id(joystick_instance_id) {}
 };
 
 #ifdef FILE_PATH_SUPPORT
@@ -2404,7 +2404,7 @@ void Frontend::Update()
 			ImGui::SeparatorText("Keyboard Input");
 
 			static bool sorted_scancodes_done;
-			static SDL_Scancode sorted_scancodes[SDL_NUM_SCANCODES]; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+			static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 			if (!sorted_scancodes_done)
 			{
@@ -2413,7 +2413,7 @@ void Frontend::Update()
 				for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
 					sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
 
-				SDL_qsort(sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
+				SDL_qsort(&sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
 					[](const void* const a, const void* const b)
 				{
 					const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
@@ -2426,7 +2426,7 @@ void Frontend::Update()
 
 			static SDL_Scancode selected_scancode;
 
-			static const char* const binding_names[INPUT_BINDING__TOTAL] = {
+			static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
 				"None",
 				"Control Pad Up",
 				"Control Pad Down",

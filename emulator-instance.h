@@ -21,7 +21,7 @@ public:
 	struct State
 	{
 		ClownMDEmu_State clownmdemu;
-		std::array<Uint32, 3 * 4 * 16>colours;
+		std::array<Uint32, 3 * 4 * 16> colours;
 	};
 
 private:

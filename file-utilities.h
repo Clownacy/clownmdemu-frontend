@@ -25,6 +25,9 @@ class FileUtilities
 private:
 	using PopupCallback = std::function<bool(const char *path)>;
 
+	int text_buffer_size;
+	char *text_buffer = nullptr;
+
 	DebugLog &debug_log;
 	const char *active_file_picker_popup = nullptr;
 	PopupCallback popup_callback;
