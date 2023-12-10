@@ -650,7 +650,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Mode");
 			ImGui::TableNextColumn();
-			static const char* const dma_modes[] = {
+			static const std::array<const char*, 3> dma_modes = {
 				"ROM/RAM to VRAM/CRAM/VSRAM",
 				"VRAM Fill",
 				"VRAM to VRAM"
@@ -697,7 +697,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Selected RAM");
 			ImGui::TableNextColumn();
-			static const char* const rams[] = {
+			static const std::array<const char*, 3> rams = {
 				"VRAM",
 				"CRAM",
 				"VSRAM"

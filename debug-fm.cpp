@@ -166,7 +166,7 @@ void DebugFM::Display(bool &open)
 						ImGui::PushFont(monospace_font);
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
-							static const cc_u8l decode[8] = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
+							static const std::array<cc_u8l, 8> decode = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
 
 							ImGui::TableNextColumn();
 							ImGui::Text("%" CC_PRIuLEAST8, decode[channel.state.operators[operator_index].envelope.key_scale - 1]);
