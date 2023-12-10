@@ -518,14 +518,14 @@ static void DoToolTip(const char* const text)
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
-	const SDL::RWops* const sdl_rwops = static_cast<const SDL::RWops*>(user);
+	const SDL::RWops* const file = static_cast<const SDL::RWops*>(user);
 
 	int i = 0;
 
 	while (i < length - 1)
 	{
 		char character;
-		if (SDL_RWread(sdl_rwops->get(), &character, 1, 1) == 0)
+		if (SDL_RWread(file->get(), &character, 1, 1) == 0)
 		{
 			if (i == 0)
 				return 0;
