@@ -243,11 +243,13 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
-	for (std::list<RecentSoftware>::iterator recent_software = recent_software_list.begin(); recent_software != recent_software_list.end(); ++recent_software)
+	for (auto recent_software = recent_software_list.begin(); recent_software != recent_software_list.end(); ++recent_software)
 	{
 		if (recent_software->path == path)
 		{
-			recent_software_list.splice(recent_software_list.begin(), recent_software_list, recent_software, std::next(recent_software));
+			if (recent_software != recent_software_list.begin())
+				recent_software_list.splice(recent_software_list.begin(), recent_software_list, recent_software, std::next(recent_software));
+
 			return;
 		}
 	}
@@ -1728,6 +1730,8 @@ void Frontend::Update()
 				}
 				else
 				{
+					const RecentSoftware *selected_software = nullptr;
+
 					for (const auto &recent_software : recent_software_list)
 					{
 						// Display only the filename.
@@ -1739,21 +1743,24 @@ void Frontend::Update()
 					#endif
 
 						if (ImGui::MenuItem(&recent_software.path[slash_index == recent_software.path.npos ? 0 : slash_index + 1]))
-						{
-							if (recent_software.is_cd_file)
-							{
-								if (LoadCDFile(recent_software.path.c_str()))
-									emulator_paused = false;
-							}
-							else
-							{
-								if (LoadCartridgeFile(recent_software.path.c_str()))
-									emulator_paused = false;
-							}
-						}
+							selected_software = &recent_software;
 
 						// Show the full path as a tooltip.
 						DoToolTip(recent_software.path.c_str());
+					}
+
+					if (selected_software != nullptr)
+					{
+						if (selected_software->is_cd_file)
+						{
+							if (LoadCDFile(selected_software->path.c_str()))
+								emulator_paused = false;
+						}
+						else
+						{
+							if (LoadCartridgeFile(selected_software->path.c_str()))
+								emulator_paused = false;
+						}
 					}
 				}
 			#endif
