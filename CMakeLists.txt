@@ -39,6 +39,7 @@ add_executable(clownmdemu-frontend WIN32
 	"file-utilities.h"
 	"frontend.cpp"
 	"frontend.h"
+	"sdl-wrapper.h"
 	"window.cpp"
 	"window.h"
 	"clownmdemu-frontend-common/mixer.h"

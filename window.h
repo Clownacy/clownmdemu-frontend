@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "SDL.h"
+#include "sdl-wrapper.h"
 
 #include "debug-log.h"
 
@@ -13,9 +13,9 @@ private:
 	bool fullscreen = false;
 
 public:
-	std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> sdl_window;
-	std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> renderer;
-	std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)> framebuffer_texture;
+	SDL::Window sdl_window;
+	SDL::Renderer renderer;
+	SDL::Texture framebuffer_texture;
 
 	Window(DebugLog &debug_log, const char *window_title, int window_width, int window_height, int framebuffer_width, int framebuffer_height);
 
