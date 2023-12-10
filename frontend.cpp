@@ -428,6 +428,14 @@ static bool LoadCDFile(const char* const path)
 	LoadCDFile(path, file);
 	return true;
 }
+
+static bool LoadSoftwareFile(const bool is_cd_file, const char* const path)
+{
+	if (is_cd_file)
+		return LoadCDFile(path);
+	else
+		return LoadCartridgeFile(path);
+}
 #endif
 
 static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
@@ -1749,19 +1757,8 @@ void Frontend::Update()
 						DoToolTip(recent_software.path.c_str());
 					}
 
-					if (selected_software != nullptr)
-					{
-						if (selected_software->is_cd_file)
-						{
-							if (LoadCDFile(selected_software->path.c_str()))
-								emulator_paused = false;
-						}
-						else
-						{
-							if (LoadCartridgeFile(selected_software->path.c_str()))
-								emulator_paused = false;
-						}
-					}
+					if (selected_software != nullptr && LoadSoftwareFile(selected_software->is_cd_file, selected_software->path.c_str()))
+						emulator_paused = false;
 				}
 			#endif
 
