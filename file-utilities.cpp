@@ -51,15 +51,15 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
 
-		TCHAR path_buffer[MAX_PATH];
+		std::array<TCHAR, MAX_PATH> path_buffer;
 		path_buffer[0] = '\0';
 
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = SDL_GetWindowWMInfo(window.GetSDLWindow(), &info) ? info.info.win.window : nullptr;
-		ofn.lpstrFile = path_buffer;
-		ofn.nMaxFile = CC_COUNT_OF(path_buffer);
+		ofn.lpstrFile = &path_buffer;
+		ofn.nMaxFile = path_buffer.size();
 		ofn.lpstrTitle = title_utf16; // It's okay for this to be nullptr.
 		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
 
@@ -84,7 +84,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		// Invoke the file dialog.
 		if (save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn))
 		{
-			char* const path_utf8 = StringToUTF8(path_buffer);
+			char* const path_utf8 = StringToUTF8(&path_buffer);
 
 			if (path_utf8 == nullptr || !callback(path_utf8))
 				success = false;

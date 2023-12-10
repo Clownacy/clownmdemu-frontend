@@ -169,7 +169,7 @@ void EmulatorInstance::Update()
 		from_index = to_index = state_rewind_index;
 
 		if (from_index == 0)
-			from_index = CC_COUNT_OF(state_rewind_buffer) - 1;
+			from_index = state_rewind_buffer.size() - 1;
 		else
 			--from_index;
 
@@ -177,12 +177,12 @@ void EmulatorInstance::Update()
 	}
 	else
 	{
-		if (state_rewind_remaining < CC_COUNT_OF(state_rewind_buffer) - 1)
+		if (state_rewind_remaining < state_rewind_buffer.size() - 1)
 			++state_rewind_remaining;
 
 		from_index = to_index = state_rewind_index;
 
-		if (to_index == CC_COUNT_OF(state_rewind_buffer) - 1)
+		if (to_index == state_rewind_buffer.size() - 1)
 			to_index = 0;
 		else
 			++to_index;

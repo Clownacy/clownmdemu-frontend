@@ -56,7 +56,7 @@ void AudioOutput::MixerEnd()
 	const cc_u32f queued_frames = device.GetTotalQueuedFrames();
 
 	rolling_average_buffer[rolling_average_buffer_index] = queued_frames;
-	rolling_average_buffer_index = (rolling_average_buffer_index + 1) % CC_COUNT_OF(rolling_average_buffer);
+	rolling_average_buffer_index = (rolling_average_buffer_index + 1) % rolling_average_buffer.size();
 
 	// If there is too much audio, just drop it because the dynamic rate control will be unable to handle it.
 	if (queued_frames < target_frames * 2)
@@ -87,5 +87,5 @@ cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_frames)
 
 cc_u32f AudioOutput::GetAverageFrames() const
 {
-	return std::accumulate(rolling_average_buffer.cbegin(), rolling_average_buffer.cend(), cc_u32f(0)) / CC_COUNT_OF(rolling_average_buffer);
+	return std::accumulate(rolling_average_buffer.cbegin(), rolling_average_buffer.cend(), cc_u32f(0)) / rolling_average_buffer.size();
 }

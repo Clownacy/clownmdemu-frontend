@@ -604,7 +604,7 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 					INPUT_BINDING_TOGGLE_CONTROL_PAD
 				};
 
-				input_binding = binding_index >= CC_COUNT_OF(input_bindings) ? INPUT_BINDING_NONE : input_bindings[binding_index];
+				input_binding = binding_index >= input_bindings.size() ? INPUT_BINDING_NONE : input_bindings[binding_index];
 			}
 			else
 			{
@@ -707,7 +707,7 @@ static void LoadConfiguration()
 	if (file == nullptr || ini_parse_stream(INIReadCallback, file, INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
-		for (std::size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
 			keyboard_bindings[i] = INPUT_BINDING_NONE;
 
 		keyboard_bindings[SDL_SCANCODE_UP] = INPUT_BINDING_CONTROLLER_UP;
@@ -779,7 +779,7 @@ static void SaveConfiguration()
 		// Save keyboard bindings.
 		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
 
-		for (std::size_t i = 0; i < CC_COUNT_OF(keyboard_bindings); ++i)
+		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
 		{
 			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
 			{
@@ -1111,7 +1111,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 			// Prevent invalid memory accesses due to future API expansions.
 			// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-			if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
+			if (event.key.keysym.scancode >= keyboard_bindings.size())
 				break;
 
 			switch (keyboard_bindings[event.key.keysym.scancode])
@@ -1169,7 +1169,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 		{
 			// Prevent invalid memory accesses due to future API expansions.
 			// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-			if (event.key.keysym.scancode >= CC_COUNT_OF(keyboard_bindings))
+			if (event.key.keysym.scancode >= keyboard_bindings.size())
 				break;
 
 			// When a key-down is processed, cache the binding so that the corresponding key-up
@@ -2410,10 +2410,10 @@ void Frontend::Update()
 			{
 				sorted_scancodes_done = true;
 
-				for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+				for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
 					sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
 
-				SDL_qsort(&sorted_scancodes, CC_COUNT_OF(sorted_scancodes), sizeof(sorted_scancodes[0]),
+				SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
 					[](const void* const a, const void* const b)
 				{
 					const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
@@ -2470,7 +2470,7 @@ void Frontend::Update()
 				ImGui::TableSetupColumn("Action");
 				ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
 				ImGui::TableHeadersRow();
-				for (std::size_t i = 0; i < CC_COUNT_OF(sorted_scancodes); ++i)
+				for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
 				{
 					if (keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
 					{

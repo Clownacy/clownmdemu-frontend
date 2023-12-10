@@ -82,9 +82,9 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 
 	if (ImGui::Begin("68000 Disassembler", &open))
 	{
-		static const char* const memories[] = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
+		static const std::array<const char*, 6> memories = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
 
-		ImGui::Combo("Memory", &current_memory, memories, CC_COUNT_OF(memories));
+		ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
 		static int address_master, address_imgui;
 
