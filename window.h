@@ -9,9 +9,6 @@
 
 class Window
 {
-private:
-	bool fullscreen = false;
-
 public:
 	SDL::Window sdl_window;
 	SDL::Renderer renderer;
@@ -20,11 +17,7 @@ public:
 	Window(DebugLog &debug_log, const char *window_title, int window_width, int window_height, int framebuffer_width, int framebuffer_height);
 
 	float GetDPIScale() const;
-	void SetFullscreen(bool enabled)
-	{
-		fullscreen = enabled;
-		SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-	}
+	void SetFullscreen(bool enabled) { SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0); }
 	bool GetFullscreen() const { return (SDL_GetWindowFlags(GetSDLWindow()) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL_Window* GetSDLWindow() const { return sdl_window.get(); }
