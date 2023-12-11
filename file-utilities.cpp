@@ -446,30 +446,24 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 	static_cast<void>(window);
 	static_cast<void>(title);
 
-	struct CallbackHolder
+	try
 	{
-		LoadFileCallback callback;
-	};
-
-	CallbackHolder* const holder = static_cast<CallbackHolder*>(SDL_malloc(sizeof(CallbackHolder)));
-
-	if (holder != nullptr)
-	{
-		new(holder) CallbackHolder{callback};
+		LoadFileCallback* const callback_detatched = new LoadFileCallback(callback);
 
 		const auto call_callback = [](const std::string &/*filename*/, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
-			CallbackHolder* const holder = static_cast<CallbackHolder*>(user_data);
+			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
 			SDL::RWops file = SDL::RWops(SDL_RWFromConstMem(buffer.data(), buffer.size()));
 
 			if (file != nullptr)
-			{
-				holder->callback(nullptr, file);
-				SDL_free(holder);
-			}
+				(*callback.get())(nullptr, file);
 		};
 
-		emscripten_browser_file::upload("", call_callback, holder);
+		emscripten_browser_file::upload("", call_callback, callback_detatched);
+	}
+	catch (const std::bad_alloc&)
+	{
+		debug_log.Log("FileUtilities::LoadFile: Failed to allocate memory.");
 	}
 #else
 	CreateOpenFileDialog(window, title, [callback](const char* const path)
