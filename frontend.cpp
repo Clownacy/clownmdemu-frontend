@@ -1678,8 +1678,6 @@ void Frontend::Update()
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
-						SDL_RWclose(file.get());
-
 						if (success)
 							emulator_paused = false;
 

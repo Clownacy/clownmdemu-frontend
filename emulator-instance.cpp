@@ -251,7 +251,6 @@ void EmulatorInstance::LoadCDFile(SDL::RWops &file)
 
 void EmulatorInstance::UnloadCDFile()
 {
-	SDL_RWclose(cd_file.get());
 	cd_file = nullptr;
 }
 
