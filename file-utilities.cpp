@@ -499,9 +499,7 @@ void FileUtilities::SaveFile(const Window &window, const char* const title, cons
 			if (file == nullptr)
 				return false;
 
-			const bool success = SDL_RWwrite(file.get(), data, 1, data_size) == data_size;
-
-			return success;
+			return SDL_RWwrite(file.get(), data, 1, data_size) == data_size;
 		};
 
 		return callback(save_file);
