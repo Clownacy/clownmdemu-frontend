@@ -1786,7 +1786,7 @@ void Frontend::Update()
 				#ifdef FILE_PATH_SUPPORT
 					file_utilities.CreateSaveFileDialog(*window, "Create Save State", CreateSaveState);
 				#else
-					file_utilities.SaveFile(*window, "Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
+					file_utilities.SaveFile(*window, "Create Save State", [](const FileUtilities::SaveFileInnerCallback &callback)
 					{
 						// Inefficient, but it's the only way...
 						try

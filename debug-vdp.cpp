@@ -227,7 +227,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 		if (ImGui::Button("Save to File"))
 		{
 			file_utilities.SaveFile(window, "Save VRAM Dump",
-			[this](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
+			[this](const FileUtilities::SaveFileInnerCallback &callback)
 			{
 				const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 

@@ -13,6 +13,7 @@
 #define FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
 #endif
 
+#include <cstddef>
 #include <functional>
 
 #include "sdl-wrapper.h"
@@ -22,8 +23,13 @@
 
 class FileUtilities
 {
+public:
+	using SaveFileInnerCallback = std::function<bool(const void *data, std::size_t data_size)>;
+
 private:
 	using PopupCallback = std::function<bool(const char *path)>;
+	using LoadFileCallback = std::function<bool(const char* const path, SDL::RWops &file)>;
+	using SaveFileCallback = std::function<bool(const SaveFileInnerCallback &save_file)>;
 
 	int text_buffer_size;
 	char *text_buffer = nullptr;
@@ -58,8 +64,8 @@ public:
 	void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size);
 	void LoadFileToBuffer(const SDL::RWops &file, unsigned char *&file_buffer, std::size_t &file_size);
 
-	void LoadFile(const Window &window, const char *title, const std::function<bool(const char* const path, SDL::RWops &file)> &callback);
-	void SaveFile(const Window &window, const char *title, const std::function<bool(const std::function<bool(const void *data, std::size_t data_size)> &save_file)> &callback);
+	void LoadFile(const Window &window, const char *title, const LoadFileCallback &callback);
+	void SaveFile(const Window &window, const char *title, const SaveFileCallback &callback);
 };
 
 #endif /* FILE_UTILITIES_H */
