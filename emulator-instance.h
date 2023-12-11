@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <vector>
 
 #include "SDL.h"
 
@@ -36,8 +37,7 @@ private:
 	ClownMDEmu_Configuration clownmdemu_configuration = {};
 	ClownMDEmu clownmdemu;
 
-	unsigned char *rom_buffer = nullptr;
-	std::size_t rom_buffer_size = 0;
+	std::vector<unsigned char> rom_buffer;
 	SDL::RWops cd_file = nullptr;
 	bool sector_size_2352 = false;
 		
@@ -70,20 +70,19 @@ private:
 
 public:
 	EmulatorInstance(DebugLog &debug_log, Window &window, const InputCallback &input_callback);
-	~EmulatorInstance();
 	void Update();
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFile(unsigned char *file_buffer, std::size_t file_size);
+	void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer);
 	void UnloadCartridgeFile();
 	void LoadCDFile(SDL::RWops &file);
 	void UnloadCDFile();
-	bool ValidateSaveState(const unsigned char *file_buffer, std::size_t file_size);
-	bool LoadSaveState(const unsigned char *file_buffer, std::size_t file_size);
+	bool ValidateSaveState(const std::vector<unsigned char> &file_buffer);
+	bool LoadSaveState(const std::vector<unsigned char> &file_buffer);
 	std::size_t GetSaveStateSize();
 	bool CreateSaveState(const SDL::RWops &file);
 
-	bool IsCartridgeFileLoaded() const { return rom_buffer != nullptr; }
+	bool IsCartridgeFileLoaded() const { return !rom_buffer.empty(); }
 	bool IsCDFileLoaded() const { return cd_file != nullptr; }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
@@ -96,12 +95,7 @@ public:
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 	const State& CurrentState() const { return *state; }
 	void OverwriteCurrentState(const State &new_state) { *state = new_state; }
-
-	void GetROMBuffer(const unsigned char *&buffer, std::size_t &size) const
-	{
-		buffer = rom_buffer;
-		size = rom_buffer_size;
-	}
+	const std::vector<unsigned char>& GetROMBuffer() const { return rom_buffer; }
 
 	bool GetPALMode() const { return clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
 

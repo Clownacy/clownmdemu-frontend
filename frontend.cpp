@@ -358,19 +358,17 @@ static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height
 // Misc. //
 ///////////
 
-static void LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
+static void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
 {
 	quick_save_exists = false;
-	emulator->LoadCartridgeFile(file_buffer, file_size);
+	emulator->LoadCartridgeFile(file_buffer);
 }
 
 static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 {
-	unsigned char *file_buffer;
-	std::size_t file_size;
-	file_utilities.LoadFileToBuffer(file, file_buffer, file_size);
+	std::vector<unsigned char> file_buffer;
 
-	if (file_buffer == nullptr)
+	if (!file_utilities.LoadFileToBuffer(file_buffer, file))
 	{
 		debug_log.Log("Could not load the cartridge file");
 		window->ShowErrorMessageBox("Failed to load the cartridge file.");
@@ -384,7 +382,7 @@ static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 	static_cast<void>(path);
 #endif
 
-	LoadCartridgeFile(file_buffer, file_size);
+	LoadCartridgeFile(file_buffer);
 	return true;
 }
 
@@ -439,9 +437,9 @@ static bool LoadSoftwareFile(const bool is_cd_file, const char* const path)
 }
 #endif
 
-static bool LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
+static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 {
-	if (!emulator->LoadSaveState(file_buffer, file_size))
+	if (!emulator->LoadSaveState(file_buffer))
 	{
 		debug_log.Log("Could not load save state file");
 		window->ShowErrorMessageBox("Could not load save state file.");
@@ -455,22 +453,16 @@ static bool LoadSaveState(const unsigned char* const file_buffer, const std::siz
 
 static bool LoadSaveState(const SDL::RWops &file)
 {
-	unsigned char *file_buffer;
-	std::size_t file_size;
-	file_utilities.LoadFileToBuffer(file, file_buffer, file_size);
+	std::vector<unsigned char> file_buffer;
 
-	if (file_buffer == nullptr)
+	if (!file_utilities.LoadFileToBuffer(file_buffer, file))
 	{
 		debug_log.Log("Could not load save state file");
 		window->ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
-	const bool success = LoadSaveState(file_buffer, file_size);
-
-	SDL_free(file_buffer);
-
-	return success;
+	return LoadSaveState(file_buffer);
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -1028,7 +1020,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		if (argc > 1)
 			LoadCartridgeFile(argv[1]);
 		else
-			LoadCartridgeFile(static_cast<unsigned char*>(nullptr), 0);
+			LoadCartridgeFile(std::vector<unsigned char>());
 
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
@@ -1576,18 +1568,14 @@ void Frontend::Update()
 	// Handle drag-and-drop event.
 	if (!file_utilities.IsDialogOpen() && drag_and_drop_filename != nullptr)
 	{
-		unsigned char *file_buffer;
-		std::size_t file_size;
-		file_utilities.LoadFileToBuffer(drag_and_drop_filename, file_buffer, file_size);
+		std::vector<unsigned char> file_buffer;
 
-		if (file_buffer != nullptr)
+		if (file_utilities.LoadFileToBuffer(file_buffer, drag_and_drop_filename))
 		{
-			if (emulator->ValidateSaveState(file_buffer, file_size))
+			if (emulator->ValidateSaveState(file_buffer))
 			{
 				if (emulator_on)
-					LoadSaveState(file_buffer, file_size);
-
-				SDL_free(file_buffer);
+					LoadSaveState(file_buffer);
 			}
 			else
 			{
@@ -1595,7 +1583,7 @@ void Frontend::Update()
 			#ifdef FILE_PATH_SUPPORT
 				AddToRecentSoftware(drag_and_drop_filename, false, false);
 			#endif
-				LoadCartridgeFile(file_buffer, file_size);
+				LoadCartridgeFile(file_buffer);
 				emulator_paused = false;
 			}
 		}

@@ -18,17 +18,15 @@ static long ReadCallback(void* const user_data)
 		case 0:
 		{
 			// ROM
-			const unsigned char *rom_buffer;
-			std::size_t rom_buffer_size;
-			emulator->GetROMBuffer(rom_buffer, rom_buffer_size);
+			const std::vector<unsigned char> &rom_buffer = emulator->GetROMBuffer();
 
-			if (rom_buffer_size == 0)
+			if (rom_buffer.empty())
 			{
 				value = 0;
 			}
 			else
 			{
-				address %= rom_buffer_size;
+				address %= rom_buffer.size();
 				value = (rom_buffer[address + 0] << 8) | rom_buffer[address + 1];
 			}
 

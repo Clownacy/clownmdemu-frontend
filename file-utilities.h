@@ -15,6 +15,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <vector>
 
 #include "sdl-wrapper.h"
 
@@ -61,8 +62,8 @@ public:
 	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
 
 	bool FileExists(const char *filename);
-	void LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size);
-	void LoadFileToBuffer(const SDL::RWops &file, unsigned char *&file_buffer, std::size_t &file_size);
+	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const char *filename);
+	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::RWops &file);
 
 	void LoadFile(const Window &window, const char *title, const LoadFileCallback &callback);
 	void SaveFile(const Window &window, const char *title, const SaveFileCallback &callback);

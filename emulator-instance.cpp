@@ -1,6 +1,6 @@
 #include "emulator-instance.h"
 
-#include <array>
+#include <utility>
 
 bool EmulatorInstance::clownmdemu_initialised;
 ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant;
@@ -9,7 +9,7 @@ cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	if (address >= emulator->rom_buffer_size)
+	if (address >= emulator->rom_buffer.size())
 		return 0;
 
 	return emulator->rom_buffer[address];
@@ -126,11 +126,6 @@ EmulatorInstance::EmulatorInstance(
 	HardResetConsole();
 }
 
-EmulatorInstance::~EmulatorInstance()
-{
-	SDL_free(rom_buffer);
-}
-
 void EmulatorInstance::Update()
 {
 	// Reset the audio buffers so that they can be mixed into.
@@ -206,13 +201,9 @@ void EmulatorInstance::HardResetConsole()
 	SoftResetConsole();
 }
 
-void EmulatorInstance::LoadCartridgeFile(unsigned char* const file_buffer, const std::size_t file_size)
+void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
 {
-	// Unload the previous ROM in memory.
-	SDL_free(rom_buffer);
-
-	rom_buffer = file_buffer;
-	rom_buffer_size = file_size;
+	rom_buffer = std::move(file_buffer);
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	state_rewind_remaining = 0;
@@ -225,9 +216,7 @@ void EmulatorInstance::LoadCartridgeFile(unsigned char* const file_buffer, const
 
 void EmulatorInstance::UnloadCartridgeFile()
 {
-	SDL_free(rom_buffer);
-	rom_buffer = nullptr;
-	rom_buffer_size = 0;
+	rom_buffer.clear();
 }
 
 void EmulatorInstance::LoadCDFile(SDL::RWops &file)
@@ -256,22 +245,19 @@ void EmulatorInstance::UnloadCDFile()
 
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
 
-bool EmulatorInstance::ValidateSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
+bool EmulatorInstance::ValidateSaveState(const std::vector<unsigned char> &file_buffer)
 {
-	return file_size == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer, &save_state_magic, sizeof(save_state_magic)) == 0;
+	return file_buffer.size() == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer.data(), &save_state_magic, sizeof(save_state_magic)) == 0;
 }
 
-bool EmulatorInstance::LoadSaveState(const unsigned char* const file_buffer, const std::size_t file_size)
+bool EmulatorInstance::LoadSaveState(const std::vector<unsigned char> &file_buffer)
 {
 	bool success = false;
 
-	if (file_buffer != nullptr) // TODO: This can't be necessary, right?
+	if (ValidateSaveState(file_buffer))
 	{
-		if (ValidateSaveState(file_buffer, file_size))
-		{
-			SDL_memcpy(state, &file_buffer[sizeof(save_state_magic)], sizeof(State));
-			success = true;
-		}
+		SDL_memcpy(state, &file_buffer[sizeof(save_state_magic)], sizeof(State));
+		success = true;
 	}
 
 	return success;

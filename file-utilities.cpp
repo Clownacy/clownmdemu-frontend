@@ -400,20 +400,20 @@ bool FileUtilities::FileExists(const char* const filename)
 	return SDL::RWops(SDL_RWFromFile(filename, "rb")) != nullptr;
 }
 
-void FileUtilities::LoadFileToBuffer(const char *filename, unsigned char *&file_buffer, std::size_t &file_size)
+bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const char *filename)
 {
-	file_buffer = nullptr;
-	file_size = 0;
-
 	SDL::RWops file = SDL::RWops(SDL_RWFromFile(filename, "rb"));
 
 	if (file == nullptr)
+	{
 		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
-	else
-		LoadFileToBuffer(file, file_buffer, file_size);
+		return false;
+	}
+
+	return LoadFileToBuffer(file_buffer, file);
 }
 
-void FileUtilities::LoadFileToBuffer(const SDL::RWops &file, unsigned char *&file_buffer, std::size_t &file_size)
+bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::RWops &file)
 {
 	const Sint64 size_s64 = SDL_RWsize(file.get());
 
@@ -425,19 +425,19 @@ void FileUtilities::LoadFileToBuffer(const SDL::RWops &file, unsigned char *&fil
 	{
 		const std::size_t size = static_cast<std::size_t>(size_s64);
 
-		file_buffer = static_cast<unsigned char*>(SDL_malloc(size));
-
-		if (file_buffer == nullptr)
+		try
+		{
+			file_buffer.resize(size);
+			SDL_RWread(file.get(), file_buffer.data(), 1, size);
+			return true;
+		}
+		catch (const std::bad_alloc)
 		{
 			debug_log.Log("Could not allocate memory for file");
 		}
-		else
-		{
-			file_size = size;
-
-			SDL_RWread(file.get(), file_buffer, 1, size);
-		}
 	}
+
+	return false;
 }
 
 void FileUtilities::LoadFile(const Window &window, const char* const title, const LoadFileCallback &callback)
