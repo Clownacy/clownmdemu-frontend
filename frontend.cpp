@@ -1793,19 +1793,19 @@ void Frontend::Update()
 						{
 							std::vector<unsigned char> save_state_buffer;
 							save_state_buffer.resize(emulator->GetSaveStateSize());
+
+							const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer.data(), save_state_buffer.size()));
+
+							if (file != nullptr)
+							{
+								emulator->CreateSaveState(file);
+
+								callback(save_state_buffer.data(), save_state_buffer.size());
+							}
 						}
 						catch (const std::bad_alloc&)
 						{
 							return false;
-						}
-
-						const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer.data(), save_state_buffer.size()));
-
-						if (file != nullptr)
-						{
-							emulator->CreateSaveState(file);
-
-							callback(save_state_buffer.data(), save_state_buffer.size());
 						}
 
 						return true;
