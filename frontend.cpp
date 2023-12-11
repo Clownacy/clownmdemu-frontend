@@ -1801,8 +1801,9 @@ void Frontend::Update()
 							emulator->CreateSaveState(file);
 
 							callback(save_state_buffer, save_state_size);
-							SDL_free(save_state_buffer);
 						}
+
+						SDL_free(save_state_buffer);
 
 						return true;
 					});
