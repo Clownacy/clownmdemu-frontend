@@ -188,9 +188,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 											else
 												directory_separator[1] = '\0';
 
-											if (last_file_dialog_directory != nullptr)
-												SDL_free(last_file_dialog_directory);
-
+											SDL_free(last_file_dialog_directory);
 											last_file_dialog_directory = path_buffer;
 											path_buffer = nullptr;
 
