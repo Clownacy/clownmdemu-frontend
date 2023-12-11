@@ -1016,11 +1016,8 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		ReloadFonts(font_size);
 
 		// If the user passed the path to the software on the command line, then load it here, automatically.
-		// Otherwise, initialise the emulator state anyway in case the user opens the debuggers without loading a ROM first.
 		if (argc > 1)
 			LoadCartridgeFile(argv[1]);
-		else
-			LoadCartridgeFile(std::vector<unsigned char>());
 
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
