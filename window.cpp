@@ -1,5 +1,6 @@
 #include "window.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -21,11 +22,11 @@ float Window::GetDPIScale() const
 	SDL_GetWindowSize(GetSDLWindow(), &window_width, nullptr);
 	SDL_GetRendererOutputSize(GetRenderer(), &renderer_width, nullptr);
 
-	dpi_scale = static_cast<float>(renderer_width) / CC_MAX(1, window_width); // Prevent a division by 0.
+	dpi_scale = static_cast<float>(renderer_width) / std::max(1, window_width); // Prevent a division by 0.
 #endif
 
 	// Prevent any insanity if we somehow get bad values.
-	return CC_MAX(1.0f, dpi_scale);
+	return std::max(1.0f, dpi_scale);
 }
 
 static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height)

@@ -1,6 +1,7 @@
 #ifndef AUDIO_OUTPUT_H
 #define AUDIO_OUTPUT_H
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 
@@ -38,7 +39,7 @@ public:
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_frames);
 	cc_u32f GetAverageFrames() const;
-	cc_u32f GetTargetFrames() const { return CC_MAX(total_buffer_frames * 2, sample_rate / 20); } // 50ms
+	cc_u32f GetTargetFrames() const { return std::max(total_buffer_frames * 2, sample_rate / 20); } // 50ms
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
 	cc_u32f GetSampleRate() const { return sample_rate; }
 

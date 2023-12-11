@@ -1,5 +1,6 @@
 #include "debug-vdp.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <functional>
@@ -338,7 +339,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 			{
 				for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
 				{
-					for (std::size_t x = 0; x < CC_MIN(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
+					for (std::size_t x = 0; x < std::min(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
 					{
 						const std::size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
 

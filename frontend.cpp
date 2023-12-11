@@ -1,5 +1,6 @@
 #include "frontend.h"
 
+#include <algorithm>
 #include <array>
 #include <cerrno>
 #include <climits> // For INT_MAX.
@@ -318,7 +319,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 {
 	static unsigned int previous_framebuffer_size_factor = 0;
 
-	const unsigned int framebuffer_size_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
+	const unsigned int framebuffer_size_factor = std::max(1u, std::min(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
 
 	if (framebuffer_texture_upscaled == nullptr || framebuffer_size_factor != previous_framebuffer_size_factor)
 	{
@@ -1954,7 +1955,7 @@ void Frontend::Update()
 			if (integer_screen_scaling)
 			{
 				// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
-				const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(work_width / destination_width, work_height / destination_height));
+				const unsigned int framebuffer_upscale_factor = std::max(1u, std::min(work_width / destination_width, work_height / destination_height));
 
 				destination_width_scaled = destination_width * framebuffer_upscale_factor;
 				destination_height_scaled = destination_height * framebuffer_upscale_factor;
@@ -1962,7 +1963,7 @@ void Frontend::Update()
 			else
 			{
 				// Round to the nearest multiple of 'destination_width' and 'destination_height'.
-				const unsigned int framebuffer_upscale_factor = CC_MAX(1, CC_MIN(CC_DIVIDE_ROUND(work_width, destination_width), CC_DIVIDE_ROUND(work_height, destination_height)));
+				const unsigned int framebuffer_upscale_factor = std::max(1u, std::min(CC_DIVIDE_ROUND(work_width, destination_width), CC_DIVIDE_ROUND(work_height, destination_height)));
 
 				RecreateUpscaledFramebuffer(work_width, work_height);
 

@@ -1,5 +1,7 @@
 #include "debug-psg.h"
 
+#include <algorithm>
+
 void DebugPSG::Display(bool &open)
 {
 	if (ImGui::Begin("PSG", &open, ImGuiWindowFlags_AlwaysAutoResize))
@@ -48,7 +50,7 @@ void DebugPSG::Display(bool &open)
 				ImGui::PushFont(monospace_font);
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%03" CC_PRIXLEAST16 " (%6" CC_PRIuFAST32 "Hz)", psg.tones[i].countdown_master, psg_clock / CC_MAX(1, psg.tones[i].countdown_master) / 2);
+				ImGui::Text("0x%03" CC_PRIXLEAST16 " (%6" CC_PRIuFAST32 "Hz)", psg.tones[i].countdown_master, psg_clock / std::max(static_cast<decltype(psg.tones[i].countdown_master)>(1), psg.tones[i].countdown_master) / 2);
 
 				ImGui::TableNextColumn();
 				if (psg.tones[i].attenuation == 15)
