@@ -9,6 +9,7 @@
 #include <iterator>
 #include <list>
 #include <string>
+#include <vector>
 
 #include "SDL.h"
 
@@ -1788,22 +1789,24 @@ void Frontend::Update()
 					file_utilities.SaveFile(*window, "Create Save State", [](const std::function<bool(const void* data_buffer, const std::size_t data_size)> &callback)
 					{
 						// Inefficient, but it's the only way...
-						const std::size_t save_state_size = emulator->GetSaveStateSize();
-						void* const save_state_buffer = SDL_malloc(save_state_size);
-
-						if (save_state_buffer == nullptr)
+						try
+						{
+							std::vector<unsigned char> save_state_buffer;
+							save_state_buffer.resize(emulator->GetSaveStateSize());
+						}
+						catch (const std::bad_alloc&)
+						{
 							return false;
+						}
 
-						const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer, save_state_size));
+						const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer.data(), save_state_buffer.size()));
 
 						if (file != nullptr)
 						{
 							emulator->CreateSaveState(file);
 
-							callback(save_state_buffer, save_state_size);
+							callback(save_state_buffer.data(), save_state_buffer.size());
 						}
-
-						SDL_free(save_state_buffer);
 
 						return true;
 					});
