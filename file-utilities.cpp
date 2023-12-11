@@ -431,7 +431,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 			SDL_RWread(file.get(), file_buffer.data(), 1, size);
 			return true;
 		}
-		catch (const std::bad_alloc)
+		catch (const std::bad_alloc&)
 		{
 			debug_log.Log("Could not allocate memory for file");
 		}
