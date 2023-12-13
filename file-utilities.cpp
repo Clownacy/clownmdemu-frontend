@@ -81,7 +81,11 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		}
 
 		// Invoke the file dialog.
-		if (save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn))
+		const bool file_selected = save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
+
+		SDL_free(title_utf16);
+
+		if (file_selected)
 		{
 			char* const path_utf8 = StringToUTF8(&path_buffer[0]);
 
@@ -90,8 +94,6 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 
 			SDL_free(path_utf8);
 		}
-
-		SDL_free(title_utf16);
 
 		// Restore the current directory.
 		if (working_directory_buffer != nullptr)
