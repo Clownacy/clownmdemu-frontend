@@ -1,5 +1,6 @@
 #include "file-utilities.h"
 
+#include <array>
 #include <climits>
 #include <vector>
 
@@ -56,7 +57,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = SDL_GetWindowWMInfo(window.GetSDLWindow(), &info) ? info.info.win.window : nullptr;
-		ofn.lpstrFile = &path_buffer;
+		ofn.lpstrFile = &path_buffer[0];
 		ofn.nMaxFile = path_buffer.size();
 		ofn.lpstrTitle = title_utf16; // It's okay for this to be nullptr.
 		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
@@ -82,7 +83,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		// Invoke the file dialog.
 		if (save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn))
 		{
-			char* const path_utf8 = StringToUTF8(&path_buffer);
+			char* const path_utf8 = StringToUTF8(&path_buffer[0]);
 
 			if (path_utf8 == nullptr || !callback(path_utf8))
 				success = false;
