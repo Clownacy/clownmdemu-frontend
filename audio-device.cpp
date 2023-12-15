@@ -14,7 +14,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 	want.channels = channels;
 	// We want a 10ms buffer (this value must be a power of two).
 	want.samples = 1;
-	while (want.samples < (want.freq * want.channels) / (1000 / 10))
+	while (want.samples < want.freq / (1000 / 10))
 		want.samples <<= 1;
 	want.callback = nullptr;
 
@@ -23,7 +23,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 	if (device == 0)
 		throw std::runtime_error(std::string("SDL_OpenAudioDevice failed with the following message - '") + SDL_GetError() + "'");
 
-	total_buffer_frames = static_cast<cc_u32f>(have.samples / have.channels);
+	total_buffer_frames = static_cast<cc_u32f>(have.samples);
 	sample_rate = static_cast<cc_u32f>(have.freq);
 
 	// Unpause audio device, so that playback can begin.
