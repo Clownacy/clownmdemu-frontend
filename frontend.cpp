@@ -913,6 +913,9 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 {
 	frame_rate_callback = frame_rate_callback_param;
 
+	// Enable high-DPI support on Windows because SDL2 is bad at being a platform abstraction library
+	SDL_SetHint(SDL_HINT_WINDOWS_DPI_SCALING, "1");
+
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
@@ -1000,13 +1003,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		{
 			// Resize the window so that there's room for the menu bar.
 			const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-		#ifdef _WIN32
-			// SDL2 does not have a proper high-DPI mechanism on Windows, so the window needs to be scaled by the DPI manually.
-			const float window_size_scale = (SDL_GetWindowFlags(window->GetSDLWindow()) & SDL_WINDOW_ALLOW_HIGHDPI) != 0 ? 1.0f : dpi_scale;
-		#else
-			const float window_size_scale = 1.0f;
-		#endif
-			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * window_size_scale), static_cast<int>(INITIAL_WINDOW_HEIGHT * window_size_scale + menu_bar_size));
+			SDL_SetWindowSize(window->GetSDLWindow(), INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT + menu_bar_size);
 		}
 
 		// Setup Platform/Renderer backends
