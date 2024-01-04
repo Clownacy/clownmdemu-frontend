@@ -1899,7 +1899,7 @@ void Frontend::Update()
 		// Weird behaviour - I know.
 		const ImVec2 size_of_display_region = ImGui::GetContentRegionAvail();
 
-		// Create an invisible button which detects when input is intended for the emulator->
+		// Create an invisible button which detects when input is intended for the emulator.
 		// We do this cursor stuff so that the framebuffer is drawn over the button.
 		const ImVec2 cursor = ImGui::GetCursorPos();
 		ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
@@ -2603,7 +2603,7 @@ void Frontend::Update()
 
 			ImGui::SeparatorText("clownmdemu-frontend " VERSION);
 
-			ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator-> Created by Clownacy.");
+			ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
 			const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
 			if (ImGui::Button(url))
 				SDL_OpenURL(url);
