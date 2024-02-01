@@ -46,7 +46,7 @@ private:
 		unsigned int cache_frame_counter = 0;
 	} window_plane_data, plane_a_data, plane_b_data;
 
-	void DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address);
+	void DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height);
 
 public:
 	DebugVDP(

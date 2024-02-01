@@ -28,7 +28,7 @@ static void DecomposeTileMetadata(const cc_u16f packed_tile_metadata, TileMetada
 	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
 }
 
-void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address)
+void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
 {
 	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
 
@@ -83,9 +83,9 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					{
 						const cc_u8l *plane_pointer = plane;
 
-						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < vdp.plane_height; ++tile_y_in_plane)
+						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 						{
-							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < vdp.plane_width; ++tile_x_in_plane)
+							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 							{
 								TileMetadata tile_metadata;
 								DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], tile_metadata);
@@ -123,8 +123,8 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					}
 				}
 
-				const float plane_width_in_pixels = static_cast<float>(vdp.plane_width * tile_width);
-				const float plane_height_in_pixels = static_cast<float>(vdp.plane_height * tile_height);
+				const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
+				const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
@@ -139,7 +139,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_viewer.scale / tile_width);
 					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_viewer.scale / tile_height);
 
-					const cc_u8l *plane_pointer = &vdp.vram[plane_address + (tile_y * vdp.plane_width + tile_x) * 2];
+					const cc_u8l *plane_pointer = &vdp.vram[plane_address + (tile_y * plane_width + tile_x) * 2];
 					const cc_u16f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
 
 					TileMetadata tile_metadata;
@@ -162,17 +162,20 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 void DebugVDP::DisplayWindowPlane(bool &open)
 {
-	DisplayPlane(open, "Window Plane", window_plane_data, emulator.CurrentState().clownmdemu.vdp.window_address);
+	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+	DisplayPlane(open, "Window Plane", window_plane_data, emulator.CurrentState().clownmdemu.vdp.window_address, vdp.h40_enabled ? 64 : 32, 32);
 }
 
 void DebugVDP::DisplayPlaneA(bool &open)
 {
-	DisplayPlane(open, "Plane A", plane_a_data, emulator.CurrentState().clownmdemu.vdp.plane_a_address);
+	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+	DisplayPlane(open, "Plane A", plane_a_data, emulator.CurrentState().clownmdemu.vdp.plane_a_address, vdp.plane_width, vdp.plane_height);
 }
 
 void DebugVDP::DisplayPlaneB(bool &open)
 {
-	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address);
+	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address, vdp.plane_width, vdp.plane_height);
 }
 
 void DebugVDP::DisplayVRAM(bool &open)
