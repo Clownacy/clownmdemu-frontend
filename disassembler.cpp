@@ -86,12 +86,9 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 
 		static int address_master, address_imgui;
 
-		bool update = false;
+		ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
 
-		update |= ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue);
-		update |= ImGui::Button("Disassemble");
-
-		if (update)
+		if (ImGui::Button("Disassemble"))
 			address_master = address_imgui;
 
 		ImGui::Separator();
