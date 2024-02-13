@@ -151,11 +151,6 @@ add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clownmdemu)
 
 # Link SDL2
-if(MINGW)
-	# SDL2main and libmingw32 have a circular dependency issue
-	# that breaks MinGW right now, so fix it by doing this.
-	target_link_libraries(clownmdemu-frontend mingw32)
-endif()
 find_package(SDL2 2.0.18)
 if(SDL2_FOUND)
 	target_link_libraries(clownmdemu-frontend SDL2::SDL2main SDL2::SDL2)
