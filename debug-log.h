@@ -3,7 +3,7 @@
 
 #include <cstdarg>
 #include <cstddef>
-#include <vector>
+#include <string>
 
 #include "SDL.h"
 
@@ -16,7 +16,7 @@ private:
 	const float &dpi_scale;
 	ImFont* const &monospace_font;
 
-	std::vector<std::vector<char>> lines;
+	std::string lines;
 	bool logging_enabled = false, log_to_console = false, force_console_output = true;
 
 public:
