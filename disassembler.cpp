@@ -1,9 +1,12 @@
 #include "disassembler.h"
 
+#include <string>
+
 #include "clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
 
 static unsigned int address;
 static int current_memory;
+static std::string assembly;
 
 static long ReadCallback(void* const user_data)
 {
@@ -71,7 +74,8 @@ static long ReadCallback(void* const user_data)
 
 static void PrintCallback(void* /*const user_data*/, const char* const string)
 {
-	ImGui::TextUnformatted(string);
+	assembly += string;
+	assembly += '\n';
 }
 
 void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const monospace_font)
@@ -84,22 +88,27 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 
 		ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
-		static int address_master, address_imgui;
+		static int address_imgui;
 
 		ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
 
 		if (ImGui::Button("Disassemble"))
-			address_master = address_imgui;
+		{
+			assembly.clear();
+
+			address = address_imgui;
+			Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &emulator);
+
+			if (assembly[assembly.size() - 1] == '\n')
+				assembly.pop_back();
+		}
 
 		ImGui::Separator();
 
 		if (ImGui::BeginChild("#code"))
 		{
 			ImGui::PushFont(monospace_font);
-
-			address = address_master;
-			Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &emulator);
-
+			ImGui::InputTextMultiline("##source", const_cast<char*>(assembly.data()), assembly.size(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 			ImGui::PopFont();
 		}
 
