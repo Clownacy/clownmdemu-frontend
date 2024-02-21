@@ -38,7 +38,8 @@
 #include "file-utilities.h"
 #include "window.h"
 
-#define CONFIG_FILENAME "clownmdemu-frontend.ini"
+#define CONFIG_FILENAME "configuration.ini"
+#define DEAR_IMGUI_CONFIG_FILENAME "imgui.ini"
 
 #define VERSION "v0.5.2"
 
@@ -490,6 +491,20 @@ static void SetAudioPALMode(const bool enabled)
 	emulator->SetPALMode(enabled);
 }
 
+static std::string PrefixConfigPath(const std::string filename)
+{
+	char* const path = SDL_GetPrefPath("clownacy", "clownmdemu-frontend");
+
+	if (path == nullptr)
+		return filename;
+
+	std::string prefixed_path(path);
+
+	SDL_free(path);
+
+	return prefixed_path + filename;
+}
+
 
 /////////////
 // Tooltip //
@@ -702,7 +717,7 @@ static void LoadConfiguration()
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
 
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(CONFIG_FILENAME, "r"));
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(PrefixConfigPath(CONFIG_FILENAME).c_str(), "r"));
 
 	// Load the configuration file, overwriting the above settings.
 	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::RWops*>(&file), INIParseCallback, nullptr) != 0)
@@ -738,7 +753,7 @@ static void LoadConfiguration()
 static void SaveConfiguration()
 {
 	// Save configuration file:
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(CONFIG_FILENAME, "w"));
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(PrefixConfigPath(CONFIG_FILENAME).c_str(), "w"));
 
 	if (file == nullptr)
 	{
@@ -944,7 +959,9 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		ImGuiIO &io = ImGui::GetIO();
 		ImGuiStyle &style = ImGui::GetStyle();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		io.IniFilename = "clownmdemu-frontend-imgui.ini";
+		io.IniFilename = nullptr; // Disable automatic loading/saving so we can do it ourselves.
+
+		ImGui::LoadIniSettingsFromDisk(PrefixConfigPath(DEAR_IMGUI_CONFIG_FILENAME).c_str());
 
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
@@ -1036,6 +1053,8 @@ void Frontend::Deinitialise()
 
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
+
+	ImGui::SaveIniSettingsToDisk(PrefixConfigPath(DEAR_IMGUI_CONFIG_FILENAME).c_str());
 
 	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
