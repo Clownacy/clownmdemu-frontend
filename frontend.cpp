@@ -507,9 +507,9 @@ static std::string GetConfigurationFilePath()
 	return PrefixConfigPath("configuration.ini");
 }
 
-static std::string GetDearImGuiConfigurationFilePath()
+static std::string GetDearImGuiSettingsFilePath()
 {
-	return PrefixConfigPath("imgui.ini");
+	return PrefixConfigPath("dear-imgui-settings.ini");
 }
 
 
@@ -968,7 +968,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 		io.IniFilename = nullptr; // Disable automatic loading/saving so we can do it ourselves.
 
-		ImGui::LoadIniSettingsFromDisk(GetDearImGuiConfigurationFilePath().c_str());
+		ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().c_str());
 
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
@@ -1061,7 +1061,7 @@ void Frontend::Deinitialise()
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-	ImGui::SaveIniSettingsToDisk(GetDearImGuiConfigurationFilePath().c_str());
+	ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().c_str());
 
 	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
