@@ -534,25 +534,25 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TextUnformatted("Window Plane Horizontal Boundary");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST8, vdp.window_horizontal_boundary);
+			ImGui::Text("%" CC_PRIdLEAST8, vdp.window.horizontal_boundary);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Horizontal Alignment");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp.window_aligned_right ? "Right" : "Left");
+			ImGui::TextUnformatted(vdp.window.aligned_right ? "Right" : "Left");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Vertical Boundary");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIdLEAST8, vdp.window_vertical_boundary);
+			ImGui::Text("%" CC_PRIdLEAST8, vdp.window.vertical_boundary);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Window Plane Vertical Alignment");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp.window_aligned_bottom ? "Bottom" : "Top");
+			ImGui::TextUnformatted(vdp.window.aligned_bottom ? "Bottom" : "Top");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Plane Width");
@@ -649,7 +649,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Pending");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp.dma.pending ? "Yes" : "No");
+			ImGui::TextUnformatted((vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Mode");
@@ -692,10 +692,17 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TextUnformatted(vdp.access.write_pending ? "Yes" : "No");
 
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Cached Write");
+			ImGui::TextUnformatted("Address Register");
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.cached_write);
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.address_register);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Command Register");
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.code_register); // TODO: Enums or something.
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -711,14 +718,7 @@ void DebugVDP::DisplayRegisters(bool &open)
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Mode");
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(vdp.access.read_mode ? "Read" : "Write");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Index");
-			ImGui::PushFont(monospace_font);
-			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.index);
-			ImGui::PopFont();
+			ImGui::TextUnformatted((vdp.access.code_register & 1 ) != 0 ? "Write" : "Read");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Increment");
