@@ -99,20 +99,15 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 			address = address_imgui;
 			Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &emulator);
 
-			if (assembly[assembly.size() - 1] == '\n')
+			if (assembly[assembly.length() - 1] == '\n')
 				assembly.pop_back();
 		}
 
 		ImGui::Separator();
 
-		if (ImGui::BeginChild("#code"))
-		{
-			ImGui::PushFont(monospace_font);
-			ImGui::InputTextMultiline("##source", const_cast<char*>(assembly.data()), assembly.size(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
-			ImGui::PopFont();
-		}
-
-		ImGui::EndChild();
+		ImGui::PushFont(monospace_font);
+		ImGui::InputTextMultiline("##code", &assembly[0], assembly.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
+		ImGui::PopFont();
 	}
 
 	ImGui::End();
