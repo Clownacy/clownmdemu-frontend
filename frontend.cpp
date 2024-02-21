@@ -924,7 +924,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	}
 	else
 	{
-		window = new Window(debug_log, "clownmdemu-frontend " VERSION, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+		window = new Window(debug_log, "clownmdemu", INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
 		emulator = new EmulatorInstance(debug_log, *window, ReadInputCallback);
 		debug_fm = new DebugFM(*emulator, monospace_font);
 		debug_frontend = new DebugFrontend(*emulator, *window, GetUpscaledFramebufferSize);
