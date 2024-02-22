@@ -189,10 +189,12 @@ static bool emulator_on, emulator_running;
 // Fonts //
 ///////////
 
+static constexpr float UNSCALED_FONT_SIZE = 16.0f;
+
 static unsigned int CalculateFontSize()
 {
 	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
-	return static_cast<unsigned int>(16.0f * dpi_scale);
+	return static_cast<unsigned int>(UNSCALED_FONT_SIZE * dpi_scale);
 }
 
 static void ReloadFonts(const unsigned int font_size)
@@ -1016,8 +1018,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		// Apply DPI scale.
 		style.ScaleAllSizes(dpi_scale);
 
-		const unsigned int font_size = CalculateFontSize();
-
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
 		int window_width, window_height;
@@ -1026,7 +1026,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
 		{
 			// Resize the window so that there's room for the menu bar.
-			const float menu_bar_size = static_cast<float>(font_size) + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
+			const float menu_bar_size = UNSCALED_FONT_SIZE + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
 			SDL_SetWindowSize(window->GetSDLWindow(), INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT + menu_bar_size);
 		}
 
@@ -1035,7 +1035,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		ImGui_ImplSDLRenderer2_Init(window->GetRenderer());
 
 		// Load fonts
-		ReloadFonts(font_size);
+		ReloadFonts(CalculateFontSize());
 
 		// If the user passed the path to the software on the command line, then load it here, automatically.
 		if (argc > 1)
