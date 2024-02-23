@@ -280,59 +280,64 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 		if (sprite_viewer.scale < 1)
 			sprite_viewer.scale = 1;
 
-		SDL_SetRenderTarget(window.renderer.get(), sprite_viewer.texture.get());
-		SDL_SetRenderDrawColor(window.renderer.get(), 0, 0, 0, 0xFF);
-		SDL_RenderClear(window.renderer.get());
-		SDL_SetRenderDrawColor(window.renderer.get(), 0x10, 0x10, 0x10, 0xFF);
-		const SDL_Rect visible_area_rectangle = {0x80, 0x80, vdp.h40_enabled ? 320 : 256, vdp.v30_enabled ? 240 : 224};
-		SDL_RenderFillRect(window.renderer.get(), &visible_area_rectangle);
-
-		std::vector<cc_u8l> sprite_vector;
-
-		// Need to display sprites backwards for proper layering.
-		for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+			SDL_SetRenderTarget(window.renderer.get(), sprite_viewer.texture.get());
+			SDL_SetRenderDrawColor(window.renderer.get(), 0, 0, 0, 0xFF);
+			SDL_RenderClear(window.renderer.get());
+			SDL_SetRenderDrawColor(window.renderer.get(), 0x10, 0x10, 0x10, 0xFF);
+			const SDL_Rect visible_area_rectangle = {0x80, 0x80, vdp.h40_enabled ? 320 : 256, vdp.v30_enabled ? 240 : 224};
+			SDL_RenderFillRect(window.renderer.get(), &visible_area_rectangle);
 
-			sprite_index = GetSprite(vdp, sprite_index).cached.link;
+			std::vector<cc_u8l> sprite_vector;
 
-			if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
-				break;
+			// Need to display sprites backwards for proper layering.
+			for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+			{
+				sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+
+				sprite_index = GetSprite(vdp, sprite_index).cached.link;
+
+				if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
+					break;
+			}
+
+			// Draw sprites to the plane texture.
+			for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+			{
+				const cc_u8f sprite_index = *it;
+				const Sprite sprite = GetSprite(vdp, sprite_index);
+
+				const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+				const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+				SDL_RenderCopy(window.renderer.get(), sprite_viewer.textures[sprite_index].get(), &src_rect, &dst_rect);
+			}
+
+			SDL_SetRenderTarget(window.renderer.get(), nullptr);
+
+			const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
+			const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
+
+			const ImVec2 image_position = ImGui::GetCursorScreenPos();
+
+			ImGui::Image(sprite_viewer.texture.get(), ImVec2(plane_width_in_pixels * sprite_viewer.scale, plane_height_in_pixels * sprite_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+
+				const ImVec2 mouse_position = ImGui::GetMousePos();
+
+				const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / sprite_viewer.scale);
+				const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / sprite_viewer.scale);
+
+				ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
+
+				ImGui::EndTooltip();
+			}
 		}
 
-		// Draw sprites to the plane texture.
-		for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
-		{
-			const cc_u8f sprite_index = *it;
-			const Sprite sprite = GetSprite(vdp, sprite_index);
-
-			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-			SDL_RenderCopy(window.renderer.get(), sprite_viewer.textures[sprite_index].get(), &src_rect, &dst_rect);
-		}
-
-		SDL_SetRenderTarget(window.renderer.get(), nullptr);
-
-		const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
-		const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
-
-		const ImVec2 image_position = ImGui::GetCursorScreenPos();
-
-		ImGui::Image(sprite_viewer.texture.get(), ImVec2(plane_width_in_pixels * sprite_viewer.scale, plane_height_in_pixels * sprite_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::BeginTooltip();
-
-			const ImVec2 mouse_position = ImGui::GetMousePos();
-
-			const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / sprite_viewer.scale);
-			const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / sprite_viewer.scale);
-
-			ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
-
-			ImGui::EndTooltip();
-		}
+		ImGui::EndChild();
 	}
 
 	ImGui::End();
