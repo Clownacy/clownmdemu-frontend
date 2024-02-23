@@ -245,7 +245,7 @@ void DebugVDP::DisplaySpriteCommon()
 
 void DebugVDP::DisplaySpritePlane(bool &open)
 {
-	ImGui::SetNextWindowSize(ImVec2(544, 610), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(544, 1120), ImGuiCond_FirstUseEver);
 
 	if (ImGui::Begin("Sprite Plane", &open))
 	{
@@ -286,7 +286,8 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 			SDL_SetRenderDrawColor(window.renderer.get(), 0, 0, 0, 0xFF);
 			SDL_RenderClear(window.renderer.get());
 			SDL_SetRenderDrawColor(window.renderer.get(), 0x10, 0x10, 0x10, 0xFF);
-			const SDL_Rect visible_area_rectangle = {0x80, 0x80, vdp.h40_enabled ? 320 : 256, vdp.v30_enabled ? 240 : 224};
+			const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
+			const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
 			SDL_RenderFillRect(window.renderer.get(), &visible_area_rectangle);
 
 			std::vector<cc_u8l> sprite_vector;
