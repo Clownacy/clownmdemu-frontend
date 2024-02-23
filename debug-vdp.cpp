@@ -206,9 +206,6 @@ void DebugVDP::DisplaySpriteCommon()
 		}
 	}
 
-	constexpr cc_u16f tile_width = 8;
-	const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
-
 	for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
 	{
 		const Sprite sprite = GetSprite(vdp, i);
