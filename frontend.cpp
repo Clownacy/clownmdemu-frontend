@@ -165,6 +165,8 @@ static bool z80_ram_viewer;
 static bool word_ram_viewer;
 static bool prg_ram_viewer;
 static bool vdp_registers;
+static bool sprite_list;
+static bool sprite_viewer;
 static bool window_plane_viewer;
 static bool plane_a_viewer;
 static bool plane_b_viewer;
@@ -1642,6 +1644,8 @@ void Frontend::Update()
 							|| prg_ram_viewer
 							|| word_ram_viewer
 							|| vdp_registers
+							|| sprite_list
+							|| sprite_viewer
 							|| window_plane_viewer
 							|| plane_a_viewer
 							|| plane_b_viewer
@@ -1864,7 +1868,9 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("VDP"))
 				{
 					ImGui::MenuItem("Registers", nullptr, &vdp_registers);
+					ImGui::MenuItem("Sprites", nullptr, &sprite_list);
 					ImGui::SeparatorText("Visualisers");
+					ImGui::MenuItem("Sprite Plane", nullptr, &sprite_viewer);
 					ImGui::MenuItem("Window Plane", nullptr, &window_plane_viewer);
 					ImGui::MenuItem("Plane A", nullptr, &plane_a_viewer);
 					ImGui::MenuItem("Plane B", nullptr, &plane_b_viewer);
@@ -2085,6 +2091,12 @@ void Frontend::Update()
 
 	if (vdp_registers)
 		debug_vdp->DisplayRegisters(vdp_registers);
+
+	if (sprite_list)
+		debug_vdp->DisplaySpriteList(sprite_list);
+
+	if (sprite_viewer)
+		debug_vdp->DisplaySpritePlane(sprite_viewer);
 
 	if (window_plane_viewer)
 		debug_vdp->DisplayWindowPlane(window_plane_viewer);

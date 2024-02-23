@@ -4,28 +4,64 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <vector>
 
 #include "SDL.h"
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-struct TileMetadata
+struct Sprite
 {
-	cc_u16f tile_index;
-	cc_u16f palette_line;
-	bool x_flip;
-	bool y_flip;
-	bool priority;
+	VDP_CachedSprite cached;
+	VDP_TileMetadata tile_metadata;
+	cc_u16f x;
 };
 
-static void DecomposeTileMetadata(const cc_u16f packed_tile_metadata, TileMetadata &tile_metadata)
+static constexpr cc_u8f sprite_texture_width = 4 * 8;
+static constexpr cc_u8f sprite_texture_height = 4 * 16;
+
+static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 {
-	tile_metadata.tile_index = packed_tile_metadata & 0x7FF;
-	tile_metadata.palette_line = (packed_tile_metadata >> 13) & 3;
-	tile_metadata.x_flip = (packed_tile_metadata & 0x800) != 0;
-	tile_metadata.y_flip = (packed_tile_metadata & 0x1000) != 0;
-	tile_metadata.priority = (packed_tile_metadata & 0x8000) != 0;
+	const cc_u16f sprite_address = vdp.sprite_table_address + sprite_index * 8;
+
+	Sprite sprite;
+	sprite.cached = VDP_GetCachedSprite(&vdp, sprite_index);
+	sprite.tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, sprite_address + 4));
+	sprite.x = VDP_ReadVRAMWord(&vdp, sprite_address + 6) & 0x1FF;
+	return sprite;
+}
+
+void DebugVDP::DrawTile(const VDP_State &vdp, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency) const
+{
+	const cc_u16f tile_width = 8;
+	const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+
+	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
+	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
+
+	const cc_u16f palette_index = tile_metadata.palette_line * 16 + (vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+
+	const Uint32 *palette_line = &emulator.CurrentState().colours[palette_index];
+
+	const cc_u8l *tile_pointer = &vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
+
+	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
+	{
+		Uint32 *plane_texture_pixels_row = reinterpret_cast<Uint32*>(&pixels[x * tile_width * sizeof(*plane_texture_pixels_row) + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch]);
+
+		for (cc_u16f i = 0; i < 2; ++i)
+		{
+			const cc_u16l tile_pixels = (tile_pointer[0] << 8) | tile_pointer[1];
+			tile_pointer += 2;
+
+			for (cc_u16f j = 0; j < 4; ++j)
+			{
+				const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
+				plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
+			}
+		}
+	}
 }
 
 void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
@@ -64,9 +100,6 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
-				const cc_u16f tile_width = 8;
-				const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
-
 				// Only update the texture if we know that the frame has changed.
 				// This prevents constant texture generation even when the emulator is paused.
 				if (plane_viewer.cache_frame_counter != frame_counter)
@@ -87,35 +120,8 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 						{
 							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 							{
-								TileMetadata tile_metadata;
-								DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1], tile_metadata);
+								DrawTile(vdp, VDP_DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1]), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
 								plane_pointer += 2;
-
-								const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
-								const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
-
-								const cc_u16f palette_index = tile_metadata.palette_line * 16 + (vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
-
-								const Uint32 *palette_line = &emulator.CurrentState().colours[palette_index];
-
-								const cc_u8l *tile_pointer = &vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
-
-								for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
-								{
-									Uint32 *plane_texture_pixels_row = reinterpret_cast<Uint32*>(&plane_texture_pixels[tile_x_in_plane * tile_width * sizeof(*plane_texture_pixels_row) + (tile_y_in_plane * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * plane_texture_pitch]);
-
-									for (cc_u16f i = 0; i < 2; ++i)
-									{
-										const cc_u16l tile_pixels = (tile_pointer[0] << 8) | tile_pointer[1];
-										tile_pointer += 2;
-
-										for (cc_u16f j = 0; j < 4; ++j)
-										{
-											const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
-											plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = palette_line[colour_index];
-										}
-									}
-								}
 							}
 						}
 
@@ -123,6 +129,8 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					}
 				}
 
+				const cc_u16f tile_width = 8;
+				const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
 				const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
 				const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
 
@@ -142,10 +150,9 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					const cc_u8l *plane_pointer = &vdp.vram[plane_address + (tile_y * plane_width + tile_x) * 2];
 					const cc_u16f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
 
-					TileMetadata tile_metadata;
-					DecomposeTileMetadata(packed_tile_metadata, tile_metadata);
+					const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
-					ImGui::Image(plane_viewer.texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width));
+					ImGui::Image(plane_viewer.texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_width)); // TODO: You fuck-up.
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -176,6 +183,210 @@ void DebugVDP::DisplayPlaneB(bool &open)
 {
 	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address, vdp.plane_width, vdp.plane_height);
+}
+
+void DebugVDP::DisplaySpriteCommon()
+{
+	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+
+	for (auto &texture : sprite_viewer.textures)
+	{
+		if (texture.get() == nullptr)
+		{
+			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+			texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
+
+			if (texture.get() == nullptr)
+			{
+				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				// Disable blending, since we don't need it
+				if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) < 0)
+					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			}
+		}
+	}
+
+	constexpr cc_u16f tile_width = 8;
+	const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+
+	for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
+	{
+		const Sprite sprite = GetSprite(vdp, i);
+
+		// Only update the texture if we know that the frame has changed.
+		// This prevents constant texture generation even when the emulator is paused.
+		if (sprite_viewer.cache_frame_counter != frame_counter)
+		{
+			// Lock texture so that we can write into it.
+			Uint8 *sprite_texture_pixels;
+			int sprite_texture_pitch;
+
+			if (SDL_LockTexture(sprite_viewer.textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			{
+				auto tile_metadata = sprite.tile_metadata;
+
+				for (cc_u8f x = 0; x < sprite.cached.width; ++x)
+				{
+					const cc_u8f x_corrected = tile_metadata.x_flip ? sprite.cached.width - 1 - x : x;
+
+					for (cc_u8f y = 0; y < sprite.cached.height; ++y)
+					{
+						const cc_u8f y_corrected = tile_metadata.y_flip ? sprite.cached.height - 1 - y : y;
+
+						DrawTile(vdp, tile_metadata, sprite_texture_pixels, sprite_texture_pitch, x_corrected, y_corrected, true);
+						++tile_metadata.tile_index;
+					}
+				}
+
+				SDL_UnlockTexture(sprite_viewer.textures[i].get());
+			}
+		}
+	}
+
+	sprite_viewer.cache_frame_counter = frame_counter;
+}
+
+void DebugVDP::DisplaySpritePlane(bool &open)
+{
+	ImGui::SetNextWindowSize(ImVec2(544, 610), ImGuiCond_FirstUseEver);
+
+	if (ImGui::Begin("Sprite Plane", &open))
+	{
+		DisplaySpriteCommon();
+
+		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+
+		constexpr cc_u16f plane_texture_width = 512;
+		constexpr cc_u16f plane_texture_height = 1024;
+
+		if (sprite_viewer.texture.get() == nullptr)
+		{
+			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+			sprite_viewer.texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
+
+			if (sprite_viewer.texture.get() == nullptr)
+			{
+				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			}
+			else
+			{
+				// Disable blending, since we don't need it
+				if (SDL_SetTextureBlendMode(sprite_viewer.texture.get(), SDL_BLENDMODE_NONE) < 0)
+					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			}
+		}
+
+		constexpr cc_u16f tile_width = 8;
+		const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+
+		ImGui::InputInt("Zoom", &sprite_viewer.scale);
+		if (sprite_viewer.scale < 1)
+			sprite_viewer.scale = 1;
+
+		SDL_SetRenderTarget(window.renderer.get(), sprite_viewer.texture.get());
+		SDL_RenderClear(window.renderer.get());
+
+		std::vector<cc_u8l> sprite_vector;
+
+		// Need to display sprites backwards for proper layering.
+		for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+		{
+			sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+
+			sprite_index = GetSprite(vdp, sprite_index).cached.link;
+
+			if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
+				break;
+		}
+
+		// Draw sprites to the plane texture.
+		for (auto &it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+		{
+			const cc_u8f sprite_index = *it;
+			const Sprite sprite = GetSprite(vdp, sprite_index);
+
+			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+			SDL_RenderCopy(window.renderer.get(), sprite_viewer.textures[sprite_index].get(), &src_rect, &dst_rect);
+		}
+
+		SDL_SetRenderTarget(window.renderer.get(), nullptr);
+
+		const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
+		const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
+
+		ImGui::Image(sprite_viewer.texture.get(), ImVec2(plane_width_in_pixels * sprite_viewer.scale, plane_height_in_pixels * sprite_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+	}
+
+	ImGui::End();
+}
+
+void DebugVDP::DisplaySpriteList(bool &open)
+{
+	ImGui::SetNextWindowSize(ImVec2(500 * dpi_scale, 405 * dpi_scale), ImGuiCond_FirstUseEver);
+
+	if (ImGui::Begin("Sprites", &open))
+	{
+		DisplaySpriteCommon();
+
+		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+
+		if (ImGui::BeginChild("Sprites", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
+		{
+			if (ImGui::BeginTable("Sprite Table", 10, ImGuiTableFlags_Borders))
+			{
+				ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Image");
+				ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Link", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Tile Index", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Palette Line", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("X-Flip", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Y-Flip", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Priority", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableHeadersRow();
+
+				for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
+				{
+					constexpr cc_u16f tile_width = 8;
+					const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+
+					const Sprite sprite = GetSprite(vdp, i);
+
+					ImGui::TableNextColumn();
+					ImGui::Text("%" CC_PRIuFAST8, i);
+					ImGui::TableNextColumn();
+					ImGui::Image(sprite_viewer.textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
+					ImGui::TableNextColumn();
+					ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
+					ImGui::TableNextColumn();
+					ImGui::Text("%" CC_PRIuFAST8 "x%" CC_PRIuFAST8, sprite.cached.width, sprite.cached.height);
+					ImGui::TableNextColumn();
+					ImGui::Text("%" CC_PRIuFAST8, sprite.cached.link);
+					ImGui::TableNextColumn();
+					ImGui::Text("%" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16, sprite.tile_metadata.tile_index, sprite.tile_metadata.tile_index);
+					ImGui::TableNextColumn();
+					ImGui::Text("Line %" CC_PRIuFAST8, sprite.tile_metadata.palette_line);
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(sprite.tile_metadata.y_flip ? "Yes" : "No");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
+				}
+
+				ImGui::EndTable();
+			}
+		}
+
+		ImGui::EndChild();
+	}
+
+	ImGui::End();
 }
 
 void DebugVDP::DisplayVRAM(bool &open)

@@ -24,6 +24,8 @@ private:
 	ImFont* const &monospace_font;
 	Window &window;
 
+	static constexpr cc_u8f TOTAL_SPRITES = 80;
+
 	struct
 	{
 		SDL::Texture texture = nullptr;
@@ -39,6 +41,14 @@ private:
 		int brightness = 1;
 	} cram_viewer;
 
+	struct
+	{
+		int scale = 0;
+		SDL::Texture texture = nullptr;
+		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
+		unsigned int cache_frame_counter = 0;
+	} sprite_viewer;
+
 	struct PlaneViewer
 	{
 		int scale = 0;
@@ -46,7 +56,9 @@ private:
 		unsigned int cache_frame_counter = 0;
 	} window_plane_data, plane_a_data, plane_b_data;
 
-	void DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height);
+	void DrawTile(const VDP_State &vdp, VDP_TileMetadata tile_metadata, Uint8 *pixels, int pitch, cc_u16f x, cc_u16f y, bool transparency) const;
+	void DisplayPlane(bool &open, const char *name, PlaneViewer &plane_viewer, cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
+	void DisplaySpriteCommon();
 
 public:
 	DebugVDP(
@@ -69,6 +81,8 @@ public:
 	void DisplayWindowPlane(bool &open);
 	void DisplayPlaneA(bool &open);
 	void DisplayPlaneB(bool &open);
+	void DisplaySpritePlane(bool &open);
+	void DisplaySpriteList(bool &open);
 	void DisplayVRAM(bool &open);
 	void DisplayCRAM(bool &open);
 	void DisplayRegisters(bool &open);
