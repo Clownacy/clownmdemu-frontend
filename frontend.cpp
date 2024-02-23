@@ -38,7 +38,7 @@
 #include "file-utilities.h"
 #include "window.h"
 
-#define VERSION "v0.5.2"
+#define VERSION "v0.6"
 
 #define INITIAL_WINDOW_WIDTH (320 * 2)
 #define INITIAL_WINDOW_HEIGHT (224 * 2)
