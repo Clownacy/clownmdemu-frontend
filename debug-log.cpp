@@ -51,7 +51,6 @@ void DebugLog::Display(bool &open)
 		ImGui::SameLine();
 		if (ImGui::Button("Clear"))
 			lines.clear();
-		ImGui::Separator();
 
 		ImGui::PushFont(monospace_font);
 		ImGui::InputTextMultiline("##log", &lines[0], lines.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);

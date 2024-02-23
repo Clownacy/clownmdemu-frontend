@@ -103,8 +103,6 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 				assembly.pop_back();
 		}
 
-		ImGui::Separator();
-
 		ImGui::PushFont(monospace_font);
 		ImGui::InputTextMultiline("##code", &assembly[0], assembly.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopFont();
