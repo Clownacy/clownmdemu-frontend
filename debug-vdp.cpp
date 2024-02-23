@@ -44,7 +44,7 @@ void DebugVDP::DrawTile(const VDP_State &vdp, const VDP_TileMetadata tile_metada
 
 	const Uint32 *palette_line = &emulator.CurrentState().colours[palette_index];
 
-	const cc_u8l *tile_pointer = &vdp.vram[tile_metadata.tile_index * (tile_width * tile_height / 2)];
+	cc_u16f tile_index = tile_metadata.tile_index * (tile_width * tile_height / 2);
 
 	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 	{
@@ -52,8 +52,8 @@ void DebugVDP::DrawTile(const VDP_State &vdp, const VDP_TileMetadata tile_metada
 
 		for (cc_u16f i = 0; i < 2; ++i)
 		{
-			const cc_u16l tile_pixels = (tile_pointer[0] << 8) | tile_pointer[1];
-			tile_pointer += 2;
+			const cc_u16l tile_pixels = VDP_ReadVRAMWord(&vdp, tile_index);
+			tile_index += 2;
 
 			for (cc_u16f j = 0; j < 4; ++j)
 			{
@@ -106,22 +106,20 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 				{
 					plane_viewer.cache_frame_counter = frame_counter;
 
-					const cc_u8l *plane = &vdp.vram[plane_address];
-
 					// Lock texture so that we can write into it.
 					Uint8 *plane_texture_pixels;
 					int plane_texture_pitch;
 
 					if (SDL_LockTexture(plane_viewer.texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
 					{
-						const cc_u8l *plane_pointer = plane;
+						cc_u16f plane_index = plane_address;
 
 						for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 						{
 							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 							{
-								DrawTile(vdp, VDP_DecomposeTileMetadata((plane_pointer[0] << 8) | plane_pointer[1]), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
-								plane_pointer += 2;
+								DrawTile(vdp, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
+								plane_index += 2;
 							}
 						}
 
@@ -147,8 +145,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_viewer.scale / tile_width);
 					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_viewer.scale / tile_height);
 
-					const cc_u8l *plane_pointer = &vdp.vram[plane_address + (tile_y * plane_width + tile_x) * 2];
-					const cc_u16f packed_tile_metadata = (plane_pointer[0] << 8) | plane_pointer[1];
+					const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
 
 					const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
@@ -496,7 +493,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 				if (SDL_LockTexture(vram_viewer.texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
-					const cc_u8l *vram_pointer = vdp.vram;
+					cc_u16f vram_index = 0;
 
 					// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
 					// instead of left-to-right then top-to-bottom.
@@ -508,8 +505,8 @@ void DebugVDP::DisplayVRAM(bool &open)
 
 							for (cc_u16f i = 0; i < 2; ++i)
 							{
-								const cc_u16l tile_row = (vram_pointer[0] << 8) |  vram_pointer[1];
-								vram_pointer += 2;
+								const cc_u16l tile_row = VDP_ReadVRAMWord(&vdp, vram_index);
+								vram_index += 2;
 
 								for (cc_u16f j = 0; j < 4; ++j)
 								{
