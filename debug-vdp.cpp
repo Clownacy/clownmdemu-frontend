@@ -315,7 +315,23 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 		const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
 		const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
 
+		const ImVec2 image_position = ImGui::GetCursorScreenPos();
+
 		ImGui::Image(sprite_viewer.texture.get(), ImVec2(plane_width_in_pixels * sprite_viewer.scale, plane_height_in_pixels * sprite_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+
+			const ImVec2 mouse_position = ImGui::GetMousePos();
+
+			const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / sprite_viewer.scale);
+			const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / sprite_viewer.scale);
+
+			ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
+
+			ImGui::EndTooltip();
+		}
 	}
 
 	ImGui::End();
