@@ -300,7 +300,7 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 		}
 
 		// Draw sprites to the plane texture.
-		for (auto &it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+		for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
 		{
 			const cc_u8f sprite_index = *it;
 			const Sprite sprite = GetSprite(vdp, sprite_index);
