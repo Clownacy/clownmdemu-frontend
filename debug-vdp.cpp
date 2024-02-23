@@ -281,7 +281,11 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 			sprite_viewer.scale = 1;
 
 		SDL_SetRenderTarget(window.renderer.get(), sprite_viewer.texture.get());
+		SDL_SetRenderDrawColor(window.renderer.get(), 0, 0, 0, 0xFF);
 		SDL_RenderClear(window.renderer.get());
+		SDL_SetRenderDrawColor(window.renderer.get(), 0x10, 0x10, 0x10, 0xFF);
+		const SDL_Rect visible_area_rectangle = {0x80, 0x80, vdp.h40_enabled ? 320 : 256, vdp.v30_enabled ? 240 : 224};
+		SDL_RenderFillRect(window.renderer.get(), &visible_area_rectangle);
 
 		std::vector<cc_u8l> sprite_vector;
 
