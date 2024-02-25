@@ -50,7 +50,7 @@ void DebugPSG::Display(bool &open)
 				ImGui::PushFont(monospace_font);
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%03" CC_PRIXLEAST16 " (%6" CC_PRIuFAST32 "Hz)", psg.tones[i].countdown_master, psg_clock / std::max(static_cast<decltype(psg.tones[i].countdown_master)>(1), psg.tones[i].countdown_master) / 2);
+				ImGui::Text("0x%03" CC_PRIXLEAST16 " (%6" CC_PRIuFAST32 "Hz)", psg.tones[i].countdown_master, psg.tones[i].countdown_master == 0 ? 0 : psg_clock / psg.tones[i].countdown_master / 2);
 
 				ImGui::TableNextColumn();
 				if (psg.tones[i].attenuation == 15)
