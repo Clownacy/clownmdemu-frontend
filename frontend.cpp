@@ -469,7 +469,7 @@ static bool LoadCDFile(const char* const path, SDL::RWops &file)
 
 	const bool sector_size_2352 = buffer == sector_header;
 
-	/* Read the header. */
+	// Read the header.
 	if (SDL_RWseek(file.get(), sector_size_2352 ? 0x110 : 0x100, RW_SEEK_SET) == -1)
 		return false;
 
@@ -477,10 +477,10 @@ static bool LoadCDFile(const char* const path, SDL::RWops &file)
 	if (SDL_RWread(file.get(), header.data(), header.size(), 1) != 1)
 		return false;
 
-	/* Load the CD. */
+	// Load the CD.
 	emulator->LoadCDFile(file, sector_size_2352);
 
-	/* Set the window title. */
+	// Set the window title.
 	if (emulator->CurrentState().clownmdemu.cd_boot)
 		SetWindowTitleToSoftwareName(header.data());
 
