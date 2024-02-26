@@ -219,21 +219,11 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer.clear();
 }
 
-void EmulatorInstance::LoadCDFile(SDL::RWops &file)
+void EmulatorInstance::LoadCDFile(SDL::RWops &file, const bool sector_size_2352)
 {
 	cd_file = std::move(file);
-
-	// Detect if the sector size is 2048 bytes or 2352 bytes.
-	sector_size_2352 = false;
-
-	std::array<unsigned char, 0x10> buffer;
-	if (SDL_RWread(cd_file.get(), &buffer, sizeof(buffer), 1) == 1)
-	{
-		static const std::array<unsigned char, 0x10> sector_header = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
-
-		if (SDL_memcmp(&buffer, &sector_header, sizeof(sector_header)) == 0)
-			sector_size_2352 = true;
-	}
+	this->sector_size_2352 = sector_size_2352;
+	SDL_RWseek(cd_file.get(), 0, RW_SEEK_SET);
 
 	HardResetConsole();
 }

@@ -36,6 +36,7 @@
 #include "disassembler.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
+#include "text-encoding.h"
 #include "window.h"
 
 #define VERSION "v0.6"
@@ -49,6 +50,8 @@
 #ifndef __EMSCRIPTEN__
 #define FILE_PATH_SUPPORT
 #endif
+
+static constexpr char DEFAULT_TITLE[] = "clownmdemu";
 
 struct Input
 {
@@ -361,10 +364,51 @@ static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height
 // Misc. //
 ///////////
 
+static void SetWindowTitleToSoftwareName(const unsigned char* const header_bytes)
+{
+	constexpr unsigned int name_buffer_size = 0x30;
+	// '*4' for the maximum UTF-8 length, '+1' for the null character.
+	unsigned char name_buffer[name_buffer_size * 4 + 1];
+
+	// Choose the proper name based on the current region.
+	const unsigned char* const in_buffer = &header_bytes[emulator->GetDomestic() ? 0x20 : 0x50];
+	const unsigned char *in_pointer = in_buffer;
+	unsigned char *out_pointer = name_buffer;
+
+	cc_u32f previous_codepoint = '\0';
+
+	// In Columns, both regions' names are encoded in SHIFT-JIS, so both name are decoded as SHIFT-JIS here.
+	while (in_pointer < &in_buffer[name_buffer_size])
+	{
+		cc_u8f in_bytes_read;
+		const cc_u32f codepoint = ShiftJISToUTF32(in_pointer, &in_bytes_read);
+		in_pointer += in_bytes_read;
+
+		// Eliminate padding (the Sonic games tend to use padding to make the name look good in a hex editor).
+		if (codepoint != ' ' || previous_codepoint != ' ')
+			out_pointer += UTF32ToUTF8(out_pointer, codepoint);
+
+		previous_codepoint = codepoint;
+	}
+
+	// Eliminate trailing spaces.
+	if (out_pointer[-1] == ' ')
+		--out_pointer;
+
+	out_pointer[0] = '\0';
+
+	// Use the default title if the ROM does not provide a name.
+	// Micro Machines is one game that lacks a name.
+	SDL_SetWindowTitle(window->GetSDLWindow(), name_buffer[0] == '\0' ? DEFAULT_TITLE : reinterpret_cast<char*>(name_buffer));
+}
+
 static void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
 {
 	quick_save_exists = false;
 	emulator->LoadCartridgeFile(file_buffer);
+
+	if (!emulator->CurrentState().clownmdemu.cd_boot)
+		SetWindowTitleToSoftwareName(&file_buffer[0x100]);
 }
 
 static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
@@ -386,6 +430,7 @@ static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 #endif
 
 	LoadCartridgeFile(file_buffer);
+
 	return true;
 }
 
@@ -403,7 +448,7 @@ static bool LoadCartridgeFile(const char* const path)
 	return LoadCartridgeFile(path, file);
 }
 
-static void LoadCDFile(const char* const path, SDL::RWops &file)
+static bool LoadCDFile(const char* const path, SDL::RWops &file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
@@ -412,7 +457,34 @@ static void LoadCDFile(const char* const path, SDL::RWops &file)
 	static_cast<void>(path);
 #endif
 
-	emulator->LoadCDFile(file);
+	// Detect if the sector size is 2048 bytes or 2352 bytes.
+	if (SDL_RWseek(file.get(), 0, RW_SEEK_SET) == -1)
+		return false;
+
+	std::array<unsigned char, 0x10> buffer;
+	if (SDL_RWread(file.get(), buffer.data(), buffer.size(), 1) != 1)
+		return false;
+
+	static const std::array<unsigned char, 0x10> sector_header = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
+
+	const bool sector_size_2352 = buffer == sector_header;
+
+	/* Read the header. */
+	if (SDL_RWseek(file.get(), sector_size_2352 ? 0x110 : 0x100, RW_SEEK_SET) == -1)
+		return false;
+
+	std::array<unsigned char, 0x100> header;
+	if (SDL_RWread(file.get(), header.data(), header.size(), 1) != 1)
+		return false;
+
+	/* Load the CD. */
+	emulator->LoadCDFile(file, sector_size_2352);
+
+	/* Set the window title. */
+	if (emulator->CurrentState().clownmdemu.cd_boot)
+		SetWindowTitleToSoftwareName(header.data());
+
+	return true;
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -427,8 +499,7 @@ static bool LoadCDFile(const char* const path)
 		return false;
 	}
 
-	LoadCDFile(path, file);
-	return true;
+	return LoadCDFile(path, file);
 }
 
 static bool LoadSoftwareFile(const bool is_cd_file, const char* const path)
@@ -950,7 +1021,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	}
 	else
 	{
-		window = new Window(debug_log, "clownmdemu", INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+		window = new Window(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
 		emulator = new EmulatorInstance(debug_log, *window, ReadInputCallback);
 		debug_fm = new DebugFM(*emulator, monospace_font);
 		debug_frontend = new DebugFrontend(*emulator, *window, GetUpscaledFramebufferSize);
@@ -1715,7 +1786,9 @@ void Frontend::Update()
 				{
 					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL::RWops &file)
 					{
-						LoadCDFile(path, file);
+						if (!LoadCDFile(path, file))
+							return false;
+
 						emulator_paused = false;
 						return true;
 					});
