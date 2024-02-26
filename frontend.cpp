@@ -39,17 +39,17 @@
 #include "text-encoding.h"
 #include "window.h"
 
-#define VERSION "v0.6"
-
-#define INITIAL_WINDOW_WIDTH (320 * 2)
-#define INITIAL_WINDOW_HEIGHT (224 * 2)
-
-#define FRAMEBUFFER_WIDTH 320
-#define FRAMEBUFFER_HEIGHT (240 * 2) // *2 because of double-resolution mode.
-
 #ifndef __EMSCRIPTEN__
 #define FILE_PATH_SUPPORT
 #endif
+
+#define VERSION "v0.6"
+
+static constexpr unsigned int INITIAL_WINDOW_WIDTH = 320 * 2;
+static constexpr unsigned int INITIAL_WINDOW_HEIGHT = 224 * 2;
+
+static constexpr unsigned int FRAMEBUFFER_WIDTH = 320;
+static constexpr unsigned int FRAMEBUFFER_HEIGHT = 240 * 2; // *2 because of double-resolution mode.
 
 static constexpr char DEFAULT_TITLE[] = "clownmdemu";
 
