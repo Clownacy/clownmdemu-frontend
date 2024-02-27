@@ -82,25 +82,20 @@ void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f secto
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	if (emulator->cd_file != nullptr)
-		SDL_RWseek(emulator->cd_file.get(), emulator->sector_size_2352 ? sector_index * 2352 + 0x10 : sector_index * 2048, RW_SEEK_SET);
+	if (emulator->cd_file.IsOpen())
+		emulator->cd_file.SeekToSector(sector_index);
 }
 
 const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	static std::array<cc_u8l, 2048> sector_buffer;
+	static CDReader::Sector sector;
 
-	if (emulator->cd_file != nullptr)
-	{
-		SDL_RWread(emulator->cd_file.get(), &sector_buffer, 2048, 1);
+	if (emulator->cd_file.IsOpen())
+		sector = emulator->cd_file.ReadSector();
 
-		if (emulator->sector_size_2352)
-			SDL_RWseek(emulator->cd_file.get(), 2352 - 2048, SEEK_CUR);
-	}
-
-	return &sector_buffer[0];
+	return sector.data();
 }
 
 EmulatorInstance::EmulatorInstance(
@@ -219,18 +214,17 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer.clear();
 }
 
-void EmulatorInstance::LoadCDFile(SDL::RWops &file, const bool sector_size_2352)
+void EmulatorInstance::LoadCDFile(SDL::RWops &file, CDReader &&cd_reader)
 {
-	cd_file = std::move(file);
-	this->sector_size_2352 = sector_size_2352;
-	SDL_RWseek(cd_file.get(), 0, RW_SEEK_SET);
+	this->cd_file = std::move(cd_reader);
+	this->cd_file.SeekToSector(0);
 
 	HardResetConsole();
 }
 
 void EmulatorInstance::UnloadCDFile()
 {
-	cd_file = nullptr;
+	cd_file.Close();
 }
 
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State

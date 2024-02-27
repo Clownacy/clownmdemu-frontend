@@ -25,6 +25,7 @@
 #include "inconsolata-regular.h"
 #include "noto-sans-regular.h"
 
+#include "cd-reader.h"
 #include "debug-fm.h"
 #include "debug-frontend.h"
 #include "debug-log.h"
@@ -457,32 +458,15 @@ static bool LoadCDFile(const char* const path, SDL::RWops &file)
 	static_cast<void>(path);
 #endif
 
-	// Detect if the sector size is 2048 bytes or 2352 bytes.
-	if (SDL_RWseek(file.get(), 0, RW_SEEK_SET) == -1)
-		return false;
-
-	std::array<unsigned char, 0x10> buffer;
-	if (SDL_RWread(file.get(), buffer.data(), buffer.size(), 1) != 1)
-		return false;
-
-	static const std::array<unsigned char, 0x10> sector_header = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
-
-	const bool sector_size_2352 = buffer == sector_header;
-
-	// Read the header.
-	if (SDL_RWseek(file.get(), sector_size_2352 ? 0x110 : 0x100, RW_SEEK_SET) == -1)
-		return false;
-
-	std::array<unsigned char, 0x100> header;
-	if (SDL_RWread(file.get(), header.data(), header.size(), 1) != 1)
-		return false;
+	CDReader cd_reader(std::move(file));
+	const CDReader::Sector sector = cd_reader.ReadSector();
 
 	// Load the CD.
-	emulator->LoadCDFile(file, sector_size_2352);
+	emulator->LoadCDFile(file, std::move(cd_reader));
 
 	// Set the window title.
 	if (emulator->CurrentState().clownmdemu.cd_boot)
-		SetWindowTitleToSoftwareName(header.data());
+		SetWindowTitleToSoftwareName(&sector[0x100]);
 
 	return true;
 }

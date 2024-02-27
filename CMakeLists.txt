@@ -15,6 +15,8 @@ add_executable(clownmdemu-frontend WIN32
 	"audio-device.h"
 	"audio-output.cpp"
 	"audio-output.h"
+	"cd-reader.cpp"
+	"cd-reader.h"
 	"debug-m68k.cpp"
 	"debug-m68k.h"
 	"debug-memory.cpp"

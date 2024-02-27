@@ -11,6 +11,7 @@
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 #include "audio-output.h"
+#include "cd-reader.h"
 #include "debug-log.h"
 #include "window.h"
 
@@ -38,8 +39,7 @@ private:
 	ClownMDEmu clownmdemu;
 
 	std::vector<unsigned char> rom_buffer;
-	SDL::RWops cd_file = nullptr;
-	bool sector_size_2352 = false;
+	CDReader cd_file;
 		
 	Uint32 *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
@@ -75,7 +75,7 @@ public:
 	void HardResetConsole();
 	void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer);
 	void UnloadCartridgeFile();
-	void LoadCDFile(SDL::RWops &file, const bool sector_size_2352);
+	void LoadCDFile(SDL::RWops &file, CDReader &&cd_file);
 	void UnloadCDFile();
 	bool ValidateSaveState(const std::vector<unsigned char> &file_buffer);
 	bool LoadSaveState(const std::vector<unsigned char> &file_buffer);
@@ -83,7 +83,7 @@ public:
 	bool CreateSaveState(const SDL::RWops &file);
 
 	bool IsCartridgeFileLoaded() const { return !rom_buffer.empty(); }
-	bool IsCDFileLoaded() const { return cd_file != nullptr; }
+	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	bool IsRewinding() const { return rewind_in_progress; }
