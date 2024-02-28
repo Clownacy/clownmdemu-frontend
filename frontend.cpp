@@ -1623,7 +1623,7 @@ void Frontend::Update()
 	// Handle dynamic DPI support
 	const float new_dpi = window->GetDPIScale();
 
-	if (dpi_scale != new_dpi) // 96 DPI appears to be the "normal" DPI
+	if (dpi_scale != new_dpi)
 	{
 		dpi_scale = new_dpi;
 
@@ -1730,7 +1730,7 @@ void Frontend::Update()
 	if (show_menu_bar)
 		window_flags |= ImGuiWindowFlags_MenuBar;
 
-	// Tweak the style so that the display fill the window->
+	// Tweak the style so that the display fill the window.
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	const bool not_collapsed = ImGui::Begin("Display", nullptr, window_flags);
 	ImGui::PopStyleVar();
@@ -2109,7 +2109,7 @@ void Frontend::Update()
 			ImGui::SetCursorPosX(static_cast<float>(static_cast<int>(ImGui::GetCursorPosX()) + (static_cast<int>(size_of_display_region.x) - destination_width_scaled) / 2));
 			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
-			// Draw the upscaled framebuffer in the window->
+			// Draw the upscaled framebuffer in the window.
 			ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 
 			debug_frontend->output_width = destination_width_scaled;
