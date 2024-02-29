@@ -22,8 +22,9 @@ bool CDReader::DetermineSectorSize(SDL::RWops &stream)
 	return buffer == sector_header;
 }
 
-void CDReader::SeekToSector(const cc_u32f sector_index)
+void CDReader::SeekToSector(const SectorIndex sector_index)
 {
+	current_sector_index = sector_index;
 	SDL_RWseek(stream.get(), sector_size_2352 ? sector_index * EXTENDED_SECTOR_SIZE + 0x10 : sector_index * SECTOR_SIZE, RW_SEEK_SET);
 }
 
@@ -35,5 +36,16 @@ CDReader::Sector CDReader::ReadSector()
 	if (sector_size_2352)
 		SDL_RWseek(stream.get(), EXTENDED_SECTOR_SIZE - SECTOR_SIZE, SEEK_CUR);
 
+	++current_sector_index;
+
 	return sector_buffer;
+}
+
+CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
+{
+	const auto sector_backup = GetCurrentSector();
+	SeekToSector(sector_index);
+	const Sector sector = ReadSector();
+	SeekToSector(sector_backup);
+	return sector;
 }
