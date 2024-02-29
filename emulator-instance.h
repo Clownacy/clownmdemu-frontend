@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "SDL.h"
@@ -117,6 +118,8 @@ public:
 	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
 	cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
 	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
+
+	std::string GetSoftwareName();
 };
 
 #endif /* EMULATOR_INSTANCE_H */

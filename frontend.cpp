@@ -37,7 +37,6 @@
 #include "disassembler.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
-#include "text-encoding.h"
 #include "window.h"
 
 #ifndef __EMSCRIPTEN__
@@ -365,42 +364,13 @@ static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height
 // Misc. //
 ///////////
 
-static void SetWindowTitleToSoftwareName(const unsigned char* const header_bytes)
+static void SetWindowTitleToSoftwareName()
 {
-	constexpr unsigned int name_buffer_size = 0x30;
-	// '*4' for the maximum UTF-8 length, '+1' for the null character.
-	unsigned char name_buffer[name_buffer_size * 4 + 1];
-
-	// Choose the proper name based on the current region.
-	const unsigned char* const in_buffer = &header_bytes[emulator->GetDomestic() ? 0x20 : 0x50];
-	const unsigned char *in_pointer = in_buffer;
-	unsigned char *out_pointer = name_buffer;
-
-	cc_u32f previous_codepoint = '\0';
-
-	// In Columns, both regions' names are encoded in SHIFT-JIS, so both name are decoded as SHIFT-JIS here.
-	while (in_pointer < &in_buffer[name_buffer_size])
-	{
-		cc_u8f in_bytes_read;
-		const cc_u32f codepoint = ShiftJISToUTF32(in_pointer, &in_bytes_read);
-		in_pointer += in_bytes_read;
-
-		// Eliminate padding (the Sonic games tend to use padding to make the name look good in a hex editor).
-		if (codepoint != ' ' || previous_codepoint != ' ')
-			out_pointer += UTF32ToUTF8(out_pointer, codepoint);
-
-		previous_codepoint = codepoint;
-	}
-
-	// Eliminate trailing spaces.
-	if (out_pointer[-1] == ' ')
-		--out_pointer;
-
-	out_pointer[0] = '\0';
+	const std::string name = emulator->GetSoftwareName();
 
 	// Use the default title if the ROM does not provide a name.
 	// Micro Machines is one game that lacks a name.
-	SDL_SetWindowTitle(window->GetSDLWindow(), name_buffer[0] == '\0' ? DEFAULT_TITLE : reinterpret_cast<char*>(name_buffer));
+	SDL_SetWindowTitle(window->GetSDLWindow(), name.empty() ? DEFAULT_TITLE : name.c_str());
 }
 
 static void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
@@ -408,8 +378,7 @@ static void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
 	quick_save_exists = false;
 	emulator->LoadCartridgeFile(file_buffer);
 
-	if (!emulator->CurrentState().clownmdemu.cd_boot)
-		SetWindowTitleToSoftwareName(&file_buffer[0x100]);
+	SetWindowTitleToSoftwareName();
 }
 
 static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
@@ -459,14 +428,11 @@ static bool LoadCDFile(const char* const path, SDL::RWops &file)
 #endif
 
 	CDReader cd_reader(std::move(file));
-	const CDReader::Sector sector = cd_reader.ReadSector();
 
 	// Load the CD.
 	emulator->LoadCDFile(file, std::move(cd_reader));
 
-	// Set the window title.
-	if (emulator->CurrentState().clownmdemu.cd_boot)
-		SetWindowTitleToSoftwareName(&sector[0x100]);
+	SetWindowTitleToSoftwareName();
 
 	return true;
 }
@@ -1761,6 +1727,7 @@ void Frontend::Update()
 					if (emulator->IsCDFileLoaded())
 						emulator->HardResetConsole();
 
+					SetWindowTitleToSoftwareName();
 					emulator_paused = false;
 				}
 
@@ -1785,6 +1752,7 @@ void Frontend::Update()
 					if (emulator->IsCartridgeFileLoaded())
 						emulator->HardResetConsole();
 
+					SetWindowTitleToSoftwareName();
 					emulator_paused = false;
 				}
 

@@ -2,6 +2,8 @@
 
 #include <utility>
 
+#include "text-encoding.h"
+
 bool EmulatorInstance::clownmdemu_initialised;
 ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant;
 
@@ -260,4 +262,56 @@ bool EmulatorInstance::CreateSaveState(const SDL::RWops &file)
 		success = true;
 
 	return success;
+}
+
+std::string EmulatorInstance::GetSoftwareName()
+{
+	std::string name_buffer;
+
+	if (IsCartridgeFileLoaded() || cd_file.IsOpen())
+	{
+		constexpr cc_u8f name_buffer_size = 0x30;
+		// '*4' for the maximum UTF-8 length.
+		name_buffer.reserve(name_buffer_size * 4);
+
+		const unsigned char* header_bytes;
+		CDReader::Sector sector;
+
+		if (IsCartridgeFileLoaded())
+		{
+			header_bytes = &rom_buffer[0x100];
+		}
+		else //if (cd_file.IsOpen())
+		{
+			sector = cd_file.ReadSector(0);
+			header_bytes = &sector[0x100];
+		}
+
+		// Choose the proper name based on the current region.
+		const unsigned char* const in_buffer = &header_bytes[GetDomestic() ? 0x20 : 0x50];
+
+		cc_u32f previous_codepoint = '\0';
+
+		// In Columns, both regions' names are encoded in SHIFT-JIS, so both names are decoded as SHIFT-JIS here.
+		for (cc_u8f in_index = 0, in_bytes_read; in_index < name_buffer_size; in_index += in_bytes_read)
+		{
+			const cc_u32f codepoint = ShiftJISToUTF32(&in_buffer[in_index], &in_bytes_read);
+
+			// Eliminate padding (the Sonic games tend to use padding to make the name look good in a hex editor).
+			if (codepoint != ' ' || previous_codepoint != ' ')
+			{
+				unsigned char utf8_buffer[4];
+				const auto total_bytes = UTF32ToUTF8(utf8_buffer, codepoint);
+				name_buffer.append(reinterpret_cast<char*>(utf8_buffer), total_bytes);
+			}
+
+			previous_codepoint = codepoint;
+		}
+
+		// Eliminate trailing spaces.
+		if (name_buffer.back() == ' ')
+			name_buffer.pop_back();
+	}
+
+	return name_buffer;
 }
