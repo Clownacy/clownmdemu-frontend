@@ -19,8 +19,6 @@ private:
 	static bool DetermineSectorSize(SDL::RWops &stream);
 
 public:
-	using SectorIndex = cc_u32f;
-
 	static constexpr cc_u16f SECTOR_SIZE = 2048;
 	using Sector = std::array<cc_u8l, SECTOR_SIZE>;
 
