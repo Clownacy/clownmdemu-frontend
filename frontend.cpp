@@ -961,7 +961,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	frame_rate_callback = frame_rate_callback_param;
 
 	// Enable high-DPI support on Windows because SDL2 is bad at being a platform abstraction library
-	SDL_SetHint(SDL_HINT_WINDOWS_DPI_SCALING, "1");
+	SDL_SetHint("SDL_WINDOWS_DPI_SCALING", "1");
 
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
