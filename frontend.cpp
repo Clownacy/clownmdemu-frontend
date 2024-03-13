@@ -2236,14 +2236,34 @@ void Frontend::Update()
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU V-Int Enabled");
+				ImGui::TextUnformatted("SUB-CPU Graphics Interrupt");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.vertical_interrupt.enabled ? "True" : "False");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
 
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU Waiting for V-Int");
+				ImGui::TextUnformatted("SUB-CPU Mega Drive Interrupt");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.vertical_interrupt.being_waited_for ? "True" : "False");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("SUB-CPU Timer Interrupt");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("SUB-CPU CDD Interrupt");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("SUB-CPU CDC Interrupt");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
 
 				ImGui::EndTable();
 			}
