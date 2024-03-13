@@ -6,7 +6,7 @@ void DebugZ80::Display(bool &open)
 {
 	if (ImGui::Begin("Z80 Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		const Z80_State &z80 = emulator.CurrentState().clownmdemu.z80;
+		const Z80_State &z80 = emulator.CurrentState().clownmdemu.z80.state;
 
 		ImGui::PushFont(monospace_font);
 

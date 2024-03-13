@@ -2094,25 +2094,25 @@ void Frontend::Update()
 		debug_frontend->Display(debug_frontend_active);
 
 	if (m68k_status)
-		debug_m68k->Display(m68k_status, "Main 68000 Registers", emulator->CurrentState().clownmdemu.m68k);
+		debug_m68k->Display(m68k_status, "Main 68000 Registers", emulator->CurrentState().clownmdemu.m68k.state);
 
 	if (mcd_m68k_status)
-		debug_m68k->Display(mcd_m68k_status, "Sub 68000 Registers", emulator->CurrentState().clownmdemu.mcd_m68k);
+		debug_m68k->Display(mcd_m68k_status, "Sub 68000 Registers", emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
 
 	if (z80_status)
 		debug_z80->Display(z80_status);
 
 	if (m68k_ram_viewer)
-		debug_memory->Display(m68k_ram_viewer, "WORK-RAM", emulator->CurrentState().clownmdemu.m68k_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.m68k_ram));
+		debug_memory->Display(m68k_ram_viewer, "WORK-RAM", emulator->CurrentState().clownmdemu.m68k.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.m68k.ram));
 
 	if (z80_ram_viewer)
-		debug_memory->Display(z80_ram_viewer, "SOUND-RAM", emulator->CurrentState().clownmdemu.z80_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.z80_ram));
+		debug_memory->Display(z80_ram_viewer, "SOUND-RAM", emulator->CurrentState().clownmdemu.z80.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.z80.ram));
 
 	if (prg_ram_viewer)
-		debug_memory->Display(prg_ram_viewer, "PRG-RAM", emulator->CurrentState().clownmdemu.prg_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.prg_ram));
+		debug_memory->Display(prg_ram_viewer, "PRG-RAM", emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer));
 
 	if (word_ram_viewer)
-		debug_memory->Display(word_ram_viewer, "WORD-RAM", emulator->CurrentState().clownmdemu.word_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.word_ram));
+		debug_memory->Display(word_ram_viewer, "WORD-RAM", emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer));
 
 	if (vdp_registers)
 		debug_vdp->DisplayRegisters(vdp_registers);
@@ -2162,88 +2162,88 @@ void Frontend::Update()
 				ImGui::TextUnformatted("Z80 Bank");
 				ImGui::TableNextColumn();
 				ImGui::PushFont(monospace_font);
-				ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80_bank * 0x8000, (clownmdemu_state.z80_bank + 1) * 0x8000 - 1);
+				ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.m68k_has_z80_bus ? "Yes" : "No");
+				ImGui::TextUnformatted(clownmdemu_state.z80.m68k_has_bus ? "Yes" : "No");
 
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Z80 Reset");
+				ImGui::TextUnformatted("Z80 Reset Held");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.z80_reset ? "Yes" : "No");
+				ImGui::TextUnformatted(clownmdemu_state.z80.reset_held ? "Yes" : "No");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.m68k_has_mcd_m68k_bus ? "Yes" : "No");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Sub 68000 Reset");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mcd_m68k_reset ? "Yes" : "No");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("PRG-RAM Bank");
 				ImGui::TableNextColumn();
 				ImGui::PushFont(monospace_font);
-				ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.prg_ram_bank * 0x20000, (clownmdemu_state.prg_ram_bank + 1) * 0x20000 - 1);
+				ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("WORD-RAM Mode");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.word_ram_1m_mode ? "1M" : "2M");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("DMNA Bit");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.word_ram_dmna ? "Set" : "Clear");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("RET Bit");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.word_ram_ret ? "Set" : "Clear");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Boot Mode");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.cd_boot ? "CD" : "Cartridge");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("68000 Communication Flag");
 				ImGui::TableNextColumn();
 				ImGui::PushFont(monospace_font);
-				ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mcd_communication_flag);
+				ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.flag);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("68000 Communication Command");
 				ImGui::TableNextColumn();
 				ImGui::PushFont(monospace_font);
-				for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mcd_communication_command); i += 2)
-					ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mcd_communication_command[i + 0], clownmdemu_state.mcd_communication_command[i + 1]);
+				for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.command); i += 2)
+					ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
 				ImGui::PopFont();
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("68000 Communication Status");
 				ImGui::TableNextColumn();
 				ImGui::PushFont(monospace_font);
-				for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mcd_communication_status); i += 2)
-					ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mcd_communication_status[i + 0], clownmdemu_state.mcd_communication_status[i + 1]);
+				for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.status); i += 2)
+					ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
 				ImGui::PopFont();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU Waiting for V-Int");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mcd_waiting_for_vint ? "True" : "False");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("SUB-CPU V-Int Enabled");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mcd_vint_enabled ? "True" : "False");
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.vertical_interrupt.enabled ? "True" : "False");
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("SUB-CPU Waiting for V-Int");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(clownmdemu_state.mega_cd.vertical_interrupt.being_waited_for ? "True" : "False");
 
 				ImGui::EndTable();
 			}
