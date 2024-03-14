@@ -2168,7 +2168,7 @@ void Frontend::Update()
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
 				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.z80.m68k_has_bus ? "Yes" : "No");
+				ImGui::TextUnformatted(clownmdemu_state.z80.bus_requested ? "Yes" : "No");
 
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted("Z80 Reset Held");
