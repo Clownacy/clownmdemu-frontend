@@ -427,10 +427,8 @@ static bool LoadCDFile(const char* const path, SDL::RWops &file)
 	static_cast<void>(path);
 #endif
 
-	CDReader cd_reader(std::move(file));
-
 	// Load the CD.
-	emulator->LoadCDFile(file, std::move(cd_reader));
+	emulator->LoadCDFile(std::move(file));
 
 	SetWindowTitleToSoftwareName();
 

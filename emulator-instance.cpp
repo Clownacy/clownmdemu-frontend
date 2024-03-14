@@ -223,7 +223,7 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer.clear();
 }
 
-void EmulatorInstance::LoadCDFile(SDL::RWops &file, CDReader &&cd_reader)
+void EmulatorInstance::LoadCDFile(CDReader &&cd_reader)
 {
 	this->cd_file = std::move(cd_reader);
 	this->cd_file.SeekToSector(0);
