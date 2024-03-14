@@ -687,7 +687,8 @@ void DebugVDP::DisplayCRAM(bool &open)
 				ImGui::SameLine();
 			}
 
-			ImGui::ColorButton("", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+			std::string desc = "##CRAM Colour " + std::to_string(j);
+			ImGui::ColorButton(desc.c_str(), ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
 
 			if (ImGui::IsItemHovered())
 			{
