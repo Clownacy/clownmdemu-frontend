@@ -80,11 +80,11 @@ void EmulatorInstance::PSGAudioCallback(void* const user_data, const std::size_t
 	generate_psg_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
 }
 
-void EmulatorInstance::MCDPCMAudioCallback(void* const user_data, const std::size_t total_samples, void (* const generate_mcd_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
+void EmulatorInstance::PCMAudioCallback(void* const user_data, const std::size_t total_samples, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	generate_mcd_pcm_audio(&emulator->clownmdemu, nullptr, total_samples);
+	generate_pcm_audio(&emulator->clownmdemu, nullptr, total_samples);
 }
 
 void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f sector_index)
@@ -115,7 +115,7 @@ EmulatorInstance::EmulatorInstance(
 	: audio_output()
 	, window(window)
 	, input_callback(input_callback)
-	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, MCDPCMAudioCallback, CDSeekCallback, CDSectorReadCallback})
+	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, PCMAudioCallback, CDSeekCallback, CDSectorReadCallback})
 {
 	// This should be called before any other clownmdemu functions are called!
 	ClownMDEmu_SetErrorCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &debug_log);
