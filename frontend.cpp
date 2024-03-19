@@ -169,6 +169,7 @@ static bool m68k_ram_viewer;
 static bool z80_ram_viewer;
 static bool word_ram_viewer;
 static bool prg_ram_viewer;
+static bool wave_ram_viewer;
 static bool vdp_registers;
 static bool sprite_list;
 static bool sprite_viewer;
@@ -1667,6 +1668,7 @@ void Frontend::Update()
 							|| z80_ram_viewer
 							|| prg_ram_viewer
 							|| word_ram_viewer
+							|| wave_ram_viewer
 							|| vdp_registers
 							|| sprite_list
 							|| sprite_viewer
@@ -1912,7 +1914,12 @@ void Frontend::Update()
 
 				ImGui::MenuItem("PSG", nullptr, &psg_status);
 
-				ImGui::MenuItem("PCM", nullptr, &pcm_status);
+				if (ImGui::BeginMenu("PCM"))
+				{
+					ImGui::MenuItem("Registers", nullptr, &pcm_status);
+					ImGui::MenuItem("WAVE-RAM", nullptr, &wave_ram_viewer);
+					ImGui::EndMenu();
+				}
 
 				ImGui::MenuItem("Other", nullptr, &other_status);
 
@@ -2120,6 +2127,9 @@ void Frontend::Update()
 	if (word_ram_viewer)
 		debug_memory->Display(word_ram_viewer, "WORD-RAM", emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer));
 
+	if (wave_ram_viewer)
+		debug_memory->Display(wave_ram_viewer, "WAVE-RAM", emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram));
+
 	if (vdp_registers)
 		debug_vdp->DisplayRegisters(vdp_registers);
 
@@ -2273,7 +2283,7 @@ void Frontend::Update()
 				ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
-
+				
 				ImGui::EndTable();
 			}
 		}
