@@ -2,7 +2,7 @@
 
 void DebugPCM::Display(bool &open)
 {
-	if (ImGui::Begin("PCM", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::Begin("PCM Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::SeparatorText("Channels");
 		if (ImGui::BeginTable("Channels", 9, ImGuiTableFlags_Borders))
