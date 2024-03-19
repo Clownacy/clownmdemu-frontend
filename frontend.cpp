@@ -2283,7 +2283,7 @@ void Frontend::Update()
 				ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
-				
+
 				ImGui::EndTable();
 			}
 		}
