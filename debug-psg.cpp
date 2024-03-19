@@ -31,7 +31,7 @@ void DebugPSG::Display(bool &open)
 		}
 
 		// Channels.
-		const cc_u32f psg_clock = (emulator.GetPALMode() ? CLOWNMDEMU_MASTER_CLOCK_PAL : CLOWNMDEMU_MASTER_CLOCK_NTSC) / 15 / 16;
+		const cc_u32f psg_clock = emulator.GetPALMode() ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
 
 		// Tone channels.
 		ImGui::SeparatorText("Tone Channels");
