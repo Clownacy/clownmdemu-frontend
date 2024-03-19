@@ -25,12 +25,12 @@ void DebugPCM::Display(bool &open)
 				const auto &channel = pcm.channels[i];
 
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST8, i + 1);
+				ImGui::Text("%" CC_PRIuFAST8, static_cast<cc_u8f>(i + 1));
 
 				ImGui::PushFont(monospace_font);
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%" CC_PRIXLEAST32, channel.address >> 11);
+				ImGui::Text("0x%" CC_PRIXFAST32, static_cast<cc_u32f>(channel.address >> 11));
 
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%" CC_PRIXLEAST32, channel.address);
@@ -39,13 +39,13 @@ void DebugPCM::Display(bool &open)
 				ImGui::TextUnformatted(channel.disabled ? "Yes" : "No");
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16 " (%" CC_PRIuLEAST16 "Hz)", channel.frequency, channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800);
+				ImGui::Text("0x%04" CC_PRIXLEAST16 " (%" CC_PRIuFAST32 "Hz)", channel.frequency, static_cast<cc_u32f>(channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800));
 
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%" CC_PRIXLEAST16, channel.loop_address);
 
 				ImGui::TableNextColumn();
-				ImGui::Text("0x%" CC_PRIXLEAST8, channel.panning);
+				ImGui::Text("0x%" CC_PRIXFAST8, static_cast<cc_u8f>((channel.panning[0] << 0) | (channel.panning[1] << 4)));
 
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%" CC_PRIXLEAST8, channel.start_address);
