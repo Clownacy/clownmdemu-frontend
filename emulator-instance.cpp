@@ -80,11 +80,11 @@ void EmulatorInstance::PSGAudioCallback(void* const user_data, const std::size_t
 	generate_psg_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
 }
 
-void EmulatorInstance::PCMAudioCallback(void* const user_data, const std::size_t total_samples, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
+void EmulatorInstance::PCMAudioCallback(void* const user_data, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	generate_pcm_audio(&emulator->clownmdemu, nullptr, total_samples);
+	generate_pcm_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
 }
 
 void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f sector_index)

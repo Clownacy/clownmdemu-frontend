@@ -31,6 +31,7 @@
 #include "debug-log.h"
 #include "debug-m68k.h"
 #include "debug-memory.h"
+#include "debug-pcm.h"
 #include "debug-psg.h"
 #include "debug-vdp.h"
 #include "debug-z80.h"
@@ -148,6 +149,7 @@ static DebugFM *debug_fm;
 static DebugFrontend *debug_frontend;
 static DebugM68k *debug_m68k;
 static DebugMemory *debug_memory;
+static DebugPCM *debug_pcm;
 static DebugPSG *debug_psg;
 static DebugVDP *debug_vdp;
 static DebugZ80 *debug_z80;
@@ -177,6 +179,7 @@ static bool vram_viewer;
 static bool cram_viewer;
 static bool fm_status;
 static bool psg_status;
+static bool pcm_status;
 static bool other_status;
 static bool debugging_toggles_menu;
 static bool disassembler;
@@ -975,6 +978,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		debug_frontend = new DebugFrontend(*emulator, *window, GetUpscaledFramebufferSize);
 		debug_m68k = new DebugM68k(monospace_font);
 		debug_memory = new DebugMemory(monospace_font);
+		debug_pcm = new DebugPCM(*emulator, monospace_font);
 		debug_psg = new DebugPSG(*emulator, monospace_font);
 		debug_vdp = new DebugVDP(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, *window);
 		debug_z80 = new DebugZ80(*emulator, monospace_font);
@@ -1099,6 +1103,7 @@ void Frontend::Deinitialise()
 	delete debug_z80;
 	delete debug_vdp;
 	delete debug_psg;
+	delete debug_pcm;
 	delete debug_memory;
 	delete debug_m68k;
 	delete debug_frontend;
@@ -1672,6 +1677,7 @@ void Frontend::Update()
 							|| cram_viewer
 							|| fm_status
 							|| psg_status
+							|| pcm_status
 							|| other_status
 							|| disassembler
 							|| debugging_toggles_menu
@@ -1905,6 +1911,8 @@ void Frontend::Update()
 				ImGui::MenuItem("FM", nullptr, &fm_status);
 
 				ImGui::MenuItem("PSG", nullptr, &psg_status);
+
+				ImGui::MenuItem("PCM", nullptr, &pcm_status);
 
 				ImGui::MenuItem("Other", nullptr, &other_status);
 
@@ -2141,6 +2149,9 @@ void Frontend::Update()
 
 	if (psg_status)
 		debug_psg->Display(psg_status);
+
+	if (pcm_status)
+		debug_pcm->Display(pcm_status);
 
 	if (other_status)
 	{

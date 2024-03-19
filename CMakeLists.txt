@@ -27,6 +27,8 @@ add_executable(clownmdemu-frontend WIN32
 	"debug-frontend.h"
 	"debug-log.cpp"
 	"debug-log.h"
+	"debug-pcm.cpp"
+	"debug-pcm.h"
 	"debug-psg.cpp"
 	"debug-psg.h"
 	"debug-vdp.cpp"
