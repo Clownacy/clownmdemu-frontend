@@ -143,6 +143,7 @@ void EmulatorInstance::Update()
 
 	// Run the emulator for a frame
 	ClownMDEmu_Iterate(&clownmdemu, &callbacks);
+	state->current_sector = cd_file.GetCurrentSector();
 
 	// Unlock the texture so that we can draw it
 	SDL_UnlockTexture(window.GetFramebufferTexture());
@@ -190,6 +191,7 @@ void EmulatorInstance::Update()
 
 	state = &state_rewind_buffer[to_index];
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu);
+	cd_file.SeekToSector(state->current_sector);
 #endif
 }
 
