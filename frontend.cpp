@@ -377,10 +377,10 @@ static void SetWindowTitleToSoftwareName()
 	SDL_SetWindowTitle(window->GetSDLWindow(), name.empty() ? DEFAULT_TITLE : name.c_str());
 }
 
-static void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
+static void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
 {
 	quick_save_exists = false;
-	emulator->LoadCartridgeFile(file_buffer);
+	emulator->LoadCartridgeFile(std::move(file_buffer));
 
 	SetWindowTitleToSoftwareName();
 }
@@ -403,7 +403,7 @@ static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 	static_cast<void>(path);
 #endif
 
-	LoadCartridgeFile(file_buffer);
+	LoadCartridgeFile(std::move(file_buffer));
 
 	return true;
 }
@@ -1631,7 +1631,7 @@ void Frontend::Update()
 			#ifdef FILE_PATH_SUPPORT
 				AddToRecentSoftware(drag_and_drop_filename, false, false);
 			#endif
-				LoadCartridgeFile(file_buffer);
+				LoadCartridgeFile(std::move(file_buffer));
 				emulator_paused = false;
 			}
 		}

@@ -76,7 +76,7 @@ public:
 	void Update();
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFile(const std::vector<unsigned char> &file_buffer);
+	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer);
 	void UnloadCartridgeFile();
 	void LoadCDFile(CDReader &&cd_file);
 	void UnloadCDFile();

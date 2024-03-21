@@ -207,7 +207,7 @@ void EmulatorInstance::HardResetConsole()
 	SoftResetConsole();
 }
 
-void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &file_buffer)
+void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
 {
 	rom_buffer = std::move(file_buffer);
 
