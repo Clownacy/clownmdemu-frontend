@@ -25,7 +25,9 @@ bool CDReader::DetermineSectorSize(SDL::RWops &stream)
 void CDReader::SeekToSector(const SectorIndex sector_index)
 {
 	current_sector_index = sector_index;
-	SDL_RWseek(stream.get(), sector_size_2352 ? sector_index * EXTENDED_SECTOR_SIZE + 0x10 : sector_index * SECTOR_SIZE, RW_SEEK_SET);
+
+	if (stream)
+		SDL_RWseek(stream.get(), sector_size_2352 ? sector_index * EXTENDED_SECTOR_SIZE + 0x10 : sector_index * SECTOR_SIZE, RW_SEEK_SET);
 }
 
 CDReader::Sector CDReader::ReadSector()
