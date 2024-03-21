@@ -2375,6 +2375,26 @@ void Frontend::Update()
 
 				ImGui::EndTable();
 			}
+
+			ImGui::SeparatorText("PCM");
+
+			if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
+			{
+				PCM_Configuration &pcm = emulator->GetConfigurationPCM();
+
+				char buffer[] = "PCM1";
+
+				for (std::size_t i = 0; i < CC_COUNT_OF(pcm.channels_disabled); ++i)
+				{
+					buffer[3] = '1' + i;
+					ImGui::TableNextColumn();
+					temp = !pcm.channels_disabled[i];
+					if (ImGui::Checkbox(buffer, &temp))
+						pcm.channels_disabled[i] = !pcm.channels_disabled[i];
+				}
+
+				ImGui::EndTable();
+			}
 		}
 
 		ImGui::End();

@@ -115,6 +115,7 @@ public:
 	VDP_Configuration& GetConfigurationVDP() { return clownmdemu_configuration.vdp; }
 	FM_Configuration& GetConfigurationFM() { return clownmdemu_configuration.fm; }
 	PSG_Configuration& GetConfigurationPSG() { return clownmdemu_configuration.psg; }
+	PCM_Configuration& GetConfigurationPCM() { return clownmdemu_configuration.pcm; }
 
 	cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
 	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
