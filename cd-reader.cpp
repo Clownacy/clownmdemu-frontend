@@ -102,6 +102,7 @@ bool CDReader::DetermineSectorSize()
 void CDReader::SeekToSector(const SectorIndex sector_index)
 {
 	current_sector_index = sector_index;
+	remaining_frames_in_track = 0; // Prevent playing music after trying to read data.
 
 	if (stream)
 		SDL_RWseek(stream.get(), header_size + (sector_size_2352 ? sector_index * EXTENDED_SECTOR_SIZE + 0x10 : sector_index * SECTOR_SIZE), RW_SEEK_SET);
@@ -132,7 +133,10 @@ CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
 void CDReader::SeekToTrack(const TrackIndex track_index)
 {
 	if (track_index >= total_tracks)
+	{
+		remaining_frames_in_track = 0;
 		return;
+	}
 
 	SDL_RWseek(stream.get(), 12 + track_index * 10, SEEK_SET);
 
