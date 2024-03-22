@@ -167,7 +167,7 @@ void EmulatorInstance::Update()
 	framebuffer_texture_pitch /= sizeof(Uint32);
 
 	// Run the emulator for a frame
-	ClownMDEmu_Iterate(&clownmdemu, &callbacks);
+	ClownMDEmu_Iterate(&clownmdemu);
 	state->current_sector = cd_file.GetCurrentSector();
 
 	// Unlock the texture so that we can draw it
@@ -215,21 +215,20 @@ void EmulatorInstance::Update()
 	SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
 
 	state = &state_rewind_buffer[to_index];
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu);
+	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 	//cd_file.SeekToSector(state->current_sector); // TODO: Gut this feature for good.
 #endif
 }
 
 void EmulatorInstance::SoftResetConsole()
 {
-	ClownMDEmu_Reset(&clownmdemu, &callbacks, !IsCartridgeFileLoaded());
+	ClownMDEmu_Reset(&clownmdemu, !IsCartridgeFileLoaded());
 }
 
 void EmulatorInstance::HardResetConsole()
 {
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
-	clownmdemu.callbacks = callbacks; // TODO: Merge this with the below function, you jackass!
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu);
+	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 	SoftResetConsole();
 }
 
