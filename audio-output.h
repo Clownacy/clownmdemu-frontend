@@ -39,6 +39,7 @@ public:
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);
 	cc_s16l* MixerAllocatePSGSamples(std::size_t total_frames);
 	cc_s16l* MixerAllocatePCMSamples(std::size_t total_frames);
+	cc_s16l* MixerAllocateCDDASamples(std::size_t total_frames);
 	cc_u32f GetAverageFrames() const;
 	cc_u32f GetTargetFrames() const { return std::max(total_buffer_frames * 2, sample_rate / 20); } // 50ms
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }

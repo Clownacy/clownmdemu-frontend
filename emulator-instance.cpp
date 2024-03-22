@@ -87,6 +87,13 @@ void EmulatorInstance::PCMAudioCallback(void* const user_data, const std::size_t
 	generate_pcm_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
 }
 
+void EmulatorInstance::CDDAAudioCallback(void* const user_data, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	generate_cdda_audio(&emulator->clownmdemu, emulator->audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
+}
+
 void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f sector_index)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
@@ -107,6 +114,24 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 	return sector.data();
 }
 
+void EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	if (emulator->cd_file.IsOpen())
+		emulator->cd_file.SeekToTrack(track_index);
+}
+
+std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l* const sample_buffer, const std::size_t total_frames)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	if (emulator->cd_file.IsOpen())
+		return emulator->cd_file.ReadAudio(sample_buffer, total_frames);
+
+	return 0;
+}
+
 EmulatorInstance::EmulatorInstance(
 	DebugLog &debug_log,
 	Window &window,
@@ -115,7 +140,7 @@ EmulatorInstance::EmulatorInstance(
 	: audio_output()
 	, window(window)
 	, input_callback(input_callback)
-	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, PCMAudioCallback, CDSeekCallback, CDSectorReadCallback})
+	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, PCMAudioCallback, CDDAAudioCallback, CDSeekCallback, CDSectorReadCallback, CDSeekTrackCallback, CDAudioReadCallback})
 {
 	// This should be called before any other clownmdemu functions are called!
 	ClownMDEmu_SetErrorCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &debug_log);
@@ -191,7 +216,7 @@ void EmulatorInstance::Update()
 
 	state = &state_rewind_buffer[to_index];
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu);
-	cd_file.SeekToSector(state->current_sector);
+	//cd_file.SeekToSector(state->current_sector); // TODO: Gut this feature for good.
 #endif
 }
 
@@ -203,6 +228,7 @@ void EmulatorInstance::SoftResetConsole()
 void EmulatorInstance::HardResetConsole()
 {
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
+	clownmdemu.callbacks = callbacks; // TODO: Merge this with the below function, you jackass!
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu);
 	SoftResetConsole();
 }

@@ -68,8 +68,11 @@ private:
 	static void FMAudioCallback(void *user_data, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void PSGAudioCallback(void *user_data, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
 	static void PCMAudioCallback(void *user_data, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void CDDAAudioCallback(void *user_data, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void CDSeekCallback(void *user_data, cc_u32f sector_index);
 	static const cc_u8l* CDSectorReadCallback(void *user_data);
+	static void CDSeekTrackCallback(void *user_data, cc_u16f track_index);
+	static std::size_t CDAudioReadCallback(void *user_data, cc_s16l *sample_buffer, std::size_t total_frames);
 
 public:
 	EmulatorInstance(DebugLog &debug_log, Window &window, const InputCallback &input_callback);

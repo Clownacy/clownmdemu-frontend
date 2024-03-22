@@ -90,6 +90,11 @@ cc_s16l* AudioOutput::MixerAllocatePCMSamples(const std::size_t total_frames)
 	return Mixer_AllocatePCMSamples(&mixer, total_frames);
 }
 
+cc_s16l* AudioOutput::MixerAllocateCDDASamples(const std::size_t total_frames)
+{
+	return Mixer_AllocateCDDASamples(&mixer, total_frames);
+}
+
 cc_u32f AudioOutput::GetAverageFrames() const
 {
 	return std::accumulate(rolling_average_buffer.cbegin(), rolling_average_buffer.cend(), cc_u32f(0)) / rolling_average_buffer.size();
