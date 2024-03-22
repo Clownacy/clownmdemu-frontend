@@ -25,7 +25,6 @@ public:
 	{
 		ClownMDEmu_State clownmdemu;
 		std::array<Uint32, 3 * 4 * 16> colours;
-		CDReader::SectorIndex current_sector;
 	};
 
 private:
