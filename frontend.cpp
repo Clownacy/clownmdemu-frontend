@@ -1879,19 +1879,24 @@ void Frontend::Update()
 
 				ImGui::MenuItem("Frontend", nullptr, &debug_frontend_active);
 
-				if (ImGui::BeginMenu("CPU Registers"))
+				if (ImGui::BeginMenu("Main-68000"))
 				{
-					ImGui::MenuItem("Main 68000", nullptr, &m68k_status);
-					ImGui::MenuItem("Sub 68000", nullptr, &mcd_m68k_status);
-					ImGui::MenuItem("Z80", nullptr, &z80_status);
+					ImGui::MenuItem("Registers", nullptr, &m68k_status);
+					ImGui::MenuItem("WORK-RAM", nullptr, &m68k_ram_viewer);
 					ImGui::EndMenu();
 				}
 
-				if (ImGui::BeginMenu("CPU RAM"))
+				if (ImGui::BeginMenu("Sub-68000"))
 				{
-					ImGui::MenuItem("WORK-RAM", nullptr, &m68k_ram_viewer);
+					ImGui::MenuItem("Registers", nullptr, &mcd_m68k_status);
 					ImGui::MenuItem("PRG-RAM", nullptr, &prg_ram_viewer);
 					ImGui::MenuItem("WORD-RAM", nullptr, &word_ram_viewer);
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::BeginMenu("Z80"))
+				{
+					ImGui::MenuItem("Registers", nullptr, &z80_status);
 					ImGui::MenuItem("SOUND-RAM", nullptr, &z80_ram_viewer);
 					ImGui::EndMenu();
 				}
