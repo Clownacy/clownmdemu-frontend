@@ -35,16 +35,16 @@ void DebugFrontend::Display(bool &open)
 			ImGui::TextUnformatted("Video");
 
 			ImGui::TableNextColumn();
-			const char* const audio_driver_name = SDL_GetCurrentVideoDriver();
-			ImGui::TextUnformatted(audio_driver_name != nullptr ? audio_driver_name : "None");
+			const char* const video_driver_name = SDL_GetCurrentVideoDriver();
+			ImGui::TextUnformatted(video_driver_name != nullptr ? video_driver_name : "None");
 
 			// Audio
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Audio");
 
 			ImGui::TableNextColumn();
-			const char* const video_driver_name = SDL_GetCurrentAudioDriver();
-			ImGui::TextUnformatted(video_driver_name != nullptr ? video_driver_name : "None");
+			const char* const audio_driver_name = SDL_GetCurrentAudioDriver();
+			ImGui::TextUnformatted(audio_driver_name != nullptr ? audio_driver_name : "None");
 
 			ImGui::EndTable();
 		}
