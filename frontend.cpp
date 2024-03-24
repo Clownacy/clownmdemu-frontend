@@ -2112,10 +2112,10 @@ void Frontend::Update()
 		debug_frontend->Display(debug_frontend_active);
 
 	if (m68k_status)
-		debug_m68k->Display(m68k_status, "Main 68000 Registers", emulator->CurrentState().clownmdemu.m68k.state);
+		debug_m68k->Display(m68k_status, "Main-68000 Registers", emulator->CurrentState().clownmdemu.m68k.state);
 
 	if (mcd_m68k_status)
-		debug_m68k->Display(mcd_m68k_status, "Sub 68000 Registers", emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
+		debug_m68k->Display(mcd_m68k_status, "Sub-68000 Registers", emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
 
 	if (z80_status)
 		debug_z80->Display(z80_status);
