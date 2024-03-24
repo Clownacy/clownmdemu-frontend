@@ -94,7 +94,11 @@ enum InputBinding
 	INPUT_BINDING_CONTROLLER_A,
 	INPUT_BINDING_CONTROLLER_B,
 	INPUT_BINDING_CONTROLLER_C,
+	INPUT_BINDING_CONTROLLER_X,
+	INPUT_BINDING_CONTROLLER_Y,
+	INPUT_BINDING_CONTROLLER_Z,
 	INPUT_BINDING_CONTROLLER_START,
+	INPUT_BINDING_CONTROLLER_MODE,
 	INPUT_BINDING_PAUSE,
 	INPUT_BINDING_RESET,
 	INPUT_BINDING_FAST_FORWARD,
@@ -672,6 +676,12 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 					input_binding = INPUT_BINDING_CONTROLLER_B;
 				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_C") == 0)
 					input_binding = INPUT_BINDING_CONTROLLER_C;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_X") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_X;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_Y") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_Y;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_Z") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_Z;
 				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_START") == 0)
 					input_binding = INPUT_BINDING_CONTROLLER_START;
 				else if (SDL_strcmp(value, "INPUT_BINDING_PAUSE") == 0)
@@ -767,7 +777,11 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_SCANCODE_Z] = INPUT_BINDING_CONTROLLER_A;
 		keyboard_bindings[SDL_SCANCODE_X] = INPUT_BINDING_CONTROLLER_B;
 		keyboard_bindings[SDL_SCANCODE_C] = INPUT_BINDING_CONTROLLER_C;
+		keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_X;
+		keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_Y;
+		keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_Z;
 		keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
+		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = INPUT_BINDING_CONTROLLER_MODE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
@@ -869,8 +883,24 @@ static void SaveConfiguration()
 						binding_string = "INPUT_BINDING_CONTROLLER_C";
 						break;
 
+					case INPUT_BINDING_CONTROLLER_X:
+						binding_string = "INPUT_BINDING_CONTROLLER_X";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_Y:
+						binding_string = "INPUT_BINDING_CONTROLLER_Y";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_Z:
+						binding_string = "INPUT_BINDING_CONTROLLER_Z";
+						break;
+
 					case INPUT_BINDING_CONTROLLER_START:
 						binding_string = "INPUT_BINDING_CONTROLLER_START";
+						break;
+
+					case INPUT_BINDING_CONTROLLER_MODE:
+						binding_string = "INPUT_BINDING_CONTROLLER_MODE";
 						break;
 
 					case INPUT_BINDING_PAUSE:
@@ -1255,7 +1285,11 @@ void Frontend::HandleEvent(const SDL_Event &event)
 					DO_KEY(CLOWNMDEMU_BUTTON_A, INPUT_BINDING_CONTROLLER_A);
 					DO_KEY(CLOWNMDEMU_BUTTON_B, INPUT_BINDING_CONTROLLER_B);
 					DO_KEY(CLOWNMDEMU_BUTTON_C, INPUT_BINDING_CONTROLLER_C);
+					DO_KEY(CLOWNMDEMU_BUTTON_X, INPUT_BINDING_CONTROLLER_X);
+					DO_KEY(CLOWNMDEMU_BUTTON_Y, INPUT_BINDING_CONTROLLER_Y);
+					DO_KEY(CLOWNMDEMU_BUTTON_Z, INPUT_BINDING_CONTROLLER_Z);
 					DO_KEY(CLOWNMDEMU_BUTTON_START, INPUT_BINDING_CONTROLLER_START);
+					DO_KEY(CLOWNMDEMU_BUTTON_MODE, INPUT_BINDING_CONTROLLER_MODE);
 
 					#undef DO_KEY
 
@@ -1394,6 +1428,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 					{
 						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
 
+						// TODO: X, Y, Z, and Mode buttons.
 						DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
 						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
 						DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B);
@@ -2541,7 +2576,11 @@ void Frontend::Update()
 				"Control Pad A",
 				"Control Pad B",
 				"Control Pad C",
+				"Control Pad X",
+				"Control Pad Y",
+				"Control Pad Z",
 				"Control Pad Start",
+				"Control Pad Mode",
 				"Pause",
 				"Reset",
 				"Fast-Forward",
