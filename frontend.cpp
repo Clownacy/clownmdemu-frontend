@@ -684,6 +684,8 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 					input_binding = INPUT_BINDING_CONTROLLER_Z;
 				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_START") == 0)
 					input_binding = INPUT_BINDING_CONTROLLER_START;
+				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_MODE") == 0)
+					input_binding = INPUT_BINDING_CONTROLLER_MODE;
 				else if (SDL_strcmp(value, "INPUT_BINDING_PAUSE") == 0)
 					input_binding = INPUT_BINDING_PAUSE;
 				else if (SDL_strcmp(value, "INPUT_BINDING_RESET") == 0)
