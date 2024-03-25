@@ -130,12 +130,12 @@ CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
 	return sector;
 }
 
-void CDReader::SeekToTrack(const TrackIndex track_index)
+cc_bool CDReader::SeekToTrack(const TrackIndex track_index)
 {
 	if (track_index >= total_tracks)
 	{
 		remaining_frames_in_track = 0;
-		return;
+		return cc_false;
 	}
 
 	SDL_RWseek(stream.get(), 12 + track_index * 10, SEEK_SET);
@@ -146,6 +146,8 @@ void CDReader::SeekToTrack(const TrackIndex track_index)
 
 	SeekToSector(start_sector);
 	remaining_frames_in_track = total_sectors * (EXTENDED_SECTOR_SIZE / (2 * 2));
+
+	return cc_true;
 }
 
 cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)

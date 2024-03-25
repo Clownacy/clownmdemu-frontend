@@ -114,12 +114,14 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 	return sector.data();
 }
 
-void EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index)
+cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
 	if (emulator->cd_file.IsOpen())
-		emulator->cd_file.SeekToTrack(track_index);
+		return emulator->cd_file.SeekToTrack(track_index);
+
+	return cc_false;
 }
 
 std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l* const sample_buffer, const std::size_t total_frames)

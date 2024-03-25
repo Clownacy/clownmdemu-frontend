@@ -51,7 +51,7 @@ public:
 	Sector ReadSector();
 	Sector ReadSector(SectorIndex sector_index);
 	SectorIndex GetCurrentSector() { return current_sector_index; }
-	void SeekToTrack(TrackIndex track_index);
+	cc_bool SeekToTrack(TrackIndex track_index);
 	cc_u32f ReadAudio(cc_s16l *sample_buffer, cc_u32f total_frames);
 };
 
