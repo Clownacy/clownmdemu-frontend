@@ -86,6 +86,28 @@ void DebugFM::Display(bool &open)
 				ImGui::TextUnformatted(pannings[fm.channels[i].pan_left][fm.channels[i].pan_right]);
 			}
 
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SSG-EG");
+
+			ImGui::PushFont(monospace_font);
+			for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+			{
+				const auto &ssgeg = fm.channels[i].state.operators[0].ssgeg;
+
+				cc_u8f byte = 0;
+				byte |= ssgeg.enabled;
+				byte <<= 1;
+				byte |= ssgeg.attack;
+				byte <<= 1;
+				byte |= ssgeg.alternate;
+				byte <<= 1;
+				byte |= ssgeg.hold;
+
+				ImGui::TableNextColumn();
+				ImGui::Text("0x%" CC_PRIXFAST8, byte);
+			}
+			ImGui::PopFont();
+
 			ImGui::EndTable();
 		}
 
@@ -119,7 +141,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(channel.state.operators[operator_index].envelope.key_on ? "On" : "Off");
+							ImGui::TextUnformatted(channel.state.operators[operator_index].key_on ? "On" : "Off");
 						}
 						ImGui::PopFont();
 
@@ -155,7 +177,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].envelope.total_level >> 3);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].total_level >> 3);
 						}
 						ImGui::PopFont();
 
@@ -169,7 +191,7 @@ void DebugFM::Display(bool &open)
 							static const std::array<cc_u8l, 8> decode = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
 
 							ImGui::TableNextColumn();
-							ImGui::Text("%" CC_PRIuLEAST8, decode[channel.state.operators[operator_index].envelope.key_scale - 1]);
+							ImGui::Text("%" CC_PRIuLEAST8, decode[channel.state.operators[operator_index].key_scale - 1]);
 						}
 						ImGui::PopFont();
 
@@ -181,7 +203,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_ATTACK]);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_ATTACK]);
 						}
 						ImGui::PopFont();
 
@@ -193,7 +215,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_DECAY]);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_DECAY]);
 						}
 						ImGui::PopFont();
 
@@ -205,7 +227,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_SUSTAIN]);
+							ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_SUSTAIN]);
 						}
 						ImGui::PopFont();
 
@@ -217,7 +239,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%" CC_PRIXLEAST16, channel.state.operators[operator_index].envelope.rates[FM_ENVELOPE_MODE_RELEASE] >> 1);
+							ImGui::Text("0x%" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_RELEASE] >> 1);
 						}
 						ImGui::PopFont();
 
@@ -229,7 +251,7 @@ void DebugFM::Display(bool &open)
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
-							ImGui::Text("0x%" CC_PRIXLEAST16, (channel.state.operators[operator_index].envelope.sustain_level / 0x20) & 0xF);
+							ImGui::Text("0x%" CC_PRIXLEAST16, (channel.state.operators[operator_index].sustain_level / 0x20) & 0xF);
 						}
 						ImGui::PopFont();
 
