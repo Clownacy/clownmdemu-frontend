@@ -233,6 +233,21 @@ void DebugFM::Display(bool &open)
 						}
 						ImGui::PopFont();
 
+						if (i == 2)
+						{
+							ImGui::TableNextRow();
+							ImGui::TableNextColumn();
+							ImGui::TextUnformatted("Frequency");
+
+							ImGui::PushFont(monospace_font);
+							for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+							{
+								ImGui::TableNextColumn();
+								ImGui::Text("0x%04" CC_PRIXLEAST16, fm.channel_3_metadata.frequencies[operator_index]);
+							}
+							ImGui::PopFont();
+						}
+
 						ImGui::EndTable();
 					}
 
