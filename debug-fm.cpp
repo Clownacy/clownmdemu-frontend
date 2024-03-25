@@ -137,13 +137,11 @@ void DebugFM::Display(bool &open)
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted("Key On");
 
-						ImGui::PushFont(monospace_font);
 						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted(channel.state.operators[operator_index].key_on ? "On" : "Off");
 						}
-						ImGui::PopFont();
 
 						ImGui::TableNextRow();
 						ImGui::TableNextColumn();
