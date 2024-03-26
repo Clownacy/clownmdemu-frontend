@@ -398,6 +398,11 @@ void DebugFM::Display(bool &open)
 				ImGui::Text("0x%02" CC_PRIXLEAST8, fm.status);
 				ImGui::PopFont();
 
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("FM3 Mode");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(fm.channel_3_metadata.csm_mode_enabled ? "CSM" : fm.channel_3_metadata.per_operator_frequencies_enabled ? "Multifrequency" : "Normal");
+
 				ImGui::EndTable();
 			}
 
