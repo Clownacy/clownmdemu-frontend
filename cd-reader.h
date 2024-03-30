@@ -34,6 +34,11 @@ private:
 	static cc_u32f ReadU32BE(SDL::RWops &stream) { return ReadUIntBE(stream, 4); }
 	static cc_u16f ReadS16BE(SDL::RWops &stream);
 	static cc_u32f ReadS32BE(SDL::RWops &stream);
+	static cc_u32f ReadUIntLE(SDL::RWops &stream, cc_u8f total_bytes);
+	static cc_u16f ReadU16LE(SDL::RWops &stream) { return ReadUIntLE(stream, 2); }
+	static cc_u32f ReadU32LE(SDL::RWops &stream) { return ReadUIntLE(stream, 4); }
+	static cc_u16f ReadS16LE(SDL::RWops &stream);
+	static cc_u32f ReadS32LE(SDL::RWops &stream);
 	Format DetermineFormat();
 	TrackIndex DetermineTotalTracks();
 	cc_u16f DetermineHeaderSize();

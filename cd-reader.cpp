@@ -48,6 +48,40 @@ cc_u32f CDReader::ReadS32BE(SDL::RWops &stream)
 	return CC_SIGN_EXTEND(cc_u32f, 32 - 1, value);
 }
 
+cc_u32f CDReader::ReadUIntLE(SDL::RWops &stream, const cc_u8f total_bytes)
+{
+	std::array<unsigned char, 4> bytes;
+
+	SDL_assert(total_bytes <= bytes.size());
+
+	if (SDL_RWread(stream.get(), bytes.data(), total_bytes, 1) < 1)
+		return 0;
+
+	cc_u32f value = 0;
+
+	for (cc_u8f i = 0; i < total_bytes; ++i)
+	{
+		value <<= 8;
+		value |= bytes[total_bytes - i - 1];
+	}
+
+	return value;
+}
+
+cc_u16f CDReader::ReadS16LE(SDL::RWops &stream)
+{
+	const cc_u16f value = ReadU16LE(stream);
+
+	return CC_SIGN_EXTEND(cc_u16f, 16 - 1, value);
+}
+
+cc_u32f CDReader::ReadS32LE(SDL::RWops &stream)
+{
+	const cc_u32f value = ReadU32LE(stream);
+
+	return CC_SIGN_EXTEND(cc_u32f, 32 - 1, value);
+}
+
 CDReader::Format CDReader::DetermineFormat()
 {
 	SDL_RWseek(stream.get(), 0, RW_SEEK_SET);
@@ -157,7 +191,7 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	remaining_frames_in_track -= frames_to_do;
 
 	for (cc_u32f i = 0; i < frames_to_do * 2; ++i)
-		sample_buffer[i] = ReadS16BE(stream);
+		sample_buffer[i] = ReadS16LE(stream);
 
 	return frames_to_do;
 }
