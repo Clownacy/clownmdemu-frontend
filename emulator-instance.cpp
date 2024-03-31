@@ -250,9 +250,9 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer.clear();
 }
 
-void EmulatorInstance::LoadCDFile(CDReader &&cd_reader)
+void EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const char* const filename)
 {
-	this->cd_file = std::move(cd_reader);
+	this->cd_file.Open(std::move(stream), filename);
 	this->cd_file.SeekToSector(0);
 
 	HardResetConsole();

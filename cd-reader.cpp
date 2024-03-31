@@ -1,197 +1,138 @@
 #include "cd-reader.h"
 
-#include <array>
-#include <ios>
-#include <utility>
+#include <climits>
 
-CDReader::CDReader(SDL::RWops &&stream)
-	: stream(std::move(stream))
-	, format(DetermineFormat())
-	, total_tracks(DetermineTotalTracks())
-	, header_size(DetermineHeaderSize())
-	, sector_size_2352(DetermineSectorSize())
+static void* FileOpenCallback(const char* const filename, const ClownCD_FileMode mode)
 {
-	SeekToSector(0);
-}
+	const char *mode_string;
 
-cc_u32f CDReader::ReadUIntBE(SDL::RWops &stream, const cc_u8f total_bytes)
-{
-	std::array<unsigned char, 4> bytes;
-
-	SDL_assert(total_bytes <= bytes.size());
-
-	if (SDL_RWread(stream.get(), bytes.data(), total_bytes, 1) < 1)
-		return 0;
-
-	cc_u32f value = 0;
-
-	for (cc_u8f i = 0; i < total_bytes; ++i)
+	switch (mode)
 	{
-		value <<= 8;
-		value |= bytes[i];
+		case CLOWNCD_RB:
+			mode_string = "rb";
+			break;
+
+		case CLOWNCD_WB:
+			mode_string = "wb";
+			break;
+
+		default:
+			return nullptr;
 	}
 
-	return value;
+	return SDL_RWFromFile(filename, mode_string);
 }
 
-cc_u16f CDReader::ReadS16BE(SDL::RWops &stream)
+static int FileCloseCallback(void* const stream)
 {
-	const cc_u16f value = ReadU16BE(stream);
-
-	return CC_SIGN_EXTEND(cc_u16f, 16 - 1, value);
+	return SDL_RWclose((SDL_RWops*)stream);
 }
 
-cc_u32f CDReader::ReadS32BE(SDL::RWops &stream)
+static size_t FileReadCallback(void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	const cc_u32f value = ReadU32BE(stream);
-
-	return CC_SIGN_EXTEND(cc_u32f, 32 - 1, value);
+	return SDL_RWread((SDL_RWops*)stream, buffer, size, count);
 }
 
-cc_u32f CDReader::ReadUIntLE(SDL::RWops &stream, const cc_u8f total_bytes)
+static size_t FileWriteCallback(const void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	std::array<unsigned char, 4> bytes;
+	return SDL_RWwrite((SDL_RWops*)stream, buffer, size, count);
+}
 
-	SDL_assert(total_bytes <= bytes.size());
+static long FileTellCallback(void* const stream)
+{
+	const auto position = SDL_RWtell((SDL_RWops*)stream);
 
-	if (SDL_RWread(stream.get(), bytes.data(), total_bytes, 1) < 1)
-		return 0;
+	if (position < LONG_MIN || position > LONG_MAX)
+		return -1L;
 
-	cc_u32f value = 0;
+	return position;
+}
 
-	for (cc_u8f i = 0; i < total_bytes; ++i)
+static int FileSeekCallback(void* const stream, const long position, const ClownCD_FileOrigin origin)
+{
+	int whence;
+
+	switch (origin)
 	{
-		value <<= 8;
-		value |= bytes[total_bytes - i - 1];
+		case CLOWNCD_SEEK_SET:
+			whence = RW_SEEK_SET;
+			break;
+
+		case CLOWNCD_SEEK_CUR:
+			whence = RW_SEEK_CUR;
+			break;
+
+		case CLOWNCD_SEEK_END:
+			whence = RW_SEEK_END;
+			break;
+
+		default:
+			return -1;
 	}
 
-	return value;
+	return SDL_RWseek((SDL_RWops*)stream, position, whence) == -1;
 }
 
-cc_u16f CDReader::ReadS16LE(SDL::RWops &stream)
+static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
+
+void CDReader::Open(SDL::RWops &&stream, const char* const filename)
 {
-	const cc_u16f value = ReadU16LE(stream);
-
-	return CC_SIGN_EXTEND(cc_u16f, 16 - 1, value);
-}
-
-cc_u32f CDReader::ReadS32LE(SDL::RWops &stream)
-{
-	const cc_u32f value = ReadU32LE(stream);
-
-	return CC_SIGN_EXTEND(cc_u32f, 32 - 1, value);
-}
-
-CDReader::Format CDReader::DetermineFormat()
-{
-	SDL_RWseek(stream.get(), 0, RW_SEEK_SET);
-
-	std::array<char, 8> identifier_buffer;
-	if (SDL_RWread(stream.get(), identifier_buffer.data(), identifier_buffer.size(), 1) < 1)
-		return Format::RAW;
-
-	constexpr std::array<char, 8> identifier = {'c', 'l', 'o', 'w', 'n', 'c', 'd', '\0'};
-
-	if (identifier_buffer != identifier)
-		return Format::RAW;
-
-	const cc_u16f version = ReadU16BE(stream);
-
-	if (version != 0)
-		return Format::RAW;
-
-	return Format::CLOWNCD;
-}
-
-CDReader::TrackIndex CDReader::DetermineTotalTracks()
-{
-	if (format == Format::RAW)
-		return 1;
-
-	SDL_RWseek(stream.get(), 8 + 2, RW_SEEK_SET);
-
-	const TrackIndex total_tracks = ReadU16BE(stream);
-
-	return total_tracks;
-}
-
-cc_u16f CDReader::DetermineHeaderSize()
-{
-	return format == Format::RAW ? 0 : 12 + total_tracks * 10;
-}
-
-bool CDReader::DetermineSectorSize()
-{
-	// Detect if the sector size is 2048 bytes or 2352 bytes.
-	SDL_RWseek(stream.get(), header_size, RW_SEEK_SET);
-
-	std::array<unsigned char, 0x10> buffer;
-	SDL_RWread(stream.get(), buffer.data(), buffer.size(), 1);
-
-	constexpr std::array<unsigned char, 0x10> sector_header = {0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x02, 0x00, 0x01};
-
-	return buffer == sector_header;
+	// Transfer ownership of the stream to ClownCD.
+	clowncd.Open(ClownCD_OpenAlreadyOpen(stream.release(), filename, &callbacks));
 }
 
 void CDReader::SeekToSector(const SectorIndex sector_index)
 {
-	current_sector_index = sector_index;
-	remaining_frames_in_track = 0; // Prevent playing music after trying to read data.
+	if (!IsOpen())
+		return;
 
-	if (stream)
-		SDL_RWseek(stream.get(), header_size + (sector_size_2352 ? sector_index * EXTENDED_SECTOR_SIZE + 0x10 : sector_index * SECTOR_SIZE), RW_SEEK_SET);
+	current_sector_index = sector_index;
+	ClownCD_SeekTrackIndex(&clowncd.data, 1, 1);
+	ClownCD_SeekSector(&clowncd.data, sector_index);
 }
 
 CDReader::Sector CDReader::ReadSector()
 {
-	Sector sector_buffer;
-	SDL_RWread(stream.get(), sector_buffer.data(), sector_buffer.size(), 1);
+	Sector sector;
 
-	if (sector_size_2352)
-		SDL_RWseek(stream.get(), EXTENDED_SECTOR_SIZE - SECTOR_SIZE, SEEK_CUR);
+	if (!IsOpen())
+	{
+		sector.fill(0);
+		return sector;
+	}
 
 	++current_sector_index;
-
-	return sector_buffer;
+	ClownCD_ReadSectorData(&clowncd.data, sector.data());
+	return sector;
 }
 
 CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
 {
-	const auto sector_backup = GetCurrentSector();
-	SeekToSector(sector_index);
-	const Sector sector = ReadSector();
-	SeekToSector(sector_backup);
+	Sector sector;
+
+	if (!IsOpen())
+	{
+		sector.fill(0);
+		return sector;
+	}
+
+	current_sector_index = sector_index;
+	ClownCD_ReadSectorAtData(&clowncd.data, sector_index, sector.data());
 	return sector;
 }
 
-cc_bool CDReader::SeekToTrack(const TrackIndex track_index)
+bool CDReader::SeekToTrack(const TrackIndex track_index)
 {
-	if (track_index >= total_tracks)
-	{
-		remaining_frames_in_track = 0;
-		return cc_false;
-	}
+	if (!IsOpen())
+		return false;
 
-	SDL_RWseek(stream.get(), 12 + track_index * 10, SEEK_SET);
-
-	ReadU16BE(stream);
-	const SectorIndex start_sector = ReadU32BE(stream);
-	const cc_u32f total_sectors = ReadU32BE(stream);
-
-	SeekToSector(start_sector);
-	remaining_frames_in_track = total_sectors * (EXTENDED_SECTOR_SIZE / (2 * 2));
-
-	return cc_true;
+	return ClownCD_SeekTrackIndex(&clowncd.data, track_index + 1, 1) != CLOWNCD_CUE_TRACK_INVALID;
 }
 
 cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
 {
-	const cc_u32f frames_to_do = std::min(remaining_frames_in_track, total_frames);
+	if (!IsOpen())
+		return 0;
 
-	remaining_frames_in_track -= frames_to_do;
-
-	for (cc_u32f i = 0; i < frames_to_do * 2; ++i)
-		sample_buffer[i] = ReadS16LE(stream);
-
-	return frames_to_do;
+	return ClownCD_ReadAudioFrames(&clowncd.data, sample_buffer, total_frames);
 }

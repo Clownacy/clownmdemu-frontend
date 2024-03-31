@@ -426,7 +426,7 @@ static bool LoadCartridgeFile(const char* const path)
 	return LoadCartridgeFile(path, file);
 }
 
-static bool LoadCDFile(const char* const path, SDL::RWops &file)
+static bool LoadCDFile(const char* const path, SDL::RWops &&file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
@@ -436,7 +436,7 @@ static bool LoadCDFile(const char* const path, SDL::RWops &file)
 #endif
 
 	// Load the CD.
-	emulator->LoadCDFile(std::move(file));
+	emulator->LoadCDFile(std::move(file), path);
 
 	SetWindowTitleToSoftwareName();
 
@@ -455,7 +455,7 @@ static bool LoadCDFile(const char* const path)
 		return false;
 	}
 
-	return LoadCDFile(path, file);
+	return LoadCDFile(path, std::move(file));
 }
 
 static bool LoadSoftwareFile(const bool is_cd_file, const char* const path)
@@ -1780,7 +1780,7 @@ void Frontend::Update()
 				{
 					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL::RWops &file)
 					{
-						if (!LoadCDFile(path, file))
+						if (!LoadCDFile(path, std::move(file)))
 							return false;
 
 						emulator_paused = false;

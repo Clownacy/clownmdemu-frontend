@@ -17,3 +17,6 @@
 [submodule "libraries/emscripten-browser-file"]
 	path = libraries/emscripten-browser-file
 	url = https://github.com/Armchair-Software/emscripten-browser-file
+[submodule "libraries/clowncd"]
+	path = libraries/clowncd
+	url = https://github.com/Clownacy/clowncd
