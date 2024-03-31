@@ -102,7 +102,7 @@ CDReader::Sector CDReader::ReadSector()
 	}
 
 	++current_sector_index;
-	ClownCD_ReadSectorData(&clowncd.data, sector.data());
+	ClownCD_ReadSector(&clowncd.data, sector.data());
 	return sector;
 }
 
@@ -110,14 +110,18 @@ CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
 {
 	Sector sector;
 
-	if (!IsOpen())
+	if (IsOpen())
 	{
-		sector.fill(0);
-		return sector;
+		const auto track_type = SeekToTrack(1);
+
+		if (/*track_type == CLOWNCD_CUE_TRACK_MODE1_2048 ||*/ track_type == CLOWNCD_CUE_TRACK_MODE1_2352)
+		{
+			SeekToSector(sector_index);
+			return ReadSector();
+		}
 	}
 
-	current_sector_index = sector_index;
-	ClownCD_ReadSectorAtData(&clowncd.data, sector_index, sector.data());
+	sector.fill(0);
 	return sector;
 }
 
@@ -130,7 +134,7 @@ ClownCD_CueTrackType CDReader::SeekToTrack(const TrackIndex track_index)
 	current_sector_index = 0;
 	current_frame_index = 0;
 
-	return ClownCD_SeekTrackIndex(&clowncd.data, track_index + 1, 1);
+	return ClownCD_SeekTrackIndex(&clowncd.data, track_index, 1);
 }
 
 void CDReader::SeekToFrame(const FrameIndex frame_index)
@@ -144,7 +148,7 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	if (!IsOpen())
 		return 0;
 
-	const auto frames_read = ClownCD_ReadAudioFrames(&clowncd.data, sample_buffer, total_frames);
+	const auto frames_read = ClownCD_ReadFrames(&clowncd.data, sample_buffer, total_frames);
 
 	current_frame_index += frames_read;
 
