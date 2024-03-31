@@ -28,7 +28,9 @@ private:
 		ClownCDWrapper(ClownCD clowncd) { Open(clowncd); }
 		~ClownCDWrapper() { Close(); }
 		ClownCDWrapper(const ClownCDWrapper &other) = delete;
+		ClownCDWrapper(ClownCDWrapper &&other) = delete;
 		ClownCDWrapper& operator=(const ClownCDWrapper &other) = delete;
+		ClownCDWrapper& operator=(ClownCDWrapper &&other) = delete;
 
 		void Open(const ClownCD clowncd)
 		{
@@ -75,6 +77,7 @@ public:
 	void Close() { clowncd.Close(); }
 	bool IsOpen() const { return clowncd.IsOpen(); }
 	void SeekToSector(SectorIndex sector_index);
+	void SeekToFrame(FrameIndex frame_index);
 	Sector ReadSector();
 	Sector ReadSector(SectorIndex sector_index);
 	SectorIndex GetCurrentSector() { return current_sector_index; }

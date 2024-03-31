@@ -133,6 +133,12 @@ ClownCD_CueTrackType CDReader::SeekToTrack(const TrackIndex track_index)
 	return ClownCD_SeekTrackIndex(&clowncd.data, track_index + 1, 1);
 }
 
+void CDReader::SeekToFrame(const FrameIndex frame_index)
+{
+	current_frame_index = frame_index;
+	ClownCD_SeekAudioFrame(&clowncd.data, frame_index);
+}
+
 cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
 {
 	if (!IsOpen())
@@ -170,7 +176,7 @@ void CDReader::SetState(const State &state)
 			break;
 
 		case CLOWNCD_CUE_TRACK_AUDIO:
-			ClownCD_SeekAudioFrame(&clowncd.data, state.frame_index);
+			SeekToFrame(state.frame_index);
 			break;
 	}
 }
