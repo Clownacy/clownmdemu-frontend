@@ -177,6 +177,9 @@ void EmulatorInstance::Update()
 	// Resample, mix, and output the audio for this frame.
 	audio_output.MixerEnd();
 
+	// Log CD state for this frame.
+	state->cd = cd_file.GetState();
+
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	// Handle rewinding.
 
@@ -217,6 +220,9 @@ void EmulatorInstance::Update()
 
 	state = &state_rewind_buffer[to_index];
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+
+	if (IsRewinding())
+		cd_file.SetState(state->cd);
 #endif
 }
 

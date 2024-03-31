@@ -70,7 +70,7 @@ static int FileSeekCallback(void* const stream, const long position, const Clown
 			return -1;
 	}
 
-	return SDL_RWseek((SDL_RWops*)stream, position, whence) == -1;
+	return SDL_RWseek((SDL_RWops*)stream, position, whence) == -1 ? -1 : 0;
 }
 
 static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
@@ -121,12 +121,16 @@ CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
 	return sector;
 }
 
-bool CDReader::SeekToTrack(const TrackIndex track_index)
+ClownCD_CueTrackType CDReader::SeekToTrack(const TrackIndex track_index)
 {
 	if (!IsOpen())
-		return false;
+		return CLOWNCD_CUE_TRACK_INVALID;
 
-	return ClownCD_SeekTrackIndex(&clowncd.data, track_index + 1, 1) != CLOWNCD_CUE_TRACK_INVALID;
+	current_track_index = track_index;
+	current_sector_index = 0;
+	current_frame_index = 0;
+
+	return ClownCD_SeekTrackIndex(&clowncd.data, track_index + 1, 1);
 }
 
 cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
@@ -134,5 +138,39 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	if (!IsOpen())
 		return 0;
 
-	return ClownCD_ReadAudioFrames(&clowncd.data, sample_buffer, total_frames);
+	const auto frames_read = ClownCD_ReadAudioFrames(&clowncd.data, sample_buffer, total_frames);
+
+	current_frame_index += frames_read;
+
+	return frames_read;
+}
+
+CDReader::State CDReader::GetState()
+{
+	State state;
+	state.track_index = current_track_index;
+	state.sector_index = current_sector_index;
+	state.frame_index = current_frame_index;
+	return state;
+}
+
+void CDReader::SetState(const State &state)
+{
+	if (!IsOpen())
+		return;
+
+	switch (SeekToTrack(state.track_index))
+	{
+		case CLOWNCD_CUE_TRACK_INVALID:
+			break;
+
+		case CLOWNCD_CUE_TRACK_MODE1_2048:
+		case CLOWNCD_CUE_TRACK_MODE1_2352:
+			SeekToSector(state.sector_index);
+			break;
+
+		case CLOWNCD_CUE_TRACK_AUDIO:
+			ClownCD_SeekAudioFrame(&clowncd.data, state.frame_index);
+			break;
+	}
 }

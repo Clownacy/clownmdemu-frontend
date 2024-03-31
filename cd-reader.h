@@ -13,6 +13,7 @@ class CDReader
 public:
 	using SectorIndex = cc_u32f;
 	using TrackIndex = cc_u16f;
+	using FrameIndex = std::size_t;
 
 private:
 	class ClownCDWrapper
@@ -54,9 +55,18 @@ private:
 	};
 
 	ClownCDWrapper clowncd;
+	TrackIndex current_track_index = 0;
 	SectorIndex current_sector_index = 0;
+	FrameIndex current_frame_index = 0;
 
 public:
+	struct State
+	{
+		CDReader::TrackIndex track_index;
+		CDReader::SectorIndex sector_index;
+		CDReader::FrameIndex frame_index;
+	};
+
 	static constexpr cc_u16f SECTOR_SIZE = 2048;
 	using Sector = std::array<cc_u8l, SECTOR_SIZE>;
 
@@ -68,8 +78,11 @@ public:
 	Sector ReadSector();
 	Sector ReadSector(SectorIndex sector_index);
 	SectorIndex GetCurrentSector() { return current_sector_index; }
-	bool SeekToTrack(TrackIndex track_index);
+	ClownCD_CueTrackType SeekToTrack(TrackIndex track_index);
 	cc_u32f ReadAudio(cc_s16l *sample_buffer, cc_u32f total_frames);
+
+	State GetState();
+	void SetState(const State &state);
 };
 
 #endif // CD_READER_H
