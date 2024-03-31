@@ -91,8 +91,6 @@ bool CDReader::SeekToSector(const SectorIndex sector_index)
 	if (/*current_track_type != CLOWNCD_CUE_TRACK_MODE1_2048 &&*/ current_track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
 		return false;
 
-	current_sector_index = sector_index;
-
 	return ClownCD_SeekSector(&clowncd.data, sector_index);
 }
 
@@ -106,7 +104,6 @@ CDReader::Sector CDReader::ReadSector()
 		return sector;
 	}
 
-	++current_sector_index;
 	ClownCD_ReadSector(&clowncd.data, sector.data());
 	return sector;
 }
@@ -130,9 +127,6 @@ bool CDReader::SeekToTrack(const TrackIndex track_index)
 	if (!IsOpen())
 		return false;
 
-	current_track_index = track_index;
-	current_sector_index = 0;
-	current_frame_index = 0;
 	current_track_type = ClownCD_SeekTrackIndex(&clowncd.data, track_index, 1);
 
 	return current_track_type != CLOWNCD_CUE_TRACK_INVALID;
@@ -140,7 +134,6 @@ bool CDReader::SeekToTrack(const TrackIndex track_index)
 
 bool CDReader::SeekToFrame(const FrameIndex frame_index)
 {
-	current_frame_index = frame_index;
 	return ClownCD_SeekAudioFrame(&clowncd.data, frame_index);
 }
 
@@ -149,19 +142,15 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	if (!IsOpen())
 		return 0;
 
-	const auto frames_read = ClownCD_ReadFrames(&clowncd.data, sample_buffer, total_frames);
-
-	current_frame_index += frames_read;
-
-	return frames_read;
+	return ClownCD_ReadFrames(&clowncd.data, sample_buffer, total_frames);
 }
 
 CDReader::State CDReader::GetState()
 {
 	State state;
-	state.track_index = current_track_index;
-	state.sector_index = current_sector_index;
-	state.frame_index = current_frame_index;
+	state.track_index = clowncd.data.track.current_track;
+	state.sector_index = clowncd.data.track.current_sector;
+	state.frame_index = clowncd.data.track.current_frame;
 	return state;
 }
 
@@ -170,27 +159,8 @@ bool CDReader::SetState(const State &state)
 	if (!IsOpen())
 		return false;
 
-	if (!SeekToTrack(state.track_index))
+	if (ClownCD_SetState(&clowncd.data, state.track_index, 1, state.sector_index, state.frame_index) == CLOWNCD_CUE_TRACK_INVALID)
 		return false;
-
-	switch (current_track_type)
-	{
-		case CLOWNCD_CUE_TRACK_INVALID:
-			break;
-
-		case CLOWNCD_CUE_TRACK_MODE1_2048:
-		case CLOWNCD_CUE_TRACK_MODE1_2352:
-			if (!SeekToSector(state.sector_index))
-				return false;
-
-			break;
-
-		case CLOWNCD_CUE_TRACK_AUDIO:
-			if (!SeekToFrame(state.frame_index))
-				return false;
-
-			break;
-	}
 
 	return true;
 }

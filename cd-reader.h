@@ -57,9 +57,6 @@ private:
 	};
 
 	ClownCDWrapper clowncd;
-	TrackIndex current_track_index = 0;
-	SectorIndex current_sector_index = 0;
-	FrameIndex current_frame_index = 0;
 	ClownCD_CueTrackType current_track_type = CLOWNCD_CUE_TRACK_INVALID;
 
 public:
