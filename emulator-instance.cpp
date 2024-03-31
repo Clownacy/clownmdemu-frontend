@@ -216,7 +216,7 @@ void EmulatorInstance::Update()
 		state_rewind_index = to_index;
 	}
 
-	SDL_memcpy(&state_rewind_buffer[to_index], &state_rewind_buffer[from_index], sizeof(state_rewind_buffer[0]));
+	state_rewind_buffer[to_index] = state_rewind_buffer[from_index];
 
 	state = &state_rewind_buffer[to_index];
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
