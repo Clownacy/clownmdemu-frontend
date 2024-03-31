@@ -60,6 +60,7 @@ private:
 	TrackIndex current_track_index = 0;
 	SectorIndex current_sector_index = 0;
 	FrameIndex current_frame_index = 0;
+	ClownCD_CueTrackType current_track_type = CLOWNCD_CUE_TRACK_INVALID;
 
 public:
 	struct State
@@ -76,16 +77,15 @@ public:
 	void Open(SDL::RWops &&stream, const char* filename);
 	void Close() { clowncd.Close(); }
 	bool IsOpen() const { return clowncd.IsOpen(); }
-	void SeekToSector(SectorIndex sector_index);
-	void SeekToFrame(FrameIndex frame_index);
+	bool SeekToSector(SectorIndex sector_index);
+	bool SeekToFrame(FrameIndex frame_index);
 	Sector ReadSector();
 	Sector ReadSector(SectorIndex sector_index);
-	SectorIndex GetCurrentSector() { return current_sector_index; }
-	ClownCD_CueTrackType SeekToTrack(TrackIndex track_index);
+	bool SeekToTrack(TrackIndex track_index);
 	cc_u32f ReadAudio(cc_s16l *sample_buffer, cc_u32f total_frames);
 
 	State GetState();
-	void SetState(const State &state);
+	bool SetState(const State &state);
 };
 
 #endif // CD_READER_H
