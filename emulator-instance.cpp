@@ -159,27 +159,6 @@ EmulatorInstance::EmulatorInstance(
 
 void EmulatorInstance::Update()
 {
-	// Reset the audio buffers so that they can be mixed into.
-	audio_output.MixerBegin();
-
-	// Lock the texture so that we can write to its pixels later
-	if (SDL_LockTexture(window.GetFramebufferTexture(), nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
-		framebuffer_texture_pixels = nullptr;
-
-	framebuffer_texture_pitch /= sizeof(Uint32);
-
-	// Run the emulator for a frame
-	ClownMDEmu_Iterate(&clownmdemu);
-
-	// Unlock the texture so that we can draw it
-	SDL_UnlockTexture(window.GetFramebufferTexture());
-
-	// Resample, mix, and output the audio for this frame.
-	audio_output.MixerEnd();
-
-	// Log CD state for this frame.
-	state->cd = cd_file.GetState();
-
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	// Handle rewinding.
 
@@ -224,6 +203,27 @@ void EmulatorInstance::Update()
 
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 #endif
+
+	// Reset the audio buffers so that they can be mixed into.
+	audio_output.MixerBegin();
+
+	// Lock the texture so that we can write to its pixels later
+	if (SDL_LockTexture(window.GetFramebufferTexture(), nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
+		framebuffer_texture_pixels = nullptr;
+
+	framebuffer_texture_pitch /= sizeof(Uint32);
+
+	// Run the emulator for a frame
+	ClownMDEmu_Iterate(&clownmdemu);
+
+	// Unlock the texture so that we can draw it
+	SDL_UnlockTexture(window.GetFramebufferTexture());
+
+	// Resample, mix, and output the audio for this frame.
+	audio_output.MixerEnd();
+
+	// Log CD state for this frame.
+	state->cd = cd_file.GetState();
 }
 
 void EmulatorInstance::SoftResetConsole()
