@@ -98,16 +98,14 @@ void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f secto
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	if (emulator->cd_file.IsOpen())
-		emulator->cd_file.SeekToSector(sector_index);
+	emulator->cd_file.SeekToSector(sector_index);
 }
 
 const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	if (emulator->cd_file.IsOpen())
-		emulator->sector = emulator->cd_file.ReadSector();
+	emulator->sector = emulator->cd_file.ReadSector();
 
 	return emulator->sector.data();
 }
@@ -115,10 +113,6 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index, ClownMDEmu_CDDAMode mode)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	// TODO: These IsOpen checks should be redundant: they are the CDReader's responsibility, not ours.
-	if (!emulator->cd_file.IsOpen())
-		return cc_false;
 
 	CDReader::PlaybackSetting playback_setting;
 
@@ -148,10 +142,7 @@ std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	if (emulator->cd_file.IsOpen())
-		return emulator->cd_file.ReadAudio(sample_buffer, total_frames);
-
-	return 0;
+	return emulator->cd_file.ReadAudio(sample_buffer, total_frames);
 }
 
 EmulatorInstance::EmulatorInstance(
