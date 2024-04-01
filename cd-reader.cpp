@@ -159,22 +159,31 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	if (!audio_playing)
 		return 0;
 
-	// TODO: Make this loop so that there are no gaps.
-	const auto frames_read = ClownCD_ReadFrames(&clowncd.data, sample_buffer, total_frames);
+	cc_u32f frames_read = 0;
 
-	if (frames_read != total_frames)
+	while (frames_read != total_frames)
 	{
-		switch (playback_setting)
-		{
-			case PlaybackSetting::ALL:
-				PlayAudio(clowncd.data.track.current_track + 1, playback_setting);
-				break;
+		frames_read += ClownCD_ReadFrames(&clowncd.data, &sample_buffer[frames_read * 2], total_frames - frames_read);
 
-			case PlaybackSetting::ONCE:
-				audio_playing = false;
-				// Fallthrough
-			case PlaybackSetting::REPEAT:
-				SeekToFrame(0);
+		if (frames_read != total_frames)
+		{
+			switch (playback_setting)
+			{
+				case PlaybackSetting::ALL:
+					if (!PlayAudio(clowncd.data.track.current_track + 1, playback_setting))
+						audio_playing = false;
+					break;
+
+				case PlaybackSetting::ONCE:
+					audio_playing = false;
+					// Fallthrough
+				case PlaybackSetting::REPEAT:
+					if (!SeekToFrame(0))
+						audio_playing = false;
+					break;
+			}
+
+			if (!audio_playing)
 				break;
 		}
 	}
