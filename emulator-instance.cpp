@@ -165,40 +165,40 @@ void EmulatorInstance::Update()
 	// We maintain a ring buffer of emulator states:
 	// when rewinding, we go backwards through this buffer,
 	// and when not rewinding, we go forwards through it.
-	std::size_t from_index, to_index;
+	const auto rewind_buffer_size = state_rewind_buffer.size();
 
 	if (IsRewinding())
 	{
 		--state_rewind_remaining;
 
-		from_index = to_index = state_rewind_index;
-
-		if (from_index == 0)
-			from_index = state_rewind_buffer.size() - 1;
+		if (state_rewind_index == 0)
+			state_rewind_index = rewind_buffer_size - 1;
 		else
-			--from_index;
-
-		state_rewind_index = from_index;
-
-		state = &state_rewind_buffer[to_index];
-		LoadState(&state_rewind_buffer[from_index]);
+			--state_rewind_index;
 	}
 	else
 	{
-		if (state_rewind_remaining < state_rewind_buffer.size() - 1)
+		if (state_rewind_remaining < rewind_buffer_size - 2) // -2 because we use a slot to hold the current state, so -1 does not suffice.
 			++state_rewind_remaining;
 
-		from_index = to_index = state_rewind_index;
-
-		if (to_index == state_rewind_buffer.size() - 1)
-			to_index = 0;
+		if (state_rewind_index == rewind_buffer_size - 1)
+			state_rewind_index = 0;
 		else
-			++to_index;
+			++state_rewind_index;
+	}
 
-		state_rewind_index = to_index;
+	auto &previous_state = state_rewind_buffer[state_rewind_index];
+	auto &next_state = state_rewind_buffer[(state_rewind_index + 1) % rewind_buffer_size];
 
-		SaveState(&state_rewind_buffer[to_index]);
-		state = &state_rewind_buffer[to_index];
+	if (IsRewinding())
+	{
+		state = &next_state;
+		LoadState(&previous_state);
+	}
+	else
+	{
+		SaveState(&next_state);
+		state = &next_state;
 	}
 
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
