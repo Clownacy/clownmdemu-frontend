@@ -436,7 +436,8 @@ static bool LoadCDFile(const char* const path, SDL::RWops &&file)
 #endif
 
 	// Load the CD.
-	emulator->LoadCDFile(std::move(file), path);
+	if (!emulator->LoadCDFile(std::move(file), path))
+		return false;
 
 	SetWindowTitleToSoftwareName();
 

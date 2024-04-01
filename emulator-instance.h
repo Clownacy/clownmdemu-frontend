@@ -83,7 +83,7 @@ public:
 	void HardResetConsole();
 	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer);
 	void UnloadCartridgeFile();
-	void LoadCDFile(SDL::RWops &&stream, const char *filename);
+	bool LoadCDFile(SDL::RWops &&stream, const char *filename);
 	void UnloadCDFile();
 
 	void LoadState(const void *buffer);
