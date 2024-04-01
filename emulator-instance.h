@@ -42,7 +42,9 @@ private:
 
 	std::vector<unsigned char> rom_buffer;
 	CDReader cd_file;
-		
+
+	CDReader::Sector sector;
+
 	Uint32 *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 

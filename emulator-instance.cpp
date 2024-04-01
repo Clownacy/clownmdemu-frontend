@@ -106,12 +106,10 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	static CDReader::Sector sector;
-
 	if (emulator->cd_file.IsOpen())
-		sector = emulator->cd_file.ReadSector();
+		emulator->sector = emulator->cd_file.ReadSector();
 
-	return sector.data();
+	return emulator->sector.data();
 }
 
 cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index, ClownMDEmu_CDDAMode mode)
