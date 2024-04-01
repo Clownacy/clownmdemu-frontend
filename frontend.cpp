@@ -1874,13 +1874,13 @@ void Frontend::Update()
 						try
 						{
 							std::vector<unsigned char> save_state_buffer;
-							save_state_buffer.resize(emulator->GetSaveStateSize());
+							save_state_buffer.resize(emulator->GetSaveStateFileSize());
 
 							const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer.data(), save_state_buffer.size()));
 
 							if (file != nullptr)
 							{
-								emulator->CreateSaveState(file);
+								emulator->WriteSaveStateFile(file);
 
 								callback(save_state_buffer.data(), save_state_buffer.size());
 							}
