@@ -79,6 +79,8 @@ void CDReader::Open(SDL::RWops &&stream, const char* const filename)
 {
 	// Transfer ownership of the stream to ClownCD.
 	clowncd.Open(ClownCD_OpenAlreadyOpen(stream.release(), filename, &callbacks));
+
+	audio_playing = false;
 }
 
 bool CDReader::SeekToSector(const SectorIndex sector_index)
@@ -86,9 +88,9 @@ bool CDReader::SeekToSector(const SectorIndex sector_index)
 	if (!IsOpen())
 		return false;
 
-	SeekToTrack(1);
+	const auto track_type = ClownCD_SeekTrackIndex(&clowncd.data, 1, 1);
 
-	if (/*current_track_type != CLOWNCD_CUE_TRACK_MODE1_2048 &&*/ current_track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
+	if (/*track_type != CLOWNCD_CUE_TRACK_MODE1_2048 &&*/ track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
 		return false;
 
 	return ClownCD_SeekSector(&clowncd.data, sector_index);
@@ -122,19 +124,31 @@ CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
 	return ReadSector();
 }
 
-bool CDReader::SeekToTrack(const TrackIndex track_index)
+bool CDReader::PlayAudio(const TrackIndex track_index, const PlaybackSetting setting)
 {
 	if (!IsOpen())
 		return false;
 
-	current_track_type = ClownCD_SeekTrackIndex(&clowncd.data, track_index, 1);
+	audio_playing = false;
 
-	return current_track_type != CLOWNCD_CUE_TRACK_INVALID;
+	if (ClownCD_SeekTrackIndex(&clowncd.data, track_index, 1) != CLOWNCD_CUE_TRACK_AUDIO)
+		return false;
+
+	audio_playing = true;
+	playback_setting = setting;
+
+	return true;
 }
 
 bool CDReader::SeekToFrame(const FrameIndex frame_index)
 {
-	return ClownCD_SeekAudioFrame(&clowncd.data, frame_index);
+	if (!ClownCD_SeekAudioFrame(&clowncd.data, frame_index))
+	{
+		audio_playing = false;
+		return false;
+	}
+
+	return true;
 }
 
 cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
@@ -142,7 +156,30 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	if (!IsOpen())
 		return 0;
 
-	return ClownCD_ReadFrames(&clowncd.data, sample_buffer, total_frames);
+	if (!audio_playing)
+		return 0;
+
+	// TODO: Make this loop so that there are no gaps.
+	const auto frames_read = ClownCD_ReadFrames(&clowncd.data, sample_buffer, total_frames);
+
+	if (frames_read != total_frames)
+	{
+		switch (playback_setting)
+		{
+			case PlaybackSetting::ALL:
+				PlayAudio(clowncd.data.track.current_track + 1, playback_setting);
+				break;
+
+			case PlaybackSetting::ONCE:
+				audio_playing = false;
+				// Fallthrough
+			case PlaybackSetting::REPEAT:
+				SeekToFrame(0);
+				break;
+		}
+	}
+
+	return frames_read;
 }
 
 CDReader::State CDReader::GetState()
@@ -151,6 +188,8 @@ CDReader::State CDReader::GetState()
 	state.track_index = clowncd.data.track.current_track;
 	state.sector_index = clowncd.data.track.current_sector;
 	state.frame_index = clowncd.data.track.current_frame;
+	state.playback_setting = playback_setting;
+	state.audio_playing = audio_playing;
 	return state;
 }
 
@@ -161,6 +200,9 @@ bool CDReader::SetState(const State &state)
 
 	if (ClownCD_SetState(&clowncd.data, state.track_index, 1, state.sector_index, state.frame_index) == CLOWNCD_CUE_TRACK_INVALID)
 		return false;
+
+	playback_setting = state.playback_setting;
+	audio_playing = state.audio_playing;
 
 	return true;
 }
