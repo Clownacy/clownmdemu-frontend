@@ -200,6 +200,9 @@ void EmulatorInstance::Update()
 			--from_index;
 
 		state_rewind_index = from_index;
+
+		state = &state_rewind_buffer[to_index];
+		LoadState(&state_rewind_buffer[from_index]);
 	}
 	else
 	{
@@ -214,15 +217,12 @@ void EmulatorInstance::Update()
 			++to_index;
 
 		state_rewind_index = to_index;
+
+		SaveState(&state_rewind_buffer[to_index]);
+		state = &state_rewind_buffer[to_index];
 	}
 
-	state_rewind_buffer[to_index] = state_rewind_buffer[from_index];
-
-	state = &state_rewind_buffer[to_index];
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
-
-	if (IsRewinding())
-		cd_file.SetState(state->cd);
 #endif
 }
 
@@ -269,32 +269,44 @@ void EmulatorInstance::UnloadCDFile()
 	cd_file.Close();
 }
 
+void EmulatorInstance::LoadState(const void* const buffer)
+{
+	SDL_memcpy(state, buffer, sizeof(*state));
+	cd_file.SetState(state->cd);
+}
+
+void EmulatorInstance::SaveState(void* const buffer)
+{
+	SDL_memcpy(buffer, state, sizeof(*state));
+}
+
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
 
-bool EmulatorInstance::ValidateSaveState(const std::vector<unsigned char> &file_buffer)
+bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer)
 {
 	return file_buffer.size() == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer.data(), &save_state_magic, sizeof(save_state_magic)) == 0;
 }
 
-bool EmulatorInstance::LoadSaveState(const std::vector<unsigned char> &file_buffer)
+bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_buffer)
 {
 	bool success = false;
 
-	if (ValidateSaveState(file_buffer))
+	if (ValidateSaveStateFile(file_buffer))
 	{
-		SDL_memcpy(state, &file_buffer[sizeof(save_state_magic)], sizeof(State));
+		LoadState(&file_buffer[sizeof(save_state_magic)]);
+
 		success = true;
 	}
 
 	return success;
 }
 
-std::size_t EmulatorInstance::GetSaveStateSize()
+std::size_t EmulatorInstance::GetSaveStateFileSize()
 {
 	return sizeof(save_state_magic) + sizeof(*state);
 }
 
-bool EmulatorInstance::CreateSaveState(const SDL::RWops &file)
+bool EmulatorInstance::WriteSaveStateFile(const SDL::RWops &file)
 {
 	bool success = false;
 

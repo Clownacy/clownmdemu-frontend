@@ -83,10 +83,14 @@ public:
 	void UnloadCartridgeFile();
 	void LoadCDFile(SDL::RWops &&stream, const char *filename);
 	void UnloadCDFile();
-	bool ValidateSaveState(const std::vector<unsigned char> &file_buffer);
-	bool LoadSaveState(const std::vector<unsigned char> &file_buffer);
-	std::size_t GetSaveStateSize();
-	bool CreateSaveState(const SDL::RWops &file);
+
+	void LoadState(const void *buffer);
+	void SaveState(void *buffer);
+
+	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer);
+	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
+	std::size_t GetSaveStateFileSize();
+	bool WriteSaveStateFile(const SDL::RWops &file);
 
 	bool IsCartridgeFileLoaded() const { return !rom_buffer.empty(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
@@ -100,7 +104,7 @@ public:
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 	const State& CurrentState() const { return *state; }
-	void OverwriteCurrentState(const State &new_state) { *state = new_state; }
+	void OverwriteCurrentState(const State &new_state) { LoadState(&new_state); }
 	const std::vector<unsigned char>& GetROMBuffer() const { return rom_buffer; }
 
 	bool GetPALMode() const { return clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }

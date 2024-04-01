@@ -469,7 +469,7 @@ static bool LoadSoftwareFile(const bool is_cd_file, const char* const path)
 
 static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 {
-	if (!emulator->LoadSaveState(file_buffer))
+	if (!emulator->LoadSaveStateFile(file_buffer))
 	{
 		debug_log.Log("Could not load save state file");
 		window->ShowErrorMessageBox("Could not load save state file.");
@@ -502,7 +502,7 @@ static bool CreateSaveState(const char* const save_state_path)
 
 	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(save_state_path, "wb"));
 
-	if (file == nullptr || !emulator->CreateSaveState(file))
+	if (file == nullptr || !emulator->WriteSaveStateFile(file))
 	{
 		debug_log.Log("Could not create save state file");
 		window->ShowErrorMessageBox("Could not create save state file.");
@@ -1657,7 +1657,7 @@ void Frontend::Update()
 
 		if (file_utilities.LoadFileToBuffer(file_buffer, drag_and_drop_filename))
 		{
-			if (emulator->ValidateSaveState(file_buffer))
+			if (emulator->ValidateSaveStateFile(file_buffer))
 			{
 				if (emulator_on)
 					LoadSaveState(file_buffer);
