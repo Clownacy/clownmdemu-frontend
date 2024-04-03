@@ -998,6 +998,13 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	// Enable high-DPI support on Windows because SDL2 is bad at being a platform abstraction library
 	SDL_SetHint("SDL_WINDOWS_DPI_SCALING", "1");
 
+#if !SDL_VERSION_ATLEAST(2,30,3)
+	// Force the window icon to the proper icon group, as the default icon
+	// size chosen by older versions of SDL does not suit high-DPI display.
+	// https://github.com/libsdl-org/SDL/pull/9429
+	SDL_SetHint("SDL_WINDOWS_INTRESOURCE_ICON", "100");
+#endif
+
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
