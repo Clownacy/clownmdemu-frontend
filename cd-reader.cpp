@@ -90,7 +90,7 @@ bool CDReader::SeekToSector(const SectorIndex sector_index)
 
 	const auto track_type = ClownCD_SeekTrackIndex(&clowncd.data, 1, 1);
 
-	if (/*track_type != CLOWNCD_CUE_TRACK_MODE1_2048 &&*/ track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
+	if (track_type != CLOWNCD_CUE_TRACK_MODE1_2048 && track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
 		return false;
 
 	return ClownCD_SeekSector(&clowncd.data, sector_index);
