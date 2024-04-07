@@ -35,6 +35,8 @@ void SetWindowTitleBarColour(SDL_Window* const window, const unsigned char red, 
 	}
 #else
 	(void)window;
-	(void)colour;
+	(void)red;
+	(void)green;
+	(void)blue;
 #endif
 }
