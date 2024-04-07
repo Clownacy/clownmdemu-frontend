@@ -1838,8 +1838,12 @@ void Frontend::Update()
 							'/');
 					#endif
 
+						ImGui::PushID(&recent_software - &recent_software_list.front());
+
 						if (ImGui::MenuItem(&recent_software.path[slash_index == recent_software.path.npos ? 0 : slash_index + 1]))
 							selected_software = &recent_software;
+
+						ImGui::PopID();
 
 						// Show the full path as a tooltip.
 						DoToolTip(recent_software.path.c_str());
