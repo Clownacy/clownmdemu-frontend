@@ -44,7 +44,7 @@
 #define FILE_PATH_SUPPORT
 #endif
 
-#define VERSION "v0.7"
+#define VERSION "v0.7.1"
 
 static constexpr unsigned int INITIAL_WINDOW_WIDTH = 320 * 2;
 static constexpr unsigned int INITIAL_WINDOW_HEIGHT = 224 * 2;
