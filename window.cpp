@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "winapi.h"
+
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
 float Window::GetDPIScale() const
@@ -76,6 +78,11 @@ Window::Window(DebugLog &debug_log, const char* const window_title, const int wi
 	, framebuffer_texture(CreateFramebufferTexture(debug_log, GetRenderer(), framebuffer_width, framebuffer_height))
 {
 
+}
+
+void Window::SetTitleBarColour(const unsigned char red, const unsigned char green, const unsigned char blue)
+{
+	SetWindowTitleBarColour(sdl_window.get(), red, green, blue);
 }
 
 void Window::ShowWarningMessageBox(const char* const message) const

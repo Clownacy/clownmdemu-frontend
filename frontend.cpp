@@ -1084,6 +1084,9 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		// Apply DPI scale.
 		style.ScaleAllSizes(dpi_scale);
 
+		const auto &menu_bar_bg_colour = colors[ImGuiCol_MenuBarBg];
+		window->SetTitleBarColour(menu_bar_bg_colour.x * 0xFF, menu_bar_bg_colour.y * 0xFF, menu_bar_bg_colour.z * 0xFF);
+
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
 		int window_width, window_height;

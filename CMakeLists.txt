@@ -46,6 +46,8 @@ add_executable(clownmdemu-frontend WIN32
 	"sdl-wrapper.h"
 	"text-encoding.c"
 	"text-encoding.h"
+	"winapi.c"
+	"winapi.h"
 	"window.cpp"
 	"window.h"
 	"clownmdemu-frontend-common/mixer.h"

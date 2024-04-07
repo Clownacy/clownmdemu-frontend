@@ -23,6 +23,7 @@ public:
 	SDL_Window* GetSDLWindow() const { return sdl_window.get(); }
 	SDL_Renderer* GetRenderer() const { return renderer.get(); }
 	SDL_Texture* GetFramebufferTexture() const { return framebuffer_texture.get(); }
+	void SetTitleBarColour(unsigned char red, unsigned char green, unsigned char blue);
 	void ShowWarningMessageBox(const char *message) const;
 	void ShowErrorMessageBox(const char *message) const;
 	void ShowFatalMessageBox(const char *message) const;
