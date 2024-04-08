@@ -4,7 +4,6 @@ void DebugPCM::Display(bool &open)
 {
 	if (ImGui::Begin("PCM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::SeparatorText("Channels");
 		if (ImGui::BeginTable("Channels", 8, ImGuiTableFlags_Borders))
 		{
 			ImGui::TableSetupColumn("Channel");
