@@ -1,3 +1,3 @@
 #include "winuser.rh"
 
-100 ICON "assets/icon.ico"
+100 ICON "assets/icon/icon.ico"

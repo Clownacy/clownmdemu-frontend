@@ -184,3 +184,20 @@ target_link_libraries(clownmdemu-frontend clown68000-disassembler)
 # Link clowncd
 add_subdirectory("libraries/clowncd" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clowncd)
+
+################
+# Installation #
+################
+
+install(TARGETS clownmdemu-frontend DESTINATION "bin")
+install(FILES "assets/clownmdemu-frontend.desktop" DESTINATION "share/applications")
+install(FILES "assets/icon/icon-512.png" DESTINATION "share/icons/hicolor/512x512/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-256.png" DESTINATION "share/icons/hicolor/256x256/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-128.png" DESTINATION "share/icons/hicolor/128x128/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-64.png" DESTINATION "share/icons/hicolor/64x64/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-48.png" DESTINATION "share/icons/hicolor/48x48/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-40.png" DESTINATION "share/icons/hicolor/40x40/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-32.png" DESTINATION "share/icons/hicolor/32x32/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-24.png" DESTINATION "share/icons/hicolor/24x24/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-20.png" DESTINATION "share/icons/hicolor/20x20/apps" RENAME "clownmdemu.png")
+install(FILES "assets/icon/icon-16.png" DESTINATION "share/icons/hicolor/16x16/apps" RENAME "clownmdemu.png")

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Icon=clownmdemu
+Exec=clownmdemu-frontend
+Terminal=false
+Type=Application
+Categories=Game;Emulator;
+Name=clownmdemu
+GenericName=Sega Mega Drive Emulator
+Comment=Sega Mega Drive Emulator
