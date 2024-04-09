@@ -74,7 +74,7 @@ add_executable(clownmdemu-frontend WIN32
 set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
 
 if(WIN32)
-	target_sources(clownmdemu-frontend PRIVATE "clownmdemu-frontend.rc")
+	target_sources(clownmdemu-frontend PRIVATE "assets/clownmdemu-frontend.rc")
 
 	# Enable Unicode support so that non-ANSI file paths work
 	target_compile_definitions(clownmdemu-frontend PRIVATE UNICODE)
