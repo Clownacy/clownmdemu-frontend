@@ -150,7 +150,7 @@ EmulatorInstance::EmulatorInstance(
 	Window &window,
 	const InputCallback &input_callback
 )
-	: audio_output()
+	: audio_output(debug_log)
 	, window(window)
 	, input_callback(input_callback)
 	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, PCMAudioCallback, CDDAAudioCallback, CDSeekCallback, CDSectorReadCallback, CDSeekTrackCallback, CDAudioReadCallback})

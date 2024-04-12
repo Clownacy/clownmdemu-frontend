@@ -11,6 +11,7 @@
 #include "clownmdemu-frontend-common/mixer.h"
 
 #include "audio-device.h"
+#include "debug-log.h"
 
 class AudioOutput
 {
@@ -32,7 +33,7 @@ private:
 	const Mixer mixer = {&mixer_constant, &mixer_state};
 
 public:
-	AudioOutput();
+	AudioOutput(DebugLog &debug_log);
 	~AudioOutput();
 	void MixerBegin();
 	void MixerEnd();

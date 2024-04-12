@@ -3,8 +3,9 @@
 #include <stdexcept>
 #include <string>
 
-AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames)
+AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames, DebugLog &debug_log)
 	: channels(channels)
+	, debug_log(debug_log)
 {
 	SDL_AudioSpec want, have;
 
@@ -21,27 +22,40 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 	device = SDL_OpenAudioDevice(nullptr, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE);
 
 	if (device == 0)
-		throw std::runtime_error(std::string("SDL_OpenAudioDevice failed with the following message - '") + SDL_GetError() + "'");
+	{
+		debug_log.Log("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		total_buffer_frames = static_cast<cc_u32f>(have.samples);
+		sample_rate = static_cast<cc_u32f>(have.freq);
 
-	total_buffer_frames = static_cast<cc_u32f>(have.samples);
-	sample_rate = static_cast<cc_u32f>(have.freq);
-
-	// Unpause audio device, so that playback can begin.
-	SDL_PauseAudioDevice(device, 0);
+		// Unpause audio device, so that playback can begin.
+		SDL_PauseAudioDevice(device, 0);
+	}
 }
 
 AudioDevice::~AudioDevice()
 {
+	if (device == 0)
+		return;
+
 	SDL_CloseAudioDevice(device);
 }
 
 void AudioDevice::QueueFrames(const cc_s16l *buffer, cc_u32f total_frames)
 {
+	if (device == 0)
+		return;
+
 	SDL_QueueAudio(device, buffer, total_frames * SIZE_OF_FRAME);
 }
 
 cc_u32f AudioDevice::GetTotalQueuedFrames()
 {
+	if (device == 0)
+		return 0;
+
 	return SDL_GetQueuedAudioSize(device) / SIZE_OF_FRAME;
 }
 
