@@ -20,9 +20,12 @@ C++11 and leverages the SDL2, Dear ImGui, FreeType, and inih libraries. On
 Unix platforms, there is also an optional dependency on the Zenity and kdialog
 projects.
 
+## Controls
+
 The default control scheme is as follows:
 
-Keyboard:
+### Keyboard
+
 - Up    = Up
 - Down  = Down
 - Left  = Left
@@ -32,7 +35,8 @@ Keyboard:
 - C     = C
 - Enter = Start
 
-Controller:
+### Controller
+
 - Up    = Up
 - Down  = Down
 - Left  = Left
@@ -49,7 +53,8 @@ Controller:
 - RT    = Fast-forward
 - RSB   = Toggle menu controls (see http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
-Hotkeys:
+### Hotkeys
+
 - Pause = Pause
 - Space = Fast-forward (unpaused), frame-advance (paused)
 - R     = Rewind
