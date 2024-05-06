@@ -528,7 +528,8 @@ void DebugVDP::DisplayVRAM(bool &open)
 
 							for (cc_u16f i = 0; i < 2; ++i)
 							{
-								const cc_u16l tile_row = VDP_ReadVRAMWord(&vdp, vram_index);
+								// TODO: Stop reading past the end of VRAM so that this bitmask is not necessary!
+								const cc_u16l tile_row = VDP_ReadVRAMWord(&vdp, vram_index & 0xFFFF);
 								vram_index += 2;
 
 								for (cc_u16f j = 0; j < 4; ++j)
