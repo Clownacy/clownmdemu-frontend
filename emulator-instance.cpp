@@ -244,6 +244,17 @@ void EmulatorInstance::SoftResetConsole()
 
 void EmulatorInstance::HardResetConsole()
 {
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+	state_rewind_remaining = 0;
+	state_rewind_index = 0;
+#endif
+	state = &state_rewind_buffer[0];
+	// A real console does not retain its RAM contents between games, as RAM
+	// is cleared when the console is powered-off.
+	// Failing to clear RAM causes issues with Sonic games and ROM-hacks,
+	// which skip initialisation when a certain magic number is found in RAM.
+	state_rewind_buffer = {};
+
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 	SoftResetConsole();
@@ -252,12 +263,6 @@ void EmulatorInstance::HardResetConsole()
 void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
 {
 	rom_buffer = std::move(file_buffer);
-
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	state_rewind_remaining = 0;
-	state_rewind_index = 0;
-#endif
-	state = &state_rewind_buffer[0];
 
 	HardResetConsole();
 }
