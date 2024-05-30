@@ -476,7 +476,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 		if (file == nullptr)
 			return false;
 
-		return callback(path, file);
+		return callback(path, std::move(file));
 	});
 #endif
 }

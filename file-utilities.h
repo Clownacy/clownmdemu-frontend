@@ -30,7 +30,7 @@ public:
 
 private:
 	using PopupCallback = std::function<bool(const std::filesystem::path &path)>;
-	using LoadFileCallback = std::function<bool(const std::filesystem::path &path, SDL::RWops &file)>;
+	using LoadFileCallback = std::function<bool(const std::filesystem::path &path, SDL::RWops &&file)>;
 	using SaveFileCallback = std::function<bool(const SaveFileInnerCallback &save_file)>;
 
 	int text_buffer_size;

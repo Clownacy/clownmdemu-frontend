@@ -1783,7 +1783,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::RWops &file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::RWops &&file)
 					{
 						if (!LoadCDFile(&path, std::move(file)))
 							return false;
@@ -1897,7 +1897,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, const SDL::RWops &file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, const SDL::RWops &&file)
 					{
 						LoadSaveState(file);
 						return true;
