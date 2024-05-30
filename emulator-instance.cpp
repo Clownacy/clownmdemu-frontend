@@ -272,9 +272,9 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer.clear();
 }
 
-bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const char* const filename)
+bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
 {
-	cd_file.Open(std::move(stream), filename);
+	cd_file.Open(std::move(stream), path);
 	if (!cd_file.SeekToSector(0))
 	{
 		cd_file.Close();

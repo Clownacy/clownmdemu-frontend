@@ -84,12 +84,12 @@ endif()
 # Required language versions #
 ##############################
 
-# Only require C90 and C++11
+# Only require C90 and C++20
 set_target_properties(clownmdemu-frontend PROPERTIES
 	C_STANDARD 90
 	C_STANDARD_REQUIRED NO
 	C_EXTENSIONS OFF
-	CXX_STANDARD 17
+	CXX_STANDARD 20
 	CXX_STANDARD_REQUIRED YES
 	CXX_EXTENSIONS OFF
 )

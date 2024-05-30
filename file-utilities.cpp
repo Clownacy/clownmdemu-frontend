@@ -398,14 +398,14 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 	}
 }
 
-bool FileUtilities::FileExists(const char* const filename)
+bool FileUtilities::FileExists(const std::filesystem::path &path)
 {
-	return SDL::RWops(SDL_RWFromFile(filename, "rb")) != nullptr;
+	return SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb")) != nullptr;
 }
 
-bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const char *filename)
+bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWops(SDL_RWFromFile(filename, "rb"));
+	SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
 
 	if (file == nullptr)
 	{
@@ -469,9 +469,9 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 		debug_log.Log("FileUtilities::LoadFile: Failed to allocate memory.");
 	}
 #else
-	CreateOpenFileDialog(window, title, [callback](const char* const path)
+	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
-		SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "rb"));
+		SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
 
 		if (file == nullptr)
 			return false;
@@ -493,11 +493,11 @@ void FileUtilities::SaveFile(const Window &window, const char* const title, cons
 		return true;
 	});
 #else
-	CreateSaveFileDialog(window, title, [callback](const char* const path)
+	CreateSaveFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "wb"));
+			const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "wb"));
 
 			if (file == nullptr)
 				return false;

@@ -14,6 +14,7 @@
 #endif
 
 #include <cstddef>
+#include <filesystem>
 #include <functional>
 #include <vector>
 
@@ -28,8 +29,8 @@ public:
 	using SaveFileInnerCallback = std::function<bool(const void *data, std::size_t data_size)>;
 
 private:
-	using PopupCallback = std::function<bool(const char *path)>;
-	using LoadFileCallback = std::function<bool(const char* const path, SDL::RWops &file)>;
+	using PopupCallback = std::function<bool(const std::filesystem::path &path)>;
+	using LoadFileCallback = std::function<bool(const std::filesystem::path &path, SDL::RWops &file)>;
 	using SaveFileCallback = std::function<bool(const SaveFileInnerCallback &save_file)>;
 
 	int text_buffer_size;
@@ -61,8 +62,8 @@ public:
 	void DisplayFileDialog(char *&drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
 
-	bool FileExists(const char *filename);
-	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const char *filename);
+	bool FileExists(const std::filesystem::path &path);
+	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path);
 	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::RWops &file);
 
 	void LoadFile(const Window &window, const char *title, const LoadFileCallback &callback);

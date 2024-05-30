@@ -1,8 +1,9 @@
 #ifndef CD_READER_H
 #define CD_READER_H
 
-#include <cstddef>
 #include <array>
+#include <cstddef>
+#include <filesystem>
 
 #include "libraries/clowncd/clowncd.h"
 
@@ -81,7 +82,7 @@ public:
 	using Sector = std::array<cc_u8l, SECTOR_SIZE>;
 
 	CDReader() = default;
-	void Open(SDL::RWops &&stream, const char* filename);
+	void Open(SDL::RWops &&stream, const std::filesystem::path &path);
 	void Close() { clowncd.Close(); }
 	bool IsOpen() const { return clowncd.IsOpen(); }
 	bool SeekToSector(SectorIndex sector_index);

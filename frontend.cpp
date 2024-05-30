@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <climits> // For INT_MAX.
 #include <cstddef>
+#include <filesystem>
 #include <forward_list>
 #include <functional>
 #include <iterator>
@@ -80,7 +81,7 @@ struct ControllerInput
 struct RecentSoftware
 {
 	bool is_cd_file;
-	std::string path;
+	std::filesystem::path path;
 };
 #endif
 
@@ -255,7 +256,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 }
 
 #ifdef FILE_PATH_SUPPORT
-static void AddToRecentSoftware(const char* const path, const bool is_cd_file, const bool add_to_end)
+static void AddToRecentSoftware(const std::filesystem::path &path, const bool is_cd_file, const bool add_to_end)
 {
 	// If the path already exists in the list, then move it to the start of the list.
 	for (auto recent_software = recent_software_list.begin(); recent_software != recent_software_list.end(); ++recent_software)
@@ -275,15 +276,9 @@ static void AddToRecentSoftware(const char* const path, const bool is_cd_file, c
 
 	// Add the file to the list of recent software.
 	if (add_to_end)
-	{
-		recent_software_list.emplace_back();
-		recent_software_list.back() = {is_cd_file, path};
-	}
+		recent_software_list.emplace_back(is_cd_file, path);
 	else
-	{
-		recent_software_list.emplace_front();
-		recent_software_list.front() = {is_cd_file, path};
-	}
+		recent_software_list.emplace_front(is_cd_file, path);
 }
 #endif
 
@@ -389,7 +384,7 @@ static void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
 	SetWindowTitleToSoftwareName();
 }
 
-static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
+static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* const path, const SDL::RWops &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -402,9 +397,7 @@ static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
-		AddToRecentSoftware(path, false, false);
-#else
-	static_cast<void>(path);
+		AddToRecentSoftware(*path, false, false);
 #endif
 
 	LoadCartridgeFile(std::move(file_buffer));
@@ -412,9 +405,9 @@ static bool LoadCartridgeFile(const char* const path, const SDL::RWops &file)
 	return true;
 }
 
-static bool LoadCartridgeFile(const char* const path)
+static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "rb"));
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
 
 	if (file == nullptr)
 	{
@@ -423,20 +416,20 @@ static bool LoadCartridgeFile(const char* const path)
 		return false;
 	}
 
-	return LoadCartridgeFile(path, file);
+	return LoadCartridgeFile(&path, file);
 }
 
-static bool LoadCDFile(const char* const path, SDL::RWops &&file)
+static bool LoadCDFile(const std::filesystem::path* const path, SDL::RWops &&file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
-		AddToRecentSoftware(path, true, false);
+		AddToRecentSoftware(*path, true, false);
 #else
 	static_cast<void>(path);
 #endif
 
 	// Load the CD.
-	if (!emulator->LoadCDFile(std::move(file), path))
+	if (!emulator->LoadCDFile(std::move(file), *path))
 		return false;
 
 	SetWindowTitleToSoftwareName();
@@ -445,9 +438,9 @@ static bool LoadCDFile(const char* const path, SDL::RWops &&file)
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool LoadCDFile(const char* const path)
+static bool LoadCDFile(const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWops(SDL_RWFromFile(path, "rb"));
+	SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
 
 	if (file == nullptr)
 	{
@@ -456,10 +449,10 @@ static bool LoadCDFile(const char* const path)
 		return false;
 	}
 
-	return LoadCDFile(path, std::move(file));
+	return LoadCDFile(&path, std::move(file));
 }
 
-static bool LoadSoftwareFile(const bool is_cd_file, const char* const path)
+static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path &path)
 {
 	if (is_cd_file)
 		return LoadCDFile(path);
@@ -497,11 +490,11 @@ static bool LoadSaveState(const SDL::RWops &file)
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool CreateSaveState(const char* const save_state_path)
+static bool CreateSaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(save_state_path, "wb"));
+	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "wb"));
 
 	if (file == nullptr || !emulator->WriteSaveStateFile(file))
 	{
@@ -549,12 +542,12 @@ static std::string GetDearImGuiSettingsFilePath()
 // Tooltip //
 /////////////
 
-static void DoToolTip(const char* const text)
+static void DoToolTip(const std::string &text)
 {
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
-		ImGui::TextUnformatted(text);
+		ImGui::TextUnformatted(&text.front(), &text.back());
 		ImGui::EndTooltip();
 	}
 }
@@ -967,7 +960,8 @@ static void SaveConfiguration()
 				PRINT_STRING(file.get(), "false\n");
 
 			PRINT_STRING(file.get(), "path = ");
-			SDL_RWwrite(file.get(), recent_software.path.c_str(), 1, recent_software.path.length());
+			const auto path_string = recent_software.path.string();
+			SDL_RWwrite(file.get(), path_string.data(), 1, path_string.length());
 			PRINT_STRING(file.get(), "\n");
 		}
 	#endif
@@ -1763,9 +1757,9 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const char* const path, const SDL::RWops &file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, const SDL::RWops &file)
 					{
-						const bool success = LoadCartridgeFile(path, file);
+						const bool success = LoadCartridgeFile(&path, file);
 
 						if (success)
 							emulator_paused = false;
@@ -1789,9 +1783,9 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const char* const path, SDL::RWops &file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::RWops &file)
 					{
-						if (!LoadCDFile(path, std::move(file)))
+						if (!LoadCDFile(&path, std::move(file)))
 							return false;
 
 						emulator_paused = false;
@@ -1833,26 +1827,19 @@ void Frontend::Update()
 
 					for (const auto &recent_software : recent_software_list)
 					{
-						// Display only the filename.
-						const auto slash_index = recent_software.path.find_last_of(
-					#ifdef _WIN32
-							"/\\");
-					#else
-							'/');
-					#endif
-
 						ImGui::PushID(&recent_software - &recent_software_list.front());
 
-						if (ImGui::MenuItem(&recent_software.path[slash_index == recent_software.path.npos ? 0 : slash_index + 1]))
+						// Display only the filename.
+						if (ImGui::MenuItem(recent_software.path.filename().string().c_str()))
 							selected_software = &recent_software;
 
 						ImGui::PopID();
 
 						// Show the full path as a tooltip.
-						DoToolTip(recent_software.path.c_str());
+						DoToolTip(recent_software.path.string());
 					}
 
-					if (selected_software != nullptr && LoadSoftwareFile(selected_software->is_cd_file, selected_software->path.c_str()))
+					if (selected_software != nullptr && LoadSoftwareFile(selected_software->is_cd_file, selected_software->path))
 						emulator_paused = false;
 				}
 			#endif
@@ -1910,7 +1897,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", [](const char* /*const path*/, SDL::RWops &file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, const SDL::RWops &file)
 					{
 						LoadSaveState(file);
 						return true;
