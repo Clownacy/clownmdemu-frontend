@@ -44,7 +44,7 @@ add_executable(clownmdemu-frontend WIN32
 	"frontend.cpp"
 	"frontend.h"
 	"sdl-wrapper.h"
-	"text-encoding.c"
+	"text-encoding.cpp"
 	"text-encoding.h"
 	"winapi.c"
 	"winapi.h"
@@ -89,8 +89,8 @@ set_target_properties(clownmdemu-frontend PROPERTIES
 	C_STANDARD 90
 	C_STANDARD_REQUIRED NO
 	C_EXTENSIONS OFF
-	CXX_STANDARD 11
-	CXX_STANDARD_REQUIRED NO
+	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED YES
 	CXX_EXTENSIONS OFF
 )
 
@@ -99,11 +99,6 @@ set_target_properties(clownmdemu-frontend PROPERTIES
 ####################
 
 if(EMSCRIPTEN)
-	# Emscripten needs C++17
-	set_target_properties(clownmdemu-frontend PROPERTIES
-		CXX_STANDARD 17
-	)
-
 	# Add the file dialog library
 	target_sources(clownmdemu-frontend PRIVATE "libraries/emscripten-browser-file/emscripten_browser_file.h")
 

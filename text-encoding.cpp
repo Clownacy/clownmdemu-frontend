@@ -1,8 +1,8 @@
 #include "text-encoding.h"
 
-#include <stddef.h>
+#include <array>
 
-static const cc_u16l shiftjis_to_unicode_lookup[0x3100] = {
+static const std::array<cc_u16l, 0x3100> shiftjis_to_unicode_lookup = {
 	0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F,
 	0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x001A, 0x001B, 0x001C, 0x001D, 0x001E, 0x001F,
 	0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
@@ -796,7 +796,7 @@ cc_u16l ShiftJISToUTF32(const unsigned char* const in_buffer, cc_u8f* const byte
 	switch (in_buffer[0] & 0xF0)
 	{
 		case 0x80:
-			lookup_index = 0x100;
+			lookup_index = 0x0100;
 			break;
 		case 0x90:
 			lookup_index = 0x1100;
@@ -806,52 +806,51 @@ cc_u16l ShiftJISToUTF32(const unsigned char* const in_buffer, cc_u8f* const byte
 			break;
 
 		default:
-			if (bytes_read != NULL)
+			if (bytes_read != nullptr)
 				*bytes_read = 1;
 
 			return shiftjis_to_unicode_lookup[in_buffer[0]];
 	}
 
-	lookup_index += ((in_buffer[0] << 8) | in_buffer[1]) & 0xFFF;
+	lookup_index += ((static_cast<cc_u16f>(in_buffer[0]) << 8) | in_buffer[1]) & 0xFFF;
 
-	if (bytes_read != NULL)
+	if (bytes_read != nullptr)
 		*bytes_read = 2;
 
 	return shiftjis_to_unicode_lookup[lookup_index];
 }
 
-cc_u8f UTF32ToUTF8(unsigned char* const out_buffer, const cc_u32f utf32_codepoint)
+std::optional<std::string> UTF32ToUTF8(const cc_u32f utf32_codepoint)
 {
+	std::string utf8;
+	utf8.reserve(4);
+
 	if (utf32_codepoint < 0x80)
 	{
-		out_buffer[0] = utf32_codepoint;
-		return 1;
+		utf8.push_back(static_cast<char>(utf32_codepoint));
 	}
 	else if (utf32_codepoint < 0x800)
 	{
-		out_buffer[0] = 0xC0 | utf32_codepoint >> 6;
-		out_buffer[1] = 0x80 | (utf32_codepoint >> 0 & 0x3F);
-		return 2;
+		utf8.push_back(static_cast<char>(0xC0 | utf32_codepoint >> 6));
+		utf8.push_back(static_cast<char>(0x80 | (utf32_codepoint >> 0 & 0x3F)));
 	}
 	else if (utf32_codepoint < 0x10000)
 	{
-		out_buffer[0] = 0xE0 | utf32_codepoint >> 12;
-		out_buffer[1] = 0x80 | (utf32_codepoint >> 6 & 0x3F);
-		out_buffer[2] = 0x80 | (utf32_codepoint >> 0 & 0x3F);
-		return 3;
+		utf8.push_back(static_cast<char>(0xE0 | utf32_codepoint >> 12));
+		utf8.push_back(static_cast<char>(0x80 | (utf32_codepoint >> 6 & 0x3F)));
+		utf8.push_back(static_cast<char>(0x80 | (utf32_codepoint >> 0 & 0x3F)));
 	}
 	else if (utf32_codepoint < 0x110000)
 	{
-		out_buffer[0] = 0xF0 | utf32_codepoint >> 18;
-		out_buffer[1] = 0x80 | (utf32_codepoint >> 12 & 0x3F);
-		out_buffer[2] = 0x80 | (utf32_codepoint >> 6 & 0x3F);
-		out_buffer[3] = 0x80 | (utf32_codepoint >> 0 & 0x3F);
-		return 4;
+		utf8.push_back(static_cast<char>(0xF0 | utf32_codepoint >> 18));
+		utf8.push_back(static_cast<char>(0x80 | (utf32_codepoint >> 12 & 0x3F)));
+		utf8.push_back(static_cast<char>(0x80 | (utf32_codepoint >> 6 & 0x3F)));
+		utf8.push_back(static_cast<char>(0x80 | (utf32_codepoint >> 0 & 0x3F)));
 	}
 	else
 	{
-		/* TODO: Report failure. */
-		out_buffer[0] = ' ';
-		return 1;
+		return std::nullopt;
 	}
+
+	return utf8;
 }

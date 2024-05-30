@@ -373,9 +373,10 @@ std::string EmulatorInstance::GetSoftwareName()
 			// Eliminate padding (the Sonic games tend to use padding to make the name look good in a hex editor).
 			if (codepoint != ' ' || previous_codepoint != ' ')
 			{
-				unsigned char utf8_buffer[4];
-				const auto total_bytes = UTF32ToUTF8(utf8_buffer, codepoint);
-				name_buffer.append(reinterpret_cast<char*>(utf8_buffer), total_bytes);
+				const auto utf8_codepoint = UTF32ToUTF8(codepoint);
+
+				if (utf8_codepoint.has_value())
+					name_buffer += *utf8_codepoint;
 			}
 
 			previous_codepoint = codepoint;
