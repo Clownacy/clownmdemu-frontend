@@ -25,22 +25,22 @@ static void* FileOpenCallback(const char* const filename, const ClownCD_FileMode
 
 static int FileCloseCallback(void* const stream)
 {
-	return SDL_RWclose((SDL_RWops*)stream);
+	return SDL_RWclose(static_cast<SDL_RWops*>(stream));
 }
 
 static size_t FileReadCallback(void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	return SDL_RWread((SDL_RWops*)stream, buffer, size, count);
+	return SDL_RWread(static_cast<SDL_RWops*>(stream), buffer, size, count);
 }
 
 static size_t FileWriteCallback(const void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	return SDL_RWwrite((SDL_RWops*)stream, buffer, size, count);
+	return SDL_RWwrite(static_cast<SDL_RWops*>(stream), buffer, size, count);
 }
 
 static long FileTellCallback(void* const stream)
 {
-	const auto position = SDL_RWtell((SDL_RWops*)stream);
+	const auto position = SDL_RWtell(static_cast<SDL_RWops*>(stream));
 
 	if (position < LONG_MIN || position > LONG_MAX)
 		return -1L;
@@ -70,7 +70,7 @@ static int FileSeekCallback(void* const stream, const long position, const Clown
 			return -1;
 	}
 
-	return SDL_RWseek((SDL_RWops*)stream, position, whence) == -1 ? -1 : 0;
+	return SDL_RWseek(static_cast<SDL_RWops*>(stream), position, whence) == -1 ? -1 : 0;
 }
 
 static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
