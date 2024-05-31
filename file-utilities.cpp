@@ -249,34 +249,16 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 
 		if (ImGui::BeginPopupModal(active_file_picker_popup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			if (text_buffer == nullptr)
-			{
-				text_buffer_size = 0x40;
-				text_buffer = static_cast<char*>(SDL_malloc(text_buffer_size));
-				text_buffer[0] = '\0';
-			}
-
 			const ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* const data)
 			{
 				FileUtilities* const file_utilities = static_cast<FileUtilities*>(data->UserData);
 
 				if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
 				{
-					if (data->BufSize > file_utilities->text_buffer_size)
+					if (static_cast<std::size_t>(data->BufSize) > file_utilities->text_buffer.size())
 					{
-						int new_text_buffer_size = (INT_MAX >> 1) + 1; // Largest power of 2.
-
-						// Find the first power of two that is larger than the requested buffer size.
-						while (data->BufSize < new_text_buffer_size >> 1)
-							new_text_buffer_size >>= 1;
-
-						char* const new_text_buffer = static_cast<char*>(SDL_realloc(file_utilities->text_buffer, new_text_buffer_size));
-
-						if (new_text_buffer != nullptr)
-						{
-							data->BufSize = file_utilities->text_buffer_size = new_text_buffer_size;
-							data->Buf = file_utilities->text_buffer = new_text_buffer;
-						}
+						file_utilities->text_buffer.resize(data->BufSize);
+						data->Buf = file_utilities->text_buffer.data();
 					}
 				}
 
@@ -294,16 +276,14 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 				ImGui::SetKeyboardFocusHere();
 
 			ImGui::TextUnformatted("Filename:");
-			const bool enter_pressed = ImGui::InputText("##filename", text_buffer, text_buffer_size, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback, this);
+			const bool enter_pressed = ImGui::InputText("##filename", text_buffer.data(), text_buffer.size(), ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback, this);
 
 			// Set the text box's contents to the dropped file's path.
 			if (drag_and_drop_filename != nullptr)
 			{
-				SDL_free(text_buffer);
 				text_buffer = drag_and_drop_filename;
+				SDL_free(drag_and_drop_filename);
 				drag_and_drop_filename = nullptr;
-
-				text_buffer_size = SDL_strlen(text_buffer) + 1;
 			}
 
 			const auto centre_buttons = [](const std::vector<const char*> &labels)
@@ -388,8 +368,8 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 			if (exit)
 			{
 				ImGui::CloseCurrentPopup();
-				SDL_free(text_buffer);
-				text_buffer = nullptr;
+				text_buffer.clear();
+				text_buffer.shrink_to_fit();
 				active_file_picker_popup = nullptr;
 			}
 

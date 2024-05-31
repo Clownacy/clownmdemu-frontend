@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "sdl-wrapper.h"
@@ -33,8 +34,7 @@ private:
 	using LoadFileCallback = std::function<bool(const std::filesystem::path &path, SDL::RWops &&file)>;
 	using SaveFileCallback = std::function<bool(const SaveFileInnerCallback &save_file)>;
 
-	int text_buffer_size;
-	char *text_buffer = nullptr;
+	std::string text_buffer;
 
 	DebugLog &debug_log;
 	const char *active_file_picker_popup = nullptr;
