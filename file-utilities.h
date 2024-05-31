@@ -59,7 +59,7 @@ public:
 #endif
 	void CreateOpenFileDialog(const Window &window, const char *title, const PopupCallback &callback);
 	void CreateSaveFileDialog(const Window &window, const char *title, const PopupCallback &callback);
-	void DisplayFileDialog(char *&drag_and_drop_filename);
+	void DisplayFileDialog(std::filesystem::path &drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup != nullptr; }
 
 	bool FileExists(const std::filesystem::path &path);

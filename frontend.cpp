@@ -127,7 +127,7 @@ static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCO
 #ifdef FILE_PATH_SUPPORT
 static std::list<RecentSoftware> recent_software_list;
 #endif
-static char *drag_and_drop_filename;
+static std::filesystem::path drag_and_drop_filename;
 
 static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
 static bool emulator_paused;
@@ -1624,6 +1624,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 		case SDL_DROPFILE:
 			drag_and_drop_filename = event.drop.file;
+			SDL_free(event.drop.file);
 			break;
 
 		default:
@@ -1663,7 +1664,7 @@ void Frontend::Update()
 	ImGui::NewFrame();
 
 	// Handle drag-and-drop event.
-	if (!file_utilities.IsDialogOpen() && drag_and_drop_filename != nullptr)
+	if (!file_utilities.IsDialogOpen() && !drag_and_drop_filename.empty())
 	{
 		std::vector<unsigned char> file_buffer;
 
@@ -1685,8 +1686,7 @@ void Frontend::Update()
 			}
 		}
 
-		SDL_free(drag_and_drop_filename);
-		drag_and_drop_filename = nullptr;
+		drag_and_drop_filename.clear();
 	}
 
 #ifndef NDEBUG

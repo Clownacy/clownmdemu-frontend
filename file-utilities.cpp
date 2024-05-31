@@ -238,7 +238,7 @@ void FileUtilities::CreateSaveFileDialog(const Window &window, const char* const
 	CreateFileDialog(window, title, callback, true);
 }
 
-void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
+void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filename)
 {
 	if (active_file_picker_popup != nullptr)
 	{
@@ -270,20 +270,19 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 			   If a file is dropped onto the dialog, focus on the
 			   'open' button instead or else the text box won't show
 			   the dropped file's path. */
-			if (drag_and_drop_filename != nullptr)
+			if (!drag_and_drop_filename.empty())
 				ImGui::SetKeyboardFocusHere(1);
 			else if (ImGui::IsWindowAppearing())
 				ImGui::SetKeyboardFocusHere();
 
 			ImGui::TextUnformatted("Filename:");
-			const bool enter_pressed = ImGui::InputText("##filename", text_buffer.data(), text_buffer.size(), ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback, this);
+			const bool enter_pressed = ImGui::InputText("##filename", text_buffer.data(), text_buffer.capacity() + 1, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback, this);
 
 			// Set the text box's contents to the dropped file's path.
-			if (drag_and_drop_filename != nullptr)
+			if (!drag_and_drop_filename.empty())
 			{
-				text_buffer = drag_and_drop_filename;
-				SDL_free(drag_and_drop_filename);
-				drag_and_drop_filename = nullptr;
+				text_buffer = drag_and_drop_filename.string();
+				drag_and_drop_filename.clear();
 			}
 
 			const auto centre_buttons = [](const std::vector<const char*> &labels)
