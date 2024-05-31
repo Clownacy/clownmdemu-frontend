@@ -305,7 +305,7 @@ static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Meg
 
 bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer)
 {
-	return file_buffer.size() == sizeof(save_state_magic) + sizeof(State) && SDL_memcmp(file_buffer.data(), &save_state_magic, sizeof(save_state_magic)) == 0;
+	return file_buffer.size() == save_state_magic.size() + sizeof(*state) && std::equal(save_state_magic.cbegin(), save_state_magic.cend(), file_buffer.cbegin());
 }
 
 bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_buffer)
@@ -314,7 +314,7 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 	if (ValidateSaveStateFile(file_buffer))
 	{
-		LoadState(&file_buffer[sizeof(save_state_magic)]);
+		LoadState(&file_buffer[save_state_magic.size()]);
 
 		success = true;
 	}
@@ -324,14 +324,14 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 std::size_t EmulatorInstance::GetSaveStateFileSize()
 {
-	return sizeof(save_state_magic) + sizeof(*state);
+	return save_state_magic.size() + sizeof(*state);
 }
 
 bool EmulatorInstance::WriteSaveStateFile(const SDL::RWops &file)
 {
 	bool success = false;
 
-	if (SDL_RWwrite(file.get(), &save_state_magic, sizeof(save_state_magic), 1) != 1 || SDL_RWwrite(file.get(), state, sizeof(*state), 1) == 1)
+	if (SDL_RWwrite(file.get(), &save_state_magic, sizeof(save_state_magic), 1) == 1 && SDL_RWwrite(file.get(), state, sizeof(*state), 1) == 1)
 		success = true;
 
 	return success;
