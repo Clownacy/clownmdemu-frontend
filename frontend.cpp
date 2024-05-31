@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <charconv>
 #include <climits> // For INT_MAX.
 #include <cstddef>
 #include <filesystem>
@@ -11,6 +12,7 @@
 #include <iterator>
 #include <list>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "SDL.h"
@@ -586,49 +588,53 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 	return buffer;
 }
 
-static int INIParseCallback(void* const /*user*/, const char* const section, const char* const name, const char* const value)
+static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* const section_cstr, const char* const name_cstr, const char* const value_cstr)
 {
-	if (SDL_strcmp(section, "Miscellaneous") == 0)
-	{
-		const bool state = SDL_strcmp(value, "on") == 0;
+	const std::string_view section(section_cstr);
+	const std::string_view name(name_cstr);
+	const std::string_view value(value_cstr);
 
-		if (SDL_strcmp(name, "vsync") == 0)
+	if (section == "Miscellaneous")
+	{
+		const bool state = value == "on";
+
+		if (name == "vsync")
 			use_vsync = state;
-		else if (SDL_strcmp(name, "integer-screen-scaling") == 0)
+		else if (name == "integer-screen-scaling")
 			integer_screen_scaling = state;
-		else if (SDL_strcmp(name, "tall-interlace-mode-2") == 0)
+		else if (name == "tall-interlace-mode-2")
 			tall_double_resolution_mode = state;
-		else if (SDL_strcmp(name, "low-pass-filter") == 0)
+		else if (name == "low-pass-filter")
 			emulator->SetLowPassFilter(state);
-		else if (SDL_strcmp(name, "pal") == 0)
+		else if (name == "pal")
 			SetAudioPALMode(state);
-		else if (SDL_strcmp(name, "japanese") == 0)
+		else if (name == "japanese")
 			emulator->SetDomestic(state);
 	#ifdef FILE_PICKER_POSIX
-		else if (SDL_strcmp(name, "last-directory") == 0)
+		else if (name == "last-directory")
 			file_utilities.last_file_dialog_directory = SDL_strdup(value);
-		else if (SDL_strcmp(name, "prefer-kdialog") == 0)
+		else if (name == "prefer-kdialog")
 			file_utilities.prefer_kdialog = state;
 	#endif
 	}
-	else if (SDL_strcmp(section, "Keyboard Bindings") == 0)
+	else if (section == "Keyboard Bindings")
 	{
-		char *string_end;
+		unsigned long scancode_integer;
+		const auto scancode_integer_result = std::from_chars(&name.front(), &name.back(), scancode_integer, 0);
 
-		errno = 0;
-		const SDL_Scancode scancode = static_cast<SDL_Scancode>(SDL_strtoul(name, &string_end, 0));
-
-		if (errno != ERANGE && string_end >= SDL_strchr(name, '\0') && scancode < SDL_NUM_SCANCODES)
+		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == &name.back() && scancode_integer < SDL_NUM_SCANCODES)
 		{
-			errno = 0;
-			const unsigned long binding_index = SDL_strtoul(value, &string_end, 0);
+			const SDL_Scancode scancode = static_cast<SDL_Scancode>(scancode_integer);
 
-			InputBinding input_binding;
+			unsigned long binding_index;
+			const auto binding_index_result = std::from_chars(&value.front(), &value.back(), binding_index, 0);
 
-			if (errno != ERANGE && string_end >= SDL_strchr(value, '\0'))
+			InputBinding input_binding = INPUT_BINDING_NONE;
+
+			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == &value.back())
 			{
 				// Legacy numerical input bindings.
-				static const std::array<InputBinding, 17> input_bindings = {
+				static const std::array input_bindings = {
 					INPUT_BINDING_NONE,
 					INPUT_BINDING_CONTROLLER_UP,
 					INPUT_BINDING_CONTROLLER_DOWN,
@@ -652,54 +658,53 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 					INPUT_BINDING_TOGGLE_CONTROL_PAD
 				};
 
-				input_binding = binding_index >= input_bindings.size() ? INPUT_BINDING_NONE : input_bindings[binding_index];
+				if (binding_index < input_bindings.size())
+					input_binding = input_bindings[binding_index];
 			}
 			else
 			{
-				if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_UP") == 0)
+				if (value == "INPUT_BINDING_CONTROLLER_UP")
 					input_binding = INPUT_BINDING_CONTROLLER_UP;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_DOWN") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_DOWN")
 					input_binding = INPUT_BINDING_CONTROLLER_DOWN;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_LEFT") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_LEFT")
 					input_binding = INPUT_BINDING_CONTROLLER_LEFT;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_RIGHT") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_RIGHT")
 					input_binding = INPUT_BINDING_CONTROLLER_RIGHT;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_A") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_A")
 					input_binding = INPUT_BINDING_CONTROLLER_A;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_B") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_B")
 					input_binding = INPUT_BINDING_CONTROLLER_B;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_C") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_C")
 					input_binding = INPUT_BINDING_CONTROLLER_C;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_X") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_X")
 					input_binding = INPUT_BINDING_CONTROLLER_X;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_Y") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_Y")
 					input_binding = INPUT_BINDING_CONTROLLER_Y;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_Z") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_Z")
 					input_binding = INPUT_BINDING_CONTROLLER_Z;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_START") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_START")
 					input_binding = INPUT_BINDING_CONTROLLER_START;
-				else if (SDL_strcmp(value, "INPUT_BINDING_CONTROLLER_MODE") == 0)
+				else if (value == "INPUT_BINDING_CONTROLLER_MODE")
 					input_binding = INPUT_BINDING_CONTROLLER_MODE;
-				else if (SDL_strcmp(value, "INPUT_BINDING_PAUSE") == 0)
+				else if (value == "INPUT_BINDING_PAUSE")
 					input_binding = INPUT_BINDING_PAUSE;
-				else if (SDL_strcmp(value, "INPUT_BINDING_RESET") == 0)
+				else if (value == "INPUT_BINDING_RESET")
 					input_binding = INPUT_BINDING_RESET;
-				else if (SDL_strcmp(value, "INPUT_BINDING_FAST_FORWARD") == 0)
+				else if (value == "INPUT_BINDING_FAST_FORWARD")
 					input_binding = INPUT_BINDING_FAST_FORWARD;
 			#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-				else if (SDL_strcmp(value, "INPUT_BINDING_REWIND") == 0)
+				else if (value == "INPUT_BINDING_REWIND")
 					input_binding = INPUT_BINDING_REWIND;
 			#endif
-				else if (SDL_strcmp(value, "INPUT_BINDING_QUICK_SAVE_STATE") == 0)
+				else if (value == "INPUT_BINDING_QUICK_SAVE_STATE")
 					input_binding = INPUT_BINDING_QUICK_SAVE_STATE;
-				else if (SDL_strcmp(value, "INPUT_BINDING_QUICK_LOAD_STATE") == 0)
+				else if (value == "INPUT_BINDING_QUICK_LOAD_STATE")
 					input_binding = INPUT_BINDING_QUICK_LOAD_STATE;
-				else if (SDL_strcmp(value, "INPUT_BINDING_TOGGLE_FULLSCREEN") == 0)
+				else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
 					input_binding = INPUT_BINDING_TOGGLE_FULLSCREEN;
-				else if (SDL_strcmp(value, "INPUT_BINDING_TOGGLE_CONTROL_PAD") == 0)
+				else if (value == "INPUT_BINDING_TOGGLE_CONTROL_PAD")
 					input_binding = INPUT_BINDING_TOGGLE_CONTROL_PAD;
-				else
-					input_binding = INPUT_BINDING_NONE;
 			}
 
 			keyboard_bindings[scancode] = input_binding;
@@ -707,17 +712,17 @@ static int INIParseCallback(void* const /*user*/, const char* const section, con
 
 	}
 #ifdef FILE_PATH_SUPPORT
-	else if (SDL_strcmp(section, "Recent Software") == 0)
+	else if (section == "Recent Software")
 	{
 		static bool is_cd_file = false;
 
-		if (SDL_strcmp(name, "cd") == 0)
+		if (name == "cd")
 		{
-			is_cd_file = SDL_strcmp(value, "true") == 0;
+			is_cd_file = value == "true";
 		}
-		else if (SDL_strcmp(name, "path") == 0)
+		else if (name == "path")
 		{
-			if (value[0] != '\0')
+			if (!value.empty())
 				AddToRecentSoftware(value, is_cd_file, true);
 		}
 	}
