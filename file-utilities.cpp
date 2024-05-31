@@ -400,12 +400,12 @@ void FileUtilities::DisplayFileDialog(char *&drag_and_drop_filename)
 
 bool FileUtilities::FileExists(const std::filesystem::path &path)
 {
-	return SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb")) != nullptr;
+	return SDL::RWFromFile(path, "rb") != nullptr;
 }
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
+	SDL::RWops file = SDL::RWFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -471,7 +471,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 #else
 	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
-		SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
+		SDL::RWops file = SDL::RWFromFile(path, "rb");
 
 		if (file == nullptr)
 			return false;
@@ -497,7 +497,7 @@ void FileUtilities::SaveFile(const Window &window, const char* const title, cons
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "wb"));
+			const SDL::RWops file = SDL::RWFromFile(path, "wb");
 
 			if (file == nullptr)
 				return false;

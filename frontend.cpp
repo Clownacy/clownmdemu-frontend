@@ -409,7 +409,7 @@ static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* cons
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
+	const SDL::RWops file = SDL::RWFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -442,7 +442,7 @@ static bool LoadCDFile(const std::filesystem::path* const path, SDL::RWops &&fil
 #ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "rb"));
+	SDL::RWops file = SDL::RWFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -496,7 +496,7 @@ static bool CreateSaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(path.string().c_str(), "wb"));
+	const SDL::RWops file = SDL::RWFromFile(path, "wb");
 
 	if (file == nullptr || !emulator->WriteSaveStateFile(file))
 	{
@@ -762,7 +762,7 @@ static void LoadConfiguration()
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
 
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(GetConfigurationFilePath().c_str(), "r"));
+	const SDL::RWops file = SDL::RWFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
 	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::RWops*>(&file), INIParseCallback, nullptr) != 0)
@@ -802,7 +802,7 @@ static void LoadConfiguration()
 static void SaveConfiguration()
 {
 	// Save configuration file:
-	const SDL::RWops file = SDL::RWops(SDL_RWFromFile(GetConfigurationFilePath().c_str(), "w"));
+	const SDL::RWops file = SDL::RWFromFile(GetConfigurationFilePath(), "w");
 
 	if (file == nullptr)
 	{
