@@ -35,7 +35,7 @@
 #endif
 #endif
 
-void FileUtilities::CreateFileDialog(const Window &window, const char* const title, const PopupCallback &callback, const bool save)
+void FileUtilities::CreateFileDialog(const Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {
 #ifndef _WIN32
 	static_cast<void>(window); // Unused
@@ -46,7 +46,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 #ifdef _WIN32
 	if (use_native_file_dialogs)
 	{
-		const auto title_utf16 = UTF8ToString(title);
+		const auto title_utf16 = UTF8ToString(title.c_str());
 
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
@@ -201,26 +201,26 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", is_save_dialog ? "Could not save file." : "Could not open file.", nullptr);
 }
 
-void FileUtilities::CreateOpenFileDialog(const Window &window, const char* const title, const PopupCallback &callback)
+void FileUtilities::CreateOpenFileDialog(const Window &window, const std::string &title, const PopupCallback &callback)
 {
 	CreateFileDialog(window, title, callback, false);
 }
 
-void FileUtilities::CreateSaveFileDialog(const Window &window, const char* const title, const PopupCallback &callback)
+void FileUtilities::CreateSaveFileDialog(const Window &window, const std::string &title, const PopupCallback &callback)
 {
 	CreateFileDialog(window, title, callback, true);
 }
 
 void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filename)
 {
-	if (active_file_picker_popup != nullptr)
+	if (active_file_picker_popup.has_value())
 	{
-		if (!ImGui::IsPopupOpen(active_file_picker_popup))
-			ImGui::OpenPopup(active_file_picker_popup);
+		if (!ImGui::IsPopupOpen(active_file_picker_popup->c_str()))
+			ImGui::OpenPopup(active_file_picker_popup->c_str());
 
 		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-		if (ImGui::BeginPopupModal(active_file_picker_popup, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(active_file_picker_popup->c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			const ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* const data)
 			{
@@ -342,7 +342,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 				ImGui::CloseCurrentPopup();
 				text_buffer.clear();
 				text_buffer.shrink_to_fit();
-				active_file_picker_popup = nullptr;
+				active_file_picker_popup.reset();
 			}
 
 			ImGui::EndPopup();
@@ -395,7 +395,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 	return false;
 }
 
-void FileUtilities::LoadFile(const Window &window, const char* const title, const LoadFileCallback &callback)
+void FileUtilities::LoadFile(const Window &window, const std::string &title, const LoadFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(window);
@@ -433,7 +433,7 @@ void FileUtilities::LoadFile(const Window &window, const char* const title, cons
 #endif
 }
 
-void FileUtilities::SaveFile(const Window &window, const char* const title, const SaveFileCallback &callback)
+void FileUtilities::SaveFile(const Window &window, const std::string &title, const SaveFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
 	static_cast<void>(window);
