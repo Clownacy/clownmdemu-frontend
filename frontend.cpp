@@ -515,28 +515,28 @@ static void SetAudioPALMode(const bool enabled)
 	emulator->SetPALMode(enabled);
 }
 
-static std::string PrefixConfigPath(const std::string filename)
+static std::filesystem::path ConfigPath()
 {
-	char* const path = SDL_GetPrefPath("clownacy", "clownmdemu-frontend");
+	char* const path_cstr = SDL_GetPrefPath("clownacy", "clownmdemu-frontend");
 
-	if (path == nullptr)
-		return filename;
+	if (path_cstr == nullptr)
+		return {};
 
-	std::string prefixed_path(path);
+	const std::filesystem::path path(path_cstr);
 
-	SDL_free(path);
+	SDL_free(path_cstr);
 
-	return prefixed_path + filename;
+	return path;
 }
 
-static std::string GetConfigurationFilePath()
+static std::filesystem::path GetConfigurationFilePath()
 {
-	return PrefixConfigPath("configuration.ini");
+	return ConfigPath()/"configuration.ini";
 }
 
-static std::string GetDearImGuiSettingsFilePath()
+static std::filesystem::path GetDearImGuiSettingsFilePath()
 {
-	return PrefixConfigPath("dear-imgui-settings.ini");
+	return ConfigPath()/"dear-imgui-settings.ini";
 }
 
 
@@ -1035,7 +1035,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 		io.IniFilename = nullptr; // Disable automatic loading/saving so we can do it ourselves.
 
-		ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().c_str());
+		ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
@@ -1129,7 +1129,7 @@ void Frontend::Deinitialise()
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-	ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().c_str());
+	ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 	ImGui_ImplSDLRenderer2_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
