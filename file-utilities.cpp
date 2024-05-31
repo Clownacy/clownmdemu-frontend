@@ -112,105 +112,98 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		{
 			if (!done)
 			{
-				char *command;
-
 				// Construct the command to invoke Zenity/kdialog.
-				const int bytes_printed = (i == 0) != prefer_kdialog ?
-					SDL_asprintf(&command, "zenity --file-selection %s --title=\"%s\" --filename=\"%s\"",
+				const std::string command = (i == 0) != prefer_kdialog ?
+					std::format("zenity --file-selection {} --title=\"{}\" --filename=\"{}\"",
 						save ? "--save" : "",
 						title,
 						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
 					:
-					SDL_asprintf(&command, "kdialog --get%sfilename --title \"%s\" \"%s\"",
+					std::format("kdialog --get{}filename --title \"{}\" \"{}\"",
 						save ? "save" : "open",
 						title,
 						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
 					;
 
-				if (bytes_printed >= 0)
+				// Invoke Zenity/kdialog.
+				FILE *path_stream = popen(command.c_str(), "r");
+
+				if (path_stream != nullptr)
 				{
-					// Invoke Zenity/kdialog.
-					FILE *path_stream = popen(command, "r");
+				#define GROW_SIZE 0x100
+					// Read the whole path returned by Zenity/kdialog.
+					// This is very complicated due to handling arbitrarily long paths.
+					char *path_buffer = static_cast<char*>(SDL_malloc(GROW_SIZE + 1)); // '+1' for the null character.
 
-					SDL_free(command);
-
-					if (path_stream != nullptr)
+					if (path_buffer != nullptr)
 					{
-					#define GROW_SIZE 0x100
-						// Read the whole path returned by Zenity/kdialog.
-						// This is very complicated due to handling arbitrarily long paths.
-						char *path_buffer = static_cast<char*>(SDL_malloc(GROW_SIZE + 1)); // '+1' for the null character.
+						std::size_t path_buffer_length = 0;
+
+						for (;;)
+						{
+							const std::size_t path_length = std::fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
+							path_buffer_length += path_length;
+
+							if (path_length != GROW_SIZE)
+								break;
+
+							char* const new_path_buffer = static_cast<char*>(SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1));
+
+							if (new_path_buffer == nullptr)
+							{
+								SDL_free(path_buffer);
+								path_buffer = nullptr;
+								break;
+							}
+
+							path_buffer = new_path_buffer;
+						}
+					#undef GROW_SIZE
 
 						if (path_buffer != nullptr)
 						{
-							std::size_t path_buffer_length = 0;
+							// Handle Zenity's/kdialog's return value.
+							const int exit_status = pclose(path_stream);
+							path_stream = nullptr;
 
-							for (;;)
+							if (exit_status != -1 && WIFEXITED(exit_status))
 							{
-								const std::size_t path_length = std::fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
-								path_buffer_length += path_length;
-
-								if (path_length != GROW_SIZE)
-									break;
-
-								char* const new_path_buffer = static_cast<char*>(SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1));
-
-								if (new_path_buffer == nullptr)
+								switch (WEXITSTATUS(exit_status))
 								{
-									SDL_free(path_buffer);
-									path_buffer = nullptr;
-									break;
-								}
-
-								path_buffer = new_path_buffer;
-							}
-						#undef GROW_SIZE
-
-							if (path_buffer != nullptr)
-							{
-								// Handle Zenity's/kdialog's return value.
-								const int exit_status = pclose(path_stream);
-								path_stream = nullptr;
-
-								if (exit_status != -1 && WIFEXITED(exit_status))
-								{
-									switch (WEXITSTATUS(exit_status))
+									case 0: // Success.
 									{
-										case 0: // Success.
-										{
-											done = true;
+										done = true;
 
-											path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
-											if (!callback(path_buffer))
-												success = false;
+										path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
+										if (!callback(path_buffer))
+											success = false;
 
-											char* const directory_separator = SDL_strrchr(path_buffer, '/');
+										char* const directory_separator = SDL_strrchr(path_buffer, '/');
 
-											if (directory_separator == nullptr)
-												path_buffer[0] = '\0';
-											else
-												directory_separator[1] = '\0';
+										if (directory_separator == nullptr)
+											path_buffer[0] = '\0';
+										else
+											directory_separator[1] = '\0';
 
-											SDL_free(last_file_dialog_directory);
-											last_file_dialog_directory = path_buffer;
-											path_buffer = nullptr;
+										SDL_free(last_file_dialog_directory);
+										last_file_dialog_directory = path_buffer;
+										path_buffer = nullptr;
 
-											break;
-										}
-
-										case 1: // No file selected.
-											done = true;
-											break;
+										break;
 									}
+
+									case 1: // No file selected.
+										done = true;
+										break;
 								}
 							}
-
-							SDL_free(path_buffer);
 						}
 
-						if (path_stream != nullptr)
-							pclose(path_stream);
+						SDL_free(path_buffer);
 					}
+
+					if (path_stream != nullptr)
+						pclose(path_stream);
 				}
 			}
 		}

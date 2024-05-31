@@ -7,6 +7,7 @@
 #include <climits> // For INT_MAX.
 #include <cstddef>
 #include <filesystem>
+#include <format>
 #include <forward_list>
 #include <functional>
 #include <iterator>
@@ -944,12 +945,8 @@ static void SaveConfiguration()
 						break;
 				}
 
-				char *buffer;
-				if (SDL_asprintf(&buffer, "%u = %s\n", static_cast<unsigned int>(i), binding_string) != -1)
-				{
-					SDL_RWwrite(file.get(), buffer, SDL_strlen(buffer), 1);
-					SDL_free(buffer);
-				}
+				const std::string buffer = std::format("{} = {}\n", i, binding_string);
+				SDL_RWwrite(file.get(), buffer.data(), buffer.size(), 1);
 			}
 		}
 
