@@ -11,6 +11,7 @@
 #include <functional>
 #include <iterator>
 #include <list>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -150,16 +151,16 @@ static Frontend::FrameRateCallback frame_rate_callback;
 static DebugLog debug_log(dpi_scale, monospace_font);
 static FileUtilities file_utilities(debug_log);
 
-static Window *window;
-static EmulatorInstance *emulator;
-static DebugFM *debug_fm;
-static DebugFrontend *debug_frontend;
-static DebugM68k *debug_m68k;
-static DebugMemory *debug_memory;
-static DebugPCM *debug_pcm;
-static DebugPSG *debug_psg;
-static DebugVDP *debug_vdp;
-static DebugZ80 *debug_z80;
+static std::optional<Window> window;
+static std::optional<EmulatorInstance> emulator;
+static std::optional<DebugFM> debug_fm;
+static std::optional<DebugFrontend> debug_frontend;
+static std::optional<DebugM68k> debug_m68k;
+static std::optional<DebugMemory> debug_memory;
+static std::optional<DebugPCM> debug_pcm;
+static std::optional<DebugPSG> debug_psg;
+static std::optional<DebugVDP> debug_vdp;
+static std::optional<DebugZ80> debug_z80;
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -1012,16 +1013,16 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	}
 	else
 	{
-		window = new Window(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-		emulator = new EmulatorInstance(debug_log, *window, ReadInputCallback);
-		debug_fm = new DebugFM(*emulator, monospace_font);
-		debug_frontend = new DebugFrontend(*emulator, *window, GetUpscaledFramebufferSize);
-		debug_m68k = new DebugM68k(monospace_font);
-		debug_memory = new DebugMemory(monospace_font);
-		debug_pcm = new DebugPCM(*emulator, monospace_font);
-		debug_psg = new DebugPSG(*emulator, monospace_font);
-		debug_vdp = new DebugVDP(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, *window);
-		debug_z80 = new DebugZ80(*emulator, monospace_font);
+		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+		emulator.emplace(debug_log, *window, ReadInputCallback);
+		debug_fm.emplace(*emulator, monospace_font);
+		debug_frontend.emplace(*emulator, *window, GetUpscaledFramebufferSize);
+		debug_m68k.emplace(monospace_font);
+		debug_memory.emplace(monospace_font);
+		debug_pcm.emplace(*emulator, monospace_font);
+		debug_psg.emplace(*emulator, monospace_font);
+		debug_vdp.emplace(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, *window);
+		debug_z80.emplace(*emulator, monospace_font);
 
 		dpi_scale = window->GetDPIScale();
 
@@ -1143,16 +1144,17 @@ void Frontend::Deinitialise()
 	recent_software_list.clear();
 #endif
 
-	delete debug_z80;
-	delete debug_vdp;
-	delete debug_psg;
-	delete debug_pcm;
-	delete debug_memory;
-	delete debug_m68k;
-	delete debug_frontend;
-	delete debug_fm;
-	delete emulator;
-	delete window;
+	// TODO: Once the frontend is a class, this won't be necessary.
+	debug_z80.reset();
+	debug_vdp.reset();
+	debug_psg.reset();
+	debug_pcm.reset();
+	debug_memory.reset();
+	debug_m68k.reset();
+	debug_frontend.reset();
+	debug_fm.reset();
+	emulator.reset();
+	window.reset();
 
 	SDL_Quit();
 }
