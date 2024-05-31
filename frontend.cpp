@@ -620,19 +620,19 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 	}
 	else if (section == "Keyboard Bindings")
 	{
-		unsigned long scancode_integer;
-		const auto scancode_integer_result = std::from_chars(&name.front(), &name.back(), scancode_integer, 0);
+		unsigned int scancode_integer;
+		const auto scancode_integer_result = std::from_chars(&name.front(), &name.back() + 1, scancode_integer, 10);
 
-		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == &name.back() && scancode_integer < SDL_NUM_SCANCODES)
+		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == &name.back() + 1 && scancode_integer < SDL_NUM_SCANCODES)
 		{
 			const SDL_Scancode scancode = static_cast<SDL_Scancode>(scancode_integer);
 
-			unsigned long binding_index;
-			const auto binding_index_result = std::from_chars(&value.front(), &value.back(), binding_index, 0);
+			unsigned int binding_index;
+			const auto binding_index_result = std::from_chars(&value.front(), &value.back() + 1, binding_index, 10);
 
 			InputBinding input_binding = INPUT_BINDING_NONE;
 
-			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == &value.back())
+			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == &value.back() + 1)
 			{
 				// Legacy numerical input bindings.
 				static const std::array input_bindings = {
