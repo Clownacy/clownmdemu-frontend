@@ -519,14 +519,12 @@ static void SetAudioPALMode(const bool enabled)
 
 static std::filesystem::path ConfigPath()
 {
-	char* const path_cstr = SDL_GetPrefPath("clownacy", "clownmdemu-frontend");
+	const auto path_cstr = SDL::Pointer<char>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend"));
 
 	if (path_cstr == nullptr)
 		return {};
 
-	const std::filesystem::path path(path_cstr);
-
-	SDL_free(path_cstr);
+	const std::filesystem::path path(path_cstr.get());
 
 	return path;
 }

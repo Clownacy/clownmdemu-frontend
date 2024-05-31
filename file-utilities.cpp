@@ -21,16 +21,11 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
 #ifdef _WIN32
-struct SDLFreeFunctor
-{
-	void operator()(void* const pointer) { return SDL_free(pointer); }
-};
-
 // Adapted from SDL2.
-#define StringToUTF8W(S) std::unique_ptr<char, SDLFreeFunctor>(SDL_iconv_string("UTF-8", "UTF-16LE", reinterpret_cast<const char*>(S), (SDL_wcslen(S) + 1) * sizeof(WCHAR)))
-#define UTF8ToStringW(S) std::unique_ptr<WCHAR, SDLFreeFunctor>(reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)))
-#define StringToUTF8A(S) std::unique_ptr<char, SDLFreeFunctor>(SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1)))
-#define UTF8ToStringA(S) std::unique_ptr<char, SDLFreeFunctor>(SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
+#define StringToUTF8W(S) SDL::Pointer<char>(SDL_iconv_string("UTF-8", "UTF-16LE", reinterpret_cast<const char*>(S), (SDL_wcslen(S) + 1) * sizeof(WCHAR)))
+#define UTF8ToStringW(S) SDL::Pointer<WCHAR>(reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)))
+#define StringToUTF8A(S) SDL::Pointer<char>(SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1)))
+#define UTF8ToStringA(S) SDL::Pointer<char>(SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
 #ifdef UNICODE
 #define StringToUTF8 StringToUTF8W
 #define UTF8ToString UTF8ToStringW

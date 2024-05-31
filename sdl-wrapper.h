@@ -17,6 +17,14 @@ using NAME = std::unique_ptr<TYPE, NAME##Deleter>
 
 namespace SDL {
 
+struct FreeFunctor
+{
+	void operator()(void* const pointer) { return SDL_free(pointer); }
+};
+
+template<typename T>
+using Pointer = std::unique_ptr<T, FreeFunctor>;
+
 SDL_WRAPPER_MAKE_RAII_POINTER(Window,   SDL_Window,   SDL_DestroyWindow  );
 SDL_WRAPPER_MAKE_RAII_POINTER(Renderer, SDL_Renderer, SDL_DestroyRenderer);
 SDL_WRAPPER_MAKE_RAII_POINTER(Texture,  SDL_Texture,  SDL_DestroyTexture );
