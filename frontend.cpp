@@ -614,7 +614,7 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			emulator->SetDomestic(state);
 	#ifdef FILE_PICKER_POSIX
 		else if (name == "last-directory")
-			file_utilities.last_file_dialog_directory = SDL_strdup(value);
+			file_utilities.last_file_dialog_directory = value;
 		else if (name == "prefer-kdialog")
 			file_utilities.prefer_kdialog = state;
 	#endif
@@ -831,10 +831,11 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file.get(), "japanese", emulator->GetDomestic());
 
 	#ifdef FILE_PICKER_POSIX
-		if (file_utilities.last_file_dialog_directory != nullptr)
+		if (!file_utilities.last_file_dialog_directory.empty())
 		{
 			PRINT_STRING(file.get(), "last-directory = ");
-			SDL_RWwrite(file.get(), file_utilities.last_file_dialog_directory, SDL_strlen(file_utilities.last_file_dialog_directory), 1);
+			const std::string last_file_dialog_directory = file_utilities.last_file_dialog_directory.string();
+			SDL_RWwrite(file.get(), last_file_dialog_directory.data(), last_file_dialog_directory.size(), 1);
 			PRINT_STRING(file.get(), "\n");
 		}
 		PRINT_BOOLEAN_OPTION(file.get(), "prefer-kdialog", file_utilities.prefer_kdialog);

@@ -45,7 +45,7 @@ private:
 
 public:
 #ifdef FILE_PICKER_POSIX
-	char *last_file_dialog_directory = nullptr;
+	std::filesystem::path last_file_dialog_directory;
 	bool prefer_kdialog = false;
 #endif
 
@@ -54,9 +54,6 @@ public:
 #endif
 
 	FileUtilities(DebugLog &debug_log) : debug_log(debug_log) {}
-#ifdef FILE_PICKER_POSIX
-	~FileUtilities() {SDL_free(last_file_dialog_directory);}
-#endif
 	void CreateOpenFileDialog(const Window &window, const char *title, const PopupCallback &callback);
 	void CreateSaveFileDialog(const Window &window, const char *title, const PopupCallback &callback);
 	void DisplayFileDialog(std::filesystem::path &drag_and_drop_filename);

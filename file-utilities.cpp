@@ -5,6 +5,7 @@
 #include <vector>
 
 #ifdef _WIN32
+#include <memory>
 #include <windows.h>
 #include "SDL_syswm.h"
 #elif defined(FILE_PICKER_POSIX)
@@ -20,11 +21,16 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
 #ifdef _WIN32
+struct SDLFreeFunctor
+{
+	void operator()(void* const pointer) { return SDL_free(pointer); }
+};
+
 // Adapted from SDL2.
-#define StringToUTF8W(S) SDL_iconv_string("UTF-8", "UTF-16LE", reinterpret_cast<const char*>(S), (SDL_wcslen(S) + 1) * sizeof(WCHAR))
-#define UTF8ToStringW(S) reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
-#define StringToUTF8A(S) SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1))
-#define UTF8ToStringA(S) SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)
+#define StringToUTF8W(S) std::unique_ptr<char, SDLFreeFunctor>(SDL_iconv_string("UTF-8", "UTF-16LE", reinterpret_cast<const char*>(S), (SDL_wcslen(S) + 1) * sizeof(WCHAR)))
+#define UTF8ToStringW(S) std::unique_ptr<WCHAR, SDLFreeFunctor>(reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)))
+#define StringToUTF8A(S) std::unique_ptr<char, SDLFreeFunctor>(SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1)))
+#define UTF8ToStringA(S) std::unique_ptr<char, SDLFreeFunctor>(SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
 #ifdef UNICODE
 #define StringToUTF8 StringToUTF8W
 #define UTF8ToString UTF8ToStringW
@@ -45,7 +51,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 #ifdef _WIN32
 	if (use_native_file_dialogs)
 	{
-		const LPTSTR title_utf16 = UTF8ToString(title);
+		const auto title_utf16 = UTF8ToString(title);
 
 		SDL_SysWMinfo info;
 		SDL_VERSION(&info.version);
@@ -59,48 +65,27 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 		ofn.hwndOwner = SDL_GetWindowWMInfo(window.GetSDLWindow(), &info) ? info.info.win.window : nullptr;
 		ofn.lpstrFile = &path_buffer[0];
 		ofn.nMaxFile = path_buffer.size();
-		ofn.lpstrTitle = title_utf16; // It's okay for this to be nullptr.
+		ofn.lpstrTitle = title_utf16.get(); // It's okay for this to be nullptr.
 		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
 
 		// Common File Dialog changes the current directory, so back it up here first.
-		LPTSTR working_directory_buffer = nullptr;
-		const DWORD working_directory_buffer_size = GetCurrentDirectory(0, nullptr);
-
-		if (working_directory_buffer_size != 0)
-		{
-			working_directory_buffer = static_cast<LPTSTR>(SDL_malloc(working_directory_buffer_size * sizeof(*working_directory_buffer)));
-
-			if (working_directory_buffer != nullptr)
-			{
-				if (GetCurrentDirectory(working_directory_buffer_size, working_directory_buffer) == 0)
-				{
-					SDL_free(working_directory_buffer);
-					working_directory_buffer = nullptr;
-				}
-			}
-		}
+		std::vector<TCHAR> working_directory(GetCurrentDirectory(0, nullptr));
+		GetCurrentDirectory(working_directory.size(), working_directory.data());
 
 		// Invoke the file dialog.
 		const bool file_selected = save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
 
-		SDL_free(title_utf16);
-
 		if (file_selected)
 		{
-			char* const path_utf8 = StringToUTF8(&path_buffer[0]);
+			const auto path_utf8 = StringToUTF8(&path_buffer[0]);
 
-			if (path_utf8 == nullptr || !callback(path_utf8))
+			if (path_utf8 == nullptr || !callback(path_utf8.get()))
 				success = false;
-
-			SDL_free(path_utf8);
 		}
 
 		// Restore the current directory.
-		if (working_directory_buffer != nullptr)
-		{
-			SetCurrentDirectory(working_directory_buffer);
-			SDL_free(working_directory_buffer);
-		}
+		if (!working_directory.empty())
+			SetCurrentDirectory(working_directory.data());
 	}
 	else
 #elif defined(FILE_PICKER_POSIX)
@@ -117,12 +102,12 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 					std::format("zenity --file-selection {} --title=\"{}\" --filename=\"{}\"",
 						save ? "--save" : "",
 						title,
-						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
+						last_file_dialog_directory)
 					:
 					std::format("kdialog --get{}filename --title \"{}\" \"{}\"",
 						save ? "save" : "open",
 						title,
-						last_file_dialog_directory == nullptr ? "" : last_file_dialog_directory)
+						last_file_dialog_directory)
 					;
 
 				// Invoke Zenity/kdialog.
@@ -185,8 +170,8 @@ void FileUtilities::CreateFileDialog(const Window &window, const char* const tit
 										else
 											directory_separator[1] = '\0';
 
-										SDL_free(last_file_dialog_directory);
 										last_file_dialog_directory = path_buffer;
+										SDL_free(path_buffer);
 										path_buffer = nullptr;
 
 										break;
