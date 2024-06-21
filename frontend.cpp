@@ -549,7 +549,7 @@ static void DoToolTip(const std::string &text)
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
-		ImGui::TextUnformatted(&text.front(), &text.back());
+		ImGui::TextUnformatted(text.data(), text.data() + text.size());
 		ImGui::EndTooltip();
 	}
 }
