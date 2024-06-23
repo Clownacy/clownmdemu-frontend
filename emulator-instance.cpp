@@ -382,8 +382,8 @@ std::string EmulatorInstance::GetSoftwareName()
 			previous_codepoint = codepoint;
 		}
 
-		// Eliminate trailing spaces.
-		if (name_buffer.back() == ' ')
+		// Eliminate trailing space.
+		if (!name_buffer.empty() && name_buffer.back() == ' ')
 			name_buffer.pop_back();
 	}
 
