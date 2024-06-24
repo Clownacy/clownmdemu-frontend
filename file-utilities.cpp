@@ -10,6 +10,7 @@
 #include "SDL_syswm.h"
 #elif defined(FILE_PICKER_POSIX)
 #include <cstdio>
+#include <format>
 #include <sys/wait.h>
 #endif
 
