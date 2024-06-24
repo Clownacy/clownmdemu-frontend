@@ -25,8 +25,13 @@ public:
 	struct State
 	{
 		ClownMDEmu_State clownmdemu;
-		std::array<Uint32, 3 * 4 * 16> colours;
+		std::array<std::array<std::array<Uint32, 16>, 4>, 3> colours;
 		CDReader::State cd;
+
+		decltype(colours[0][0][0])& Colours(const cc_u16f index)
+		{
+			return colours[index / (colours[0].size() * colours[0][0].size()) % colours.size()][index / colours[0][0].size() % colours[0].size()][index % colours[0][0].size()];
+		}
 	};
 
 private:

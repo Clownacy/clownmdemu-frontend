@@ -18,6 +18,26 @@ struct Sprite
 	cc_u16f x;
 };
 
+static constexpr cc_u16f TileWidth()
+{
+	return 8;
+}
+
+static cc_u16f TileHeight(const VDP_State &vdp)
+{
+	return vdp.double_resolution_enabled ? 16 : 8;
+}
+
+static cc_u16f TileSizeInBytes(const VDP_State &vdp)
+{
+	return TileWidth() * TileHeight(vdp) / 2;
+}
+
+static cc_u16f VRAMSizeInTiles(const VDP_State &vdp)
+{
+	return CC_COUNT_OF(vdp.vram) / TileSizeInBytes(vdp);
+}
+
 static constexpr cc_u8f sprite_texture_width = 4 * 8;
 static constexpr cc_u8f sprite_texture_height = 4 * 16;
 
@@ -32,19 +52,18 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-void DebugVDP::DrawTile(const VDP_State &vdp, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency) const
+void DebugVDP::DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency) const
 {
-	const cc_u16f tile_width = 8;
-	const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+	const cc_u16f tile_width = TileWidth();
+	const cc_u16f tile_height = TileHeight(state.clownmdemu.vdp);
+	const cc_u16f tile_size_in_bytes = TileSizeInBytes(state.clownmdemu.vdp);
 
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-	const cc_u16f palette_index = tile_metadata.palette_line * 16 + (vdp.shadow_highlight_enabled && !tile_metadata.priority) * 16 * 4;
+	const auto &palette_line = state.colours[state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority][tile_metadata.palette_line];
 
-	const Uint32 *palette_line = &emulator.CurrentState().colours[palette_index];
-
-	cc_u16f tile_index = tile_metadata.tile_index * (tile_width * tile_height / 2);
+	cc_u16f vram_index = tile_metadata.tile_index * tile_size_in_bytes;
 
 	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 	{
@@ -52,8 +71,8 @@ void DebugVDP::DrawTile(const VDP_State &vdp, const VDP_TileMetadata tile_metada
 
 		for (cc_u16f i = 0; i < 2; ++i)
 		{
-			const cc_u16l tile_pixels = VDP_ReadVRAMWord(&vdp, tile_index);
-			tile_index += 2;
+			const cc_u16l tile_pixels = VDP_ReadVRAMWord(&state.clownmdemu.vdp, vram_index);
+			vram_index += 2;
 
 			for (cc_u16f j = 0; j < 4; ++j)
 			{
@@ -70,7 +89,8 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 	if (ImGui::Begin(name, &open))
 	{
-		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+		const auto &state = emulator.CurrentState();
+		const VDP_State &vdp = state.clownmdemu.vdp;
 
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
@@ -118,7 +138,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 						{
 							for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 							{
-								DrawTile(vdp, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
+								DrawTile(state, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
 								plane_index += 2;
 							}
 						}
@@ -127,8 +147,9 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 					}
 				}
 
-				const cc_u16f tile_width = 8;
-				const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+				const cc_u16f tile_width = TileWidth();
+				const cc_u16f tile_height = TileHeight(vdp);
+
 				const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
 				const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
 
@@ -184,7 +205,8 @@ void DebugVDP::DisplayPlaneB(bool &open)
 
 void DebugVDP::DisplaySpriteCommon()
 {
-	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+	const auto &state = emulator.CurrentState();
+	const VDP_State &vdp = state.clownmdemu.vdp;
 
 	for (auto &texture : sprite_viewer.textures)
 	{
@@ -205,6 +227,8 @@ void DebugVDP::DisplaySpriteCommon()
 			}
 		}
 	}
+
+	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
 	for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
 	{
@@ -230,8 +254,8 @@ void DebugVDP::DisplaySpriteCommon()
 					{
 						const cc_u8f y_corrected = tile_metadata.y_flip ? sprite.cached.height - 1 - y : y;
 
-						DrawTile(vdp, tile_metadata, sprite_texture_pixels, sprite_texture_pitch, x_corrected, y_corrected, true);
-						++tile_metadata.tile_index;
+						DrawTile(state, tile_metadata, sprite_texture_pixels, sprite_texture_pitch, x_corrected, y_corrected, true);
+						tile_metadata.tile_index = (tile_metadata.tile_index + 1) % size_of_vram_in_tiles;
 					}
 				}
 
@@ -273,8 +297,8 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 			}
 		}
 
-		constexpr cc_u16f tile_width = 8;
-		const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+		const cc_u16f tile_width = TileWidth();
+		const cc_u16f tile_height = TileHeight(vdp);
 
 		ImGui::InputInt("Zoom", &sprite_viewer.scale);
 		if (sprite_viewer.scale < 1)
@@ -372,8 +396,8 @@ void DebugVDP::DisplaySpriteList(bool &open)
 
 				for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
 				{
-					constexpr cc_u16f tile_width = 8;
-					const cc_u16f tile_height = vdp.double_resolution_enabled ? 16 : 8;
+					const cc_u16f tile_width = TileWidth();
+					const cc_u16f tile_height = TileHeight(vdp);
 
 					const Sprite sprite = GetSprite(vdp, i);
 
@@ -424,12 +448,12 @@ void DebugVDP::DisplayVRAM(bool &open)
 
 	if (ImGui::Begin("VRAM", &open))
 	{
-		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+		const auto &state = emulator.CurrentState();
+		const VDP_State &vdp = state.clownmdemu.vdp;
 
-		const std::size_t tile_width = 8;
-		const std::size_t tile_height = vdp.double_resolution_enabled ? 16 : 8;
-
-		const std::size_t size_of_vram_in_tiles = CC_COUNT_OF(vdp.vram) * 2 / (tile_width * tile_height);
+		const cc_u16f tile_width = TileWidth();
+		const cc_u16f tile_height = TileHeight(vdp);
+		const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
 		// Create VRAM texture if it does not exist.
 		if (vram_viewer.texture == nullptr)
@@ -475,24 +499,35 @@ void DebugVDP::DisplayVRAM(bool &open)
 			bool options_changed = false;
 
 			// Handle VRAM viewing options.
-			const int length_of_palette_line = 16;
-			const int length_of_palette = length_of_palette_line * 4;
-
 			ImGui::SeparatorText("Brightness");
-			options_changed |= ImGui::RadioButton("Shadow", &vram_viewer.brightness_index, length_of_palette * 1);
-			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("Normal", &vram_viewer.brightness_index, length_of_palette * 0);
-			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("Highlight", &vram_viewer.brightness_index, length_of_palette * 2);
+			for (std::size_t i = 0; i < state.colours.size(); ++i)
+			{
+				if (i != 0)
+					ImGui::SameLine();
+
+				static const std::array brightness_names = {
+					"Normal",
+					"Shadow",
+					"Highlight"
+				};
+
+				options_changed |= ImGui::RadioButton(brightness_names[i], &vram_viewer.brightness_index, i);
+			}
 
 			ImGui::SeparatorText("Palette Line");
-			options_changed |= ImGui::RadioButton("0", &vram_viewer.palette_line, length_of_palette_line * 0);
-			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("1", &vram_viewer.palette_line, length_of_palette_line * 1);
-			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("2", &vram_viewer.palette_line, length_of_palette_line * 2);
-			ImGui::SameLine();
-			options_changed |= ImGui::RadioButton("3", &vram_viewer.palette_line, length_of_palette_line * 3);
+			for (std::size_t i = 0; i < state.colours[0].size(); ++i)
+			{
+				if (i != 0)
+					ImGui::SameLine();
+
+				static const std::array brightness_names = std::to_array<std::string>({
+					"Normal",
+					"Shadow",
+					"Highlight"
+				});
+
+				options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &vram_viewer.palette_line, i);
+			}
 
 			ImGui::SeparatorText("Tiles");
 
@@ -507,7 +542,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 				vram_viewer.cache_frame_counter = frame_counter;
 
 				// Select the correct palette line.
-				const Uint32 *selected_palette = &emulator.CurrentState().colours[vram_viewer.brightness_index + vram_viewer.palette_line];
+				const auto &selected_palette = state.colours[vram_viewer.brightness_index][vram_viewer.palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
@@ -640,6 +675,8 @@ void DebugVDP::DisplayCRAM(bool &open)
 {
 	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
 	{
+		const auto &state = emulator.CurrentState();
+
 		ImGui::SeparatorText("Brightness");
 		ImGui::RadioButton("Shadow", &cram_viewer.brightness, 0);
 		ImGui::SameLine();
@@ -656,7 +693,7 @@ void DebugVDP::DisplayCRAM(bool &open)
 		{
 			ImGui::PushID(j);
 
-			const cc_u16f value = emulator.CurrentState().clownmdemu.vdp.cram[j];
+			const cc_u16f value = state.clownmdemu.vdp.cram[j];
 			const cc_u16f blue = (value >> 9) & 7;
 			const cc_u16f green = (value >> 5) & 7;
 			const cc_u16f red = (value >> 1) & 7;

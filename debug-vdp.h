@@ -56,7 +56,7 @@ private:
 		unsigned int cache_frame_counter = 0;
 	} window_plane_data, plane_a_data, plane_b_data;
 
-	void DrawTile(const VDP_State &vdp, VDP_TileMetadata tile_metadata, Uint8 *pixels, int pitch, cc_u16f x, cc_u16f y, bool transparency) const;
+	void DrawTile(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, Uint8 *pixels, int pitch, cc_u16f x, cc_u16f y, bool transparency) const;
 	void DisplayPlane(bool &open, const char *name, PlaneViewer &plane_viewer, cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 	void DisplaySpriteCommon();
 
