@@ -36,12 +36,8 @@
 #endif
 #endif
 
-void FileUtilities::CreateFileDialog(const Window &window, const std::string &title, const PopupCallback &callback, const bool save)
+void FileUtilities::CreateFileDialog([[maybe_unused]] const Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {
-#ifndef _WIN32
-	static_cast<void>(window); // Unused
-#endif
-
 	bool success = true;
 
 #ifdef _WIN32
@@ -394,12 +390,9 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 	return false;
 }
 
-void FileUtilities::LoadFile(const Window &window, const std::string &title, const LoadFileCallback &callback)
+void FileUtilities::LoadFile([[maybe_unused]] const Window &window, [[maybe_unused]] const std::string &title, const LoadFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
-	static_cast<void>(window);
-	static_cast<void>(title);
-
 	try
 	{
 		LoadFileCallback* const callback_detatched = new LoadFileCallback(callback);
@@ -432,12 +425,9 @@ void FileUtilities::LoadFile(const Window &window, const std::string &title, con
 #endif
 }
 
-void FileUtilities::SaveFile(const Window &window, const std::string &title, const SaveFileCallback &callback)
+void FileUtilities::SaveFile([[maybe_unused]] const Window &window, [[maybe_unused]] const std::string &title, const SaveFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
-	static_cast<void>(window);
-	static_cast<void>(title);
-
 	callback([](const void* const data, const std::size_t data_size)
 	{
 		emscripten_browser_file::download("", "application/octet-stream", std::string_view(static_cast<const char*>(data), data_size));

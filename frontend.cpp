@@ -428,8 +428,6 @@ static bool LoadCDFile(const std::filesystem::path* const path, SDL::RWops &&fil
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
 		AddToRecentSoftware(*path, true, false);
-#else
-	static_cast<void>(path);
 #endif
 
 	// Load the CD.

@@ -17,14 +17,11 @@ cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u
 	return emulator->rom_buffer[address];
 }
 
-void EmulatorInstance::CartridgeWrittenCallback(void* const user_data, const cc_u32f address, const cc_u8f value)
+void EmulatorInstance::CartridgeWrittenCallback([[maybe_unused]] void* const user_data, [[maybe_unused]] const cc_u32f address, [[maybe_unused]] const cc_u8f value)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+	//EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
 	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
-	static_cast<void>(emulator);
-	static_cast<void>(address);
-	static_cast<void>(value);
 
 	/*
 	if (address >= emulator->rom_buffer_size)

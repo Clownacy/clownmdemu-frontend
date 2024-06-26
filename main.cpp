@@ -91,12 +91,9 @@ static void FrameRateCallback(const bool pal_mode)
 }
 #endif
 
-int main(const int argc, char** const argv)
+int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 {
 #ifdef __EMSCRIPTEN__
-	static_cast<void>(argc);
-	static_cast<void>(argv);
-
 	// Initialise persistent storage.
 	EM_ASM({
 		FS.mkdir('/clownmdemu-frontend');
