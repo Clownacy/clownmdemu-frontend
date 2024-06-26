@@ -98,12 +98,12 @@ void FileUtilities::CreateFileDialog(const Window &window, const std::string &ti
 					std::format("zenity --file-selection {} --title=\"{}\" --filename=\"{}\"",
 						save ? "--save" : "",
 						title,
-						last_file_dialog_directory)
+						last_file_dialog_directory.string())
 					:
 					std::format("kdialog --get{}filename --title \"{}\" \"{}\"",
 						save ? "save" : "open",
 						title,
-						last_file_dialog_directory)
+						last_file_dialog_directory.string())
 					;
 
 				// Invoke Zenity/kdialog.
