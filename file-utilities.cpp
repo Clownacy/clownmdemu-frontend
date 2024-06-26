@@ -73,9 +73,7 @@ void FileUtilities::CreateFileDialog(const Window &window, const std::string &ti
 
 		if (file_selected)
 		{
-			const auto path_utf8 = StringToUTF8(&path_buffer[0]);
-
-			if (path_utf8 == nullptr || !callback(path_utf8.get()))
+			if (!callback(path_buffer.data()))
 				success = false;
 		}
 
