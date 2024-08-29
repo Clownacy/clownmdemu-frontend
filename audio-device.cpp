@@ -5,7 +5,6 @@
 
 AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames, DebugLog &debug_log)
 	: channels(channels)
-	, debug_log(debug_log)
 {
 	SDL_AudioSpec want, have;
 
