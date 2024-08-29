@@ -1,5 +1,7 @@
 #include "emulator-instance.h"
 
+#include <algorithm>
+#include <iterator>
 #include <utility>
 
 #include "text-encoding.h"
@@ -250,7 +252,8 @@ void EmulatorInstance::HardResetConsole()
 	// is cleared when the console is powered-off.
 	// Failing to clear RAM causes issues with Sonic games and ROM-hacks,
 	// which skip initialisation when a certain magic number is found in RAM.
-	state_rewind_buffer = {};
+	auto &m68k_ram = state_rewind_buffer[0].clownmdemu.m68k.ram;
+	std::fill(std::begin(m68k_ram), std::end(m68k_ram), 0);
 
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
