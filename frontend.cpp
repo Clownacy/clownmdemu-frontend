@@ -262,10 +262,12 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 #ifdef FILE_PATH_SUPPORT
 static void AddToRecentSoftware(const std::filesystem::path &path, const bool is_cd_file, const bool add_to_end)
 {
+	const auto absolute_path = std::filesystem::absolute(path);
+
 	// If the path already exists in the list, then move it to the start of the list.
 	for (auto recent_software = recent_software_list.begin(); recent_software != recent_software_list.end(); ++recent_software)
 	{
-		if (recent_software->path == path)
+		if (recent_software->path == absolute_path)
 		{
 			if (recent_software != recent_software_list.begin())
 				recent_software_list.splice(recent_software_list.begin(), recent_software_list, recent_software, std::next(recent_software));
@@ -280,9 +282,9 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 
 	// Add the file to the list of recent software.
 	if (add_to_end)
-		recent_software_list.emplace_back(is_cd_file, path);
+		recent_software_list.emplace_back(is_cd_file, absolute_path);
 	else
-		recent_software_list.emplace_front(is_cd_file, path);
+		recent_software_list.emplace_front(is_cd_file, absolute_path);
 }
 #endif
 
