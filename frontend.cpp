@@ -606,6 +606,8 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			tall_double_resolution_mode = state;
 		else if (name == "low-pass-filter")
 			emulator->SetLowPassFilter(state);
+		else if (name == "low-volume-distortion")
+			emulator->GetConfigurationFM().ladder_effect_disabled = !state;
 		else if (name == "pal")
 			SetAudioPALMode(state);
 		else if (name == "japanese")
@@ -825,6 +827,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file.get(), "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file.get(), "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_BOOLEAN_OPTION(file.get(), "low-pass-filter", emulator->GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file.get(), "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file.get(), "pal", emulator->GetPALMode());
 		PRINT_BOOLEAN_OPTION(file.get(), "japanese", emulator->GetDomestic());
 
@@ -2524,6 +2527,12 @@ void Frontend::Update()
 				if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
 					emulator->SetLowPassFilter(low_pass_filter);
 				DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+
+				ImGui::TableNextColumn();
+				bool ladder_effect = !emulator->GetConfigurationFM().ladder_effect_disabled;
+				if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
+					emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
+				DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
 
 				ImGui::EndTable();
 			}
