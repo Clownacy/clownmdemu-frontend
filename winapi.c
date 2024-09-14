@@ -26,8 +26,17 @@ void SetWindowTitleBarColour(SDL_Window* const window, const unsigned char red, 
 
 			if (DwmSetWindowAttribute_Function != NULL)
 			{
-				const COLORREF winapi_colour = RGB(red, green, blue);
-				DwmSetWindowAttribute_Function(info.info.win.window, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
+				{
+					/* Colour the title bar. */
+					const COLORREF winapi_colour = RGB(red, green, blue);
+					DwmSetWindowAttribute_Function(info.info.win.window, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
+				}
+
+				{
+					/* Disable the dumbass window rounding. */
+					const int rounding_mode = 1; /* DWMWCP_DONOTROUND */
+					DwmSetWindowAttribute_Function(info.info.win.window, 33/*DWMWA_WINDOW_CORNER_PREFERENCE*/, &rounding_mode, sizeof(rounding_mode));
+				}
 			}
 
 			SDL_UnloadObject(handle);
