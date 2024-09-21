@@ -8,6 +8,7 @@
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 
 #include "debug-log.h"
+#include "raii-wrapper.h"
 #include "window.h"
 
 class WindowWithDearImGui : public Window
@@ -26,7 +27,7 @@ public:
 	// TODO: Make this private.
 	ImFont *monospace_font;
 
-	WindowWithDearImGui(DebugLog &debug_log, const char *window_title, int window_width, int window_height, int framebuffer_width, int framebuffer_height);
+	WindowWithDearImGui(DebugLog &debug_log, const char *window_title, int window_width, int window_height);
 	~WindowWithDearImGui();
 	void MakeDearImGuiContextCurrent() { ImGui::SetCurrentContext(dear_imgui_context.get()); }
 	void StartDearImGuiFrame();

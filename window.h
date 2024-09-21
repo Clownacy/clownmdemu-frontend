@@ -12,9 +12,8 @@ class Window
 public:
 	SDL::Window sdl_window;
 	SDL::Renderer renderer;
-	SDL::Texture framebuffer_texture;
 
-	Window(DebugLog &debug_log, const char *window_title, int window_width, int window_height, int framebuffer_width, int framebuffer_height);
+	Window(DebugLog &debug_log, const char *window_title, int window_width, int window_height);
 
 	float GetDPIScale() const;
 	void SetFullscreen(bool enabled) { SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0); }
@@ -22,7 +21,6 @@ public:
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL_Window* GetSDLWindow() const { return sdl_window.get(); }
 	SDL_Renderer* GetRenderer() const { return renderer.get(); }
-	SDL_Texture* GetFramebufferTexture() const { return framebuffer_texture.get(); }
 	void SetTitleBarColour(unsigned char red, unsigned char green, unsigned char blue);
 	void ShowWarningMessageBox(const char *message) const;
 	void ShowErrorMessageBox(const char *message) const;

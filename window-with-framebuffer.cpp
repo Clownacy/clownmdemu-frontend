@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
+SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
 {
 	// Create framebuffer texture
 	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
@@ -21,11 +21,4 @@ static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* 
 	}
 
 	return framebuffer_texture;
-}
-
-WindowWithFramebuffer::WindowWithFramebuffer(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
-	: Window(debug_log, window_title, window_width, window_height, framebuffer_width, framebuffer_height)
-	, framebuffer_texture(CreateFramebufferTexture(debug_log, GetRenderer(), framebuffer_width, framebuffer_height))
-{
-
 }

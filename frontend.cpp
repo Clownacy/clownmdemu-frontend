@@ -43,7 +43,7 @@
 #include "disassembler.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
-#include "window.h"
+#include "window-with-framebuffer.h"
 
 #ifndef __EMSCRIPTEN__
 #define FILE_PATH_SUPPORT
@@ -152,7 +152,7 @@ static Frontend::FrameRateCallback frame_rate_callback;
 static DebugLog debug_log(dpi_scale, monospace_font);
 static FileUtilities file_utilities(debug_log);
 
-static std::optional<Window> window;
+static std::optional<WindowWithFramebuffer> window;
 static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;

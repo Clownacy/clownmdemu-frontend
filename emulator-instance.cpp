@@ -146,7 +146,7 @@ std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l
 
 EmulatorInstance::EmulatorInstance(
 	DebugLog &debug_log,
-	Window &window,
+	WindowWithFramebuffer &window,
 	const InputCallback &input_callback
 )
 	: audio_output(debug_log)

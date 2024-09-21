@@ -15,7 +15,7 @@
 #include "audio-output.h"
 #include "cd-reader.h"
 #include "debug-log.h"
-#include "window.h"
+#include "window-with-framebuffer.h"
 
 class EmulatorInstance
 {
@@ -39,7 +39,7 @@ private:
 	static ClownMDEmu_Constant clownmdemu_constant;
 
 	AudioOutput audio_output;
-	Window &window;
+	WindowWithFramebuffer &window;
 	const InputCallback input_callback;
 	ClownMDEmu_Callbacks callbacks;
 
@@ -83,7 +83,7 @@ private:
 	static std::size_t CDAudioReadCallback(void *user_data, cc_s16l *sample_buffer, std::size_t total_frames);
 
 public:
-	EmulatorInstance(DebugLog &debug_log, Window &window, const InputCallback &input_callback);
+	EmulatorInstance(DebugLog &debug_log, WindowWithFramebuffer &window, const InputCallback &input_callback);
 	void Update();
 	void SoftResetConsole();
 	void HardResetConsole();
