@@ -40,6 +40,7 @@
 #include "disassembler.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
+#include "window-popup.h"
 #include "window-with-framebuffer.h"
 
 #ifndef __EMSCRIPTEN__
@@ -148,7 +149,7 @@ static DebugLog debug_log(dpi_scale, monospace_font);
 static FileUtilities file_utilities(debug_log);
 
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<WindowWithDearImGui> options_window;
+static std::optional<WindowPopup> options_window;
 static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
@@ -1886,14 +1887,9 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Options", nullptr, options_window.has_value()))
 				{
 					if (options_window.has_value())
-					{
 						options_window.reset();
-					}
 					else
-					{
-						options_window.emplace(debug_log, "Options", INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
-						SDL_ShowWindow(options_window->GetSDLWindow());
-					}
+						options_window.emplace(debug_log, "Options", 360, 360);
 				}
 
 				ImGui::Separator();
@@ -2354,11 +2350,9 @@ void Frontend::Update()
 
 	if (options_window.has_value())
 	{
-		options_window->StartDearImGuiFrame();
+		// TODO: ImGui::SetNextWindowSize(ImVec2(360.0f * dpi_scale, 360.0f * dpi_scale), ImGuiCond_FirstUseEver);
 
-		ImGui::SetNextWindowSize(ImVec2(360.0f * dpi_scale, 360.0f * dpi_scale), ImGuiCond_FirstUseEver);
-
-		if (ImGui::Begin("Options", &options_menu))
+		if (options_window->Begin())
 		{
 			ImGui::SeparatorText("Console");
 
@@ -2637,9 +2631,7 @@ void Frontend::Update()
 			}
 		}
 
-		ImGui::End();
-
-		options_window->FinishDearImGuiFrame();
+		options_window->End();
 	}
 
 	if (about_menu)

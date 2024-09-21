@@ -51,6 +51,8 @@ add_executable(clownmdemu-frontend WIN32
 	"winapi.h"
 	"window.cpp"
 	"window.h"
+	"window-popup.cpp"
+	"window-popup.h"
 	"window-with-dear-imgui.cpp"
 	"window-with-dear-imgui.h"
 	"window-with-framebuffer.cpp"
