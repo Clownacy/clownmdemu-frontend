@@ -1,0 +1,176 @@
+#include "window-with-dear-imgui.h"
+
+#include <stdexcept>
+
+#include "inconsolata-regular.h"
+#include "noto-sans-regular.h"
+
+
+///////////
+// Fonts //
+///////////
+
+static constexpr float UNSCALED_FONT_SIZE = 16.0f;
+
+unsigned int WindowWithDearImGui::CalculateFontSize()
+{
+	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
+	return static_cast<unsigned int>(UNSCALED_FONT_SIZE * dpi_scale);
+}
+
+void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
+{
+	ImGuiIO &io = ImGui::GetIO();
+
+	io.Fonts->Clear();
+	ImGui_ImplSDLRenderer2_DestroyFontsTexture();
+
+	ImFontConfig font_cfg = ImFontConfig();
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Noto Sans Regular, %upx", font_size);
+	io.Fonts->AddFontFromMemoryCompressedTTF(noto_sans_regular_compressed_data, noto_sans_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
+	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
+	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
+}
+
+
+///////////////
+// Not Fonts //
+///////////////
+
+static SDL_Texture* CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
+{
+	// Create framebuffer texture
+	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+	SDL_Texture* const framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_width, framebuffer_height);
+
+	if (framebuffer_texture == nullptr)
+	{
+		throw std::runtime_error(std::string("SDL_CreateTexture failed with the following message - '") + SDL_GetError() + "'");
+	}
+	else
+	{
+		// Disable blending, since we don't need it
+		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
+			debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+	}
+
+	return framebuffer_texture;
+}
+
+WindowWithDearImGui::WindowWithDearImGui(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const int framebuffer_width, const int framebuffer_height)
+	: Window(debug_log, window_title, window_width, window_height, framebuffer_width, framebuffer_height)
+	, dear_imgui_context(ImGui::CreateContext())
+	, dpi_scale(GetDPIScale())
+{
+	MakeDearImGuiContextCurrent();
+
+	ImGuiIO &io = ImGui::GetIO();
+	ImGuiStyle &style = ImGui::GetStyle();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.IniFilename = nullptr; // Disable automatic loading/saving so we can do it ourselves.
+
+		// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+	//ImGui::StyleColorsClassic();
+
+	style.WindowBorderSize = 0.0f;
+	style.PopupBorderSize = 0.0f;
+	style.ChildBorderSize = 0.0f;
+	style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+	style.TabRounding = 0.0f;
+	style.ScrollbarRounding = 0.0f;
+
+	ImVec4* colors = style.Colors;
+	colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 0.94f);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.35f, 0.35f, 0.35f, 0.54f);
+	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.69f, 0.69f, 0.69f, 0.40f);
+	colors[ImGuiCol_FrameBgActive] = ImVec4(0.69f, 0.69f, 0.69f, 0.67f);
+	colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
+	colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
+	colors[ImGuiCol_MenuBarBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
+	colors[ImGuiCol_CheckMark] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
+	colors[ImGuiCol_SliderGrab] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
+	colors[ImGuiCol_SliderGrabActive] = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
+	colors[ImGuiCol_Button] = ImVec4(0.41f, 0.41f, 0.41f, 0.63f);
+	colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+	colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
+	colors[ImGuiCol_Header] = ImVec4(0.38f, 0.38f, 0.38f, 0.39f);
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.38f, 0.38f, 0.38f, 0.80f);
+	colors[ImGuiCol_HeaderActive] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
+	colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
+	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.56f, 0.56f, 0.56f, 0.78f);
+	colors[ImGuiCol_SeparatorActive] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
+	colors[ImGuiCol_ResizeGrip] = ImVec4(0.51f, 0.51f, 0.51f, 0.43f);
+	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.79f);
+	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
+	colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
+	colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
+	colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+
+	style_backup = style;
+
+	// Apply DPI scale.
+	style.ScaleAllSizes(GetDPIScale());
+
+	const auto &menu_bar_bg_colour = colors[ImGuiCol_MenuBarBg];
+	SetTitleBarColour(menu_bar_bg_colour.x * 0xFF, menu_bar_bg_colour.y * 0xFF, menu_bar_bg_colour.z * 0xFF);
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplSDL2_InitForSDLRenderer(GetSDLWindow(), GetRenderer());
+	ImGui_ImplSDLRenderer2_Init(GetRenderer());
+
+	// Load fonts
+	ReloadFonts(CalculateFontSize());
+}
+
+WindowWithDearImGui::~WindowWithDearImGui()
+{
+	ImGui_ImplSDLRenderer2_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+}
+
+void WindowWithDearImGui::StartDearImGuiFrame()
+{
+	MakeDearImGuiContextCurrent();
+
+	// Handle dynamic DPI support
+	const float new_dpi = GetDPIScale();
+
+	if (dpi_scale != new_dpi)
+	{
+		dpi_scale = new_dpi;
+
+		auto& style = ImGui::GetStyle();
+		style = style_backup;
+		style.ScaleAllSizes(dpi_scale);
+		ReloadFonts(CalculateFontSize());
+	}
+
+	// Start the Dear ImGui frame
+	ImGui_ImplSDLRenderer2_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+}
+
+void WindowWithDearImGui::FinishDearImGuiFrame()
+{
+	SDL_RenderClear(GetRenderer());
+
+	// Render Dear ImGui.
+	ImGui::Render();
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+
+	// Finally display the rendered frame to the user.
+	SDL_RenderPresent(GetRenderer());
+}
+
+float WindowWithDearImGui::GetMenuBarSize()
+{
+	MakeDearImGuiContextCurrent();
+
+	return UNSCALED_FONT_SIZE + ImGui::GetStyle().FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
+}
