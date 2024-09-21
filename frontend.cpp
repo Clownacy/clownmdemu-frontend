@@ -27,9 +27,6 @@
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 #include "libraries/inih/ini.h"
 
-#include "inconsolata-regular.h"
-#include "noto-sans-regular.h"
-
 #include "cd-reader.h"
 #include "debug-fm.h"
 #include "debug-frontend.h"
@@ -145,14 +142,13 @@ static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
-static ImGuiStyle style_backup;
-
 static Frontend::FrameRateCallback frame_rate_callback;
 
 static DebugLog debug_log(dpi_scale, monospace_font);
 static FileUtilities file_utilities(debug_log);
 
 static std::optional<WindowWithFramebuffer> window;
+static std::optional<WindowWithDearImGui> options_window;
 static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
@@ -201,33 +197,6 @@ static bool dear_imgui_demo_window;
 #endif
 
 static bool emulator_on, emulator_running;
-
-
-///////////
-// Fonts //
-///////////
-
-static constexpr float UNSCALED_FONT_SIZE = 16.0f;
-
-static unsigned int CalculateFontSize()
-{
-	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
-	return static_cast<unsigned int>(UNSCALED_FONT_SIZE * dpi_scale);
-}
-
-static void ReloadFonts(const unsigned int font_size)
-{
-	ImGuiIO &io = ImGui::GetIO();
-
-	io.Fonts->Clear();
-	ImGui_ImplSDLRenderer2_DestroyFontsTexture();
-
-	ImFontConfig font_cfg = ImFontConfig();
-	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Noto Sans Regular, %upx", font_size);
-	io.Fonts->AddFontFromMemoryCompressedTTF(noto_sans_regular_compressed_data, noto_sans_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
-	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Inconsolata Regular, %upx", font_size);
-	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
-}
 
 
 ////////////////////////////
@@ -1012,7 +981,10 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	}
 	else
 	{
+		IMGUI_CHECKVERSION();
+
 		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
 		debug_fm.emplace(*emulator, monospace_font);
 		debug_frontend.emplace(*emulator, *window, GetUpscaledFramebufferSize);
@@ -1027,64 +999,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		LoadConfiguration();
 
-		// Setup Dear ImGui context
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO &io = ImGui::GetIO();
-		ImGuiStyle &style = ImGui::GetStyle();
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		io.IniFilename = nullptr; // Disable automatic loading/saving so we can do it ourselves.
-
-		ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
-
-		// Setup Dear ImGui style
-		ImGui::StyleColorsDark();
-		//ImGui::StyleColorsLight();
-		//ImGui::StyleColorsClassic();
-
-		style.WindowBorderSize = 0.0f;
-		style.PopupBorderSize = 0.0f;
-		style.ChildBorderSize = 0.0f;
-		style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-		style.TabRounding = 0.0f;
-		style.ScrollbarRounding = 0.0f;
-
-		ImVec4* colors = style.Colors;
-		colors[ImGuiCol_Text] = ImVec4(0.94f, 0.94f, 0.94f, 1.00f);
-		colors[ImGuiCol_WindowBg] = ImVec4(0.13f, 0.13f, 0.13f, 0.94f);
-		colors[ImGuiCol_FrameBg] = ImVec4(0.35f, 0.35f, 0.35f, 0.54f);
-		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.69f, 0.69f, 0.69f, 0.40f);
-		colors[ImGuiCol_FrameBgActive] = ImVec4(0.69f, 0.69f, 0.69f, 0.67f);
-		colors[ImGuiCol_Border] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
-		colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.06f, 0.06f, 0.06f, 1.00f);
-		colors[ImGuiCol_MenuBarBg] = ImVec4(0.09f, 0.09f, 0.09f, 1.00f);
-		colors[ImGuiCol_CheckMark] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
-		colors[ImGuiCol_SliderGrab] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.56f, 0.56f, 0.56f, 1.00f);
-		colors[ImGuiCol_Button] = ImVec4(0.41f, 0.41f, 0.41f, 0.63f);
-		colors[ImGuiCol_ButtonHovered] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-		colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
-		colors[ImGuiCol_Header] = ImVec4(0.38f, 0.38f, 0.38f, 0.39f);
-		colors[ImGuiCol_HeaderHovered] = ImVec4(0.38f, 0.38f, 0.38f, 0.80f);
-		colors[ImGuiCol_HeaderActive] = ImVec4(0.38f, 0.38f, 0.38f, 1.00f);
-		colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.43f, 0.50f);
-		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.56f, 0.56f, 0.56f, 0.78f);
-		colors[ImGuiCol_SeparatorActive] = ImVec4(0.63f, 0.63f, 0.63f, 1.00f);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.51f, 0.51f, 0.51f, 0.43f);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.79f);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
-		colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-
-		style_backup = style;
-
-		// Apply DPI scale.
-		style.ScaleAllSizes(dpi_scale);
-
-		const auto &menu_bar_bg_colour = colors[ImGuiCol_MenuBarBg];
-		window->SetTitleBarColour(menu_bar_bg_colour.x * 0xFF, menu_bar_bg_colour.y * 0xFF, menu_bar_bg_colour.z * 0xFF);
+		// TODO: ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
@@ -1094,16 +1009,8 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
 		{
 			// Resize the window so that there's room for the menu bar.
-			const float menu_bar_size = UNSCALED_FONT_SIZE + style.FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
-			SDL_SetWindowSize(window->GetSDLWindow(), INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT + menu_bar_size);
+			SDL_SetWindowSize(window->GetSDLWindow(), INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize());
 		}
-
-		// Setup Platform/Renderer backends
-		ImGui_ImplSDL2_InitForSDLRenderer(window->GetSDLWindow(), window->GetRenderer());
-		ImGui_ImplSDLRenderer2_Init(window->GetRenderer());
-
-		// Load fonts
-		ReloadFonts(CalculateFontSize());
 
 		// If the user passed the path to the software on the command line, then load it here, automatically.
 		if (argc > 1)
@@ -1129,11 +1036,7 @@ void Frontend::Deinitialise()
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-	ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
-
-	ImGui_ImplSDLRenderer2_Shutdown();
-	ImGui_ImplSDL2_Shutdown();
-	ImGui::DestroyContext();
+	// TODO: ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 	SaveConfiguration();
 
@@ -1639,28 +1542,13 @@ void Frontend::Update()
 	ImGuiStyle &style = ImGui::GetStyle();
 	ImGuiIO &io = ImGui::GetIO();
 
-	// Handle dynamic DPI support
-	const float new_dpi = window->GetDPIScale();
-
-	if (dpi_scale != new_dpi)
-	{
-		dpi_scale = new_dpi;
-
-		style = style_backup;
-		style.ScaleAllSizes(dpi_scale);
-		ReloadFonts(CalculateFontSize());
-	}
-
 	if (emulator_running)
 	{
 		emulator->Update();
 		++frame_counter;
 	}
 
-	// Start the Dear ImGui frame
-	ImGui_ImplSDLRenderer2_NewFrame();
-	ImGui_ImplSDL2_NewFrame();
-	ImGui::NewFrame();
+	window->StartDearImGuiFrame();
 
 	// Handle drag-and-drop event.
 	if (!file_utilities.IsDialogOpen() && !drag_and_drop_filename.empty())
@@ -1995,7 +1883,18 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				ImGui::MenuItem("Options", nullptr, &options_menu);
+				if (ImGui::MenuItem("Options", nullptr, options_window.has_value()))
+				{
+					if (options_window.has_value())
+					{
+						options_window.reset();
+					}
+					else
+					{
+						options_window.emplace(debug_log, "Options", INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT);
+						SDL_ShowWindow(options_window->GetSDLWindow());
+					}
+				}
 
 				ImGui::Separator();
 
@@ -2453,8 +2352,10 @@ void Frontend::Update()
 	if (disassembler)
 		Disassembler(disassembler, *emulator, monospace_font);
 
-	if (options_menu)
+	if (options_window.has_value())
 	{
+		options_window->StartDearImGuiFrame();
+
 		ImGui::SetNextWindowSize(ImVec2(360.0f * dpi_scale, 360.0f * dpi_scale), ImGuiCond_FirstUseEver);
 
 		if (ImGui::Begin("Options", &options_menu))
@@ -2737,6 +2638,8 @@ void Frontend::Update()
 		}
 
 		ImGui::End();
+
+		options_window->FinishDearImGuiFrame();
 	}
 
 	if (about_menu)
@@ -2887,14 +2790,7 @@ void Frontend::Update()
 
 	file_utilities.DisplayFileDialog(drag_and_drop_filename);
 
-	SDL_RenderClear(window->GetRenderer());
-
-	// Render Dear ImGui.
-	ImGui::Render();
-	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
-
-	// Finally display the rendered frame to the user.
-	SDL_RenderPresent(window->GetRenderer());
+	window->FinishDearImGuiFrame();
 
 	PreEventStuff();
 }

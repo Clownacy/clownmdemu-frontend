@@ -122,7 +122,8 @@ WindowWithDearImGui::~WindowWithDearImGui()
 
 void WindowWithDearImGui::StartDearImGuiFrame()
 {
-	MakeDearImGuiContextCurrent();
+	previous_dear_imgui_context = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(dear_imgui_context.get());
 
 	// Handle dynamic DPI support
 	const float new_dpi = GetDPIScale();
@@ -153,6 +154,8 @@ void WindowWithDearImGui::FinishDearImGuiFrame()
 
 	// Finally display the rendered frame to the user.
 	SDL_RenderPresent(GetRenderer());
+
+	ImGui::SetCurrentContext(previous_dear_imgui_context);
 }
 
 float WindowWithDearImGui::GetMenuBarSize()

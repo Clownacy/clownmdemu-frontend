@@ -14,9 +14,10 @@
 class WindowWithDearImGui : public Window
 {
 private:
-	MAKE_RAII_POINTER(ImGuiContext, ImGuiContext, ImGui::DestroyContext);
+	MAKE_RAII_POINTER(DearImGuiContext, ImGuiContext, ImGui::DestroyContext);
 
-	ImGuiContext dear_imgui_context;
+	DearImGuiContext dear_imgui_context;
+	ImGuiContext *previous_dear_imgui_context;
 	ImGuiStyle style_backup;
 	float dpi_scale;
 
