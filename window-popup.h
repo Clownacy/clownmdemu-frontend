@@ -18,7 +18,7 @@ private:
 	int dear_imgui_window_width, dear_imgui_window_height;
 
 public:
-	WindowPopup(DebugLog &debug_log, const char *window_title, int window_width, int window_height, bool resizeable, WindowWithDearImGui *parent_window = nullptr);
+	WindowPopup(const char *window_title, int window_width, int window_height, bool resizeable, WindowWithDearImGui *parent_window = nullptr);
 
 	bool Begin(ImGuiWindowFlags window_flags = 0);
 	void End();

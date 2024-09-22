@@ -471,7 +471,7 @@ void DebugVDP::VRAMViewer::Display()
 		if (ImGui::Button("Save to File"))
 		{
 			Frontend::file_utilities.SaveFile(GetWindow(), "Save VRAM Dump",
-			[this, vdp](const FileUtilities::SaveFileInnerCallback &callback)
+			[vdp](const FileUtilities::SaveFileInnerCallback &callback)
 			{
 				return callback(vdp.vram, sizeof(vdp.vram));
 			});

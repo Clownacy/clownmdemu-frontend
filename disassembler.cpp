@@ -1,9 +1,12 @@
 #include "disassembler.h"
 
+#include <array>
 #include <string>
 
 #include "clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
 
+#include "emulator-instance.h"
+#include "frontend.h"
 #include "window-popup.h"
 
 static unsigned int address;
@@ -80,7 +83,7 @@ static void PrintCallback(void* /*const user_data*/, const char* const string)
 	assembly += '\n';
 }
 
-void Disassembler(WindowPopup &window, const EmulatorInstance &emulator, ImFont* const monospace_font)
+void Disassembler(WindowPopup &window)
 {
 	if (window.Begin())
 	{
@@ -97,7 +100,7 @@ void Disassembler(WindowPopup &window, const EmulatorInstance &emulator, ImFont*
 			assembly.clear();
 
 			address = address_imgui;
-			Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &emulator);
+			Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &*Frontend::emulator);
 
 			if (assembly[assembly.length() - 1] == '\n')
 				assembly.pop_back();

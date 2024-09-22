@@ -56,7 +56,7 @@ static SDL_Renderer* CreateRenderer(SDL_Window* const window)
 	return renderer;
 }
 
-Window::Window(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const bool resizeable)
+Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
 	: sdl_window(CreateWindow(window_title, window_width, window_height, resizeable))
 	, renderer(CreateRenderer(GetSDLWindow()))
 {

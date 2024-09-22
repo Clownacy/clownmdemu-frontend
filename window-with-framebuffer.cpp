@@ -2,7 +2,9 @@
 
 #include <stdexcept>
 
-SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(DebugLog &debug_log, SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
+#include "frontend.h"
+
+SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
 {
 	// Create framebuffer texture
 	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
@@ -17,7 +19,7 @@ SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(DebugLog &debug_log
 	{
 		// Disable blending, since we don't need it
 		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
-			debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 	}
 
 	return framebuffer_texture;

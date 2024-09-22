@@ -29,7 +29,7 @@ public:
 	// TODO: Make this private.
 	ImFont *monospace_font;
 
-	WindowWithDearImGui(DebugLog &debug_log, const char *window_title, int window_width, int window_height, bool resizeable);
+	WindowWithDearImGui(const char *window_title, int window_width, int window_height, bool resizeable);
 	~WindowWithDearImGui();
 	void MakeDearImGuiContextCurrent() { ImGui::SetCurrentContext(dear_imgui_context.get()); }
 	void StartDearImGuiFrame();

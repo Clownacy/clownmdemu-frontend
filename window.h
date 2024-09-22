@@ -13,7 +13,7 @@ public:
 	SDL::Window sdl_window;
 	SDL::Renderer renderer;
 
-	Window(DebugLog &debug_log, const char *window_title, int window_width, int window_height, bool resizeable);
+	Window(const char *window_title, int window_width, int window_height, bool resizeable);
 
 	float GetDPIScale() const;
 	void SetFullscreen(bool enabled) { SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0); }

@@ -1,6 +1,6 @@
 #include "window-popup.h"
 
-WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const bool resizeable, WindowWithDearImGui* const parent_window)
+WindowPopup::WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, WindowWithDearImGui* const parent_window)
 	: title(window_title)
 	, resizeable(resizeable)
 	, parent_window(parent_window)
@@ -12,7 +12,7 @@ WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, co
 	}
 	else
 	{
-		window.emplace(debug_log, window_title, window_width, window_height, resizeable);
+		window.emplace(window_title, window_width, window_height, resizeable);
 		SDL_ShowWindow(window->GetSDLWindow());
 	}
 }

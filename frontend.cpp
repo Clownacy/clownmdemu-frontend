@@ -149,8 +149,6 @@ static bool emulator_frame_advance;
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
 
-static ImFont *monospace_font;
-
 static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
@@ -1010,8 +1008,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	{
 		IMGUI_CHECKVERSION();
 
-		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
-		monospace_font = window->monospace_font;
+		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		emulator.emplace(debug_log, *window, ReadInputCallback);
 
 		dpi_scale = window->GetDPIScale();
@@ -1631,9 +1628,6 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 void Frontend::Update()
 {
-	ImGuiStyle &style = ImGui::GetStyle();
-	ImGuiIO &io = ImGui::GetIO();
-
 	if (emulator_running)
 	{
 		emulator->Update();
@@ -1698,7 +1692,7 @@ void Frontend::Update()
 	const bool show_menu_bar = !window->GetFullscreen()
 							|| pop_out
 							|| AnyPopupsOpen()
-							|| (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
+							|| (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 	// Hide mouse when the user just wants a fullscreen display window
 	if (!show_menu_bar)
@@ -1884,7 +1878,7 @@ void Frontend::Update()
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(debug_log, title == nullptr ? label : title, width, height, resizeable);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable);
 				}
 			};
 
@@ -2430,7 +2424,7 @@ void Frontend::Update()
 	}
 
 	if (m68k_disassembler_window.has_value())
-		Disassembler(*m68k_disassembler_window, *emulator, monospace_font);
+		Disassembler(*m68k_disassembler_window);
 
 	if (options_window.has_value())
 	{
