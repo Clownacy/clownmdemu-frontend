@@ -149,9 +149,6 @@ static DebugLog debug_log(dpi_scale, monospace_font);
 static FileUtilities file_utilities(debug_log);
 
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<WindowPopup> options_window;
-static std::optional<WindowPopup> about_window;
-static std::optional<WindowPopup> debugging_toggles_window;
 static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
@@ -161,6 +158,11 @@ static std::optional<DebugPCM> debug_pcm;
 static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
+
+static std::array<std::optional<WindowPopup>, 3> popup_windows;
+static std::optional<WindowPopup> &options_window = popup_windows[0];
+static std::optional<WindowPopup> &about_window = popup_windows[1];
+static std::optional<WindowPopup> &debugging_toggles_window = popup_windows[2];
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -1598,16 +1600,8 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	}
 	else
 	{
-		const auto popup_windows = std::to_array<std::optional<WindowPopup>*>({
-			&options_window,
-			&about_window,
-			&debugging_toggles_window,
-		});
-
-		for (auto pointer : popup_windows)
+		for (auto &popup_window : popup_windows)
 		{
-			auto &popup_window = *pointer;
-
 			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
 			{
 				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
