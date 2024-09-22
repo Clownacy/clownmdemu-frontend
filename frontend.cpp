@@ -190,7 +190,6 @@ static bool pcm_status;
 static bool other_status;
 static bool debugging_toggles_menu;
 static bool disassembler;
-static bool options_menu;
 static bool about_menu;
 
 #ifndef NDEBUG
@@ -1688,7 +1687,7 @@ void Frontend::Update()
 							|| other_status
 							|| disassembler
 							|| debugging_toggles_menu
-							|| options_menu
+							|| options_window.has_value()
 							|| about_menu
 							|| (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
@@ -2418,8 +2417,6 @@ void Frontend::Update()
 
 	if (options_window.has_value())
 	{
-		// TODO: ImGui::SetNextWindowSize(ImVec2(360.0f * dpi_scale, 360.0f * dpi_scale), ImGuiCond_FirstUseEver);
-
 		if (options_window->Begin())
 		{
 			ImGui::SeparatorText("Console");
