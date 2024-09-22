@@ -1697,34 +1697,19 @@ void Frontend::Update()
 	// Prevent the window from getting too small or we'll get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
+	const auto AnyPopupsOpen = []()
+	{
+		return std::apply(
+			[]<typename... Ts>(const Ts&... windows)
+			{
+				return (windows->has_value() || ...);
+			}, popup_windows
+		);
+	};
+
 	const bool show_menu_bar = !window->GetFullscreen()
 							|| pop_out
-							|| debug_log_window.has_value()
-							|| debug_frontend_window.has_value()
-							|| m68k_status_window.has_value()
-							|| mcd_m68k_status_window.has_value()
-							|| z80_status_window.has_value()
-							|| m68k_ram_viewer_window.has_value()
-							|| z80_ram_viewer_window.has_value()
-							|| prg_ram_viewer_window.has_value()
-							|| word_ram_viewer_window.has_value()
-							|| wave_ram_viewer_window.has_value()
-							|| vdp_registers_window.has_value()
-							|| sprite_list_window.has_value()
-							|| sprite_viewer_window.has_value()
-							|| window_plane_viewer_window.has_value()
-							|| plane_a_viewer_window.has_value()
-							|| plane_b_viewer_window.has_value()
-							|| vram_viewer_window.has_value()
-							|| cram_viewer_window.has_value()
-							|| fm_status_window.has_value()
-							|| psg_status_window.has_value()
-							|| pcm_status_window.has_value()
-							|| other_status_window.has_value()
-							|| m68k_disassembler_window.has_value()
-							|| debugging_toggles_window.has_value()
-							|| options_window.has_value()
-							|| about_window.has_value()
+							|| AnyPopupsOpen()
 							|| (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 	// Hide mouse when the user just wants a fullscreen display window
