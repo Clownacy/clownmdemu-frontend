@@ -1015,7 +1015,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		LoadConfiguration();
 
-		// TODO: ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
+		ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
@@ -1052,7 +1052,7 @@ void Frontend::Deinitialise()
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-	// TODO: ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
+	ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 	SaveConfiguration();
 
