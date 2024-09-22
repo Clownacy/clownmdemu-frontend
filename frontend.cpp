@@ -151,6 +151,7 @@ static FileUtilities file_utilities(debug_log);
 static std::optional<WindowWithFramebuffer> window;
 static std::optional<WindowPopup> options_window;
 static std::optional<WindowPopup> about_window;
+static std::optional<WindowPopup> debugging_toggles_window;
 static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
@@ -189,7 +190,6 @@ static bool fm_status;
 static bool psg_status;
 static bool pcm_status;
 static bool other_status;
-static bool debugging_toggles_menu;
 static bool disassembler;
 
 #ifndef NDEBUG
@@ -1601,6 +1601,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 		const auto popup_windows = std::to_array<std::optional<WindowPopup>*>({
 			&options_window,
 			&about_window,
+			&debugging_toggles_window,
 		});
 
 		for (auto pointer : popup_windows)
@@ -1699,7 +1700,7 @@ void Frontend::Update()
 							|| pcm_status
 							|| other_status
 							|| disassembler
-							|| debugging_toggles_menu
+							|| debugging_toggles_window.has_value()
 							|| options_window.has_value()
 							|| about_window.has_value()
 							|| (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
@@ -1881,11 +1882,22 @@ void Frontend::Update()
 				ImGui::EndMenu();
 			}
 
+			const auto PopupButton = [](const char* const title, std::optional<WindowPopup> &window, const int width, const int height)
+			{
+				if (ImGui::MenuItem(title, nullptr, window.has_value()))
+				{
+					if (window.has_value())
+						window.reset();
+					else
+						window.emplace(debug_log, title, width, height);
+				}
+			};
+
 			if (ImGui::BeginMenu("Debugging"))
 			{
 				ImGui::MenuItem("Log", nullptr, &debug_log_active);
 
-				ImGui::MenuItem("Toggles", nullptr, &debugging_toggles_menu);
+				PopupButton("Toggles", debugging_toggles_window, 240, 436);
 
 				ImGui::MenuItem("68000 Disassembler", nullptr, &disassembler);
 
@@ -1963,17 +1975,6 @@ void Frontend::Update()
 			#endif
 
 				ImGui::Separator();
-
-				const auto PopupButton = [](const char* const title, std::optional<WindowPopup> &window, const int width, const int height)
-				{
-					if (ImGui::MenuItem(title, nullptr, window.has_value()))
-					{
-						if (window.has_value())
-							window.reset();
-						else
-							window.emplace(debug_log, title, width, height);
-					}
-				};
 
 				PopupButton("Options", options_window, 360, 360);
 
@@ -2321,9 +2322,9 @@ void Frontend::Update()
 		ImGui::End();
 	}
 
-	if (debugging_toggles_menu)
+	if (debugging_toggles_window.has_value())
 	{
-		if (ImGui::Begin("Toggles", &debugging_toggles_menu, ImGuiWindowFlags_AlwaysAutoResize))
+		if (debugging_toggles_window->Begin(ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			bool temp;
 
@@ -2427,7 +2428,7 @@ void Frontend::Update()
 			}
 		}
 
-		ImGui::End();
+		debugging_toggles_window->End();
 	}
 
 	if (disassembler)
