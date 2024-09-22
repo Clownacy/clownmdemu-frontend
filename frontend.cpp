@@ -156,8 +156,6 @@ static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<DebugMemory> debug_memory;
-static std::optional<DebugPCM> debug_pcm;
 
 static std::optional<WindowPopup> options_window;
 static std::optional<WindowPopup> about_window;
@@ -183,7 +181,7 @@ static std::optional<DebugVDP::VRAMViewer> vram_viewer_window;
 static std::optional<DebugVDP::CRAMViewer> cram_viewer_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
-static std::optional<WindowPopup> pcm_status_window;
+static std::optional<DebugPCM::Registers> pcm_status_window;
 static std::optional<WindowPopup> other_status_window;
 
 static constexpr auto popup_windows = std::make_tuple(
@@ -1015,7 +1013,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
-		debug_pcm.emplace(*emulator, monospace_font);
 
 		dpi_scale = window->GetDPIScale();
 
@@ -1069,7 +1066,6 @@ void Frontend::Deinitialise()
 #endif
 
 	// TODO: Once the frontend is a class, this won't be necessary.
-	debug_pcm.reset();
 	emulator.reset();
 	window.reset();
 
@@ -2193,7 +2189,7 @@ void Frontend::Update()
 		psg_status_window->Display();
 
 	if (pcm_status_window.has_value())
-		debug_pcm->Display(*pcm_status_window);
+		pcm_status_window->Display();
 
 	if (other_status_window.has_value())
 	{

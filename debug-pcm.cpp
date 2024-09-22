@@ -1,10 +1,10 @@
 #include "debug-pcm.h"
 
-#include "window-popup.h"
+#include "frontend.h"
 
-void DebugPCM::Display(WindowPopup &window)
+void DebugPCM::Registers::Display()
 {
-	if (window.Begin())
+	if (Begin())
 	{
 		if (ImGui::BeginTable("Channels", 8, ImGuiTableFlags_Borders))
 		{
@@ -18,7 +18,7 @@ void DebugPCM::Display(WindowPopup &window)
 			ImGui::TableSetupColumn("Loop Address");
 			ImGui::TableHeadersRow();
 
-			const PCM_State &pcm = emulator.CurrentState().clownmdemu.mega_cd.pcm;
+			const PCM_State &pcm = Frontend::emulator->CurrentState().clownmdemu.mega_cd.pcm;
 
 			for (cc_u8f i = 0; i < CC_COUNT_OF(pcm.channels); ++i)
 			{
@@ -30,7 +30,7 @@ void DebugPCM::Display(WindowPopup &window)
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(channel.disabled ? "No" : "Yes");
 
-				ImGui::PushFont(window.GetMonospaceFont());
+				ImGui::PushFont(GetMonospaceFont());
 
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%04" CC_PRIXLEAST16 " (%5" CC_PRIuFAST32 "Hz)", channel.frequency, static_cast<cc_u32f>(channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800));
@@ -57,5 +57,5 @@ void DebugPCM::Display(WindowPopup &window)
 		}
 	}
 
-	window.End();
+	End();
 }
