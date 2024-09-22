@@ -4,9 +4,12 @@
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-void DebugMemory::Display(bool &open, const char* const window_name, const cc_u8l* const buffer, const std::size_t buffer_length)
+#include "window-popup.h"
+
+void DebugMemory::Display(WindowPopup &window, const cc_u8l* const buffer, const std::size_t buffer_length)
 {
-	ImGui::PushFont(monospace_font);
+#if 0
+	ImGui::PushFont(window.GetMonospaceFont());
 
 	// Fit window's width to text, and disable horizontal resizing.
 	const ImGuiStyle &style = ImGui::GetStyle();
@@ -16,10 +19,10 @@ void DebugMemory::Display(bool &open, const char* const window_name, const cc_u8
 	ImGui::SetNextWindowSize(ImVec2(width, width), ImGuiCond_FirstUseEver);
 
 	ImGui::PopFont();
-
-	if (ImGui::Begin(window_name, &open))
+#endif
+	if (window.Begin())
 	{
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(window.GetMonospaceFont());
 
 		ImGuiListClipper clipper;
 		clipper.Begin(buffer_length / 0x10);
@@ -46,12 +49,13 @@ void DebugMemory::Display(bool &open, const char* const window_name, const cc_u8
 		ImGui::PopFont();
 	}
 
-	ImGui::End();
+	window.End();
 }
 
-void DebugMemory::Display(bool &open, const char* const window_name, const cc_u16l* const buffer, const std::size_t buffer_length)
+void DebugMemory::Display(WindowPopup &window, const cc_u16l* const buffer, const std::size_t buffer_length)
 {
-	ImGui::PushFont(monospace_font);
+#if 0
+	ImGui::PushFont(window.GetMonospaceFont());
 
 	// Fit window's width to text, and disable horizontal resizing.
 	const ImGuiStyle &style = ImGui::GetStyle();
@@ -61,10 +65,10 @@ void DebugMemory::Display(bool &open, const char* const window_name, const cc_u1
 	ImGui::SetNextWindowSize(ImVec2(width, width), ImGuiCond_FirstUseEver);
 
 	ImGui::PopFont();
-
-	if (ImGui::Begin(window_name, &open))
+#endif
+	if (window.Begin())
 	{
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(window.GetMonospaceFont());
 
 		ImGuiListClipper clipper;
 		clipper.Begin(buffer_length / 8);
@@ -89,5 +93,5 @@ void DebugMemory::Display(bool &open, const char* const window_name, const cc_u1
 		ImGui::PopFont();
 	}
 
-	ImGui::End();
+	window.End();
 }

@@ -2,13 +2,15 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void DebugZ80::Display(bool &open)
+#include "window-popup.h"
+
+void DebugZ80::Display(WindowPopup &window)
 {
-	if (ImGui::Begin("Z80 Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (window.Begin())
 	{
 		const Z80_State &z80 = emulator.CurrentState().clownmdemu.z80.state;
 
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(window.GetMonospaceFont());
 
 		ImGui::Text("Normal: A:%02" CC_PRIXLEAST8 " B:%02" CC_PRIXLEAST8 " C:%02" CC_PRIXLEAST8 " D:%02" CC_PRIXLEAST8 " E:%02" CC_PRIXLEAST8 " F:%02" CC_PRIXLEAST8 " H:%02" CC_PRIXLEAST8 " L:%02" CC_PRIXLEAST8, z80.a, z80.b, z80.c, z80.d, z80.e, z80.f, z80.h, z80.l);
 		ImGui::Separator();
@@ -19,5 +21,5 @@ void DebugZ80::Display(bool &open)
 		ImGui::PopFont();
 	}
 
-	ImGui::End();
+	window.End();
 }

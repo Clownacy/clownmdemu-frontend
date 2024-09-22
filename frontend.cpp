@@ -159,7 +159,7 @@ static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
 
-static std::array<std::optional<WindowPopup>, 8> popup_windows;
+static std::array<std::optional<WindowPopup>, 14> popup_windows;
 static std::optional<WindowPopup> &options_window = popup_windows[0];
 static std::optional<WindowPopup> &about_window = popup_windows[1];
 static std::optional<WindowPopup> &debug_log_window = popup_windows[2];
@@ -168,6 +168,12 @@ static std::optional<WindowPopup> &m68k_disassembler_window = popup_windows[4];
 static std::optional<WindowPopup> &debug_frontend_window = popup_windows[5];
 static std::optional<WindowPopup> &m68k_status_window = popup_windows[6];
 static std::optional<WindowPopup> &mcd_m68k_status_window = popup_windows[7];
+static std::optional<WindowPopup> &z80_status_window = popup_windows[8];
+static std::optional<WindowPopup> &m68k_ram_viewer_window = popup_windows[9];
+static std::optional<WindowPopup> &z80_ram_viewer_window = popup_windows[10];
+static std::optional<WindowPopup> &word_ram_viewer_window = popup_windows[11];
+static std::optional<WindowPopup> &prg_ram_viewer_window = popup_windows[12];
+static std::optional<WindowPopup> &wave_ram_viewer_window = popup_windows[13];
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -175,12 +181,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool z80_status;
-static bool m68k_ram_viewer;
-static bool z80_ram_viewer;
-static bool word_ram_viewer;
-static bool prg_ram_viewer;
-static bool wave_ram_viewer;
 static bool vdp_registers;
 static bool sprite_list;
 static bool sprite_viewer;
@@ -1675,12 +1675,12 @@ void Frontend::Update()
 							|| debug_frontend_window.has_value()
 							|| m68k_status_window.has_value()
 							|| mcd_m68k_status_window.has_value()
-							|| z80_status
-							|| m68k_ram_viewer
-							|| z80_ram_viewer
-							|| prg_ram_viewer
-							|| word_ram_viewer
-							|| wave_ram_viewer
+							|| z80_status_window.has_value()
+							|| m68k_ram_viewer_window.has_value()
+							|| z80_ram_viewer_window.has_value()
+							|| prg_ram_viewer_window.has_value()
+							|| word_ram_viewer_window.has_value()
+							|| wave_ram_viewer_window.has_value()
 							|| vdp_registers
 							|| sprite_list
 							|| sprite_viewer
@@ -1902,22 +1902,22 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("Main-68000"))
 				{
 					PopupButton("Registers", m68k_status_window, 376, 120, false, "Main-68000 Registers");
-					ImGui::MenuItem("WORK-RAM", nullptr, &m68k_ram_viewer);
+					PopupButton("WORK-RAM", m68k_ram_viewer_window, 384, 384, true);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
 					PopupButton("Registers", mcd_m68k_status_window, 376, 120, false, "Sub-68000 Registers");
-					ImGui::MenuItem("PRG-RAM", nullptr, &prg_ram_viewer);
-					ImGui::MenuItem("WORD-RAM", nullptr, &word_ram_viewer);
+					PopupButton("PRG-RAM", prg_ram_viewer_window, 384, 384, true);
+					PopupButton("WORD-RAM", word_ram_viewer_window, 384, 384, true);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Z80"))
 				{
-					ImGui::MenuItem("Registers", nullptr, &z80_status);
-					ImGui::MenuItem("SOUND-RAM", nullptr, &z80_ram_viewer);
+					PopupButton("Registers", z80_status_window, 390, 80, false, "Z80 Registers");
+					PopupButton("SOUND-RAM", z80_ram_viewer_window, 436, 436, true);
 					ImGui::EndMenu();
 				}
 
@@ -1942,7 +1942,7 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("PCM"))
 				{
 					ImGui::MenuItem("Registers", nullptr, &pcm_status);
-					ImGui::MenuItem("WAVE-RAM", nullptr, &wave_ram_viewer);
+					PopupButton("WAVE-RAM", wave_ram_viewer_window, 436, 436, true);
 					ImGui::EndMenu();
 				}
 
@@ -2137,23 +2137,23 @@ void Frontend::Update()
 	if (mcd_m68k_status_window.has_value())
 		debug_m68k->Display(*mcd_m68k_status_window, emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
 
-	if (z80_status)
-		debug_z80->Display(z80_status);
+	if (z80_status_window.has_value())
+		debug_z80->Display(*z80_status_window);
 
-	if (m68k_ram_viewer)
-		debug_memory->Display(m68k_ram_viewer, "WORK-RAM", emulator->CurrentState().clownmdemu.m68k.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.m68k.ram));
+	if (m68k_ram_viewer_window.has_value())
+		debug_memory->Display(*m68k_ram_viewer_window, emulator->CurrentState().clownmdemu.m68k.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.m68k.ram));
 
-	if (z80_ram_viewer)
-		debug_memory->Display(z80_ram_viewer, "SOUND-RAM", emulator->CurrentState().clownmdemu.z80.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.z80.ram));
+	if (z80_ram_viewer_window.has_value())
+		debug_memory->Display(*z80_ram_viewer_window, emulator->CurrentState().clownmdemu.z80.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.z80.ram));
 
-	if (prg_ram_viewer)
-		debug_memory->Display(prg_ram_viewer, "PRG-RAM", emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer));
+	if (prg_ram_viewer_window.has_value())
+		debug_memory->Display(*prg_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer));
 
-	if (word_ram_viewer)
-		debug_memory->Display(word_ram_viewer, "WORD-RAM", emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer));
+	if (word_ram_viewer_window.has_value())
+		debug_memory->Display(*word_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer));
 
-	if (wave_ram_viewer)
-		debug_memory->Display(wave_ram_viewer, "WAVE-RAM", emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram));
+	if (wave_ram_viewer_window.has_value())
+		debug_memory->Display(*wave_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram));
 
 	if (vdp_registers)
 		debug_vdp->DisplayRegisters(vdp_registers);

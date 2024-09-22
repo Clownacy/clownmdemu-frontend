@@ -5,6 +5,8 @@
 
 #include "emulator-instance.h"
 
+class WindowPopup;
+
 class DebugZ80
 {
 private:
@@ -19,7 +21,7 @@ public:
 		emulator(emulator),
 		monospace_font(monospace_font)
 	{}
-	void Display(bool &open);
+	void Display(WindowPopup &window);
 };
 
 #endif /* DEBUG_Z80_H */
