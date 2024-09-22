@@ -24,7 +24,7 @@ private:
 	FileUtilities &file_utilities;
 	const unsigned int &frame_counter;
 	ImFont* const &monospace_font;
-	Window &window;
+	Window &window; // TODO: Remove this.
 
 	static constexpr cc_u8f TOTAL_SPRITES = 80;
 
@@ -45,6 +45,7 @@ private:
 
 	struct SpriteCommon
 	{
+		// TODO: Any way to share this between the two sprite viewers again when using Dear ImGui windows?
 		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
 		unsigned int cache_frame_counter = 0;
 	};

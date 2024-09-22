@@ -54,6 +54,7 @@ void DebugMemory::Display(WindowPopup &window, const cc_u8l* const buffer, const
 
 void DebugMemory::Display(WindowPopup &window, const cc_u16l* const buffer, const std::size_t buffer_length)
 {
+	// TODO: Remove or reimplement this.
 #if 0
 	ImGui::PushFont(window.GetMonospaceFont());
 
