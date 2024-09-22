@@ -6,6 +6,8 @@
 #include "emulator-instance.h"
 #include "window.h"
 
+class WindowPopup;
+
 class DebugFrontend
 {
 public:
@@ -13,21 +15,19 @@ public:
 
 private:
 	const EmulatorInstance &emulator;
-	Window &window;
 	const GetUpscaledFramebufferSize get_upscaled_framebuffer_size;
 
 public:
 	unsigned int output_width = 0, output_height = 0;
 	unsigned int upscale_width = 0, upscale_height = 0;
 
-	DebugFrontend(const EmulatorInstance &emulator, Window &window, const GetUpscaledFramebufferSize &get_upscaled_framebuffer_size)
+	DebugFrontend(const EmulatorInstance &emulator, const GetUpscaledFramebufferSize &get_upscaled_framebuffer_size)
 		: emulator(emulator)
-		, window(window)
 		, get_upscaled_framebuffer_size(get_upscaled_framebuffer_size)
 	{
 
 	}
-	void Display(bool &open);
+	void Display(WindowPopup &window);
 };
 
 #endif /* DEBUG_FRONTEND_H */

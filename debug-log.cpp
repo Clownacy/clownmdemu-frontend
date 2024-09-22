@@ -1,5 +1,7 @@
 #include "debug-log.h"
 
+#include "window-popup.h"
+
 void DebugLog::Log(const char* const format, std::va_list args)
 {
 	if (logging_enabled || force_console_output)
@@ -39,11 +41,9 @@ void DebugLog::Log(const char* const format, ...)
 	va_end(args);
 }
 
-void DebugLog::Display(bool &open)
+void DebugLog::Display(WindowPopup &window)
 {
-	ImGui::SetNextWindowSize(ImVec2(400 * dpi_scale, 300 * dpi_scale), ImGuiCond_FirstUseEver);
-
-	if (ImGui::Begin("Log", &open))
+	if (window.Begin())
 	{
 		ImGui::Checkbox("Enable Logging", &logging_enabled);
 		ImGui::SameLine();
@@ -52,7 +52,7 @@ void DebugLog::Display(bool &open)
 		if (ImGui::Button("Clear"))
 			lines.clear();
 
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(window.GetMonospaceFont());
 		ImGui::InputTextMultiline("##log", &lines[0], lines.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 
 		// When scrolled to the bottom, stay that way.
@@ -62,5 +62,5 @@ void DebugLog::Display(bool &open)
 		ImGui::PopFont();
 	}
 
-	ImGui::End();
+	window.End();
 }

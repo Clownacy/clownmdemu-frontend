@@ -4,6 +4,8 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
 
+#include "window-popup.h"
+
 static unsigned int address;
 static int current_memory;
 static std::string assembly;
@@ -78,11 +80,9 @@ static void PrintCallback(void* /*const user_data*/, const char* const string)
 	assembly += '\n';
 }
 
-void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const monospace_font)
+void Disassembler(WindowPopup &window, const EmulatorInstance &emulator, ImFont* const monospace_font)
 {
-	ImGui::SetNextWindowSize(ImVec2(580, 620), ImGuiCond_FirstUseEver);
-
-	if (ImGui::Begin("68000 Disassembler", &open))
+	if (window.Begin())
 	{
 		static const std::array<const char*, 6> memories = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
 
@@ -103,10 +103,10 @@ void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont* const mo
 				assembly.pop_back();
 		}
 
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(window.GetMonospaceFont());
 		ImGui::InputTextMultiline("##code", &assembly[0], assembly.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 		ImGui::PopFont();
 	}
 
-	ImGui::End();
+	window.End();
 }

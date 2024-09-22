@@ -40,12 +40,17 @@ public:
 		ImGui::SetCurrentContext(previous_context);
 	}
 
-	ImFont* GetMonospaceFont()
+	WindowWithDearImGui& GetWindow()
 	{
 		if (window.has_value())
-			return window->monospace_font;
+			return *window;
 		else
-			return parent_window->monospace_font;
+			return *parent_window;
+	}
+
+	ImFont* GetMonospaceFont()
+	{
+		return GetWindow().monospace_font;
 	}
 };
 

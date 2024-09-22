@@ -159,10 +159,13 @@ static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
 
-static std::array<std::optional<WindowPopup>, 3> popup_windows;
+static std::array<std::optional<WindowPopup>, 6> popup_windows;
 static std::optional<WindowPopup> &options_window = popup_windows[0];
 static std::optional<WindowPopup> &about_window = popup_windows[1];
-static std::optional<WindowPopup> &debugging_toggles_window = popup_windows[2];
+static std::optional<WindowPopup> &debug_log_window = popup_windows[2];
+static std::optional<WindowPopup> &debugging_toggles_window = popup_windows[3];
+static std::optional<WindowPopup> &m68k_disassembler_window = popup_windows[4];
+static std::optional<WindowPopup> &debug_frontend_window = popup_windows[5];
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -170,8 +173,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool debug_log_active;
-static bool debug_frontend_active;
 static bool m68k_status;
 static bool mcd_m68k_status;
 static bool z80_status;
@@ -192,7 +193,6 @@ static bool fm_status;
 static bool psg_status;
 static bool pcm_status;
 static bool other_status;
-static bool disassembler;
 
 #ifndef NDEBUG
 static bool dear_imgui_demo_window;
@@ -989,7 +989,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
 		debug_fm.emplace(*emulator, monospace_font);
-		debug_frontend.emplace(*emulator, *window, GetUpscaledFramebufferSize);
+		debug_frontend.emplace(*emulator, GetUpscaledFramebufferSize);
 		debug_m68k.emplace(monospace_font);
 		debug_memory.emplace(monospace_font);
 		debug_pcm.emplace(*emulator, monospace_font);
@@ -1671,8 +1671,8 @@ void Frontend::Update()
 
 	const bool show_menu_bar = !window->GetFullscreen()
 							|| pop_out
-							|| debug_log_active
-							|| debug_frontend_active
+							|| debug_log_window.has_value()
+							|| debug_frontend_window.has_value()
 							|| m68k_status
 							|| mcd_m68k_status
 							|| z80_status
@@ -1693,7 +1693,7 @@ void Frontend::Update()
 							|| psg_status
 							|| pcm_status
 							|| other_status
-							|| disassembler
+							|| m68k_disassembler_window.has_value()
 							|| debugging_toggles_window.has_value()
 							|| options_window.has_value()
 							|| about_window.has_value()
@@ -1889,15 +1889,15 @@ void Frontend::Update()
 
 			if (ImGui::BeginMenu("Debugging"))
 			{
-				ImGui::MenuItem("Log", nullptr, &debug_log_active);
+				PopupButton("Log", debug_log_window, 400, 300);
 
 				PopupButton("Toggles", debugging_toggles_window, 240, 436);
 
-				ImGui::MenuItem("68000 Disassembler", nullptr, &disassembler);
+				PopupButton("68000 Disassembler", m68k_disassembler_window, 380, 410);
 
 				ImGui::Separator();
 
-				ImGui::MenuItem("Frontend", nullptr, &debug_frontend_active);
+				PopupButton("Frontend", debug_frontend_window, 160, 300);
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
@@ -2125,11 +2125,11 @@ void Frontend::Update()
 
 	ImGui::End();
 
-	if (debug_log_active)
-		debug_log.Display(debug_log_active);
+	if (debug_log_window.has_value())
+		debug_log.Display(*debug_log_window);
 
-	if (debug_frontend_active)
-		debug_frontend->Display(debug_frontend_active);
+	if (debug_frontend_window.has_value())
+		debug_frontend->Display(*debug_frontend_window);
 
 	if (m68k_status)
 		debug_m68k->Display(m68k_status, "Main-68000 Registers", emulator->CurrentState().clownmdemu.m68k.state);
@@ -2425,8 +2425,8 @@ void Frontend::Update()
 		debugging_toggles_window->End();
 	}
 
-	if (disassembler)
-		Disassembler(disassembler, *emulator, monospace_font);
+	if (m68k_disassembler_window.has_value())
+		Disassembler(*m68k_disassembler_window, *emulator, monospace_font);
 
 	if (options_window.has_value())
 	{

@@ -5,6 +5,8 @@
 
 #include "emulator-instance.h"
 
-void Disassembler(bool &open, const EmulatorInstance &emulator, ImFont *monospace_font);
+class WindowPopup;
+
+void Disassembler(WindowPopup &window, const EmulatorInstance &emulator, ImFont *monospace_font);
 
 #endif /* DISASSEMBLER_H */

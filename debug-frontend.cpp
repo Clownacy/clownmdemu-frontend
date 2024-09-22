@@ -1,5 +1,7 @@
 #include "debug-frontend.h"
 
+#include "window-popup.h"
+
 static void DoToolTip(const char* const text)
 {
 	if (ImGui::IsItemHovered())
@@ -10,9 +12,9 @@ static void DoToolTip(const char* const text)
 	}
 }
 
-void DebugFrontend::Display(bool &open)
+void DebugFrontend::Display(WindowPopup &window)
 {
-	if (ImGui::Begin("Frontend", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (window.Begin(ImGuiWindowFlags_AlwaysAutoResize))
 	{
 		ImGui::SeparatorText("SDL2 Drivers");
 
@@ -25,7 +27,7 @@ void DebugFrontend::Display(bool &open)
 			ImGui::TableNextColumn();
 
 			SDL_RendererInfo info;
-			if (SDL_GetRendererInfo(window.GetRenderer(), &info) == 0)
+			if (SDL_GetRendererInfo(window.GetWindow().GetRenderer(), &info) == 0)
 				ImGui::TextUnformatted(info.name);
 			else
 				ImGui::TextUnformatted("Unknown");
@@ -131,5 +133,5 @@ void DebugFrontend::Display(bool &open)
 		}
 	}
 
-	ImGui::End();
+	window.End();
 }
