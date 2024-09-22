@@ -43,12 +43,25 @@ namespace DebugVDPNew
 		void Display();
 	};
 
-	class SpriteList: public SpriteCommon
+	class SpriteList : public SpriteCommon
 	{
 	public:
 		using SpriteCommon::SpriteCommon;
 
 		void Display();
+	};
+
+	class PlaneViewer : public WindowPopup
+	{
+	private:
+		int scale = 0;
+		SDL::Texture texture = nullptr;
+		unsigned int cache_frame_counter = 0;
+
+	public:
+		using WindowPopup::WindowPopup;
+
+		void Display(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 	};
 }
 
@@ -78,15 +91,6 @@ private:
 		int brightness = 1;
 	} cram_viewer;
 
-	struct PlaneViewer
-	{
-		int scale = 0;
-		SDL::Texture texture = nullptr;
-		unsigned int cache_frame_counter = 0;
-	} window_plane_data, plane_a_data, plane_b_data;
-
-	void DisplayPlane(bool &open, const char *name, PlaneViewer &plane_viewer, cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
-
 public:
 	DebugVDP(
 		DebugLog &debug_log,
@@ -105,9 +109,6 @@ public:
 		monospace_font(monospace_font),
 		window(window)
 	{}
-	void DisplayWindowPlane(bool &open);
-	void DisplayPlaneA(bool &open);
-	void DisplayPlaneB(bool &open);
 	void DisplayVRAM(bool &open);
 	void DisplayCRAM(bool &open);
 	void DisplayRegisters(WindowPopup &window);

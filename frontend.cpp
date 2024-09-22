@@ -179,6 +179,9 @@ static std::optional<WindowPopup> wave_ram_viewer_window;
 static std::optional<WindowPopup> vdp_registers_window;
 static std::optional<DebugVDPNew::SpriteList> sprite_list_window;
 static std::optional<DebugVDPNew::SpriteViewer> sprite_viewer_window;
+static std::optional<DebugVDPNew::PlaneViewer> window_plane_viewer_window;
+static std::optional<DebugVDPNew::PlaneViewer>  plane_a_viewer_window;
+static std::optional<DebugVDPNew::PlaneViewer>  plane_b_viewer_window;
 
 static std::optional<WindowPopup> other_status_window;
 static std::optional<WindowPopup> pcm_status_window;
@@ -189,9 +192,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool window_plane_viewer;
-static bool plane_a_viewer;
-static bool plane_b_viewer;
 static bool vram_viewer;
 static bool cram_viewer;
 static bool fm_status;
@@ -1621,6 +1621,9 @@ void Frontend::HandleEvent(const SDL_Event &event)
 			&vdp_registers_window,
 			&sprite_list_window,
 			&sprite_viewer_window,
+			&window_plane_viewer_window,
+			&plane_a_viewer_window,
+			&plane_b_viewer_window,
 
 			&other_status_window,
 			&pcm_status_window
@@ -1717,9 +1720,9 @@ void Frontend::Update()
 							|| vdp_registers_window.has_value()
 							|| sprite_list_window.has_value()
 							|| sprite_viewer_window.has_value()
-							|| window_plane_viewer
-							|| plane_a_viewer
-							|| plane_b_viewer
+							|| window_plane_viewer_window.has_value()
+							|| plane_a_viewer_window.has_value()
+							|| plane_b_viewer_window.has_value()
 							|| vram_viewer
 							|| cram_viewer
 							|| fm_status
@@ -1960,9 +1963,9 @@ void Frontend::Update()
 					PopupButton("Sprites", sprite_list_window, 540, 540, false);
 					ImGui::SeparatorText("Visualisers");
 					PopupButton("Sprite Plane", sprite_viewer_window, 544 / dpi_scale, 560 / dpi_scale, true);
-					ImGui::MenuItem("Window Plane", nullptr, &window_plane_viewer);
-					ImGui::MenuItem("Plane A", nullptr, &plane_a_viewer);
-					ImGui::MenuItem("Plane B", nullptr, &plane_b_viewer);
+					PopupButton("Window Plane", window_plane_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Plane A", plane_a_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Plane B", plane_b_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					ImGui::MenuItem("VRAM", nullptr, &vram_viewer);
 					ImGui::MenuItem("CRAM", nullptr, &cram_viewer);
 					ImGui::EndMenu();
@@ -2158,6 +2161,8 @@ void Frontend::Update()
 
 	ImGui::End();
 
+	const auto &clownmdemu = emulator->CurrentState().clownmdemu;
+
 	if (debug_log_window.has_value())
 		debug_log.Display(*debug_log_window);
 
@@ -2165,28 +2170,28 @@ void Frontend::Update()
 		debug_frontend->Display(*debug_frontend_window);
 
 	if (m68k_status_window.has_value())
-		debug_m68k->Display(*m68k_status_window, emulator->CurrentState().clownmdemu.m68k.state);
+		debug_m68k->Display(*m68k_status_window, clownmdemu.m68k.state);
 
 	if (mcd_m68k_status_window.has_value())
-		debug_m68k->Display(*mcd_m68k_status_window, emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
+		debug_m68k->Display(*mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
 
 	if (z80_status_window.has_value())
 		debug_z80->Display(*z80_status_window);
 
 	if (m68k_ram_viewer_window.has_value())
-		debug_memory->Display(*m68k_ram_viewer_window, emulator->CurrentState().clownmdemu.m68k.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.m68k.ram));
+		debug_memory->Display(*m68k_ram_viewer_window, clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
 
 	if (z80_ram_viewer_window.has_value())
-		debug_memory->Display(*z80_ram_viewer_window, emulator->CurrentState().clownmdemu.z80.ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.z80.ram));
+		debug_memory->Display(*z80_ram_viewer_window, clownmdemu.z80.ram, CC_COUNT_OF(clownmdemu.z80.ram));
 
 	if (prg_ram_viewer_window.has_value())
-		debug_memory->Display(*prg_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.prg_ram.buffer));
+		debug_memory->Display(*prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer));
 
 	if (word_ram_viewer_window.has_value())
-		debug_memory->Display(*word_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.word_ram.buffer));
+		debug_memory->Display(*word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer));
 
 	if (wave_ram_viewer_window.has_value())
-		debug_memory->Display(*wave_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram));
+		debug_memory->Display(*wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
 
 	if (vdp_registers_window.has_value())
 		debug_vdp->DisplayRegisters(*vdp_registers_window);
@@ -2197,14 +2202,14 @@ void Frontend::Update()
 	if (sprite_viewer_window.has_value())
 		sprite_viewer_window->Display();
 
-	if (window_plane_viewer)
-		debug_vdp->DisplayWindowPlane(window_plane_viewer);
+	if (window_plane_viewer_window.has_value())
+		window_plane_viewer_window->Display(clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
 
-	if (plane_a_viewer)
-		debug_vdp->DisplayPlaneA(plane_a_viewer);
+	if (plane_a_viewer_window.has_value())
+		plane_a_viewer_window->Display(clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
 
-	if (plane_b_viewer)
-		debug_vdp->DisplayPlaneB(plane_b_viewer);
+	if (plane_b_viewer_window.has_value())
+		plane_b_viewer_window->Display(clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
 
 	if (vram_viewer)
 		debug_vdp->DisplayVRAM(vram_viewer);

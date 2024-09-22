@@ -86,54 +86,52 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &plane_viewer, const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
+void DebugVDPNew::PlaneViewer::Display(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
 {
-	ImGui::SetNextWindowSize(ImVec2(1050, 610), ImGuiCond_FirstUseEver);
-
-	if (ImGui::Begin(name, &open))
+	if (Begin())
 	{
-		const auto &state = emulator.CurrentState();
+		const auto &state = Frontend::emulator->CurrentState();
 		const VDP_State &vdp = state.clownmdemu.vdp;
 
 		const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 		const cc_u16f plane_texture_height = 64 * 16;
 
-		if (plane_viewer.texture.get() == nullptr)
+		if (texture.get() == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			plane_viewer.texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
+			texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
 
-			if (plane_viewer.texture.get() == nullptr)
+			if (texture.get() == nullptr)
 			{
-				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(plane_viewer.texture.get(), SDL_BLENDMODE_NONE) < 0)
-					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+				if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
-		if (plane_viewer.texture.get() != nullptr)
+		if (texture.get() != nullptr)
 		{
-			ImGui::InputInt("Zoom", &plane_viewer.scale);
-			if (plane_viewer.scale < 1)
-				plane_viewer.scale = 1;
+			ImGui::InputInt("Zoom", &scale);
+			if (scale < 1)
+				scale = 1;
 
 			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 			{
 				// Only update the texture if we know that the frame has changed.
 				// This prevents constant texture generation even when the emulator is paused.
-				if (plane_viewer.cache_frame_counter != frame_counter)
+				if (cache_frame_counter != Frontend::frame_counter)
 				{
-					plane_viewer.cache_frame_counter = frame_counter;
+					cache_frame_counter = Frontend::frame_counter;
 
 					// Lock texture so that we can write into it.
 					Uint8 *plane_texture_pixels;
 					int plane_texture_pitch;
 
-					if (SDL_LockTexture(plane_viewer.texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
+					if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
 					{
 						cc_u16f plane_index = plane_address;
 
@@ -146,7 +144,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 							}
 						}
 
-						SDL_UnlockTexture(plane_viewer.texture.get());
+						SDL_UnlockTexture(texture.get());
 					}
 				}
 
@@ -158,7 +156,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-				ImGui::Image(plane_viewer.texture.get(), ImVec2(plane_width_in_pixels * plane_viewer.scale, plane_height_in_pixels * plane_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+				ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 				if (ImGui::IsItemHovered())
 				{
@@ -166,14 +164,15 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 
 					const ImVec2 mouse_position = ImGui::GetMousePos();
 
-					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / plane_viewer.scale / tile_width);
-					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / plane_viewer.scale / tile_height);
+					const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
+					const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
 
 					const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
 
 					const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
-					ImGui::Image(plane_viewer.texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
+					const auto dpi_scale = GetWindow().GetDPIScale();
+					ImGui::Image(texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
 					ImGui::SameLine();
 					ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -185,25 +184,7 @@ void DebugVDP::DisplayPlane(bool &open, const char* const name, PlaneViewer &pla
 		}
 	}
 
-	ImGui::End();
-}
-
-void DebugVDP::DisplayWindowPlane(bool &open)
-{
-	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
-	DisplayPlane(open, "Window Plane", window_plane_data, emulator.CurrentState().clownmdemu.vdp.window_address, vdp.h40_enabled ? 64 : 32, 32);
-}
-
-void DebugVDP::DisplayPlaneA(bool &open)
-{
-	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
-	DisplayPlane(open, "Plane A", plane_a_data, emulator.CurrentState().clownmdemu.vdp.plane_a_address, vdp.plane_width, vdp.plane_height);
-}
-
-void DebugVDP::DisplayPlaneB(bool &open)
-{
-	const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
-	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address, vdp.plane_width, vdp.plane_height);
+	End();
 }
 
 void DebugVDPNew::SpriteCommon::DisplaySpriteCommon()
