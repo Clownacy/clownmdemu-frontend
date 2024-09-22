@@ -168,11 +168,11 @@ static std::optional<DebugFrontend> debug_frontend_window;
 static std::optional<DebugM68k::Registers> m68k_status_window;
 static std::optional<DebugM68k::Registers> mcd_m68k_status_window;
 static std::optional<DebugZ80::Registers> z80_status_window;
-static std::optional<WindowPopup> m68k_ram_viewer_window;
-static std::optional<WindowPopup> z80_ram_viewer_window;
-static std::optional<WindowPopup> word_ram_viewer_window;
-static std::optional<WindowPopup> prg_ram_viewer_window;
-static std::optional<WindowPopup> wave_ram_viewer_window;
+static std::optional<DebugMemory> m68k_ram_viewer_window;
+static std::optional<DebugMemory> z80_ram_viewer_window;
+static std::optional<DebugMemory> word_ram_viewer_window;
+static std::optional<DebugMemory> prg_ram_viewer_window;
+static std::optional<DebugMemory> wave_ram_viewer_window;
 static std::optional<DebugVDP::Registers> vdp_registers_window;
 static std::optional<DebugVDP::SpriteList> sprite_list_window;
 static std::optional<DebugVDP::SpriteViewer> sprite_viewer_window;
@@ -1015,7 +1015,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
-		debug_memory.emplace(monospace_font);
 		debug_pcm.emplace(*emulator, monospace_font);
 
 		dpi_scale = window->GetDPIScale();
@@ -1071,7 +1070,6 @@ void Frontend::Deinitialise()
 
 	// TODO: Once the frontend is a class, this won't be necessary.
 	debug_pcm.reset();
-	debug_memory.reset();
 	emulator.reset();
 	window.reset();
 
@@ -2150,19 +2148,19 @@ void Frontend::Update()
 		z80_status_window->Display();
 
 	if (m68k_ram_viewer_window.has_value())
-		debug_memory->Display(*m68k_ram_viewer_window, clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
+		m68k_ram_viewer_window->Display(clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
 
 	if (z80_ram_viewer_window.has_value())
-		debug_memory->Display(*z80_ram_viewer_window, clownmdemu.z80.ram, CC_COUNT_OF(clownmdemu.z80.ram));
+		z80_ram_viewer_window->Display(clownmdemu.z80.ram, CC_COUNT_OF(clownmdemu.z80.ram));
 
 	if (prg_ram_viewer_window.has_value())
-		debug_memory->Display(*prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer));
+		prg_ram_viewer_window->Display(clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer));
 
 	if (word_ram_viewer_window.has_value())
-		debug_memory->Display(*word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer));
+		word_ram_viewer_window->Display(clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer));
 
 	if (wave_ram_viewer_window.has_value())
-		debug_memory->Display(*wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
+		wave_ram_viewer_window->Display(clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
 
 	if (vdp_registers_window.has_value())
 		vdp_registers_window->Display();

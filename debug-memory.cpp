@@ -6,7 +6,7 @@
 
 #include "window-popup.h"
 
-void DebugMemory::Display(WindowPopup &window, const cc_u8l* const buffer, const std::size_t buffer_length)
+void DebugMemory::Display(const cc_u8l* const buffer, const std::size_t buffer_length)
 {
 #if 0
 	ImGui::PushFont(window.GetMonospaceFont());
@@ -20,9 +20,9 @@ void DebugMemory::Display(WindowPopup &window, const cc_u8l* const buffer, const
 
 	ImGui::PopFont();
 #endif
-	if (window.Begin())
+	if (Begin())
 	{
-		ImGui::PushFont(window.GetMonospaceFont());
+		ImGui::PushFont(GetMonospaceFont());
 
 		ImGuiListClipper clipper;
 		clipper.Begin(buffer_length / 0x10);
@@ -49,10 +49,10 @@ void DebugMemory::Display(WindowPopup &window, const cc_u8l* const buffer, const
 		ImGui::PopFont();
 	}
 
-	window.End();
+	End();
 }
 
-void DebugMemory::Display(WindowPopup &window, const cc_u16l* const buffer, const std::size_t buffer_length)
+void DebugMemory::Display(const cc_u16l* const buffer, const std::size_t buffer_length)
 {
 	// TODO: Remove or reimplement this.
 #if 0
@@ -67,9 +67,9 @@ void DebugMemory::Display(WindowPopup &window, const cc_u16l* const buffer, cons
 
 	ImGui::PopFont();
 #endif
-	if (window.Begin())
+	if (Begin())
 	{
-		ImGui::PushFont(window.GetMonospaceFont());
+		ImGui::PushFont(GetMonospaceFont());
 
 		ImGuiListClipper clipper;
 		clipper.Begin(buffer_length / 8);
@@ -94,5 +94,5 @@ void DebugMemory::Display(WindowPopup &window, const cc_u16l* const buffer, cons
 		ImGui::PopFont();
 	}
 
-	window.End();
+	End();
 }
