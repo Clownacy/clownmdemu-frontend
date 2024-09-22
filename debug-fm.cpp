@@ -3,16 +3,19 @@
 #include <array>
 #include <cstddef>
 
-void DebugFM::Display(bool &open)
+#include "frontend.h"
+
+void DebugFM::Registers::Display()
 {
-	if (ImGui::Begin("FM", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (Begin())
 	{
 		const std::array<std::array<const char*, 2>, 2> pannings = {{
 			{"Mute", "R"},
 			{"L", "L+R"}
 		}};
 
-		const FM_State &fm = emulator.CurrentState().clownmdemu.fm;
+		const FM_State &fm = Frontend::emulator->CurrentState().clownmdemu.fm;
+		const auto monospace_font = GetMonospaceFont();
 
 		ImGui::SeparatorText("FM Channels");
 
@@ -410,5 +413,5 @@ void DebugFM::Display(bool &open)
 		}
 	}
 
-	ImGui::End();
+	End();
 }

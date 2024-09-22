@@ -153,12 +153,10 @@ static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
 static std::optional<DebugM68k> debug_m68k;
 static std::optional<DebugMemory> debug_memory;
 static std::optional<DebugPCM> debug_pcm;
-static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugZ80> debug_z80;
 
 static std::optional<WindowPopup> options_window;
@@ -183,9 +181,10 @@ static std::optional<DebugVDPNew::PlaneViewer> plane_a_viewer_window;
 static std::optional<DebugVDPNew::PlaneViewer> plane_b_viewer_window;
 static std::optional<DebugVDPNew::VRAMViewer> vram_viewer_window;
 static std::optional<DebugVDPNew::CRAMViewer> cram_viewer_window;
-
-static std::optional<WindowPopup> other_status_window;
+static std::optional<DebugFM::Registers> fm_status_window;
+static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<WindowPopup> pcm_status_window;
+static std::optional<WindowPopup> other_status_window;
 
 static constexpr auto popup_windows = std::make_tuple(
 	&options_window,
@@ -210,9 +209,10 @@ static constexpr auto popup_windows = std::make_tuple(
 	&plane_b_viewer_window,
 	&vram_viewer_window,
 	&cram_viewer_window,
-
-	&other_status_window,
-	&pcm_status_window
+	&fm_status_window,
+	&psg_status_window,
+	&pcm_status_window,
+	&other_status_window
 );
 
 // Manages whether the program exits or not.
@@ -220,9 +220,6 @@ static bool quit;
 
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
-
-static bool fm_status;
-static bool psg_status;
 
 #ifndef NDEBUG
 static bool dear_imgui_demo_window;
@@ -1018,12 +1015,10 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
-		debug_fm.emplace(*emulator, monospace_font);
 		debug_frontend.emplace(*emulator, GetUpscaledFramebufferSize);
 		debug_m68k.emplace(monospace_font);
 		debug_memory.emplace(monospace_font);
 		debug_pcm.emplace(*emulator, monospace_font);
-		debug_psg.emplace(*emulator, monospace_font);
 		debug_z80.emplace(*emulator, monospace_font);
 
 		dpi_scale = window->GetDPIScale();
@@ -1079,12 +1074,10 @@ void Frontend::Deinitialise()
 
 	// TODO: Once the frontend is a class, this won't be necessary.
 	debug_z80.reset();
-	debug_psg.reset();
 	debug_pcm.reset();
 	debug_memory.reset();
 	debug_m68k.reset();
 	debug_frontend.reset();
-	debug_fm.reset();
 	emulator.reset();
 	window.reset();
 
@@ -1724,8 +1717,8 @@ void Frontend::Update()
 							|| plane_b_viewer_window.has_value()
 							|| vram_viewer_window.has_value()
 							|| cram_viewer_window.has_value()
-							|| fm_status
-							|| psg_status
+							|| fm_status_window.has_value()
+							|| psg_status_window.has_value()
 							|| pcm_status_window.has_value()
 							|| other_status_window.has_value()
 							|| m68k_disassembler_window.has_value()
@@ -1970,9 +1963,9 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
-				ImGui::MenuItem("FM", nullptr, &fm_status);
+				PopupButton("FM", fm_status_window, 470, 744, false, "FM Registers");
 
-				ImGui::MenuItem("PSG", nullptr, &psg_status);
+				PopupButton("PSG", psg_status_window, 290, 264, false, "PSG Registers");
 
 				if (ImGui::BeginMenu("PCM"))
 				{
@@ -2216,11 +2209,11 @@ void Frontend::Update()
 	if (cram_viewer_window.has_value())
 		cram_viewer_window->Display();
 
-	if (fm_status)
-		debug_fm->Display(fm_status);
+	if (fm_status_window)
+		fm_status_window->Display();
 
-	if (psg_status)
-		debug_psg->Display(psg_status);
+	if (psg_status_window)
+		psg_status_window->Display();
 
 	if (pcm_status_window.has_value())
 		debug_pcm->Display(*pcm_status_window);

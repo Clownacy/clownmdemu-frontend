@@ -2,11 +2,14 @@
 
 #include <algorithm>
 
-void DebugPSG::Display(bool &open)
+#include "frontend.h"
+
+void DebugPSG::Registers::Display()
 {
-	if (ImGui::Begin("PSG", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (Begin())
 	{
-		const PSG_State &psg = emulator.CurrentState().clownmdemu.psg;
+		const PSG_State &psg = Frontend::emulator->CurrentState().clownmdemu.psg;
+		const auto monospace_font = GetMonospaceFont();
 
 		// Latched command.
 		ImGui::SeparatorText("Latched Command");
@@ -31,7 +34,7 @@ void DebugPSG::Display(bool &open)
 		}
 
 		// Channels.
-		const cc_u32f psg_clock = emulator.GetPALMode() ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
+		const cc_u32f psg_clock = Frontend::emulator->GetPALMode() ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
 
 		// Tone channels.
 		ImGui::SeparatorText("Tone Channels");
@@ -108,5 +111,5 @@ void DebugPSG::Display(bool &open)
 		}
 	}
 
-	ImGui::End();
+	End();
 }
