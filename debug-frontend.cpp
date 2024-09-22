@@ -1,6 +1,6 @@
 #include "debug-frontend.h"
 
-#include "window-popup.h"
+#include "frontend.h"
 
 static void DoToolTip(const char* const text)
 {
@@ -12,9 +12,9 @@ static void DoToolTip(const char* const text)
 	}
 }
 
-void DebugFrontend::Display(WindowPopup &window)
+void DebugFrontend::Display()
 {
-	if (window.Begin())
+	if (Begin())
 	{
 		ImGui::SeparatorText("SDL2 Drivers");
 
@@ -27,7 +27,7 @@ void DebugFrontend::Display(WindowPopup &window)
 			ImGui::TableNextColumn();
 
 			SDL_RendererInfo info;
-			if (SDL_GetRendererInfo(window.GetWindow().GetRenderer(), &info) == 0)
+			if (SDL_GetRendererInfo(GetWindow().GetRenderer(), &info) == 0)
 				ImGui::TextUnformatted(info.name);
 			else
 				ImGui::TextUnformatted("Unknown");
@@ -60,11 +60,11 @@ void DebugFrontend::Display(WindowPopup &window)
 			DoToolTip("The size that the frame is drawn at.");
 			ImGui::TableNextColumn();
 
-			if (output_width != 0 || output_height != 0)
+			if (Frontend::output_width != 0 || Frontend::output_height != 0)
 			{
-				ImGui::Text("%ux%u", output_width, output_height);
+				ImGui::Text("%ux%u", Frontend::output_width, Frontend::output_height);
 
-				output_width = output_height = 0;
+				Frontend::output_width = Frontend::output_height = 0;
 			}
 			else
 			{
@@ -76,11 +76,11 @@ void DebugFrontend::Display(WindowPopup &window)
 			DoToolTip("The size that the frame is upscaled to for fractional scaling.");
 			ImGui::TableNextColumn();
 
-			if (upscale_width != 0 || upscale_height != 0)
+			if (Frontend::upscale_width != 0 || Frontend::upscale_height != 0)
 			{
-				ImGui::Text("%ux%u", upscale_width, upscale_height);
+				ImGui::Text("%ux%u", Frontend::upscale_width, Frontend::upscale_height);
 
-				upscale_width = upscale_height = 0;
+				Frontend::upscale_width = Frontend::upscale_height = 0;
 			}
 			else
 			{
@@ -93,7 +93,7 @@ void DebugFrontend::Display(WindowPopup &window)
 			ImGui::TableNextColumn();
 
 			unsigned int texture_width, texture_height;
-			if (get_upscaled_framebuffer_size(texture_width, texture_height))
+			if (Frontend::GetUpscaledFramebufferSize(texture_width, texture_height))
 				ImGui::Text("%ux%u", texture_width, texture_height);
 			else
 				ImGui::TextUnformatted("N/A");
@@ -109,29 +109,29 @@ void DebugFrontend::Display(WindowPopup &window)
 			ImGui::TextUnformatted("Sample Rate");
 			DoToolTip("The number of audio frames played per second.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioSampleRate());
+			ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioSampleRate());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Buffer Frames");
 			DoToolTip("The number of audio frames that are pulled from the buffer in a single batch.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioTotalBufferFrames());
+			ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");
 			DoToolTip("The number of buffered audio frames that the audio system tries to maintain.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioTargetFrames());
+			ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioTargetFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Average Frames");
 			DoToolTip("The current average number of buffered audio frames.");
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST32, emulator.GetAudioAverageFrames());
+			ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioAverageFrames());
 
 			ImGui::EndTable();
 		}
 	}
 
-	window.End();
+	End();
 }

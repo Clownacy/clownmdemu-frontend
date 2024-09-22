@@ -124,6 +124,9 @@ std::optional<EmulatorInstance> Frontend::emulator;
 FileUtilities Frontend::file_utilities(debug_log);
 unsigned int Frontend::frame_counter;
 
+unsigned int Frontend::output_width, Frontend::output_height;
+unsigned int Frontend::upscale_width, Frontend::upscale_height;
+
 static Frontend::FrameRateCallback frame_rate_callback;
 
 static Input keyboard_input;
@@ -153,7 +156,6 @@ static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<DebugFrontend> debug_frontend;
 static std::optional<DebugM68k> debug_m68k;
 static std::optional<DebugMemory> debug_memory;
 static std::optional<DebugPCM> debug_pcm;
@@ -164,7 +166,7 @@ static std::optional<WindowPopup> about_window;
 static std::optional<WindowPopup> debug_log_window;
 static std::optional<WindowPopup> debugging_toggles_window;
 static std::optional<WindowPopup> m68k_disassembler_window;
-static std::optional<WindowPopup> debug_frontend_window;
+static std::optional<DebugFrontend> debug_frontend_window;
 static std::optional<WindowPopup> m68k_status_window;
 static std::optional<WindowPopup> mcd_m68k_status_window;
 static std::optional<WindowPopup> z80_status_window;
@@ -173,14 +175,14 @@ static std::optional<WindowPopup> z80_ram_viewer_window;
 static std::optional<WindowPopup> word_ram_viewer_window;
 static std::optional<WindowPopup> prg_ram_viewer_window;
 static std::optional<WindowPopup> wave_ram_viewer_window;
-static std::optional<DebugVDPNew::Registers> vdp_registers_window;
-static std::optional<DebugVDPNew::SpriteList> sprite_list_window;
-static std::optional<DebugVDPNew::SpriteViewer> sprite_viewer_window;
-static std::optional<DebugVDPNew::PlaneViewer> window_plane_viewer_window;
-static std::optional<DebugVDPNew::PlaneViewer> plane_a_viewer_window;
-static std::optional<DebugVDPNew::PlaneViewer> plane_b_viewer_window;
-static std::optional<DebugVDPNew::VRAMViewer> vram_viewer_window;
-static std::optional<DebugVDPNew::CRAMViewer> cram_viewer_window;
+static std::optional<DebugVDP::Registers> vdp_registers_window;
+static std::optional<DebugVDP::SpriteList> sprite_list_window;
+static std::optional<DebugVDP::SpriteViewer> sprite_viewer_window;
+static std::optional<DebugVDP::PlaneViewer> window_plane_viewer_window;
+static std::optional<DebugVDP::PlaneViewer> plane_a_viewer_window;
+static std::optional<DebugVDP::PlaneViewer> plane_b_viewer_window;
+static std::optional<DebugVDP::VRAMViewer> vram_viewer_window;
+static std::optional<DebugVDP::CRAMViewer> cram_viewer_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<WindowPopup> pcm_status_window;
@@ -357,7 +359,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 	}
 }
 
-static bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
+bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
 {
 	if (framebuffer_texture_upscaled == nullptr)
 		return false;
@@ -1015,7 +1017,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
-		debug_frontend.emplace(*emulator, GetUpscaledFramebufferSize);
 		debug_m68k.emplace(monospace_font);
 		debug_memory.emplace(monospace_font);
 		debug_pcm.emplace(*emulator, monospace_font);
@@ -1077,7 +1078,6 @@ void Frontend::Deinitialise()
 	debug_pcm.reset();
 	debug_memory.reset();
 	debug_m68k.reset();
-	debug_frontend.reset();
 	emulator.reset();
 	window.reset();
 
@@ -2119,8 +2119,8 @@ void Frontend::Update()
 					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
 					uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
 
-					debug_frontend->upscale_width = upscaled_framebuffer_rect.w;
-					debug_frontend->upscale_height = upscaled_framebuffer_rect.h;
+					upscale_width = upscaled_framebuffer_rect.w;
+					upscale_height = upscaled_framebuffer_rect.h;
 				}
 			}
 
@@ -2131,8 +2131,8 @@ void Frontend::Update()
 			// Draw the upscaled framebuffer in the window.
 			ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 
-			debug_frontend->output_width = destination_width_scaled;
-			debug_frontend->output_height = destination_height_scaled;
+			output_width = destination_width_scaled;
+			output_height = destination_height_scaled;
 		}
 	}
 
@@ -2144,7 +2144,7 @@ void Frontend::Update()
 		debug_log.Display(*debug_log_window);
 
 	if (debug_frontend_window.has_value())
-		debug_frontend->Display(*debug_frontend_window);
+		debug_frontend_window->Display();
 
 	if (m68k_status_window.has_value())
 		debug_m68k->Display(*m68k_status_window, clownmdemu.m68k.state);

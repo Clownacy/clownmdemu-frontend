@@ -13,7 +13,7 @@
 #include "file-utilities.h"
 #include "window-popup.h"
 
-namespace DebugVDPNew
+namespace DebugVDP
 {
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 

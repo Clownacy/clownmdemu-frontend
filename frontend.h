@@ -22,6 +22,10 @@ namespace Frontend
 	extern FileUtilities file_utilities;
 	extern unsigned int frame_counter;
 
+	extern unsigned int output_width, output_height;
+	extern unsigned int upscale_width, upscale_height;
+
+	bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
 	void HandleEvent(const SDL_Event &event);
 	void Update();

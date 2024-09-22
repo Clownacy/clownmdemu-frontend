@@ -86,7 +86,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-void DebugVDPNew::PlaneViewer::Display(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
+void DebugVDP::PlaneViewer::Display(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
 {
 	if (Begin())
 	{
@@ -187,7 +187,7 @@ void DebugVDPNew::PlaneViewer::Display(const cc_u16l plane_address, const cc_u16
 	End();
 }
 
-void DebugVDPNew::SpriteCommon::DisplaySpriteCommon()
+void DebugVDP::SpriteCommon::DisplaySpriteCommon()
 {
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
@@ -251,7 +251,7 @@ void DebugVDPNew::SpriteCommon::DisplaySpriteCommon()
 	cache_frame_counter = Frontend::frame_counter;
 }
 
-void DebugVDPNew::SpriteViewer::Display()
+void DebugVDP::SpriteViewer::Display()
 {
 	if (Begin())
 	{
@@ -351,7 +351,7 @@ void DebugVDPNew::SpriteViewer::Display()
 	End();
 }
 
-void DebugVDPNew::SpriteList::Display()
+void DebugVDP::SpriteList::Display()
 {
 	if (Begin())
 	{
@@ -415,7 +415,7 @@ void DebugVDPNew::SpriteList::Display()
 	End();
 }
 
-void DebugVDPNew::VRAMViewer::Display()
+void DebugVDP::VRAMViewer::Display()
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float dpi_scale = GetWindow().GetDPIScale();
@@ -654,7 +654,7 @@ void DebugVDPNew::VRAMViewer::Display()
 	End();
 }
 
-void DebugVDPNew::CRAMViewer::Display()
+void DebugVDP::CRAMViewer::Display()
 {
 	if (Begin())
 	{
@@ -734,7 +734,7 @@ void DebugVDPNew::CRAMViewer::Display()
 	End();
 }
 
-void DebugVDPNew::Registers::Display()
+void DebugVDP::Registers::Display()
 {
 	if (Begin())
 	{
