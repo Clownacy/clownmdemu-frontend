@@ -6,11 +6,11 @@
 
 #include "window-popup.h"
 
-void DebugM68k::Display(WindowPopup &window, const Clown68000_State &m68k)
+void DebugM68k::Registers::Display(const Clown68000_State &m68k)
 {
-	if (window.Begin())
+	if (Begin())
 	{
-		ImGui::PushFont(window.GetMonospaceFont());
+		ImGui::PushFont(GetMonospaceFont());
 
 		for (cc_u8f i = 0; i < 8; ++i)
 		{
@@ -46,5 +46,5 @@ void DebugM68k::Display(WindowPopup &window, const Clown68000_State &m68k)
 		ImGui::PopFont();
 	}
 
-	window.End();
+	End();
 }

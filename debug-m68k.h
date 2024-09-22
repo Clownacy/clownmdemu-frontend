@@ -1,24 +1,19 @@
 #ifndef DEBUG_M68K_H
 #define DEBUG_M68K_H
 
-#include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
+#include "clownmdemu-frontend-common/clownmdemu/clown68000/interpreter/clown68000.h"
 
-class WindowPopup;
+#include "window-popup.h"
 
-class DebugM68k
+namespace DebugM68k
 {
-private:
-	ImFont* const &monospace_font;
+	class Registers : public WindowPopup
+	{
+	public:
+		using WindowPopup::WindowPopup;
 
-public:
-	DebugM68k(
-		ImFont* const &monospace_font
-	) :
-		monospace_font(monospace_font)
-	{}
-
-	void Display(WindowPopup &window, const Clown68000_State &m68k);
-};
+		void Display(const Clown68000_State &m68k);
+	};
+}
 
 #endif /* DEBUG_M68K_H */

@@ -156,10 +156,8 @@ static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<DebugM68k> debug_m68k;
 static std::optional<DebugMemory> debug_memory;
 static std::optional<DebugPCM> debug_pcm;
-static std::optional<DebugZ80> debug_z80;
 
 static std::optional<WindowPopup> options_window;
 static std::optional<WindowPopup> about_window;
@@ -167,9 +165,9 @@ static std::optional<WindowPopup> debug_log_window;
 static std::optional<WindowPopup> debugging_toggles_window;
 static std::optional<WindowPopup> m68k_disassembler_window;
 static std::optional<DebugFrontend> debug_frontend_window;
-static std::optional<WindowPopup> m68k_status_window;
-static std::optional<WindowPopup> mcd_m68k_status_window;
-static std::optional<WindowPopup> z80_status_window;
+static std::optional<DebugM68k::Registers> m68k_status_window;
+static std::optional<DebugM68k::Registers> mcd_m68k_status_window;
+static std::optional<DebugZ80::Registers> z80_status_window;
 static std::optional<WindowPopup> m68k_ram_viewer_window;
 static std::optional<WindowPopup> z80_ram_viewer_window;
 static std::optional<WindowPopup> word_ram_viewer_window;
@@ -1017,10 +1015,8 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
-		debug_m68k.emplace(monospace_font);
 		debug_memory.emplace(monospace_font);
 		debug_pcm.emplace(*emulator, monospace_font);
-		debug_z80.emplace(*emulator, monospace_font);
 
 		dpi_scale = window->GetDPIScale();
 
@@ -1074,10 +1070,8 @@ void Frontend::Deinitialise()
 #endif
 
 	// TODO: Once the frontend is a class, this won't be necessary.
-	debug_z80.reset();
 	debug_pcm.reset();
 	debug_memory.reset();
-	debug_m68k.reset();
 	emulator.reset();
 	window.reset();
 
@@ -2147,13 +2141,13 @@ void Frontend::Update()
 		debug_frontend_window->Display();
 
 	if (m68k_status_window.has_value())
-		debug_m68k->Display(*m68k_status_window, clownmdemu.m68k.state);
+		m68k_status_window->Display(clownmdemu.m68k.state);
 
 	if (mcd_m68k_status_window.has_value())
-		debug_m68k->Display(*mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
+		mcd_m68k_status_window->Display(clownmdemu.mega_cd.m68k.state);
 
 	if (z80_status_window.has_value())
-		debug_z80->Display(*z80_status_window);
+		z80_status_window->Display();
 
 	if (m68k_ram_viewer_window.has_value())
 		debug_memory->Display(*m68k_ram_viewer_window, clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
