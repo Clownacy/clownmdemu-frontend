@@ -19,8 +19,6 @@ public:
 	{
 
 	}
-
-	SDL_Texture* GetFramebufferTexture() const { return framebuffer_texture.get(); }
 };
 
 #endif /* WINDOW_WITH_FRAMEBUFFER_H */

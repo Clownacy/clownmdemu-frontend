@@ -4,6 +4,7 @@
 #include <iterator>
 #include <utility>
 
+#include "frontend.h"
 #include "text-encoding.h"
 
 bool EmulatorInstance::clownmdemu_initialised;
@@ -145,17 +146,16 @@ std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l
 }
 
 EmulatorInstance::EmulatorInstance(
-	DebugLog &debug_log,
-	WindowWithFramebuffer &window,
+	SDL::Texture &texture,
 	const InputCallback &input_callback
 )
-	: audio_output(debug_log)
-	, window(window)
+	: audio_output()
+	, texture(texture)
 	, input_callback(input_callback)
 	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, PCMAudioCallback, CDDAAudioCallback, CDSeekCallback, CDSectorReadCallback, CDSeekTrackCallback, CDAudioReadCallback})
 {
 	// This should be called before any other clownmdemu functions are called!
-	ClownMDEmu_SetLogCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &debug_log);
+	ClownMDEmu_SetLogCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &Frontend::debug_log);
 
 	// Initialise persistent data such as lookup tables.
 	if (!clownmdemu_initialised)
@@ -218,7 +218,7 @@ void EmulatorInstance::Update()
 	audio_output.MixerBegin();
 
 	// Lock the texture so that we can write to its pixels later
-	if (SDL_LockTexture(window.GetFramebufferTexture(), nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
+	if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
 		framebuffer_texture_pixels = nullptr;
 
 	framebuffer_texture_pitch /= sizeof(Uint32);
@@ -227,7 +227,7 @@ void EmulatorInstance::Update()
 	ClownMDEmu_Iterate(&clownmdemu);
 
 	// Unlock the texture so that we can draw it
-	SDL_UnlockTexture(window.GetFramebufferTexture());
+	SDL_UnlockTexture(texture.get());
 
 	// Resample, mix, and output the audio for this frame.
 	audio_output.MixerEnd();

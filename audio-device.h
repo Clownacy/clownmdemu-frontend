@@ -5,8 +5,6 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#include "debug-log.h"
-
 class AudioDevice
 {
 private:
@@ -16,7 +14,7 @@ private:
 	SDL_AudioDeviceID device;
 
 public:
-	AudioDevice(cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames, DebugLog &debug_log);
+	AudioDevice(cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames);
 	~AudioDevice();
 	AudioDevice(const AudioDevice&) = delete;
 	AudioDevice& operator=(const AudioDevice&) = delete;

@@ -3,7 +3,9 @@
 #include <stdexcept>
 #include <string>
 
-AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames, DebugLog &debug_log)
+#include "frontend.h"
+
+AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames)
 	: channels(channels)
 {
 	SDL_AudioSpec want, have;
@@ -22,7 +24,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 
 	if (device == 0)
 	{
-		debug_log.Log("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_OpenAudioDevice failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{

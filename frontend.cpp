@@ -1009,7 +1009,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		IMGUI_CHECKVERSION();
 
 		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
-		emulator.emplace(debug_log, *window, ReadInputCallback);
+		emulator.emplace(window->framebuffer_texture, ReadInputCallback);
 
 		dpi_scale = window->GetDPIScale();
 
@@ -2000,7 +2000,7 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			SDL_Texture *selected_framebuffer_texture = window->GetFramebufferTexture();
+			SDL_Texture *selected_framebuffer_texture = window->framebuffer_texture.get();
 
 			const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
 			const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
@@ -2092,7 +2092,7 @@ void Frontend::Update()
 					SDL_SetRenderTarget(window->GetRenderer(), framebuffer_texture_upscaled);
 
 					// Render.
-					SDL_RenderCopy(window->GetRenderer(), window->GetFramebufferTexture(), &framebuffer_rect, &upscaled_framebuffer_rect);
+					SDL_RenderCopy(window->GetRenderer(), window->framebuffer_texture.get(), &framebuffer_rect, &upscaled_framebuffer_rect);
 
 					// Switch back to actually rendering to the screen.
 					SDL_SetRenderTarget(window->GetRenderer(), nullptr);
