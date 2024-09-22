@@ -1055,6 +1055,14 @@ void Frontend::Deinitialise()
 {
 	debug_log.ForceConsoleOutput(true);
 
+	// Destroy windows BEFORE we shut-down SDL.
+	std::apply(
+		[]<typename... Ts>(const Ts&... windows)
+		{
+			(windows->reset(), ...);
+		}, popup_windows
+	);
+
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
