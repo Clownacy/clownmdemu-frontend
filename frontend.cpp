@@ -152,6 +152,7 @@ static EmulatorInstance::State quick_save_state;
 static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
+static bool dear_imgui_windows;
 
 static std::optional<WindowWithFramebuffer> window;
 
@@ -598,6 +599,8 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			integer_screen_scaling = state;
 		else if (name == "tall-interlace-mode-2")
 			tall_double_resolution_mode = state;
+		else if (name == "dear-imgui-windows")
+			dear_imgui_windows = state;
 		else if (name == "low-pass-filter")
 			emulator->SetLowPassFilter(state);
 		else if (name == "low-volume-distortion")
@@ -754,6 +757,7 @@ static void LoadConfiguration()
 	emulator->SetLowPassFilter(true);
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
+	dear_imgui_windows = false;
 
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
@@ -820,6 +824,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file.get(), "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file.get(), "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file.get(), "tall-interlace-mode-2", tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file.get(), "dear-imgui-windows", dear_imgui_windows);
 		PRINT_BOOLEAN_OPTION(file.get(), "low-pass-filter", emulator->GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file.get(), "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file.get(), "pal", emulator->GetPALMode());
@@ -1015,7 +1020,8 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		LoadConfiguration();
 
-		ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
+		if (dear_imgui_windows)
+			ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
@@ -1052,7 +1058,8 @@ void Frontend::Deinitialise()
 	if (framebuffer_texture_upscaled != nullptr)
 		SDL_DestroyTexture(framebuffer_texture_upscaled);
 
-	ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
+	if (dear_imgui_windows)
+		ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
 
 	SaveConfiguration();
 
@@ -1878,7 +1885,7 @@ void Frontend::Update()
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, dear_imgui_windows ? &*::window : nullptr);
 				}
 			};
 
@@ -1951,7 +1958,8 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
 
-				ImGui::MenuItem("Display Window", nullptr, &pop_out);
+				if (dear_imgui_windows)
+					ImGui::MenuItem("Display Window", nullptr, &pop_out);
 
 			#ifndef NDEBUG
 				ImGui::Separator();
