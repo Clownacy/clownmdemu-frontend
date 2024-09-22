@@ -13,6 +13,8 @@
 #include "file-utilities.h"
 #include "window.h"
 
+class WindowPopup;
+
 class DebugVDP
 {
 private:
@@ -41,13 +43,21 @@ private:
 		int brightness = 1;
 	} cram_viewer;
 
-	struct
+	struct SpriteCommon
+	{
+		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
+		unsigned int cache_frame_counter = 0;
+	};
+
+	struct : public SpriteCommon
 	{
 		int scale = 0;
 		SDL::Texture texture = nullptr;
-		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
-		unsigned int cache_frame_counter = 0;
 	} sprite_viewer;
+
+	struct : public SpriteCommon
+	{
+	} sprite_list;
 
 	struct PlaneViewer
 	{
@@ -58,7 +68,7 @@ private:
 
 	void DrawTile(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, Uint8 *pixels, int pitch, cc_u16f x, cc_u16f y, bool transparency) const;
 	void DisplayPlane(bool &open, const char *name, PlaneViewer &plane_viewer, cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
-	void DisplaySpriteCommon();
+	void DisplaySpriteCommon(Window &window, SpriteCommon &common);
 
 public:
 	DebugVDP(
@@ -82,10 +92,10 @@ public:
 	void DisplayPlaneA(bool &open);
 	void DisplayPlaneB(bool &open);
 	void DisplaySpritePlane(bool &open);
-	void DisplaySpriteList(bool &open);
+	void DisplaySpriteList(WindowPopup &window);
 	void DisplayVRAM(bool &open);
 	void DisplayCRAM(bool &open);
-	void DisplayRegisters(bool &open);
+	void DisplayRegisters(WindowPopup &window);
 };
 
 #endif /* DEBUG_VDP_H */

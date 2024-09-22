@@ -159,7 +159,7 @@ static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
 
-static std::array<std::optional<WindowPopup>, 14> popup_windows;
+static std::array<std::optional<WindowPopup>, 18> popup_windows;
 static std::optional<WindowPopup> &options_window = popup_windows[0];
 static std::optional<WindowPopup> &about_window = popup_windows[1];
 static std::optional<WindowPopup> &debug_log_window = popup_windows[2];
@@ -174,6 +174,11 @@ static std::optional<WindowPopup> &z80_ram_viewer_window = popup_windows[10];
 static std::optional<WindowPopup> &word_ram_viewer_window = popup_windows[11];
 static std::optional<WindowPopup> &prg_ram_viewer_window = popup_windows[12];
 static std::optional<WindowPopup> &wave_ram_viewer_window = popup_windows[13];
+static std::optional<WindowPopup> &vdp_registers_window = popup_windows[16];
+static std::optional<WindowPopup> &sprite_list_window = popup_windows[17];
+
+static std::optional<WindowPopup> &other_status_window = popup_windows[15];
+static std::optional<WindowPopup> &pcm_status_window = popup_windows[14];
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -181,8 +186,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool vdp_registers;
-static bool sprite_list;
 static bool sprite_viewer;
 static bool window_plane_viewer;
 static bool plane_a_viewer;
@@ -191,8 +194,6 @@ static bool vram_viewer;
 static bool cram_viewer;
 static bool fm_status;
 static bool psg_status;
-static bool pcm_status;
-static bool other_status;
 
 #ifndef NDEBUG
 static bool dear_imgui_demo_window;
@@ -1681,8 +1682,8 @@ void Frontend::Update()
 							|| prg_ram_viewer_window.has_value()
 							|| word_ram_viewer_window.has_value()
 							|| wave_ram_viewer_window.has_value()
-							|| vdp_registers
-							|| sprite_list
+							|| vdp_registers_window.has_value()
+							|| sprite_list_window.has_value()
 							|| sprite_viewer
 							|| window_plane_viewer
 							|| plane_a_viewer
@@ -1691,8 +1692,8 @@ void Frontend::Update()
 							|| cram_viewer
 							|| fm_status
 							|| psg_status
-							|| pcm_status
-							|| other_status
+							|| pcm_status_window.has_value()
+							|| other_status_window.has_value()
 							|| m68k_disassembler_window.has_value()
 							|| debugging_toggles_window.has_value()
 							|| options_window.has_value()
@@ -1923,8 +1924,8 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("VDP"))
 				{
-					ImGui::MenuItem("Registers", nullptr, &vdp_registers);
-					ImGui::MenuItem("Sprites", nullptr, &sprite_list);
+					PopupButton("Registers", vdp_registers_window, 360, 824, false, "VDP Registers");
+					PopupButton("Sprites", sprite_list_window, 540, 540, false);
 					ImGui::SeparatorText("Visualisers");
 					ImGui::MenuItem("Sprite Plane", nullptr, &sprite_viewer);
 					ImGui::MenuItem("Window Plane", nullptr, &window_plane_viewer);
@@ -1941,12 +1942,12 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("PCM"))
 				{
-					ImGui::MenuItem("Registers", nullptr, &pcm_status);
+					PopupButton("Registers", pcm_status_window, 630, 200, false, "PCM Registers");
 					PopupButton("WAVE-RAM", wave_ram_viewer_window, 436, 436, true);
 					ImGui::EndMenu();
 				}
 
-				ImGui::MenuItem("Other", nullptr, &other_status);
+				PopupButton("Other", other_status_window, 350, 536, false);
 
 				ImGui::EndMenu();
 			}
@@ -2155,11 +2156,11 @@ void Frontend::Update()
 	if (wave_ram_viewer_window.has_value())
 		debug_memory->Display(*wave_ram_viewer_window, emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(emulator->CurrentState().clownmdemu.mega_cd.pcm.wave_ram));
 
-	if (vdp_registers)
-		debug_vdp->DisplayRegisters(vdp_registers);
+	if (vdp_registers_window.has_value())
+		debug_vdp->DisplayRegisters(*vdp_registers_window);
 
-	if (sprite_list)
-		debug_vdp->DisplaySpriteList(sprite_list);
+	if (sprite_list_window.has_value())
+		debug_vdp->DisplaySpriteList(*sprite_list_window);
 
 	if (sprite_viewer)
 		debug_vdp->DisplaySpritePlane(sprite_viewer);
@@ -2185,15 +2186,16 @@ void Frontend::Update()
 	if (psg_status)
 		debug_psg->Display(psg_status);
 
-	if (pcm_status)
-		debug_pcm->Display(pcm_status);
+	if (pcm_status_window.has_value())
+		debug_pcm->Display(*pcm_status_window);
 
-	if (other_status)
+	if (other_status_window.has_value())
 	{
-		if (ImGui::Begin("Other", &other_status, ImGuiWindowFlags_AlwaysAutoResize))
+		if (other_status_window->Begin())
 		{
 			if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
 			{
+				const auto monospace_font = other_status_window->GetMonospaceFont();
 				const ClownMDEmu_State &clownmdemu_state = emulator->CurrentState().clownmdemu;
 
 				cc_u8f i;
@@ -2313,7 +2315,7 @@ void Frontend::Update()
 			}
 		}
 
-		ImGui::End();
+		other_status_window->End();
 	}
 
 	if (debugging_toggles_window.has_value())

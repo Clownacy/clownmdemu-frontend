@@ -11,6 +11,8 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
+#include "window-popup.h"
+
 struct Sprite
 {
 	VDP_CachedSprite cached;
@@ -203,12 +205,12 @@ void DebugVDP::DisplayPlaneB(bool &open)
 	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address, vdp.plane_width, vdp.plane_height);
 }
 
-void DebugVDP::DisplaySpriteCommon()
+void DebugVDP::DisplaySpriteCommon(Window &window, SpriteCommon &common)
 {
 	const auto &state = emulator.CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	for (auto &texture : sprite_viewer.textures)
+	for (auto &texture : common.textures)
 	{
 		if (texture.get() == nullptr)
 		{
@@ -236,13 +238,13 @@ void DebugVDP::DisplaySpriteCommon()
 
 		// Only update the texture if we know that the frame has changed.
 		// This prevents constant texture generation even when the emulator is paused.
-		if (sprite_viewer.cache_frame_counter != frame_counter)
+		if (common.cache_frame_counter != frame_counter)
 		{
 			// Lock texture so that we can write into it.
 			Uint8 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
-			if (SDL_LockTexture(sprite_viewer.textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			if (SDL_LockTexture(common.textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
 			{
 				auto tile_metadata = sprite.tile_metadata;
 
@@ -259,12 +261,12 @@ void DebugVDP::DisplaySpriteCommon()
 					}
 				}
 
-				SDL_UnlockTexture(sprite_viewer.textures[i].get());
+				SDL_UnlockTexture(common.textures[i].get());
 			}
 		}
 	}
 
-	sprite_viewer.cache_frame_counter = frame_counter;
+	common.cache_frame_counter = frame_counter;
 }
 
 void DebugVDP::DisplaySpritePlane(bool &open)
@@ -273,7 +275,7 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 
 	if (ImGui::Begin("Sprite Plane", &open))
 	{
-		DisplaySpriteCommon();
+		DisplaySpriteCommon(window, sprite_viewer);
 
 		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
@@ -368,13 +370,11 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 	ImGui::End();
 }
 
-void DebugVDP::DisplaySpriteList(bool &open)
+void DebugVDP::DisplaySpriteList(WindowPopup &window)
 {
-	ImGui::SetNextWindowSize(ImVec2(500 * dpi_scale, 405 * dpi_scale), ImGuiCond_FirstUseEver);
-
-	if (ImGui::Begin("Sprites", &open))
+	if (window.Begin())
 	{
-		DisplaySpriteCommon();
+		DisplaySpriteCommon(window.GetWindow(), sprite_list);
 
 		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
@@ -404,7 +404,7 @@ void DebugVDP::DisplaySpriteList(bool &open)
 					ImGui::TableNextColumn();
 					ImGui::Text("%" CC_PRIuFAST8, i);
 					ImGui::TableNextColumn();
-					ImGui::Image(sprite_viewer.textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
+					ImGui::Image(sprite_list.textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
 					ImGui::TableNextColumn();
 					ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
 					ImGui::TableNextColumn();
@@ -430,7 +430,7 @@ void DebugVDP::DisplaySpriteList(bool &open)
 		ImGui::EndChild();
 	}
 
-	ImGui::End();
+	window.End();
 }
 
 void DebugVDP::DisplayVRAM(bool &open)
@@ -750,10 +750,11 @@ void DebugVDP::DisplayCRAM(bool &open)
 	ImGui::End();
 }
 
-void DebugVDP::DisplayRegisters(bool &open)
+void DebugVDP::DisplayRegisters(WindowPopup &window)
 {
-	if (ImGui::Begin("VDP Registers", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (window.Begin())
 	{
+		const auto monospace_font = window.GetMonospaceFont();
 		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
 
 		ImGui::SeparatorText("Miscellaneous");
@@ -1000,5 +1001,5 @@ void DebugVDP::DisplayRegisters(bool &open)
 		}
 	}
 
-	ImGui::End();
+	window.End();
 }

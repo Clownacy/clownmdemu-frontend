@@ -1,8 +1,10 @@
 #include "debug-pcm.h"
 
-void DebugPCM::Display(bool &open)
+#include "window-popup.h"
+
+void DebugPCM::Display(WindowPopup &window)
 {
-	if (ImGui::Begin("PCM", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (window.Begin())
 	{
 		if (ImGui::BeginTable("Channels", 8, ImGuiTableFlags_Borders))
 		{
@@ -28,7 +30,7 @@ void DebugPCM::Display(bool &open)
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(channel.disabled ? "No" : "Yes");
 
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(window.GetMonospaceFont());
 
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%04" CC_PRIXLEAST16 " (%5" CC_PRIuFAST32 "Hz)", channel.frequency, static_cast<cc_u32f>(channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800));
@@ -55,5 +57,5 @@ void DebugPCM::Display(bool &open)
 		}
 	}
 
-	ImGui::End();
+	window.End();
 }
