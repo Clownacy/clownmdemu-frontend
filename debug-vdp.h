@@ -63,55 +63,41 @@ namespace DebugVDPNew
 
 		void Display(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 	};
-}
 
-class DebugVDP
-{
-private:
-	DebugLog &debug_log;
-	const float &dpi_scale;
-	const EmulatorInstance &emulator;
-	FileUtilities &file_utilities;
-	const unsigned int &frame_counter;
-	ImFont* const &monospace_font;
-	Window &window; // TODO: Remove this.
-
-	struct
+	class VRAMViewer : public WindowPopup
 	{
+	private:
 		SDL::Texture texture = nullptr;
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
 		int brightness_index = 0;
 		int palette_line = 0;
 		unsigned int cache_frame_counter = 0;
-	} vram_viewer;
 
-	struct
+	public:
+		using WindowPopup::WindowPopup;
+
+		void Display();
+	};
+
+	class CRAMViewer : public WindowPopup
 	{
+	private:
 		int brightness = 1;
-	} cram_viewer;
 
-public:
-	DebugVDP(
-		DebugLog &debug_log,
-		const float &dpi_scale,
-		const EmulatorInstance &emulator,
-		FileUtilities &file_utilities,
-		const unsigned int &frame_counter,
-		ImFont* const &monospace_font,
-		Window &window
-	) :
-		debug_log(debug_log),
-		dpi_scale(dpi_scale),
-		emulator(emulator),
-		file_utilities(file_utilities),
-		frame_counter(frame_counter),
-		monospace_font(monospace_font),
-		window(window)
-	{}
-	void DisplayVRAM(bool &open);
-	void DisplayCRAM(bool &open);
-	void DisplayRegisters(WindowPopup &window);
-};
+	public:
+		using WindowPopup::WindowPopup;
+
+		void Display();
+	};
+
+	class Registers : public WindowPopup
+	{
+	public:
+		using WindowPopup::WindowPopup;
+
+		void Display();
+	};
+}
 
 #endif /* DEBUG_VDP_H */

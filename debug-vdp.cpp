@@ -415,22 +415,25 @@ void DebugVDPNew::SpriteList::Display()
 	End();
 }
 
-void DebugVDP::DisplayVRAM(bool &open)
+void DebugVDPNew::VRAMViewer::Display()
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
+	const float dpi_scale = GetWindow().GetDPIScale();
 	const float tile_scale = SDL_roundf(3.0f * dpi_scale);
 	const float tile_spacing = SDL_roundf(2.0f * dpi_scale);
 
+	// TODO: This.
+#if 0
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
 	// Give the window a default size of 16 tiles wide.
 	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * dpi_scale;
 	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
-
-	if (ImGui::Begin("VRAM", &open))
+#endif
+	if (Begin())
 	{
-		const auto &state = emulator.CurrentState();
+		const auto &state = Frontend::emulator->CurrentState();
 		const VDP_State &vdp = state.clownmdemu.vdp;
 
 		const cc_u16f tile_width = TileWidth();
@@ -438,7 +441,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 		const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
 		// Create VRAM texture if it does not exist.
-		if (vram_viewer.texture == nullptr)
+		if (texture == nullptr)
 		{
 			// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
 			const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
@@ -447,36 +450,34 @@ void DebugVDP::DisplayVRAM(bool &open)
 			const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
 			const std::size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
 
-			vram_viewer.texture_width = vram_texture_width_rounded_up_to_8;
-			vram_viewer.texture_height = vram_texture_height_rounded_up_to_16;
+			texture_width = vram_texture_width_rounded_up_to_8;
+			texture_height = vram_texture_height_rounded_up_to_16;
 
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			vram_viewer.texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(vram_viewer.texture_width), static_cast<int>(vram_viewer.texture_height)));
+			texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height)));
 
-			if (vram_viewer.texture == nullptr)
+			if (texture == nullptr)
 			{
-				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(vram_viewer.texture.get(), SDL_BLENDMODE_NONE) < 0)
-					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+				if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
 		if (ImGui::Button("Save to File"))
 		{
-			file_utilities.SaveFile(window, "Save VRAM Dump",
-			[this](const FileUtilities::SaveFileInnerCallback &callback)
+			Frontend::file_utilities.SaveFile(GetWindow(), "Save VRAM Dump",
+			[this, vdp](const FileUtilities::SaveFileInnerCallback &callback)
 			{
-				const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
-
 				return callback(vdp.vram, sizeof(vdp.vram));
 			});
 		}
 
-		if (vram_viewer.texture != nullptr)
+		if (texture != nullptr)
 		{
 			bool options_changed = false;
 
@@ -493,7 +494,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 					"Highlight"
 				};
 
-				options_changed |= ImGui::RadioButton(brightness_names[i], &vram_viewer.brightness_index, i);
+				options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_index, i);
 			}
 
 			ImGui::SeparatorText("Palette Line");
@@ -508,29 +509,29 @@ void DebugVDP::DisplayVRAM(bool &open)
 					"Highlight"
 				});
 
-				options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &vram_viewer.palette_line, i);
+				options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
 			}
 
 			ImGui::SeparatorText("Tiles");
 
 			// Set up some variables that we're going to need soon.
-			const std::size_t vram_texture_width_in_tiles = vram_viewer.texture_width / tile_width;
-			const std::size_t vram_texture_height_in_tiles = vram_viewer.texture_height / tile_height;
+			const std::size_t vram_texture_width_in_tiles = texture_width / tile_width;
+			const std::size_t vram_texture_height_in_tiles = texture_height / tile_height;
 
 			// Only update the texture if we know that the frame has changed.
 			// This prevents constant texture generation even when the emulator is paused.
-			if (vram_viewer.cache_frame_counter != frame_counter || options_changed)
+			if (cache_frame_counter != Frontend::frame_counter || options_changed)
 			{
-				vram_viewer.cache_frame_counter = frame_counter;
+				cache_frame_counter = Frontend::frame_counter;
 
 				// Select the correct palette line.
-				const auto &selected_palette = state.colours[vram_viewer.brightness_index][vram_viewer.palette_line];
+				const auto &selected_palette = state.colours[brightness_index][palette_line];
 
 				// Lock texture so that we can write into it.
 				Uint8 *vram_texture_pixels;
 				int vram_texture_pitch;
 
-				if (SDL_LockTexture(vram_viewer.texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
+				if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 				{
 					// Generate VRAM bitmap.
 					cc_u16f vram_index = 0;
@@ -558,7 +559,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 						}
 					}
 
-					SDL_UnlockTexture(vram_viewer.texture.get());
+					SDL_UnlockTexture(texture.get());
 				}
 			}
 
@@ -600,12 +601,12 @@ void DebugVDP::DisplayVRAM(bool &open)
 						const std::size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
 
 						const ImVec2 current_tile_uv0(
-							static_cast<float>(current_tile_src_x) / static_cast<float>(vram_viewer.texture_width),
-							static_cast<float>(current_tile_src_y) / static_cast<float>(vram_viewer.texture_height));
+							static_cast<float>(current_tile_src_x) / static_cast<float>(texture_width),
+							static_cast<float>(current_tile_src_y) / static_cast<float>(texture_height));
 
 						const ImVec2 current_tile_uv1(
-							static_cast<float>(current_tile_src_x + tile_width) / static_cast<float>(vram_viewer.texture_width),
-							static_cast<float>(current_tile_src_y + tile_height) / static_cast<float>(vram_viewer.texture_height));
+							static_cast<float>(current_tile_src_x + tile_width) / static_cast<float>(texture_width),
+							static_cast<float>(current_tile_src_y + tile_height) / static_cast<float>(texture_height));
 
 						// Figure out where the tile goes in the viewer.
 						const float current_tile_dst_x = static_cast<float>(x) * dst_tile_size_and_padding.x;
@@ -628,7 +629,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 							tile_boundary_position_bottom_right.y - tile_spacing);
 
 						// Finally, display the tile.
-						draw_list->AddImage(vram_viewer.texture.get(), tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+						draw_list->AddImage(texture.get(), tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
 
 						if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
 						{
@@ -638,7 +639,7 @@ void DebugVDP::DisplayVRAM(bool &open)
 							ImGui::Text("%zd/0x%zX", tile_index, tile_index);
 
 							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-							ImGui::Image(vram_viewer.texture.get(), ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+							ImGui::Image(texture.get(), ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
 
 							ImGui::EndTooltip();
 						}
@@ -650,21 +651,21 @@ void DebugVDP::DisplayVRAM(bool &open)
 		}
 	}
 
-	ImGui::End();
+	End();
 }
 
-void DebugVDP::DisplayCRAM(bool &open)
+void DebugVDPNew::CRAMViewer::Display()
 {
-	if (ImGui::Begin("CRAM", &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (Begin())
 	{
-		const auto &state = emulator.CurrentState();
+		const auto &state = Frontend::emulator->CurrentState();
 
 		ImGui::SeparatorText("Brightness");
-		ImGui::RadioButton("Shadow", &cram_viewer.brightness, 0);
+		ImGui::RadioButton("Shadow", &brightness, 0);
 		ImGui::SameLine();
-		ImGui::RadioButton("Normal", &cram_viewer.brightness, 1);
+		ImGui::RadioButton("Normal", &brightness, 1);
 		ImGui::SameLine();
-		ImGui::RadioButton("Highlight", &cram_viewer.brightness, 2);
+		ImGui::RadioButton("Highlight", &brightness, 2);
 
 		ImGui::SeparatorText("Colours");
 
@@ -682,7 +683,7 @@ void DebugVDP::DisplayCRAM(bool &open)
 
 			cc_u16f value_shaded = value & 0xEEE;
 
-			switch (cram_viewer.brightness)
+			switch (brightness)
 			{
 				case 0:
 					value_shaded >>= 1;
@@ -707,6 +708,7 @@ void DebugVDP::DisplayCRAM(bool &open)
 				ImGui::SameLine();
 			}
 
+			const float dpi_scale = GetWindow().GetDPIScale();
 			ImGui::ColorButton("##colour-button", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
 
 			if (ImGui::IsItemHovered())
@@ -715,7 +717,7 @@ void DebugVDP::DisplayCRAM(bool &open)
 
 				ImGui::Text("Line %" CC_PRIdFAST16 ", Colour %" CC_PRIdFAST16, j / length_of_palette_line, j % length_of_palette_line);
 				ImGui::Separator();
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(GetMonospaceFont());
 				ImGui::Text("Value: %03" CC_PRIXFAST16, value);
 				ImGui::Text("Blue:  %" CC_PRIdFAST16 "/7", blue);
 				ImGui::Text("Green: %" CC_PRIdFAST16 "/7", green);
@@ -729,15 +731,15 @@ void DebugVDP::DisplayCRAM(bool &open)
 		}
 	}
 
-	ImGui::End();
+	End();
 }
 
-void DebugVDP::DisplayRegisters(WindowPopup &window)
+void DebugVDPNew::Registers::Display()
 {
-	if (window.Begin())
+	if (Begin())
 	{
-		const auto monospace_font = window.GetMonospaceFont();
-		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+		const auto monospace_font = GetMonospaceFont();
+		const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
 
 		ImGui::SeparatorText("Miscellaneous");
 
@@ -983,5 +985,5 @@ void DebugVDP::DisplayRegisters(WindowPopup &window)
 		}
 	}
 
-	window.End();
+	End();
 }

@@ -159,7 +159,6 @@ static std::optional<DebugM68k> debug_m68k;
 static std::optional<DebugMemory> debug_memory;
 static std::optional<DebugPCM> debug_pcm;
 static std::optional<DebugPSG> debug_psg;
-static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
 
 static std::optional<WindowPopup> options_window;
@@ -176,15 +175,45 @@ static std::optional<WindowPopup> z80_ram_viewer_window;
 static std::optional<WindowPopup> word_ram_viewer_window;
 static std::optional<WindowPopup> prg_ram_viewer_window;
 static std::optional<WindowPopup> wave_ram_viewer_window;
-static std::optional<WindowPopup> vdp_registers_window;
+static std::optional<DebugVDPNew::Registers> vdp_registers_window;
 static std::optional<DebugVDPNew::SpriteList> sprite_list_window;
 static std::optional<DebugVDPNew::SpriteViewer> sprite_viewer_window;
 static std::optional<DebugVDPNew::PlaneViewer> window_plane_viewer_window;
-static std::optional<DebugVDPNew::PlaneViewer>  plane_a_viewer_window;
-static std::optional<DebugVDPNew::PlaneViewer>  plane_b_viewer_window;
+static std::optional<DebugVDPNew::PlaneViewer> plane_a_viewer_window;
+static std::optional<DebugVDPNew::PlaneViewer> plane_b_viewer_window;
+static std::optional<DebugVDPNew::VRAMViewer> vram_viewer_window;
+static std::optional<DebugVDPNew::CRAMViewer> cram_viewer_window;
 
 static std::optional<WindowPopup> other_status_window;
 static std::optional<WindowPopup> pcm_status_window;
+
+static constexpr auto popup_windows = std::make_tuple(
+	&options_window,
+	&about_window,
+	&debug_log_window,
+	&debugging_toggles_window,
+	&m68k_disassembler_window,
+	&debug_frontend_window,
+	&m68k_status_window,
+	&mcd_m68k_status_window,
+	&z80_status_window,
+	&m68k_ram_viewer_window,
+	&z80_ram_viewer_window,
+	&word_ram_viewer_window,
+	&prg_ram_viewer_window,
+	&wave_ram_viewer_window,
+	&vdp_registers_window,
+	&sprite_list_window,
+	&sprite_viewer_window,
+	&window_plane_viewer_window,
+	&plane_a_viewer_window,
+	&plane_b_viewer_window,
+	&vram_viewer_window,
+	&cram_viewer_window,
+
+	&other_status_window,
+	&pcm_status_window
+);
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -192,8 +221,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool vram_viewer;
-static bool cram_viewer;
 static bool fm_status;
 static bool psg_status;
 
@@ -997,7 +1024,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		debug_memory.emplace(monospace_font);
 		debug_pcm.emplace(*emulator, monospace_font);
 		debug_psg.emplace(*emulator, monospace_font);
-		debug_vdp.emplace(debug_log, dpi_scale, *emulator, file_utilities, frame_counter, monospace_font, *window);
 		debug_z80.emplace(*emulator, monospace_font);
 
 		dpi_scale = window->GetDPIScale();
@@ -1053,7 +1079,6 @@ void Frontend::Deinitialise()
 
 	// TODO: Once the frontend is a class, this won't be necessary.
 	debug_z80.reset();
-	debug_vdp.reset();
 	debug_psg.reset();
 	debug_pcm.reset();
 	debug_memory.reset();
@@ -1603,32 +1628,6 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	}
 	else
 	{
-		static const auto popup_windows = std::make_tuple(
-			&options_window,
-			&about_window,
-			&debug_log_window,
-			&debugging_toggles_window,
-			&m68k_disassembler_window,
-			&debug_frontend_window,
-			&m68k_status_window,
-			&mcd_m68k_status_window,
-			&z80_status_window,
-			&m68k_ram_viewer_window,
-			&z80_ram_viewer_window,
-			&word_ram_viewer_window,
-			&prg_ram_viewer_window,
-			&wave_ram_viewer_window,
-			&vdp_registers_window,
-			&sprite_list_window,
-			&sprite_viewer_window,
-			&window_plane_viewer_window,
-			&plane_a_viewer_window,
-			&plane_b_viewer_window,
-
-			&other_status_window,
-			&pcm_status_window
-		);
-
 		const auto DoWindow = [&]<typename T>(std::optional<T> &popup_window)
 		{
 			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
@@ -1723,8 +1722,8 @@ void Frontend::Update()
 							|| window_plane_viewer_window.has_value()
 							|| plane_a_viewer_window.has_value()
 							|| plane_b_viewer_window.has_value()
-							|| vram_viewer
-							|| cram_viewer
+							|| vram_viewer_window.has_value()
+							|| cram_viewer_window.has_value()
 							|| fm_status
 							|| psg_status
 							|| pcm_status_window.has_value()
@@ -1966,8 +1965,8 @@ void Frontend::Update()
 					PopupButton("Window Plane", window_plane_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane A", plane_a_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane B", plane_b_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					ImGui::MenuItem("VRAM", nullptr, &vram_viewer);
-					ImGui::MenuItem("CRAM", nullptr, &cram_viewer);
+					PopupButton("VRAM", vram_viewer_window, 480, 480, true);
+					PopupButton("CRAM", cram_viewer_window, 456, 186, false);
 					ImGui::EndMenu();
 				}
 
@@ -2194,7 +2193,7 @@ void Frontend::Update()
 		debug_memory->Display(*wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
 
 	if (vdp_registers_window.has_value())
-		debug_vdp->DisplayRegisters(*vdp_registers_window);
+		vdp_registers_window->Display();
 
 	if (sprite_list_window.has_value())
 		sprite_list_window->Display();
@@ -2211,11 +2210,11 @@ void Frontend::Update()
 	if (plane_b_viewer_window.has_value())
 		plane_b_viewer_window->Display(clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
 
-	if (vram_viewer)
-		debug_vdp->DisplayVRAM(vram_viewer);
+	if (vram_viewer_window.has_value())
+		vram_viewer_window->Display();
 
-	if (cram_viewer)
-		debug_vdp->DisplayCRAM(cram_viewer);
+	if (cram_viewer_window.has_value())
+		cram_viewer_window->Display();
 
 	if (fm_status)
 		debug_fm->Display(fm_status);
