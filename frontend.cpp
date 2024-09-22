@@ -1891,13 +1891,13 @@ void Frontend::Update()
 			{
 				PopupButton("Log", debug_log_window, 400, 300, true);
 
-				PopupButton("Toggles", debugging_toggles_window, 240, 436, false);
+				PopupButton("Toggles", debugging_toggles_window, 234, 444, false);
 
 				PopupButton("68000 Disassembler", m68k_disassembler_window, 380, 410, true);
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, 160, 300, false);
+				PopupButton("Frontend", debug_frontend_window, 160, 304, false);
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
@@ -1974,7 +1974,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("About", about_window, 605, 430, true);
+				PopupButton("About", about_window, 626, 430, true);
 
 			#ifndef __EMSCRIPTEN__
 				ImGui::Separator();

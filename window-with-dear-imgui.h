@@ -21,6 +21,7 @@ private:
 	ImGuiStyle style_backup;
 	float dpi_scale;
 
+	float GetFontScale();
 	unsigned int CalculateFontSize();
 	void ReloadFonts(unsigned int font_size);
 

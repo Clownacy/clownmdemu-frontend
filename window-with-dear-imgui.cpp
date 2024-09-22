@@ -12,6 +12,11 @@
 
 static constexpr float UNSCALED_FONT_SIZE = 16.0f;
 
+float WindowWithDearImGui::GetFontScale()
+{
+	return CalculateFontSize() / UNSCALED_FONT_SIZE;
+}
+
 unsigned int WindowWithDearImGui::CalculateFontSize()
 {
 	// Note that we are purposefully flooring, as Dear ImGui's docs recommend.
