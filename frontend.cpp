@@ -2770,14 +2770,14 @@ void Frontend::Update()
 
 			if (ImGui::CollapsingHeader("clownmdemu"))
 			{
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(about_window->GetMonospaceFont());
 				ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
 				ImGui::PopFont();
 			}
 
 			if (ImGui::CollapsingHeader("Dear ImGui"))
 			{
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(about_window->GetMonospaceFont());
 				ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
 				ImGui::PopFont();
 			}
@@ -2785,7 +2785,7 @@ void Frontend::Update()
 		#ifdef __EMSCRIPTEN__
 			if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
 			{
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(about_window->GetMonospaceFont());
 				ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
 				ImGui::PopFont();
 			}
@@ -2796,7 +2796,7 @@ void Frontend::Update()
 			{
 				if (ImGui::TreeNode("General"))
 				{
-					ImGui::PushFont(monospace_font);
+					ImGui::PushFont(about_window->GetMonospaceFont());
 					ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
 					ImGui::PopFont();
 					ImGui::TreePop();
@@ -2804,7 +2804,7 @@ void Frontend::Update()
 
 				if (ImGui::TreeNode("BDF Driver"))
 				{
-					ImGui::PushFont(monospace_font);
+					ImGui::PushFont(about_window->GetMonospaceFont());
 					ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
 					ImGui::PopFont();
 					ImGui::TreePop();
@@ -2812,7 +2812,7 @@ void Frontend::Update()
 
 				if (ImGui::TreeNode("PCF Driver"))
 				{
-					ImGui::PushFont(monospace_font);
+					ImGui::PushFont(about_window->GetMonospaceFont());
 					ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
 					ImGui::PopFont();
 					ImGui::TreePop();
@@ -2820,7 +2820,7 @@ void Frontend::Update()
 
 				if (ImGui::TreeNode("fthash.c & fthash.h"))
 				{
-					ImGui::PushFont(monospace_font);
+					ImGui::PushFont(about_window->GetMonospaceFont());
 					ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
 					ImGui::PopFont();
 					ImGui::TreePop();
@@ -2828,7 +2828,7 @@ void Frontend::Update()
 
 				if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
 				{
-					ImGui::PushFont(monospace_font);
+					ImGui::PushFont(about_window->GetMonospaceFont());
 					ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
 					ImGui::PopFont();
 					ImGui::TreePop();
@@ -2838,21 +2838,21 @@ void Frontend::Update()
 
 			if (ImGui::CollapsingHeader("inih"))
 			{
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(about_window->GetMonospaceFont());
 				ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
 				ImGui::PopFont();
 			}
 
 			if (ImGui::CollapsingHeader("Noto Sans"))
 			{
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(about_window->GetMonospaceFont());
 				ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
 				ImGui::PopFont();
 			}
 
 			if (ImGui::CollapsingHeader("Inconsolata"))
 			{
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(about_window->GetMonospaceFont());
 				ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
 				ImGui::PopFont();
 			}

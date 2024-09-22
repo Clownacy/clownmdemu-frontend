@@ -1,7 +1,8 @@
 #include "window-popup.h"
 
-WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, Window* const parent_window)
+WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, WindowWithDearImGui* const parent_window)
 	: title(window_title)
+	, parent_window(parent_window)
 {
 	if (parent_window != nullptr)
 	{
