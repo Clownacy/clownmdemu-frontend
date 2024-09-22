@@ -4,6 +4,8 @@
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
+class WindowPopup;
+
 class DebugM68k
 {
 private:
@@ -15,7 +17,8 @@ public:
 	) :
 		monospace_font(monospace_font)
 	{}
-	void Display(bool &open, const char* const name, const Clown68000_State &m68k);
+
+	void Display(WindowPopup &window, const Clown68000_State &m68k);
 };
 
 #endif /* DEBUG_M68K_H */

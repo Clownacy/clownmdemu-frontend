@@ -159,13 +159,15 @@ static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
 
-static std::array<std::optional<WindowPopup>, 6> popup_windows;
+static std::array<std::optional<WindowPopup>, 8> popup_windows;
 static std::optional<WindowPopup> &options_window = popup_windows[0];
 static std::optional<WindowPopup> &about_window = popup_windows[1];
 static std::optional<WindowPopup> &debug_log_window = popup_windows[2];
 static std::optional<WindowPopup> &debugging_toggles_window = popup_windows[3];
 static std::optional<WindowPopup> &m68k_disassembler_window = popup_windows[4];
 static std::optional<WindowPopup> &debug_frontend_window = popup_windows[5];
+static std::optional<WindowPopup> &m68k_status_window = popup_windows[6];
+static std::optional<WindowPopup> &mcd_m68k_status_window = popup_windows[7];
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -173,8 +175,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool m68k_status;
-static bool mcd_m68k_status;
 static bool z80_status;
 static bool m68k_ram_viewer;
 static bool z80_ram_viewer;
@@ -1673,8 +1673,8 @@ void Frontend::Update()
 							|| pop_out
 							|| debug_log_window.has_value()
 							|| debug_frontend_window.has_value()
-							|| m68k_status
-							|| mcd_m68k_status
+							|| m68k_status_window.has_value()
+							|| mcd_m68k_status_window.has_value()
 							|| z80_status
 							|| m68k_ram_viewer
 							|| z80_ram_viewer
@@ -1876,14 +1876,14 @@ void Frontend::Update()
 				ImGui::EndMenu();
 			}
 
-			const auto PopupButton = [](const char* const title, std::optional<WindowPopup> &window, const int width, const int height, const bool resizeable)
+			const auto PopupButton = [](const char* const label, std::optional<WindowPopup> &window, const int width, const int height, const bool resizeable, const char* const title = nullptr)
 			{
-				if (ImGui::MenuItem(title, nullptr, window.has_value()))
+				if (ImGui::MenuItem(label, nullptr, window.has_value()))
 				{
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(debug_log, title, width, height, resizeable);
+						window.emplace(debug_log, title == nullptr ? label : title, width, height, resizeable);
 				}
 			};
 
@@ -1901,14 +1901,14 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
-					ImGui::MenuItem("Registers", nullptr, &m68k_status);
+					PopupButton("Registers", m68k_status_window, 376, 120, false, "Main-68000 Registers");
 					ImGui::MenuItem("WORK-RAM", nullptr, &m68k_ram_viewer);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
-					ImGui::MenuItem("Registers", nullptr, &mcd_m68k_status);
+					PopupButton("Registers", mcd_m68k_status_window, 376, 120, false, "Sub-68000 Registers");
 					ImGui::MenuItem("PRG-RAM", nullptr, &prg_ram_viewer);
 					ImGui::MenuItem("WORD-RAM", nullptr, &word_ram_viewer);
 					ImGui::EndMenu();
@@ -2131,11 +2131,11 @@ void Frontend::Update()
 	if (debug_frontend_window.has_value())
 		debug_frontend->Display(*debug_frontend_window);
 
-	if (m68k_status)
-		debug_m68k->Display(m68k_status, "Main-68000 Registers", emulator->CurrentState().clownmdemu.m68k.state);
+	if (m68k_status_window.has_value())
+		debug_m68k->Display(*m68k_status_window, emulator->CurrentState().clownmdemu.m68k.state);
 
-	if (mcd_m68k_status)
-		debug_m68k->Display(mcd_m68k_status, "Sub-68000 Registers", emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
+	if (mcd_m68k_status_window.has_value())
+		debug_m68k->Display(*mcd_m68k_status_window, emulator->CurrentState().clownmdemu.mega_cd.m68k.state);
 
 	if (z80_status)
 		debug_z80->Display(z80_status);

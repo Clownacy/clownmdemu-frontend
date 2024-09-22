@@ -4,11 +4,13 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-void DebugM68k::Display(bool &open, const char* const name, const Clown68000_State &m68k)
+#include "window-popup.h"
+
+void DebugM68k::Display(WindowPopup &window, const Clown68000_State &m68k)
 {
-	if (ImGui::Begin(name, &open, ImGuiWindowFlags_AlwaysAutoResize))
+	if (window.Begin())
 	{
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(window.GetMonospaceFont());
 
 		for (cc_u8f i = 0; i < 8; ++i)
 		{
@@ -44,5 +46,5 @@ void DebugM68k::Display(bool &open, const char* const name, const Clown68000_Sta
 		ImGui::PopFont();
 	}
 
-	ImGui::End();
+	window.End();
 }
