@@ -20,9 +20,14 @@ float Window::GetDPIScale() const
 	return std::max(1.0f, dpi_scale);
 }
 
-static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height)
+static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
 {
-	SDL_Window* const window = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI);
+	Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI;
+
+	if (resizeable)
+		window_flags |= SDL_WINDOW_RESIZABLE;
+
+	SDL_Window* const window = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, window_flags);
 
 	if (window == nullptr)
 		throw std::runtime_error(std::string("SDL_CreateWindow failed with the following message - '") + SDL_GetError() + "'");
@@ -51,8 +56,8 @@ static SDL_Renderer* CreateRenderer(SDL_Window* const window)
 	return renderer;
 }
 
-Window::Window(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height)
-	: sdl_window(CreateWindow(window_title, window_width, window_height))
+Window::Window(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const bool resizeable)
+	: sdl_window(CreateWindow(window_title, window_width, window_height, resizeable))
 	, renderer(CreateRenderer(GetSDLWindow()))
 {
 

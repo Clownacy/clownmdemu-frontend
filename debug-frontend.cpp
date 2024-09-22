@@ -14,7 +14,7 @@ static void DoToolTip(const char* const text)
 
 void DebugFrontend::Display(WindowPopup &window)
 {
-	if (window.Begin(ImGuiWindowFlags_AlwaysAutoResize))
+	if (window.Begin())
 	{
 		ImGui::SeparatorText("SDL2 Drivers");
 

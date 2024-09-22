@@ -1,7 +1,8 @@
 #include "window-popup.h"
 
-WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, WindowWithDearImGui* const parent_window)
+WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, const bool resizeable, WindowWithDearImGui* const parent_window)
 	: title(window_title)
+	, resizeable(resizeable)
 	, parent_window(parent_window)
 {
 	if (parent_window != nullptr)
@@ -11,7 +12,7 @@ WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, co
 	}
 	else
 	{
-		window.emplace(debug_log, window_title, window_width, window_height);
+		window.emplace(debug_log, window_title, window_width, window_height, resizeable);
 		SDL_ShowWindow(window->GetSDLWindow());
 	}
 }
@@ -34,6 +35,9 @@ bool WindowPopup::Begin(ImGuiWindowFlags window_flags)
 	{
 		ImGui::SetNextWindowSize(ImVec2(dear_imgui_window_width, dear_imgui_window_height), ImGuiCond_FirstUseEver);
 	}
+
+	if (!resizeable)
+		window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 	//ImGui::PushID(this);
 	return ImGui::Begin(title.c_str(), nullptr, window_flags);

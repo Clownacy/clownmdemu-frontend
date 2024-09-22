@@ -985,7 +985,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	{
 		IMGUI_CHECKVERSION();
 
-		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+		window.emplace(debug_log, DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		monospace_font = window->monospace_font;
 		emulator.emplace(debug_log, *window, ReadInputCallback);
 		debug_fm.emplace(*emulator, monospace_font);
@@ -1876,28 +1876,28 @@ void Frontend::Update()
 				ImGui::EndMenu();
 			}
 
-			const auto PopupButton = [](const char* const title, std::optional<WindowPopup> &window, const int width, const int height)
+			const auto PopupButton = [](const char* const title, std::optional<WindowPopup> &window, const int width, const int height, const bool resizeable)
 			{
 				if (ImGui::MenuItem(title, nullptr, window.has_value()))
 				{
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(debug_log, title, width, height);
+						window.emplace(debug_log, title, width, height, resizeable);
 				}
 			};
 
 			if (ImGui::BeginMenu("Debugging"))
 			{
-				PopupButton("Log", debug_log_window, 400, 300);
+				PopupButton("Log", debug_log_window, 400, 300, true);
 
-				PopupButton("Toggles", debugging_toggles_window, 240, 436);
+				PopupButton("Toggles", debugging_toggles_window, 240, 436, false);
 
-				PopupButton("68000 Disassembler", m68k_disassembler_window, 380, 410);
+				PopupButton("68000 Disassembler", m68k_disassembler_window, 380, 410, true);
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, 160, 300);
+				PopupButton("Frontend", debug_frontend_window, 160, 300, false);
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
@@ -1970,11 +1970,11 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Options", options_window, 360, 360);
+				PopupButton("Options", options_window, 360, 360, true);
 
 				ImGui::Separator();
 
-				PopupButton("About", about_window, 605, 430);
+				PopupButton("About", about_window, 605, 430, true);
 
 			#ifndef __EMSCRIPTEN__
 				ImGui::Separator();
@@ -2318,7 +2318,7 @@ void Frontend::Update()
 
 	if (debugging_toggles_window.has_value())
 	{
-		if (debugging_toggles_window->Begin(ImGuiWindowFlags_AlwaysAutoResize))
+		if (debugging_toggles_window->Begin())
 		{
 			bool temp;
 
