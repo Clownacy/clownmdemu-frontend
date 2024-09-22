@@ -11,9 +11,46 @@
 #include "debug-log.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
-#include "window.h"
+#include "window-popup.h"
 
-class WindowPopup;
+namespace DebugVDPNew
+{
+	constexpr cc_u8f TOTAL_SPRITES = 80;
+
+	struct SpriteCommon : public WindowPopup
+	{
+	private:
+		unsigned int cache_frame_counter = 0;
+
+	protected:
+		// TODO: Any way to share this between the two sprite viewers again when using Dear ImGui windows?
+		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
+		void DisplaySpriteCommon();
+
+	public:
+		using WindowPopup::WindowPopup;
+	};
+
+	class SpriteViewer: public SpriteCommon
+	{
+	private:
+		int scale = 0;
+		SDL::Texture texture = nullptr;
+
+	public:
+		using SpriteCommon::SpriteCommon;
+
+		void Display();
+	};
+
+	class SpriteList: public SpriteCommon
+	{
+	public:
+		using SpriteCommon::SpriteCommon;
+
+		void Display();
+	};
+}
 
 class DebugVDP
 {
@@ -25,8 +62,6 @@ private:
 	const unsigned int &frame_counter;
 	ImFont* const &monospace_font;
 	Window &window; // TODO: Remove this.
-
-	static constexpr cc_u8f TOTAL_SPRITES = 80;
 
 	struct
 	{
@@ -43,23 +78,6 @@ private:
 		int brightness = 1;
 	} cram_viewer;
 
-	struct SpriteCommon
-	{
-		// TODO: Any way to share this between the two sprite viewers again when using Dear ImGui windows?
-		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
-		unsigned int cache_frame_counter = 0;
-	};
-
-	struct : public SpriteCommon
-	{
-		int scale = 0;
-		SDL::Texture texture = nullptr;
-	} sprite_viewer;
-
-	struct : public SpriteCommon
-	{
-	} sprite_list;
-
 	struct PlaneViewer
 	{
 		int scale = 0;
@@ -67,9 +85,7 @@ private:
 		unsigned int cache_frame_counter = 0;
 	} window_plane_data, plane_a_data, plane_b_data;
 
-	void DrawTile(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, Uint8 *pixels, int pitch, cc_u16f x, cc_u16f y, bool transparency) const;
 	void DisplayPlane(bool &open, const char *name, PlaneViewer &plane_viewer, cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
-	void DisplaySpriteCommon(Window &window, SpriteCommon &common);
 
 public:
 	DebugVDP(
@@ -92,8 +108,6 @@ public:
 	void DisplayWindowPlane(bool &open);
 	void DisplayPlaneA(bool &open);
 	void DisplayPlaneB(bool &open);
-	void DisplaySpritePlane(bool &open);
-	void DisplaySpriteList(WindowPopup &window);
 	void DisplayVRAM(bool &open);
 	void DisplayCRAM(bool &open);
 	void DisplayRegisters(WindowPopup &window);

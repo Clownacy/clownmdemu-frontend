@@ -15,14 +15,11 @@ class WindowPopup;
 class DebugLog
 {
 private:
-	const float &dpi_scale;
-	ImFont* const &monospace_font;
-
 	std::string lines;
 	bool logging_enabled = false, log_to_console = false, force_console_output = true;
 
 public:
-	DebugLog(const float &dpi_scale, ImFont* const &monospace_font) : dpi_scale(dpi_scale), monospace_font(monospace_font)
+	DebugLog()
 	{
 		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 	}

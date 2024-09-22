@@ -11,6 +11,7 @@
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
+#include "frontend.h"
 #include "window-popup.h"
 
 struct Sprite
@@ -54,7 +55,7 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-void DebugVDP::DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency) const
+static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency)
 {
 	const cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(state.clownmdemu.vdp);
@@ -205,27 +206,27 @@ void DebugVDP::DisplayPlaneB(bool &open)
 	DisplayPlane(open, "Plane B", plane_b_data, emulator.CurrentState().clownmdemu.vdp.plane_b_address, vdp.plane_width, vdp.plane_height);
 }
 
-void DebugVDP::DisplaySpriteCommon(Window &window, SpriteCommon &common)
+void DebugVDPNew::SpriteCommon::DisplaySpriteCommon()
 {
-	const auto &state = emulator.CurrentState();
+	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	for (auto &texture : common.textures)
+	for (auto &texture : textures)
 	{
 		if (texture.get() == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
+			texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
 
 			if (texture.get() == nullptr)
 			{
-				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
 				if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) < 0)
-					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 	}
@@ -238,13 +239,13 @@ void DebugVDP::DisplaySpriteCommon(Window &window, SpriteCommon &common)
 
 		// Only update the texture if we know that the frame has changed.
 		// This prevents constant texture generation even when the emulator is paused.
-		if (common.cache_frame_counter != frame_counter)
+		if (cache_frame_counter != Frontend::frame_counter)
 		{
 			// Lock texture so that we can write into it.
 			Uint8 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
-			if (SDL_LockTexture(common.textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			if (SDL_LockTexture(textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
 			{
 				auto tile_metadata = sprite.tile_metadata;
 
@@ -261,60 +262,59 @@ void DebugVDP::DisplaySpriteCommon(Window &window, SpriteCommon &common)
 					}
 				}
 
-				SDL_UnlockTexture(common.textures[i].get());
+				SDL_UnlockTexture(textures[i].get());
 			}
 		}
 	}
 
-	common.cache_frame_counter = frame_counter;
+	cache_frame_counter = Frontend::frame_counter;
 }
 
-void DebugVDP::DisplaySpritePlane(bool &open)
+void DebugVDPNew::SpriteViewer::Display()
 {
-	ImGui::SetNextWindowSize(ImVec2(544, 1120), ImGuiCond_FirstUseEver);
-
-	if (ImGui::Begin("Sprite Plane", &open))
+	if (Begin())
 	{
-		DisplaySpriteCommon(window, sprite_viewer);
+		DisplaySpriteCommon();
 
-		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+		const auto renderer = GetWindow().GetRenderer();
+		const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
 
 		constexpr cc_u16f plane_texture_width = 512;
 		constexpr cc_u16f plane_texture_height = 1024;
 
-		if (sprite_viewer.texture.get() == nullptr)
+		if (texture.get() == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			sprite_viewer.texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
+			texture = SDL::Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
 
-			if (sprite_viewer.texture.get() == nullptr)
+			if (texture.get() == nullptr)
 			{
-				debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+				Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(sprite_viewer.texture.get(), SDL_BLENDMODE_NONE) < 0)
-					debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+				if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 			}
 		}
 
 		const cc_u16f tile_width = TileWidth();
 		const cc_u16f tile_height = TileHeight(vdp);
 
-		ImGui::InputInt("Zoom", &sprite_viewer.scale);
-		if (sprite_viewer.scale < 1)
-			sprite_viewer.scale = 1;
+		ImGui::InputInt("Zoom", &scale);
+		if (scale < 1)
+			scale = 1;
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			SDL_SetRenderTarget(window.renderer.get(), sprite_viewer.texture.get());
-			SDL_SetRenderDrawColor(window.renderer.get(), 0, 0, 0, 0xFF);
-			SDL_RenderClear(window.renderer.get());
-			SDL_SetRenderDrawColor(window.renderer.get(), 0x10, 0x10, 0x10, 0xFF);
+			SDL_SetRenderTarget(renderer, texture.get());
+			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+			SDL_RenderClear(renderer);
+			SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
 			const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
 			const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
-			SDL_RenderFillRect(window.renderer.get(), &visible_area_rectangle);
+			SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
 			std::vector<cc_u8l> sprite_vector;
 
@@ -337,17 +337,17 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 
 				const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
 				const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-				SDL_RenderCopy(window.renderer.get(), sprite_viewer.textures[sprite_index].get(), &src_rect, &dst_rect);
+				SDL_RenderCopy(renderer, textures[sprite_index].get(), &src_rect, &dst_rect);
 			}
 
-			SDL_SetRenderTarget(window.renderer.get(), nullptr);
+			SDL_SetRenderTarget(renderer, nullptr);
 
 			const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
 			const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(sprite_viewer.texture.get(), ImVec2(plane_width_in_pixels * sprite_viewer.scale, plane_height_in_pixels * sprite_viewer.scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+			ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -355,8 +355,8 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 
 				const ImVec2 mouse_position = ImGui::GetMousePos();
 
-				const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / sprite_viewer.scale);
-				const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / sprite_viewer.scale);
+				const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale);
+				const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale);
 
 				ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
 
@@ -367,16 +367,16 @@ void DebugVDP::DisplaySpritePlane(bool &open)
 		ImGui::EndChild();
 	}
 
-	ImGui::End();
+	End();
 }
 
-void DebugVDP::DisplaySpriteList(WindowPopup &window)
+void DebugVDPNew::SpriteList::Display()
 {
-	if (window.Begin())
+	if (Begin())
 	{
-		DisplaySpriteCommon(window.GetWindow(), sprite_list);
+		DisplaySpriteCommon();
 
-		const VDP_State &vdp = emulator.CurrentState().clownmdemu.vdp;
+		const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
 
 		if (ImGui::BeginChild("Sprites", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
@@ -400,11 +400,12 @@ void DebugVDP::DisplaySpriteList(WindowPopup &window)
 					const cc_u16f tile_height = TileHeight(vdp);
 
 					const Sprite sprite = GetSprite(vdp, i);
+					const auto dpi_scale = GetWindow().GetDPIScale();
 
 					ImGui::TableNextColumn();
 					ImGui::Text("%" CC_PRIuFAST8, i);
 					ImGui::TableNextColumn();
-					ImGui::Image(sprite_list.textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
+					ImGui::Image(textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
 					ImGui::TableNextColumn();
 					ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
 					ImGui::TableNextColumn();
@@ -430,7 +431,7 @@ void DebugVDP::DisplaySpriteList(WindowPopup &window)
 		ImGui::EndChild();
 	}
 
-	window.End();
+	End();
 }
 
 void DebugVDP::DisplayVRAM(bool &open)

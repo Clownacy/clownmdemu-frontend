@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 #include "SDL.h"
@@ -115,6 +116,16 @@ enum InputBinding
 	INPUT_BINDING__TOTAL
 };
 
+using namespace Frontend;
+
+DebugLog Frontend::debug_log;
+float Frontend::dpi_scale;
+std::optional<EmulatorInstance> Frontend::emulator;
+FileUtilities Frontend::file_utilities(debug_log);
+unsigned int Frontend::frame_counter;
+
+static Frontend::FrameRateCallback frame_rate_callback;
+
 static Input keyboard_input;
 
 static std::forward_list<ControllerInput> controller_input_list;
@@ -135,21 +146,13 @@ static bool emulator_frame_advance;
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
 
-static float dpi_scale;
-static unsigned int frame_counter;
 static ImFont *monospace_font;
 
 static bool use_vsync;
 static bool integer_screen_scaling;
 static bool tall_double_resolution_mode;
 
-static Frontend::FrameRateCallback frame_rate_callback;
-
-static DebugLog debug_log(dpi_scale, monospace_font);
-static FileUtilities file_utilities(debug_log);
-
 static std::optional<WindowWithFramebuffer> window;
-static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
 static std::optional<DebugM68k> debug_m68k;
@@ -159,26 +162,26 @@ static std::optional<DebugPSG> debug_psg;
 static std::optional<DebugVDP> debug_vdp;
 static std::optional<DebugZ80> debug_z80;
 
-static std::array<std::optional<WindowPopup>, 18> popup_windows;
-static std::optional<WindowPopup> &options_window = popup_windows[0];
-static std::optional<WindowPopup> &about_window = popup_windows[1];
-static std::optional<WindowPopup> &debug_log_window = popup_windows[2];
-static std::optional<WindowPopup> &debugging_toggles_window = popup_windows[3];
-static std::optional<WindowPopup> &m68k_disassembler_window = popup_windows[4];
-static std::optional<WindowPopup> &debug_frontend_window = popup_windows[5];
-static std::optional<WindowPopup> &m68k_status_window = popup_windows[6];
-static std::optional<WindowPopup> &mcd_m68k_status_window = popup_windows[7];
-static std::optional<WindowPopup> &z80_status_window = popup_windows[8];
-static std::optional<WindowPopup> &m68k_ram_viewer_window = popup_windows[9];
-static std::optional<WindowPopup> &z80_ram_viewer_window = popup_windows[10];
-static std::optional<WindowPopup> &word_ram_viewer_window = popup_windows[11];
-static std::optional<WindowPopup> &prg_ram_viewer_window = popup_windows[12];
-static std::optional<WindowPopup> &wave_ram_viewer_window = popup_windows[13];
-static std::optional<WindowPopup> &vdp_registers_window = popup_windows[16];
-static std::optional<WindowPopup> &sprite_list_window = popup_windows[17];
+static std::optional<WindowPopup> options_window;
+static std::optional<WindowPopup> about_window;
+static std::optional<WindowPopup> debug_log_window;
+static std::optional<WindowPopup> debugging_toggles_window;
+static std::optional<WindowPopup> m68k_disassembler_window;
+static std::optional<WindowPopup> debug_frontend_window;
+static std::optional<WindowPopup> m68k_status_window;
+static std::optional<WindowPopup> mcd_m68k_status_window;
+static std::optional<WindowPopup> z80_status_window;
+static std::optional<WindowPopup> m68k_ram_viewer_window;
+static std::optional<WindowPopup> z80_ram_viewer_window;
+static std::optional<WindowPopup> word_ram_viewer_window;
+static std::optional<WindowPopup> prg_ram_viewer_window;
+static std::optional<WindowPopup> wave_ram_viewer_window;
+static std::optional<WindowPopup> vdp_registers_window;
+static std::optional<DebugVDPNew::SpriteList> sprite_list_window;
+static std::optional<DebugVDPNew::SpriteViewer> sprite_viewer_window;
 
-static std::optional<WindowPopup> &other_status_window = popup_windows[15];
-static std::optional<WindowPopup> &pcm_status_window = popup_windows[14];
+static std::optional<WindowPopup> other_status_window;
+static std::optional<WindowPopup> pcm_status_window;
 
 // Manages whether the program exits or not.
 static bool quit;
@@ -186,7 +189,6 @@ static bool quit;
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
 
-static bool sprite_viewer;
 static bool window_plane_viewer;
 static bool plane_a_viewer;
 static bool plane_b_viewer;
@@ -1601,7 +1603,30 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	}
 	else
 	{
-		for (auto &popup_window : popup_windows)
+		static const auto popup_windows = std::make_tuple(
+			&options_window,
+			&about_window,
+			&debug_log_window,
+			&debugging_toggles_window,
+			&m68k_disassembler_window,
+			&debug_frontend_window,
+			&m68k_status_window,
+			&mcd_m68k_status_window,
+			&z80_status_window,
+			&m68k_ram_viewer_window,
+			&z80_ram_viewer_window,
+			&word_ram_viewer_window,
+			&prg_ram_viewer_window,
+			&wave_ram_viewer_window,
+			&vdp_registers_window,
+			&sprite_list_window,
+			&sprite_viewer_window,
+
+			&other_status_window,
+			&pcm_status_window
+		);
+
+		const auto DoWindow = [&]<typename T>(std::optional<T> &popup_window)
 		{
 			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
 			{
@@ -1610,7 +1635,14 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				else
 					popup_window->ProcessEvent(event);
 			}
-		}
+		};
+
+		std::apply(
+			[&]<typename... Ts>(Ts const&... windows)
+			{
+				(DoWindow(*windows), ...);
+			}, popup_windows
+		);
 	}
 }
 
@@ -1684,7 +1716,7 @@ void Frontend::Update()
 							|| wave_ram_viewer_window.has_value()
 							|| vdp_registers_window.has_value()
 							|| sprite_list_window.has_value()
-							|| sprite_viewer
+							|| sprite_viewer_window.has_value()
 							|| window_plane_viewer
 							|| plane_a_viewer
 							|| plane_b_viewer
@@ -1877,7 +1909,7 @@ void Frontend::Update()
 				ImGui::EndMenu();
 			}
 
-			const auto PopupButton = [](const char* const label, std::optional<WindowPopup> &window, const int width, const int height, const bool resizeable, const char* const title = nullptr)
+			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const int width, const int height, const bool resizeable, const char* const title = nullptr)
 			{
 				if (ImGui::MenuItem(label, nullptr, window.has_value()))
 				{
@@ -1927,7 +1959,7 @@ void Frontend::Update()
 					PopupButton("Registers", vdp_registers_window, 360, 824, false, "VDP Registers");
 					PopupButton("Sprites", sprite_list_window, 540, 540, false);
 					ImGui::SeparatorText("Visualisers");
-					ImGui::MenuItem("Sprite Plane", nullptr, &sprite_viewer);
+					PopupButton("Sprite Plane", sprite_viewer_window, 544 / dpi_scale, 560 / dpi_scale, true);
 					ImGui::MenuItem("Window Plane", nullptr, &window_plane_viewer);
 					ImGui::MenuItem("Plane A", nullptr, &plane_a_viewer);
 					ImGui::MenuItem("Plane B", nullptr, &plane_b_viewer);
@@ -2160,10 +2192,10 @@ void Frontend::Update()
 		debug_vdp->DisplayRegisters(*vdp_registers_window);
 
 	if (sprite_list_window.has_value())
-		debug_vdp->DisplaySpriteList(*sprite_list_window);
+		sprite_list_window->Display();
 
-	if (sprite_viewer)
-		debug_vdp->DisplaySpritePlane(sprite_viewer);
+	if (sprite_viewer_window.has_value())
+		sprite_viewer_window->Display();
 
 	if (window_plane_viewer)
 		debug_vdp->DisplayWindowPlane(window_plane_viewer);
