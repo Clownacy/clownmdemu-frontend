@@ -15,10 +15,8 @@ WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, co
 	}
 }
 
-bool WindowPopup::Begin()
+bool WindowPopup::Begin(ImGuiWindowFlags window_flags)
 {
-	ImGuiWindowFlags window_flags = 0;
-
 	if (window.has_value())
 	{
 		window->StartDearImGuiFrame();
@@ -29,7 +27,7 @@ bool WindowPopup::Begin()
 		ImGui::SetNextWindowPos(viewport->WorkPos);
 		ImGui::SetNextWindowSize(viewport->WorkSize);
 
-		window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 	}
 	else
 	{

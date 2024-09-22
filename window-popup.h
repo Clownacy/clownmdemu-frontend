@@ -18,7 +18,7 @@ private:
 public:
 	WindowPopup(DebugLog &debug_log, const char *window_title, int window_width, int window_height, Window *parent_window = nullptr);
 
-	bool Begin();
+	bool Begin(ImGuiWindowFlags window_flags = 0);
 	void End();
 
 	bool IsWindowID(const Uint32 window_id) const

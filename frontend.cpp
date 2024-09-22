@@ -150,6 +150,7 @@ static FileUtilities file_utilities(debug_log);
 
 static std::optional<WindowWithFramebuffer> window;
 static std::optional<WindowPopup> options_window;
+static std::optional<WindowPopup> about_window;
 static std::optional<EmulatorInstance> emulator;
 static std::optional<DebugFM> debug_fm;
 static std::optional<DebugFrontend> debug_frontend;
@@ -190,7 +191,6 @@ static bool pcm_status;
 static bool other_status;
 static bool debugging_toggles_menu;
 static bool disassembler;
-static bool about_menu;
 
 #ifndef NDEBUG
 static bool dear_imgui_demo_window;
@@ -1596,12 +1596,25 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	{
 		HandleMainWindowEvent(event);
 	}
-	else if (options_window.has_value() && options_window->IsWindowID(*window_id))
+	else
 	{
-		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
-			options_window.reset();
-		else
-			options_window->ProcessEvent(event);
+		const auto popup_windows = std::to_array<std::optional<WindowPopup>*>({
+			&options_window,
+			&about_window,
+		});
+
+		for (auto pointer : popup_windows)
+		{
+			auto &popup_window = *pointer;
+
+			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
+			{
+				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
+					popup_window.reset();
+				else
+					popup_window->ProcessEvent(event);
+			}
+		}
 	}
 }
 
@@ -1688,7 +1701,7 @@ void Frontend::Update()
 							|| disassembler
 							|| debugging_toggles_menu
 							|| options_window.has_value()
-							|| about_menu
+							|| about_window.has_value()
 							|| (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 	// Hide mouse when the user just wants a fullscreen display window
@@ -1951,17 +1964,22 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Options", nullptr, options_window.has_value()))
+				const auto PopupButton = [](const char* const title, std::optional<WindowPopup> &window, const int width, const int height)
 				{
-					if (options_window.has_value())
-						options_window.reset();
-					else
-						options_window.emplace(debug_log, "Options", 360, 360);
-				}
+					if (ImGui::MenuItem(title, nullptr, window.has_value()))
+					{
+						if (window.has_value())
+							window.reset();
+						else
+							window.emplace(debug_log, title, width, height);
+					}
+				};
+
+				PopupButton("Options", options_window, 360, 360);
 
 				ImGui::Separator();
 
-				ImGui::MenuItem("About", nullptr, &about_menu);
+				PopupButton("About", about_window, 605, 430);
 
 			#ifndef __EMSCRIPTEN__
 				ImGui::Separator();
@@ -2699,11 +2717,9 @@ void Frontend::Update()
 		options_window->End();
 	}
 
-	if (about_menu)
+	if (about_window.has_value())
 	{
-		ImGui::SetNextWindowSize(ImVec2(605.0f * dpi_scale, 430.0f * dpi_scale), ImGuiCond_FirstUseEver);
-
-		if (ImGui::Begin("About", &about_menu, ImGuiWindowFlags_HorizontalScrollbar))
+		if (about_window->Begin(ImGuiWindowFlags_HorizontalScrollbar))
 		{
 			static const char licence_clownmdemu[] = {
 				#include "licences/clownmdemu.h"
@@ -2842,7 +2858,7 @@ void Frontend::Update()
 			}
 		}
 
-		ImGui::End();
+		about_window->End();
 	}
 
 	file_utilities.DisplayFileDialog(drag_and_drop_filename);
