@@ -1062,8 +1062,10 @@ void Frontend::Deinitialise()
 	SDL_Quit();
 }
 
-void Frontend::HandleEvent(const SDL_Event &event)
+static void HandleMainWindowEvent(const SDL_Event &event)
 {
+	window->MakeDearImGuiContextCurrent();
+
 	ImGuiIO &io = ImGui::GetIO();
 
 	bool give_event_to_imgui = true;
@@ -1072,6 +1074,10 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	// Process the event
 	switch (event.type)
 	{
+		case SDL_WINDOWEVENT:
+			if (event.window.event != SDL_WINDOWEVENT_CLOSE)
+				break;
+			[[fallthrough]];
 		case SDL_QUIT:
 			quit = true;
 			break;
@@ -1536,6 +1542,68 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 	if (give_event_to_imgui)
 		ImGui_ImplSDL2_ProcessEvent(&event);
+}
+
+void Frontend::HandleEvent(const SDL_Event &event)
+{
+	const std::optional<Uint32> window_id = [&]() -> std::optional<Uint32>
+	{
+		switch (event.type)
+		{
+			case SDL_WINDOWEVENT:
+				return event.window.windowID;
+
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+				return event.key.windowID;
+
+			case SDL_TEXTEDITING:
+				return event.edit.windowID;
+
+			case SDL_TEXTEDITING_EXT:
+				return event.editExt.windowID;
+
+			case SDL_TEXTINPUT:
+				return event.text.windowID;
+
+			case SDL_MOUSEMOTION:
+				return event.motion.windowID;
+
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				return event.button.windowID;
+
+			case SDL_MOUSEWHEEL:
+				return event.wheel.windowID;
+
+			case SDL_USEREVENT:
+				return event.user.windowID;
+
+			case SDL_DROPFILE:
+			case SDL_DROPTEXT:
+			case SDL_DROPBEGIN:
+			case SDL_DROPCOMPLETE:
+				return event.drop.windowID;
+		}
+
+		return std::nullopt;
+	}();
+
+	if (!window_id.has_value())
+	{
+		HandleMainWindowEvent(event);
+	}
+	else if (*window_id == SDL_GetWindowID(window->GetSDLWindow()))
+	{
+		HandleMainWindowEvent(event);
+	}
+	else if (options_window.has_value() && options_window->IsWindowID(*window_id))
+	{
+		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
+			options_window.reset();
+		else
+			options_window->ProcessEvent(event);
+	}
 }
 
 void Frontend::Update()

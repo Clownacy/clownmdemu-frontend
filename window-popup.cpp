@@ -2,11 +2,13 @@
 
 WindowPopup::WindowPopup(DebugLog &debug_log, const char* const window_title, const int window_width, const int window_height, Window* const parent_window)
 	: title(window_title)
-	, width(window_width)
-	, height(window_height)
-	, parent_window(parent_window)
 {
-	if (parent_window == nullptr)
+	if (parent_window != nullptr)
+	{
+		dear_imgui_window_width = window_width * parent_window->GetDPIScale();
+		dear_imgui_window_height = window_height * parent_window->GetDPIScale();
+	}
+	else
 	{
 		window.emplace(debug_log, window_title, window_width, window_height);
 		SDL_ShowWindow(window->GetSDLWindow());
@@ -17,7 +19,7 @@ bool WindowPopup::Begin()
 {
 	ImGuiWindowFlags window_flags = 0;
 
-	if (parent_window == nullptr)
+	if (window.has_value())
 	{
 		window->StartDearImGuiFrame();
 
@@ -31,7 +33,7 @@ bool WindowPopup::Begin()
 	}
 	else
 	{
-		ImGui::SetNextWindowSize(ImVec2(width * parent_window->GetDPIScale(), height * parent_window->GetDPIScale()), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSize(ImVec2(dear_imgui_window_width, dear_imgui_window_height), ImGuiCond_FirstUseEver);
 	}
 
 	//ImGui::PushID(this);
@@ -43,6 +45,6 @@ void WindowPopup::End()
 	ImGui::End();
 	//ImGui::PopID();
 
-	if (parent_window == nullptr)
+	if (window.has_value())
 		window->FinishDearImGuiFrame();
 }
