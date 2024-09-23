@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "frontend.h"
+#include "../../frontend.h"
 
 SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
 {

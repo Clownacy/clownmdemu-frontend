@@ -10,8 +10,6 @@
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#include "window-popup.h"
-
 class DebugLog
 {
 public:
@@ -28,21 +26,6 @@ public:
 	}
 	void Log(const char *format, std::va_list args);
 	CC_ATTRIBUTE_PRINTF(2, 3) void Log(const char *format, ...);
-};
-
-class DebugLogViewer : public WindowPopup<DebugLogViewer>
-{
-private:
-	using Base = WindowPopup<DebugLogViewer>;
-
-	static constexpr Uint32 window_flags = 0;
-
-	void DisplayInternal();
-
-public:
-	using Base::WindowPopup;
-
-	friend Base;
 };
 
 #endif /* DEBUG_LOG_H */

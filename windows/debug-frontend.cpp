@@ -1,6 +1,6 @@
 #include "debug-frontend.h"
 
-#include "frontend.h"
+#include "../frontend.h"
 
 void DebugFrontend::DisplayInternal()
 {

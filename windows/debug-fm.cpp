@@ -3,7 +3,7 @@
 #include <array>
 #include <cstddef>
 
-#include "frontend.h"
+#include "../frontend.h"
 
 void DebugFM::Registers::DisplayInternal()
 {

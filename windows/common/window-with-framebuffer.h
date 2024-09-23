@@ -1,7 +1,7 @@
 #ifndef WINDOW_WITH_FRAMEBUFFER_H
 #define WINDOW_WITH_FRAMEBUFFER_H
 
-#include "sdl-wrapper.h"
+#include "../../sdl-wrapper.h"
 
 #include "window-with-dear-imgui.h"
 

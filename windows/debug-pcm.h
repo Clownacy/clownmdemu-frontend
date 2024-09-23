@@ -1,7 +1,7 @@
 #ifndef DEBUG_PCM_H
 #define DEBUG_PCM_H
 
-#include "window-popup.h"
+#include "common/window-popup.h"
 
 namespace DebugPCM
 {

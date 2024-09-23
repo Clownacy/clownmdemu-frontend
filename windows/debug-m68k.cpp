@@ -1,10 +1,8 @@
 #include "debug-m68k.h"
 
-#include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
-#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
-
-#include "window-popup.h"
+#include "../libraries/imgui/imgui.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 void DebugM68k::Registers::DisplayInternal(const Clown68000_State &m68k)
 {

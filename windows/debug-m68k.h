@@ -1,9 +1,9 @@
 #ifndef DEBUG_M68K_H
 #define DEBUG_M68K_H
 
-#include "clownmdemu-frontend-common/clownmdemu/clown68000/interpreter/clown68000.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clown68000/interpreter/clown68000.h"
 
-#include "window-popup.h"
+#include "common/window-popup.h"
 
 namespace DebugM68k
 {

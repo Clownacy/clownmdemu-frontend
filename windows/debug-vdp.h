@@ -3,15 +3,11 @@
 
 #include <cstddef>
 
-#include "sdl-wrapper.h"
+#include "../sdl-wrapper.h"
 
-#include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#include "debug-log.h"
-#include "emulator-instance.h"
-#include "file-utilities.h"
-#include "window-popup.h"
+#include "common/window-popup.h"
 
 namespace DebugVDP
 {

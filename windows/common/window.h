@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "sdl-wrapper.h"
+#include "../../sdl-wrapper.h"
 
 class Window
 {

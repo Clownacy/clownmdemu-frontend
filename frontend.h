@@ -12,7 +12,7 @@
 #include "debug-log.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
-#include "window-with-framebuffer.h"
+#include "windows/common/window-with-framebuffer.h"
 
 void DoToolTip(const std::string &text);
 

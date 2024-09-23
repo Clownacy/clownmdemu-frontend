@@ -1,9 +1,9 @@
-#ifndef DEBUG_Z80_H
-#define DEBUG_Z80_H
+#ifndef DEBUG_PSG_H
+#define DEBUG_PSG_H
 
-#include "window-popup.h"
+#include "common/window-popup.h"
 
-namespace DebugZ80
+namespace DebugPSG
 {
 	class Registers : public WindowPopup<Registers>
 	{
@@ -21,4 +21,4 @@ namespace DebugZ80
 	};
 }
 
-#endif /* DEBUG_Z80_H */
+#endif /* DEBUG_PSG_H */

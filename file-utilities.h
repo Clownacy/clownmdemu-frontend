@@ -23,7 +23,7 @@
 #include "sdl-wrapper.h"
 
 #include "debug-log.h"
-#include "window.h"
+#include "windows/common/window.h"
 
 class FileUtilities
 {

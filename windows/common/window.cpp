@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "winapi.h"
+#include "../../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "winapi.h"
 
 float Window::GetDPIScale() const
 {

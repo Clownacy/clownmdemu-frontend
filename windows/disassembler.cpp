@@ -3,11 +3,11 @@
 #include <array>
 #include <string>
 
-#include "clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
+#include "../libraries/imgui/imgui.h"
 
-#include "emulator-instance.h"
-#include "frontend.h"
-#include "window-popup.h"
+#include "../emulator-instance.h"
+#include "../frontend.h"
 
 static unsigned int address;
 static int current_memory;

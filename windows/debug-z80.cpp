@@ -1,6 +1,8 @@
 #include "debug-z80.h"
 
-#include "frontend.h"
+#include "../libraries/imgui/imgui.h"
+
+#include "../frontend.h"
 
 void DebugZ80::Registers::DisplayInternal()
 {

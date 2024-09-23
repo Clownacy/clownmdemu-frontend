@@ -1,6 +1,8 @@
 #include "debug-pcm.h"
 
-#include "frontend.h"
+#include "../libraries/imgui/imgui.h"
+
+#include "../frontend.h"
 
 void DebugPCM::Registers::DisplayInternal()
 {

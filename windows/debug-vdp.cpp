@@ -7,12 +7,12 @@
 #include <vector>
 
 #include "SDL.h"
-#include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
-#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
-#include "frontend.h"
-#include "window-popup.h"
+#include "../libraries/imgui/imgui.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
+
+#include "../frontend.h"
 
 struct Sprite
 {

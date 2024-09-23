@@ -1,7 +1,7 @@
 #ifndef DEBUG_FRONTEND_H
 #define DEBUG_FRONTEND_H
 
-#include "window-popup.h"
+#include "common/window-popup.h"
 
 class DebugFrontend : public WindowPopup<DebugFrontend>
 {

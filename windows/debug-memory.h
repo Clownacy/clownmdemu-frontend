@@ -3,9 +3,9 @@
 
 #include <cstddef>
 
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-#include "window-popup.h"
+#include "common/window-popup.h"
 
 class DebugMemory : public WindowPopup<DebugMemory>
 {

@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-#include "frontend.h"
+#include "../frontend.h"
 
 void DebugPSG::Registers::DisplayInternal()
 {

@@ -1,7 +1,7 @@
 #ifndef DEBUG_FM_H
 #define DEBUG_FM_H
 
-#include "window-popup.h"
+#include "common/window-popup.h"
 
 namespace DebugFM
 {
