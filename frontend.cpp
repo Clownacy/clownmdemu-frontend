@@ -2624,16 +2624,6 @@ void Frontend::Update()
 				if (dear_imgui_windows)
 					ImGui::MenuItem("Display Window", nullptr, &pop_out);
 
-			#ifndef NDEBUG
-				ImGui::Separator();
-
-				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
-
-			#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
-				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
-			#endif
-			#endif
-
 				ImGui::Separator();
 
 				PopupButton("Options", options_window, 360, 360, true);
@@ -2647,6 +2637,16 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Exit"))
 					quit = true;
+			#endif
+
+			#ifndef NDEBUG
+				ImGui::SeparatorText("Development");
+
+				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
+
+			#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
+				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
+			#endif
 			#endif
 
 				ImGui::EndMenu();
