@@ -50,6 +50,8 @@
 
 #define VERSION "v0.7.1"
 
+using namespace Frontend;
+
 static constexpr unsigned int INITIAL_WINDOW_WIDTH = 320 * 2;
 static constexpr unsigned int INITIAL_WINDOW_HEIGHT = 224 * 2;
 
@@ -57,14 +59,6 @@ static constexpr unsigned int FRAMEBUFFER_WIDTH = 320;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = 240 * 2; // *2 because of double-resolution mode.
 
 static constexpr char DEFAULT_TITLE[] = "clownmdemu";
-
-struct Input
-{
-	unsigned int bound_joypad = 0;
-	std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons = {0};
-	unsigned char fast_forward = 0;
-	unsigned char rewind = 0;
-};
 
 struct ControllerInput
 {
@@ -87,34 +81,6 @@ struct RecentSoftware
 	std::filesystem::path path;
 };
 #endif
-
-enum InputBinding
-{
-	INPUT_BINDING_NONE,
-	INPUT_BINDING_CONTROLLER_UP,
-	INPUT_BINDING_CONTROLLER_DOWN,
-	INPUT_BINDING_CONTROLLER_LEFT,
-	INPUT_BINDING_CONTROLLER_RIGHT,
-	INPUT_BINDING_CONTROLLER_A,
-	INPUT_BINDING_CONTROLLER_B,
-	INPUT_BINDING_CONTROLLER_C,
-	INPUT_BINDING_CONTROLLER_X,
-	INPUT_BINDING_CONTROLLER_Y,
-	INPUT_BINDING_CONTROLLER_Z,
-	INPUT_BINDING_CONTROLLER_START,
-	INPUT_BINDING_CONTROLLER_MODE,
-	INPUT_BINDING_PAUSE,
-	INPUT_BINDING_RESET,
-	INPUT_BINDING_FAST_FORWARD,
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	INPUT_BINDING_REWIND,
-#endif
-	INPUT_BINDING_QUICK_SAVE_STATE,
-	INPUT_BINDING_QUICK_LOAD_STATE,
-	INPUT_BINDING_TOGGLE_FULLSCREEN,
-	INPUT_BINDING_TOGGLE_CONTROL_PAD,
-	INPUT_BINDING__TOTAL
-};
 
 class AboutWindow : public WindowPopup
 {
@@ -518,26 +484,321 @@ public:
 	}
 };
 
-using namespace Frontend;
+class OptionsWindow : public WindowPopup
+{
+public:
+	using WindowPopup::WindowPopup;
+
+	bool Display()
+	{
+		return BeginAndEnd(0,
+			[&]()
+			{
+				ImGui::SeparatorText("Console");
+
+				if (ImGui::BeginTable("Console Options", 3))
+				{
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("TV Standard:");
+					DoToolTip("Some games only work with a certain TV standard.");
+					ImGui::TableNextColumn();
+					if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
+						if (Frontend::emulator->GetPALMode())
+							Frontend::SetAudioPALMode(false);
+					DoToolTip("60 FPS");
+					ImGui::TableNextColumn();
+					if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
+						if (!Frontend::emulator->GetPALMode())
+							Frontend::SetAudioPALMode(true);
+					DoToolTip("50 FPS");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Region:");
+					DoToolTip("Some games only work with a certain region.");
+					ImGui::TableNextColumn();
+					if (ImGui::RadioButton("Japan", Frontend::emulator->GetDomestic()))
+						Frontend::emulator->SetDomestic(true);
+					DoToolTip("Games may show Japanese text.");
+					ImGui::TableNextColumn();
+					if (ImGui::RadioButton("Elsewhere", !Frontend::emulator->GetDomestic()))
+						Frontend::emulator->SetDomestic(false);
+					DoToolTip("Games may show English text.");
+
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText("Video");
+
+				if (ImGui::BeginTable("Video Options", 2))
+				{
+					ImGui::TableNextColumn();
+					if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
+						if (!Frontend::fast_forward_in_progress)
+							SDL_RenderSetVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
+					DoToolTip("Prevents screen tearing.");
+
+					ImGui::TableNextColumn();
+					if (ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling) && Frontend::integer_screen_scaling)
+					{
+						// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
+						SDL_DestroyTexture(Frontend::framebuffer_texture_upscaled);
+						Frontend::framebuffer_texture_upscaled = nullptr;
+					}
+					DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
+
+					ImGui::TableNextColumn();
+					ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
+					DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
+
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText("Audio");
+
+				if (ImGui::BeginTable("Audio Options", 2))
+				{
+					ImGui::TableNextColumn();
+					bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
+					if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
+						Frontend::emulator->SetLowPassFilter(low_pass_filter);
+					DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+
+					ImGui::TableNextColumn();
+					bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
+					if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
+						Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
+					DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
+
+					ImGui::EndTable();
+				}
+
+			#ifdef FILE_PICKER_POSIX
+				ImGui::SeparatorText("Preferred File Dialog");
+
+				if (ImGui::BeginTable("Preferred File Dialog", 2))
+				{
+					ImGui::TableNextColumn();
+
+					if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
+						file_utilities.prefer_kdialog = false;
+					DoToolTip("Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
+
+					ImGui::TableNextColumn();
+
+					if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
+						file_utilities.prefer_kdialog = true;
+					DoToolTip("Best with KDE, LXQt, Deepin, etc.");
+
+					ImGui::EndTable();
+				}
+			#endif
+
+				ImGui::SeparatorText("Keyboard Input");
+
+				static bool sorted_scancodes_done;
+				static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+
+				if (!sorted_scancodes_done)
+				{
+					sorted_scancodes_done = true;
+
+					for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
+						sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
+
+					SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
+						[](const void* const a, const void* const b)
+					{
+						const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
+						const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
+
+						return Frontend::keyboard_bindings[*binding_1] - Frontend::keyboard_bindings[*binding_2];
+					}
+					);
+				}
+
+				static SDL_Scancode selected_scancode;
+
+				static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
+					"None",
+					"Control Pad Up",
+					"Control Pad Down",
+					"Control Pad Left",
+					"Control Pad Right",
+					"Control Pad A",
+					"Control Pad B",
+					"Control Pad C",
+					"Control Pad X",
+					"Control Pad Y",
+					"Control Pad Z",
+					"Control Pad Start",
+					"Control Pad Mode",
+					"Pause",
+					"Reset",
+					"Fast-Forward",
+		#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+						"Rewind",
+		#endif
+						"Quick Save State",
+						"Quick Load State",
+						"Toggle Fullscreen",
+						"Toggle Control Pad"
+				};
+
+				if (ImGui::BeginTable("Keyboard Input Options", 2))
+				{
+					ImGui::TableNextColumn();
+					if (ImGui::RadioButton("Control Pad #1", Frontend::keyboard_input.bound_joypad == 0))
+						Frontend::keyboard_input.bound_joypad = 0;
+					DoToolTip("Binds the keyboard to Control Pad #1.");
+
+
+					ImGui::TableNextColumn();
+					if (ImGui::RadioButton("Control Pad #2", Frontend::keyboard_input.bound_joypad == 1))
+						Frontend::keyboard_input.bound_joypad = 1;
+					DoToolTip("Binds the keyboard to Control Pad #2.");
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
+				{
+					ImGui::TableSetupColumn("Key");
+					ImGui::TableSetupColumn("Action");
+					ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+					ImGui::TableHeadersRow();
+					for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
+					{
+						if (Frontend::keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
+						{
+							ImGui::TableNextColumn();
+							ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(sorted_scancodes[i])));
+
+							ImGui::TableNextColumn();
+							ImGui::TextUnformatted(binding_names[Frontend::keyboard_bindings[sorted_scancodes[i]]]);
+
+							ImGui::TableNextColumn();
+							ImGui::PushID(i);
+							if (ImGui::Button("X"))
+								Frontend::keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
+							ImGui::PopID();
+						}
+					}
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("Add Binding"))
+					ImGui::OpenPopup("Select Key");
+
+				static bool scroll_to_add_bindings_button;
+
+				if (scroll_to_add_bindings_button)
+				{
+					scroll_to_add_bindings_button = false;
+					ImGui::SetScrollHereY(1.0f);
+				}
+
+				const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+				if (ImGui::BeginPopupModal("Select Key", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					bool next_menu = false;
+
+					ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
+					ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
+
+					int total_keys;
+					const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
+
+					for (int i = 0; i < total_keys; ++i)
+					{
+						if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
+						{
+							ImGui::CloseCurrentPopup();
+
+							// The 'escape' key will exit the menu without binding.
+							if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
+							{
+								next_menu = true;
+								selected_scancode = static_cast<SDL_Scancode>(i);
+							}
+							break;
+						}
+					}
+
+					if (ImGui::Button("Cancel"))
+						ImGui::CloseCurrentPopup();
+
+					ImGui::EndPopup();
+
+					if (next_menu)
+						ImGui::OpenPopup("Select Action");
+				}
+
+				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+				if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					bool previous_menu = false;
+
+					ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
+
+					if (ImGui::BeginListBox("##Actions"))
+					{
+						for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
+						{
+							if (ImGui::Selectable(binding_names[i]))
+							{
+								ImGui::CloseCurrentPopup();
+								Frontend::keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
+								sorted_scancodes_done = false;
+								scroll_to_add_bindings_button = true;
+							}
+						}
+						ImGui::EndListBox();
+					}
+
+					if (ImGui::Button("Cancel"))
+					{
+						previous_menu = true;
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::EndPopup();
+
+					if (previous_menu)
+						ImGui::OpenPopup("Select Key");
+				}
+			}
+		);
+	}
+};
 
 DebugLog Frontend::debug_log;
 float Frontend::dpi_scale;
 std::optional<EmulatorInstance> Frontend::emulator;
+std::optional<WindowWithFramebuffer> Frontend::window;
 FileUtilities Frontend::file_utilities(debug_log);
 unsigned int Frontend::frame_counter;
+SDL_Texture *Frontend::framebuffer_texture_upscaled;
 
 unsigned int Frontend::output_width, Frontend::output_height;
 unsigned int Frontend::upscale_width, Frontend::upscale_height;
 
-static Frontend::FrameRateCallback frame_rate_callback;
+bool Frontend::use_vsync;
+bool Frontend::integer_screen_scaling;
+bool Frontend::tall_double_resolution_mode;
+bool Frontend::fast_forward_in_progress;
 
-static Input keyboard_input;
+Input Frontend::keyboard_input;
+std::array<InputBinding, SDL_NUM_SCANCODES> Frontend::keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
-static std::forward_list<ControllerInput> controller_input_list;
-
-static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+
+static Frontend::FrameRateCallback frame_rate_callback;
+
+static std::forward_list<ControllerInput> controller_input_list;
 
 #ifdef FILE_PATH_SUPPORT
 static std::list<RecentSoftware> recent_software_list;
@@ -551,14 +812,9 @@ static bool emulator_frame_advance;
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
 
-static bool use_vsync;
-static bool integer_screen_scaling;
-static bool tall_double_resolution_mode;
 static bool dear_imgui_windows;
 
-static std::optional<WindowWithFramebuffer> window;
-
-static std::optional<WindowPopup> options_window;
+static std::optional<OptionsWindow> options_window;
 static std::optional<AboutWindow> about_window;
 static std::optional<WindowPopup> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -685,9 +941,6 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 }
 #endif
 
-// Manages whether the emulator runs at a higher speed or not.
-static bool fast_forward_in_progress;
-
 static void UpdateFastForwardStatus()
 {
 	const bool previous_fast_forward_in_progress = fast_forward_in_progress;
@@ -700,7 +953,7 @@ static void UpdateFastForwardStatus()
 	if (previous_fast_forward_in_progress != fast_forward_in_progress)
 	{
 		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
-		if (use_vsync)
+		if (Frontend::use_vsync)
 			SDL_RenderSetVSync(window->GetRenderer(), !fast_forward_in_progress);
 	}
 }
@@ -722,7 +975,6 @@ static void UpdateRewindStatus()
 // Upscaled Framebuffer //
 //////////////////////////
 
-static SDL_Texture *framebuffer_texture_upscaled;
 static unsigned int framebuffer_texture_upscaled_width;
 static unsigned int framebuffer_texture_upscaled_height;
 
@@ -908,7 +1160,7 @@ static bool CreateSaveState(const std::filesystem::path &path)
 }
 #endif
 
-static void SetAudioPALMode(const bool enabled)
+void Frontend::SetAudioPALMode(const bool enabled)
 {
 	frame_rate_callback(enabled);
 	emulator->SetPALMode(enabled);
@@ -937,11 +1189,12 @@ static std::filesystem::path GetDearImGuiSettingsFilePath()
 }
 
 
+
 /////////////
 // Tooltip //
 /////////////
 
-static void DoToolTip(const std::string &text)
+void DoToolTip(const std::string &text)
 {
 	if (ImGui::IsItemHovered())
 	{
@@ -2575,291 +2828,7 @@ void Frontend::Update()
 	DisplayWindow(other_status_window);
 	DisplayWindow(debugging_toggles_window);
 	DisplayWindow(m68k_disassembler_window);
-
-	if (options_window.has_value())
-	{
-		if (options_window->Begin())
-		{
-			ImGui::SeparatorText("Console");
-
-			if (ImGui::BeginTable("Console Options", 3))
-			{
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("TV Standard:");
-				DoToolTip("Some games only work with a certain TV standard.");
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("NTSC", !emulator->GetPALMode()))
-					if (emulator->GetPALMode())
-						SetAudioPALMode(false);
-				DoToolTip("60 FPS");
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("PAL", emulator->GetPALMode()))
-					if (!emulator->GetPALMode())
-						SetAudioPALMode(true);
-				DoToolTip("50 FPS");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Region:");
-				DoToolTip("Some games only work with a certain region.");
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("Japan", emulator->GetDomestic()))
-					emulator->SetDomestic(true);
-				DoToolTip("Games may show Japanese text.");
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("Elsewhere", !emulator->GetDomestic()))
-					emulator->SetDomestic(false);
-				DoToolTip("Games may show English text.");
-
-				ImGui::EndTable();
-			}
-
-			ImGui::SeparatorText("Video");
-
-			if (ImGui::BeginTable("Video Options", 2))
-			{
-				ImGui::TableNextColumn();
-				if (ImGui::Checkbox("V-Sync", &use_vsync))
-					if (!fast_forward_in_progress)
-						SDL_RenderSetVSync(window->GetRenderer(), use_vsync);
-				DoToolTip("Prevents screen tearing.");
-
-				ImGui::TableNextColumn();
-				if (ImGui::Checkbox("Integer Screen Scaling", &integer_screen_scaling) && integer_screen_scaling)
-				{
-					// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
-					SDL_DestroyTexture(framebuffer_texture_upscaled);
-					framebuffer_texture_upscaled = nullptr;
-				}
-				DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
-
-				ImGui::TableNextColumn();
-				ImGui::Checkbox("Tall Interlace Mode 2", &tall_double_resolution_mode);
-				DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
-
-				ImGui::EndTable();
-			}
-
-			ImGui::SeparatorText("Audio");
-
-			if (ImGui::BeginTable("Audio Options", 2))
-			{
-				ImGui::TableNextColumn();
-				bool low_pass_filter = emulator->GetLowPassFilter();
-				if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
-					emulator->SetLowPassFilter(low_pass_filter);
-				DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
-
-				ImGui::TableNextColumn();
-				bool ladder_effect = !emulator->GetConfigurationFM().ladder_effect_disabled;
-				if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
-					emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
-				DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
-
-				ImGui::EndTable();
-			}
-
-		#ifdef FILE_PICKER_POSIX
-			ImGui::SeparatorText("Preferred File Dialog");
-
-			if (ImGui::BeginTable("Preferred File Dialog", 2))
-			{
-				ImGui::TableNextColumn();
-
-				if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
-					file_utilities.prefer_kdialog = false;
-				DoToolTip("Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
-
-				ImGui::TableNextColumn();
-
-				if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
-					file_utilities.prefer_kdialog = true;
-				DoToolTip("Best with KDE, LXQt, Deepin, etc.");
-
-				ImGui::EndTable();
-			}
-		#endif
-
-			ImGui::SeparatorText("Keyboard Input");
-
-			static bool sorted_scancodes_done;
-			static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-
-			if (!sorted_scancodes_done)
-			{
-				sorted_scancodes_done = true;
-
-				for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
-					sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
-
-				SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
-					[](const void* const a, const void* const b)
-				{
-					const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
-					const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
-
-					return keyboard_bindings[*binding_1] - keyboard_bindings[*binding_2];
-				}
-				);
-			}
-
-			static SDL_Scancode selected_scancode;
-
-			static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
-				"None",
-				"Control Pad Up",
-				"Control Pad Down",
-				"Control Pad Left",
-				"Control Pad Right",
-				"Control Pad A",
-				"Control Pad B",
-				"Control Pad C",
-				"Control Pad X",
-				"Control Pad Y",
-				"Control Pad Z",
-				"Control Pad Start",
-				"Control Pad Mode",
-				"Pause",
-				"Reset",
-				"Fast-Forward",
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-				"Rewind",
-#endif
-				"Quick Save State",
-				"Quick Load State",
-				"Toggle Fullscreen",
-				"Toggle Control Pad"
-			};
-
-			if (ImGui::BeginTable("Keyboard Input Options", 2))
-			{
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("Control Pad #1", keyboard_input.bound_joypad == 0))
-					keyboard_input.bound_joypad = 0;
-				DoToolTip("Binds the keyboard to Control Pad #1.");
-
-
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton("Control Pad #2", keyboard_input.bound_joypad == 1))
-					keyboard_input.bound_joypad = 1;
-				DoToolTip("Binds the keyboard to Control Pad #2.");
-
-				ImGui::EndTable();
-			}
-
-			if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
-			{
-				ImGui::TableSetupColumn("Key");
-				ImGui::TableSetupColumn("Action");
-				ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-				ImGui::TableHeadersRow();
-				for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
-				{
-					if (keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
-					{
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(sorted_scancodes[i])));
-
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(binding_names[keyboard_bindings[sorted_scancodes[i]]]);
-
-						ImGui::TableNextColumn();
-						ImGui::PushID(i);
-						if (ImGui::Button("X"))
-							keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
-						ImGui::PopID();
-					}
-				}
-				ImGui::EndTable();
-			}
-
-			if (ImGui::Button("Add Binding"))
-				ImGui::OpenPopup("Select Key");
-
-			static bool scroll_to_add_bindings_button;
-
-			if (scroll_to_add_bindings_button)
-			{
-				scroll_to_add_bindings_button = false;
-				ImGui::SetScrollHereY(1.0f);
-			}
-
-			const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-			if (ImGui::BeginPopupModal("Select Key", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				bool next_menu = false;
-
-				ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
-				ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
-
-				int total_keys;
-				const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
-
-				for (int i = 0; i < total_keys; ++i)
-				{
-					if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
-					{
-						ImGui::CloseCurrentPopup();
-
-						// The 'escape' key will exit the menu without binding.
-						if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
-						{
-							next_menu = true;
-							selected_scancode = static_cast<SDL_Scancode>(i);
-						}
-						break;
-					}
-				}
-
-				if (ImGui::Button("Cancel"))
-					ImGui::CloseCurrentPopup();
-
-				ImGui::EndPopup();
-
-				if (next_menu)
-					ImGui::OpenPopup("Select Action");
-			}
-
-			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-			if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				bool previous_menu = false;
-
-				ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
-
-				if (ImGui::BeginListBox("##Actions"))
-				{
-					for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
-					{
-						if (ImGui::Selectable(binding_names[i]))
-						{
-							ImGui::CloseCurrentPopup();
-							keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
-							sorted_scancodes_done = false;
-							scroll_to_add_bindings_button = true;
-						}
-					}
-					ImGui::EndListBox();
-				}
-
-				if (ImGui::Button("Cancel"))
-				{
-					previous_menu = true;
-					ImGui::CloseCurrentPopup();
-				}
-
-				ImGui::EndPopup();
-
-				if (previous_menu)
-					ImGui::OpenPopup("Select Key");
-			}
-		}
-
-		options_window->End();
-	}
-
+	DisplayWindow(options_window);
 	DisplayWindow(about_window);
 
 	file_utilities.DisplayFileDialog(drag_and_drop_filename);

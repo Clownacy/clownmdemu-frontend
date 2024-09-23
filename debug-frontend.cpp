@@ -2,16 +2,6 @@
 
 #include "frontend.h"
 
-static void DoToolTip(const char* const text)
-{
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		ImGui::TextUnformatted(text);
-		ImGui::EndTooltip();
-	}
-}
-
 void DebugFrontend::Display()
 {
 	if (Begin())
