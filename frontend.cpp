@@ -2630,13 +2630,12 @@ void Frontend::Update()
 					window->ToggleFullscreen();
 
 				if (dear_imgui_windows)
+				{
 					ImGui::MenuItem("Display Window", nullptr, &pop_out);
-
-				ImGui::Separator();
+					ImGui::Separator();
+				}
 
 				PopupButton("Options", options_window, 360, 360, true);
-
-				ImGui::Separator();
 
 				PopupButton("About", about_window, 626, 430, true);
 
