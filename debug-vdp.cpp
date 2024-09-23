@@ -86,108 +86,103 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-bool DebugVDP::PlaneViewer::Display(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
+void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
 {
-	return BeginAndEnd(0,
-		[&]()
+	const auto &state = Frontend::emulator->CurrentState();
+	const VDP_State &vdp = state.clownmdemu.vdp;
+
+	const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
+	const cc_u16f plane_texture_height = 64 * 16;
+
+	if (texture.get() == nullptr)
+	{
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
+
+		if (texture.get() == nullptr)
 		{
-			const auto &state = Frontend::emulator->CurrentState();
-			const VDP_State &vdp = state.clownmdemu.vdp;
+			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			// Disable blending, since we don't need it
+			if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+		}
+	}
 
-			const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
-			const cc_u16f plane_texture_height = 64 * 16;
+	if (texture.get() != nullptr)
+	{
+		ImGui::InputInt("Zoom", &scale);
+		if (scale < 1)
+			scale = 1;
 
-			if (texture.get() == nullptr)
+		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
+		{
+			// Only update the texture if we know that the frame has changed.
+			// This prevents constant texture generation even when the emulator is paused.
+			if (cache_frame_counter != Frontend::frame_counter)
 			{
-				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-				texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
+				cache_frame_counter = Frontend::frame_counter;
 
-				if (texture.get() == nullptr)
-				{
-					Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-				}
-				else
-				{
-					// Disable blending, since we don't need it
-					if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
-						Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-				}
-			}
+				// Lock texture so that we can write into it.
+				Uint8 *plane_texture_pixels;
+				int plane_texture_pitch;
 
-			if (texture.get() != nullptr)
-			{
-				ImGui::InputInt("Zoom", &scale);
-				if (scale < 1)
-					scale = 1;
-
-				if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
+				if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
 				{
-					// Only update the texture if we know that the frame has changed.
-					// This prevents constant texture generation even when the emulator is paused.
-					if (cache_frame_counter != Frontend::frame_counter)
+					cc_u16f plane_index = plane_address;
+
+					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 					{
-						cache_frame_counter = Frontend::frame_counter;
-
-						// Lock texture so that we can write into it.
-						Uint8 *plane_texture_pixels;
-						int plane_texture_pitch;
-
-						if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
+						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 						{
-							cc_u16f plane_index = plane_address;
-
-							for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
-							{
-								for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
-								{
-									DrawTile(state, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
-									plane_index += 2;
-								}
-							}
-
-							SDL_UnlockTexture(texture.get());
+							DrawTile(state, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
+							plane_index += 2;
 						}
 					}
 
-					const cc_u16f tile_width = TileWidth();
-					const cc_u16f tile_height = TileHeight(vdp);
-
-					const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
-					const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
-
-					const ImVec2 image_position = ImGui::GetCursorScreenPos();
-
-					ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
-
-					if (ImGui::IsItemHovered())
-					{
-						ImGui::BeginTooltip();
-
-						const ImVec2 mouse_position = ImGui::GetMousePos();
-
-						const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
-						const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
-
-						const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
-
-						const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
-
-						const auto dpi_scale = GetWindow().GetDPIScale();
-						ImGui::Image(texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
-						ImGui::SameLine();
-						ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
-
-						ImGui::EndTooltip();
-					}
+					SDL_UnlockTexture(texture.get());
 				}
+			}
 
-				ImGui::EndChild();
+			const cc_u16f tile_width = TileWidth();
+			const cc_u16f tile_height = TileHeight(vdp);
+
+			const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
+			const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
+
+			const ImVec2 image_position = ImGui::GetCursorScreenPos();
+
+			ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+
+				const ImVec2 mouse_position = ImGui::GetMousePos();
+
+				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
+				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
+
+				const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
+
+				const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
+
+				const auto dpi_scale = GetWindow().GetDPIScale();
+				ImGui::Image(texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
+				ImGui::SameLine();
+				ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
+
+				ImGui::EndTooltip();
 			}
 		}
-	);
+
+		ImGui::EndChild();
+	}
 }
 
-void DebugVDP::SpriteCommon::DisplaySpriteCommon()
+void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 {
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
@@ -197,7 +192,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon()
 		if (texture.get() == nullptr)
 		{
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-			texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
+			texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
 
 			if (texture.get() == nullptr)
 			{
@@ -251,171 +246,161 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon()
 	cache_frame_counter = Frontend::frame_counter;
 }
 
-bool DebugVDP::SpriteViewer::Display()
+void DebugVDP::SpriteViewer::DisplayInternal()
 {
-	return BeginAndEnd(0,
-		[&]()
+	DisplaySpriteCommon(GetWindow());
+
+	const auto renderer = GetWindow().GetRenderer();
+	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
+
+	constexpr cc_u16f plane_texture_width = 512;
+	constexpr cc_u16f plane_texture_height = 1024;
+
+	if (texture.get() == nullptr)
+	{
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+		texture = SDL::Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
+
+		if (texture.get() == nullptr)
 		{
-			DisplaySpriteCommon();
-
-			const auto renderer = GetWindow().GetRenderer();
-			const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
-
-			constexpr cc_u16f plane_texture_width = 512;
-			constexpr cc_u16f plane_texture_height = 1024;
-
-			if (texture.get() == nullptr)
-			{
-				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-				texture = SDL::Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
-
-				if (texture.get() == nullptr)
-				{
-					Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-				}
-				else
-				{
-					// Disable blending, since we don't need it
-					if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
-						Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-				}
-			}
-
-			const cc_u16f tile_width = TileWidth();
-			const cc_u16f tile_height = TileHeight(vdp);
-
-			ImGui::InputInt("Zoom", &scale);
-			if (scale < 1)
-				scale = 1;
-
-			if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
-			{
-				SDL_SetRenderTarget(renderer, texture.get());
-				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-				SDL_RenderClear(renderer);
-				SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
-				const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-				const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
-				SDL_RenderFillRect(renderer, &visible_area_rectangle);
-
-				std::vector<cc_u8l> sprite_vector;
-
-				// Need to display sprites backwards for proper layering.
-				for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
-				{
-					sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
-
-					sprite_index = GetSprite(vdp, sprite_index).cached.link;
-
-					if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
-						break;
-				}
-
-				// Draw sprites to the plane texture.
-				for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
-				{
-					const cc_u8f sprite_index = *it;
-					const Sprite sprite = GetSprite(vdp, sprite_index);
-
-					const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-					const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-					SDL_RenderCopy(renderer, textures[sprite_index].get(), &src_rect, &dst_rect);
-				}
-
-				SDL_SetRenderTarget(renderer, nullptr);
-
-				const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
-				const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
-
-				const ImVec2 image_position = ImGui::GetCursorScreenPos();
-
-				ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
-
-				if (ImGui::IsItemHovered())
-				{
-					ImGui::BeginTooltip();
-
-					const ImVec2 mouse_position = ImGui::GetMousePos();
-
-					const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale);
-					const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale);
-
-					ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
-
-					ImGui::EndTooltip();
-				}
-			}
-
-			ImGui::EndChild();
+			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 		}
-	);
+		else
+		{
+			// Disable blending, since we don't need it
+			if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+		}
+	}
+
+	const cc_u16f tile_width = TileWidth();
+	const cc_u16f tile_height = TileHeight(vdp);
+
+	ImGui::InputInt("Zoom", &scale);
+	if (scale < 1)
+		scale = 1;
+
+	if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
+	{
+		SDL_SetRenderTarget(renderer, texture.get());
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+		SDL_RenderClear(renderer);
+		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
+		const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
+		const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
+		SDL_RenderFillRect(renderer, &visible_area_rectangle);
+
+		std::vector<cc_u8l> sprite_vector;
+
+		// Need to display sprites backwards for proper layering.
+		for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+		{
+			sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+
+			sprite_index = GetSprite(vdp, sprite_index).cached.link;
+
+			if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
+				break;
+		}
+
+		// Draw sprites to the plane texture.
+		for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+		{
+			const cc_u8f sprite_index = *it;
+			const Sprite sprite = GetSprite(vdp, sprite_index);
+
+			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+			SDL_RenderCopy(renderer, textures[sprite_index].get(), &src_rect, &dst_rect);
+		}
+
+		SDL_SetRenderTarget(renderer, nullptr);
+
+		const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
+		const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
+
+		const ImVec2 image_position = ImGui::GetCursorScreenPos();
+
+		ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+
+			const ImVec2 mouse_position = ImGui::GetMousePos();
+
+			const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale);
+			const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale);
+
+			ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
+
+			ImGui::EndTooltip();
+		}
+	}
+
+	ImGui::EndChild();
 }
 
-bool DebugVDP::SpriteList::Display()
+void DebugVDP::SpriteList::DisplayInternal()
 {
-	return BeginAndEnd(0,
-		[&]()
+	DisplaySpriteCommon(GetWindow());
+
+	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
+
+	if (ImGui::BeginChild("Sprites", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
+	{
+		if (ImGui::BeginTable("Sprite Table", 10, ImGuiTableFlags_Borders))
 		{
-			DisplaySpriteCommon();
+			ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Image");
+			ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Link", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Tile Index", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Palette Line", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("X-Flip", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Y-Flip", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Priority", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableHeadersRow();
 
-			const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
-
-			if (ImGui::BeginChild("Sprites", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
+			for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
 			{
-				if (ImGui::BeginTable("Sprite Table", 10, ImGuiTableFlags_Borders))
-				{
-					ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Image");
-					ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Link", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Tile Index", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Palette Line", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("X-Flip", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Y-Flip", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableSetupColumn("Priority", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableHeadersRow();
+				const cc_u16f tile_width = TileWidth();
+				const cc_u16f tile_height = TileHeight(vdp);
 
-					for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
-					{
-						const cc_u16f tile_width = TileWidth();
-						const cc_u16f tile_height = TileHeight(vdp);
+				const Sprite sprite = GetSprite(vdp, i);
+				const auto dpi_scale = GetWindow().GetDPIScale();
 
-						const Sprite sprite = GetSprite(vdp, i);
-						const auto dpi_scale = GetWindow().GetDPIScale();
-
-						ImGui::TableNextColumn();
-						ImGui::Text("%" CC_PRIuFAST8, i);
-						ImGui::TableNextColumn();
-						ImGui::Image(textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
-						ImGui::TableNextColumn();
-						ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
-						ImGui::TableNextColumn();
-						ImGui::Text("%" CC_PRIuFAST8 "x%" CC_PRIuFAST8, sprite.cached.width, sprite.cached.height);
-						ImGui::TableNextColumn();
-						ImGui::Text("%" CC_PRIuFAST8, sprite.cached.link);
-						ImGui::TableNextColumn();
-						ImGui::Text("%" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16, sprite.tile_metadata.tile_index, sprite.tile_metadata.tile_index);
-						ImGui::TableNextColumn();
-						ImGui::Text("Line %" CC_PRIuFAST8, sprite.tile_metadata.palette_line);
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(sprite.tile_metadata.y_flip ? "Yes" : "No");
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
-					}
-
-					ImGui::EndTable();
-				}
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST8, i);
+				ImGui::TableNextColumn();
+				ImGui::Image(textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST8 "x%" CC_PRIuFAST8, sprite.cached.width, sprite.cached.height);
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST8, sprite.cached.link);
+				ImGui::TableNextColumn();
+				ImGui::Text("%" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16, sprite.tile_metadata.tile_index, sprite.tile_metadata.tile_index);
+				ImGui::TableNextColumn();
+				ImGui::Text("Line %" CC_PRIuFAST8, sprite.tile_metadata.palette_line);
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(sprite.tile_metadata.y_flip ? "Yes" : "No");
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
 			}
 
-			ImGui::EndChild();
+			ImGui::EndTable();
 		}
-	);
+	}
+
+	ImGui::EndChild();
 }
 
-bool DebugVDP::VRAMViewer::Display()
+void DebugVDP::VRAMViewer::DisplayInternal()
 {
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float dpi_scale = GetWindow().GetDPIScale();
@@ -432,559 +417,544 @@ bool DebugVDP::VRAMViewer::Display()
 	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
 #endif
 
-	return BeginAndEnd(0,
-		[&]()
+	const auto &state = Frontend::emulator->CurrentState();
+	const VDP_State &vdp = state.clownmdemu.vdp;
+
+	const cc_u16f tile_width = TileWidth();
+	const cc_u16f tile_height = TileHeight(vdp);
+	const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
+
+	// Create VRAM texture if it does not exist.
+	if (texture == nullptr)
+	{
+		// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
+		const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
+		const std::size_t vram_texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(size_of_vram_in_pixels))));
+		const std::size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
+		const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
+		const std::size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
+
+		texture_width = vram_texture_width_rounded_up_to_8;
+		texture_height = vram_texture_height_rounded_up_to_16;
+
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height)));
+
+		if (texture == nullptr)
 		{
-			const auto &state = Frontend::emulator->CurrentState();
-			const VDP_State &vdp = state.clownmdemu.vdp;
+			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+		}
+		else
+		{
+			// Disable blending, since we don't need it
+			if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+		}
+	}
 
-			const cc_u16f tile_width = TileWidth();
-			const cc_u16f tile_height = TileHeight(vdp);
-			const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
+	if (ImGui::Button("Save to File"))
+	{
+		Frontend::file_utilities.SaveFile(GetWindow(), "Save VRAM Dump",
+		[vdp](const FileUtilities::SaveFileInnerCallback &callback)
+		{
+			return callback(vdp.vram, sizeof(vdp.vram));
+		});
+	}
 
-			// Create VRAM texture if it does not exist.
-			if (texture == nullptr)
+	if (texture != nullptr)
+	{
+		bool options_changed = false;
+
+		// Handle VRAM viewing options.
+		ImGui::SeparatorText("Brightness");
+		for (std::size_t i = 0; i < state.colours.size(); ++i)
+		{
+			if (i != 0)
+				ImGui::SameLine();
+
+			static const std::array brightness_names = {
+				"Normal",
+				"Shadow",
+				"Highlight"
+			};
+
+			options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_index, i);
+		}
+
+		ImGui::SeparatorText("Palette Line");
+		for (std::size_t i = 0; i < state.colours[0].size(); ++i)
+		{
+			if (i != 0)
+				ImGui::SameLine();
+
+			static const std::array brightness_names = std::to_array<std::string>({
+				"Normal",
+				"Shadow",
+				"Highlight"
+			});
+
+			options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
+		}
+
+		ImGui::SeparatorText("Tiles");
+
+		// Set up some variables that we're going to need soon.
+		const std::size_t vram_texture_width_in_tiles = texture_width / tile_width;
+		const std::size_t vram_texture_height_in_tiles = texture_height / tile_height;
+
+		// Only update the texture if we know that the frame has changed.
+		// This prevents constant texture generation even when the emulator is paused.
+		if (cache_frame_counter != Frontend::frame_counter || options_changed)
+		{
+			cache_frame_counter = Frontend::frame_counter;
+
+			// Select the correct palette line.
+			const auto &selected_palette = state.colours[brightness_index][palette_line];
+
+			// Lock texture so that we can write into it.
+			Uint8 *vram_texture_pixels;
+			int vram_texture_pitch;
+
+			if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 			{
-				// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-				const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
-				const std::size_t vram_texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(size_of_vram_in_pixels))));
-				const std::size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
-				const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;
-				const std::size_t vram_texture_height_rounded_up_to_16 = (vram_texture_height_in_progress + (16 - 1)) / 16 * 16;
+				// Generate VRAM bitmap.
+				cc_u16f vram_index = 0;
 
-				texture_width = vram_texture_width_rounded_up_to_8;
-				texture_height = vram_texture_height_rounded_up_to_16;
-
-				SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-				texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height)));
-
-				if (texture == nullptr)
+				// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
+				// instead of left-to-right then top-to-bottom.
+				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 				{
-					Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-				}
-				else
-				{
-					// Disable blending, since we don't need it
-					if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
-						Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-				}
-			}
-
-			if (ImGui::Button("Save to File"))
-			{
-				Frontend::file_utilities.SaveFile(GetWindow(), "Save VRAM Dump",
-				[vdp](const FileUtilities::SaveFileInnerCallback &callback)
-				{
-					return callback(vdp.vram, sizeof(vdp.vram));
-				});
-			}
-
-			if (texture != nullptr)
-			{
-				bool options_changed = false;
-
-				// Handle VRAM viewing options.
-				ImGui::SeparatorText("Brightness");
-				for (std::size_t i = 0; i < state.colours.size(); ++i)
-				{
-					if (i != 0)
-						ImGui::SameLine();
-
-					static const std::array brightness_names = {
-						"Normal",
-						"Shadow",
-						"Highlight"
-					};
-
-					options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_index, i);
-				}
-
-				ImGui::SeparatorText("Palette Line");
-				for (std::size_t i = 0; i < state.colours[0].size(); ++i)
-				{
-					if (i != 0)
-						ImGui::SameLine();
-
-					static const std::array brightness_names = std::to_array<std::string>({
-						"Normal",
-						"Shadow",
-						"Highlight"
-					});
-
-					options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
-				}
-
-				ImGui::SeparatorText("Tiles");
-
-				// Set up some variables that we're going to need soon.
-				const std::size_t vram_texture_width_in_tiles = texture_width / tile_width;
-				const std::size_t vram_texture_height_in_tiles = texture_height / tile_height;
-
-				// Only update the texture if we know that the frame has changed.
-				// This prevents constant texture generation even when the emulator is paused.
-				if (cache_frame_counter != Frontend::frame_counter || options_changed)
-				{
-					cache_frame_counter = Frontend::frame_counter;
-
-					// Select the correct palette line.
-					const auto &selected_palette = state.colours[brightness_index][palette_line];
-
-					// Lock texture so that we can write into it.
-					Uint8 *vram_texture_pixels;
-					int vram_texture_pitch;
-
-					if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
+					for (std::size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
 					{
-						// Generate VRAM bitmap.
-						cc_u16f vram_index = 0;
+						Uint32 *pixels_pointer = reinterpret_cast<Uint32*>(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
 
-						// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
-						// instead of left-to-right then top-to-bottom.
-						for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+						for (cc_u16f i = 0; i < 2; ++i)
 						{
-							for (std::size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
+							// TODO: Stop reading past the end of VRAM so that this bitmask is not necessary!
+							const cc_u16l tile_row = VDP_ReadVRAMWord(&vdp, vram_index & 0xFFFF);
+							vram_index += 2;
+
+							for (cc_u16f j = 0; j < 4; ++j)
 							{
-								Uint32 *pixels_pointer = reinterpret_cast<Uint32*>(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
-
-								for (cc_u16f i = 0; i < 2; ++i)
-								{
-									// TODO: Stop reading past the end of VRAM so that this bitmask is not necessary!
-									const cc_u16l tile_row = VDP_ReadVRAMWord(&vdp, vram_index & 0xFFFF);
-									vram_index += 2;
-
-									for (cc_u16f j = 0; j < 4; ++j)
-									{
-										const cc_u16f colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
-										*pixels_pointer++ = selected_palette[colour_index];
-									}
-								}
-							}
-						}
-
-						SDL_UnlockTexture(texture.get());
-					}
-				}
-
-				// Actually display the VRAM now.
-				ImGui::BeginChild("VRAM contents");
-
-				const ImVec2 dst_tile_size(
-					tile_width  * tile_scale,
-					tile_height * tile_scale);
-
-				const ImVec2 dst_tile_size_and_padding(
-					dst_tile_size.x + tile_spacing * 2,
-					dst_tile_size.y + tile_spacing * 2);
-
-				// Calculate the size of the VRAM display region.
-				// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
-				const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size_and_padding.x);
-				const std::size_t vram_display_region_width_in_tiles = SDL_floorf(vram_display_region_width / dst_tile_size_and_padding.x);
-
-				const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
-				const bool window_is_hovered = ImGui::IsWindowHovered();
-
-				// Draw the list of tiles.
-				ImDrawList *draw_list = ImGui::GetWindowDrawList();
-
-				// Here we use a clipper so that we only render the tiles that we can actually see.
-				ImGuiListClipper clipper;
-				clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, vram_display_region_width_in_tiles), dst_tile_size_and_padding.y);
-				while (clipper.Step())
-				{
-					for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
-					{
-						for (std::size_t x = 0; x < std::min(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
-						{
-							const std::size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
-
-							// Obtain texture coordinates for the current tile.
-							const std::size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
-							const std::size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
-
-							const ImVec2 current_tile_uv0(
-								static_cast<float>(current_tile_src_x) / static_cast<float>(texture_width),
-								static_cast<float>(current_tile_src_y) / static_cast<float>(texture_height));
-
-							const ImVec2 current_tile_uv1(
-								static_cast<float>(current_tile_src_x + tile_width) / static_cast<float>(texture_width),
-								static_cast<float>(current_tile_src_y + tile_height) / static_cast<float>(texture_height));
-
-							// Figure out where the tile goes in the viewer.
-							const float current_tile_dst_x = static_cast<float>(x) * dst_tile_size_and_padding.x;
-							const float current_tile_dst_y = static_cast<float>(y) * dst_tile_size_and_padding.y;
-
-							const ImVec2 tile_boundary_position_top_left(
-								canvas_position.x + current_tile_dst_x,
-								canvas_position.y + current_tile_dst_y);
-
-							const ImVec2 tile_boundary_position_bottom_right(
-								tile_boundary_position_top_left.x + dst_tile_size_and_padding.x,
-								tile_boundary_position_top_left.y + dst_tile_size_and_padding.y);
-
-							const ImVec2 tile_position_top_left(
-								tile_boundary_position_top_left.x + tile_spacing,
-								tile_boundary_position_top_left.y + tile_spacing);
-
-							const ImVec2 tile_position_bottom_right(
-								tile_boundary_position_bottom_right.x - tile_spacing,
-								tile_boundary_position_bottom_right.y - tile_spacing);
-
-							// Finally, display the tile.
-							draw_list->AddImage(texture.get(), tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
-
-							if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
-							{
-								ImGui::BeginTooltip();
-
-								// Display the tile's index.
-								ImGui::Text("%zd/0x%zX", tile_index, tile_index);
-
-								// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-								ImGui::Image(texture.get(), ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
-
-								ImGui::EndTooltip();
+								const cc_u16f colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
+								*pixels_pointer++ = selected_palette[colour_index];
 							}
 						}
 					}
 				}
 
-				ImGui::EndChild();
+				SDL_UnlockTexture(texture.get());
 			}
 		}
-	);
+
+		// Actually display the VRAM now.
+		ImGui::BeginChild("VRAM contents");
+
+		const ImVec2 dst_tile_size(
+			tile_width  * tile_scale,
+			tile_height * tile_scale);
+
+		const ImVec2 dst_tile_size_and_padding(
+			dst_tile_size.x + tile_spacing * 2,
+			dst_tile_size.y + tile_spacing * 2);
+
+		// Calculate the size of the VRAM display region.
+		// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
+		const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size_and_padding.x);
+		const std::size_t vram_display_region_width_in_tiles = SDL_floorf(vram_display_region_width / dst_tile_size_and_padding.x);
+
+		const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
+		const bool window_is_hovered = ImGui::IsWindowHovered();
+
+		// Draw the list of tiles.
+		ImDrawList *draw_list = ImGui::GetWindowDrawList();
+
+		// Here we use a clipper so that we only render the tiles that we can actually see.
+		ImGuiListClipper clipper;
+		clipper.Begin(CC_DIVIDE_CEILING(size_of_vram_in_tiles, vram_display_region_width_in_tiles), dst_tile_size_and_padding.y);
+		while (clipper.Step())
+		{
+			for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
+			{
+				for (std::size_t x = 0; x < std::min(vram_display_region_width_in_tiles, size_of_vram_in_tiles - (y * vram_display_region_width_in_tiles)); ++x)
+				{
+					const std::size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
+
+					// Obtain texture coordinates for the current tile.
+					const std::size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
+					const std::size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
+
+					const ImVec2 current_tile_uv0(
+						static_cast<float>(current_tile_src_x) / static_cast<float>(texture_width),
+						static_cast<float>(current_tile_src_y) / static_cast<float>(texture_height));
+
+					const ImVec2 current_tile_uv1(
+						static_cast<float>(current_tile_src_x + tile_width) / static_cast<float>(texture_width),
+						static_cast<float>(current_tile_src_y + tile_height) / static_cast<float>(texture_height));
+
+					// Figure out where the tile goes in the viewer.
+					const float current_tile_dst_x = static_cast<float>(x) * dst_tile_size_and_padding.x;
+					const float current_tile_dst_y = static_cast<float>(y) * dst_tile_size_and_padding.y;
+
+					const ImVec2 tile_boundary_position_top_left(
+						canvas_position.x + current_tile_dst_x,
+						canvas_position.y + current_tile_dst_y);
+
+					const ImVec2 tile_boundary_position_bottom_right(
+						tile_boundary_position_top_left.x + dst_tile_size_and_padding.x,
+						tile_boundary_position_top_left.y + dst_tile_size_and_padding.y);
+
+					const ImVec2 tile_position_top_left(
+						tile_boundary_position_top_left.x + tile_spacing,
+						tile_boundary_position_top_left.y + tile_spacing);
+
+					const ImVec2 tile_position_bottom_right(
+						tile_boundary_position_bottom_right.x - tile_spacing,
+						tile_boundary_position_bottom_right.y - tile_spacing);
+
+					// Finally, display the tile.
+					draw_list->AddImage(texture.get(), tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+
+					if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
+					{
+						ImGui::BeginTooltip();
+
+						// Display the tile's index.
+						ImGui::Text("%zd/0x%zX", tile_index, tile_index);
+
+						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
+						ImGui::Image(texture.get(), ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+
+						ImGui::EndTooltip();
+					}
+				}
+			}
+		}
+
+		ImGui::EndChild();
+	}
 }
 
-bool DebugVDP::CRAMViewer::Display()
+void DebugVDP::CRAMViewer::DisplayInternal()
 {
-	return BeginAndEnd(0,
-		[&]()
+	const auto &state = Frontend::emulator->CurrentState();
+
+	ImGui::SeparatorText("Brightness");
+	ImGui::RadioButton("Shadow", &brightness, 0);
+	ImGui::SameLine();
+	ImGui::RadioButton("Normal", &brightness, 1);
+	ImGui::SameLine();
+	ImGui::RadioButton("Highlight", &brightness, 2);
+
+	ImGui::SeparatorText("Colours");
+
+	const cc_u16f length_of_palette_line = 16;
+	const cc_u16f length_of_palette = length_of_palette_line * 4;
+
+	for (cc_u16f j = 0; j < length_of_palette; ++j)
+	{
+		ImGui::PushID(j);
+
+		const cc_u16f value = state.clownmdemu.vdp.cram[j];
+		const cc_u16f blue = (value >> 9) & 7;
+		const cc_u16f green = (value >> 5) & 7;
+		const cc_u16f red = (value >> 1) & 7;
+
+		cc_u16f value_shaded = value & 0xEEE;
+
+		switch (brightness)
 		{
-			const auto &state = Frontend::emulator->CurrentState();
+			case 0:
+				value_shaded >>= 1;
+				break;
 
-			ImGui::SeparatorText("Brightness");
-			ImGui::RadioButton("Shadow", &brightness, 0);
-			ImGui::SameLine();
-			ImGui::RadioButton("Normal", &brightness, 1);
-			ImGui::SameLine();
-			ImGui::RadioButton("Highlight", &brightness, 2);
+			case 1:
+				break;
 
-			ImGui::SeparatorText("Colours");
-
-			const cc_u16f length_of_palette_line = 16;
-			const cc_u16f length_of_palette = length_of_palette_line * 4;
-
-			for (cc_u16f j = 0; j < length_of_palette; ++j)
-			{
-				ImGui::PushID(j);
-
-				const cc_u16f value = state.clownmdemu.vdp.cram[j];
-				const cc_u16f blue = (value >> 9) & 7;
-				const cc_u16f green = (value >> 5) & 7;
-				const cc_u16f red = (value >> 1) & 7;
-
-				cc_u16f value_shaded = value & 0xEEE;
-
-				switch (brightness)
-				{
-					case 0:
-						value_shaded >>= 1;
-						break;
-
-					case 1:
-						break;
-
-					case 2:
-						value_shaded >>= 1;
-						value_shaded |= 0x888;
-						break;
-				}
-
-				const cc_u16f blue_shaded = (value_shaded >> 8) & 0xF;
-				const cc_u16f green_shaded = (value_shaded >> 4) & 0xF;
-				const cc_u16f red_shaded = (value_shaded >> 0) & 0xF;
-
-				if (j % length_of_palette_line != 0)
-				{
-					// Split the colours into palette lines.
-					ImGui::SameLine();
-				}
-
-				const float dpi_scale = GetWindow().GetDPIScale();
-				ImGui::ColorButton("##colour-button", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
-
-				if (ImGui::IsItemHovered())
-				{
-					ImGui::BeginTooltip();
-
-					ImGui::Text("Line %" CC_PRIdFAST16 ", Colour %" CC_PRIdFAST16, j / length_of_palette_line, j % length_of_palette_line);
-					ImGui::Separator();
-					ImGui::PushFont(GetMonospaceFont());
-					ImGui::Text("Value: %03" CC_PRIXFAST16, value);
-					ImGui::Text("Blue:  %" CC_PRIdFAST16 "/7", blue);
-					ImGui::Text("Green: %" CC_PRIdFAST16 "/7", green);
-					ImGui::Text("Red:   %" CC_PRIdFAST16 "/7", red);
-					ImGui::PopFont();
-
-					ImGui::EndTooltip();
-				}
-
-				ImGui::PopID();
-			}
+			case 2:
+				value_shaded >>= 1;
+				value_shaded |= 0x888;
+				break;
 		}
-	);
+
+		const cc_u16f blue_shaded = (value_shaded >> 8) & 0xF;
+		const cc_u16f green_shaded = (value_shaded >> 4) & 0xF;
+		const cc_u16f red_shaded = (value_shaded >> 0) & 0xF;
+
+		if (j % length_of_palette_line != 0)
+		{
+			// Split the colours into palette lines.
+			ImGui::SameLine();
+		}
+
+		const float dpi_scale = GetWindow().GetDPIScale();
+		ImGui::ColorButton("##colour-button", ImVec4(static_cast<float>(red_shaded) / 0xF, static_cast<float>(green_shaded) / 0xF, static_cast<float>(blue_shaded) / 0xF, 1.0f), ImGuiColorEditFlags_NoBorder | ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoDragDrop, ImVec2(20.0f * dpi_scale, 20.0f * dpi_scale));
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+
+			ImGui::Text("Line %" CC_PRIdFAST16 ", Colour %" CC_PRIdFAST16, j / length_of_palette_line, j % length_of_palette_line);
+			ImGui::Separator();
+			ImGui::PushFont(GetMonospaceFont());
+			ImGui::Text("Value: %03" CC_PRIXFAST16, value);
+			ImGui::Text("Blue:  %" CC_PRIdFAST16 "/7", blue);
+			ImGui::Text("Green: %" CC_PRIdFAST16 "/7", green);
+			ImGui::Text("Red:   %" CC_PRIdFAST16 "/7", red);
+			ImGui::PopFont();
+
+			ImGui::EndTooltip();
+		}
+
+		ImGui::PopID();
+	}
 }
 
-bool DebugVDP::Registers::Display()
+void DebugVDP::Registers::DisplayInternal()
 {
-	return BeginAndEnd(0,
-		[&]()
-		{
-			const auto monospace_font = GetMonospaceFont();
-			const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
+	const auto monospace_font = GetMonospaceFont();
+	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
 
-			ImGui::SeparatorText("Miscellaneous");
+	ImGui::SeparatorText("Miscellaneous");
 
-			if (ImGui::BeginTable("VDP Registers", 2, ImGuiTableFlags_Borders))
-			{
-				ImGui::TableSetupColumn("Property");
-				ImGui::TableSetupColumn("Value");
-				ImGui::TableHeadersRow();
+	if (ImGui::BeginTable("VDP Registers", 2, ImGuiTableFlags_Borders))
+	{
+		ImGui::TableSetupColumn("Property");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableHeadersRow();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Sprite Table Address");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.sprite_table_address);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Sprite Table Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.sprite_table_address);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Window Plane Address");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.window_address);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Window Plane Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.window_address);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Plane A Address");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_a_address);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane A Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_a_address);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Plane B Address");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_b_address);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane B Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_b_address);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Horizontal Scroll Table Address");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.hscroll_address);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Horizontal Scroll Table Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.hscroll_address);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Window Plane Horizontal Boundary");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIdLEAST8, vdp.window.horizontal_boundary);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Window Plane Horizontal Boundary");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("%" CC_PRIdLEAST8, vdp.window.horizontal_boundary);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Window Plane Horizontal Alignment");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.window.aligned_right ? "Right" : "Left");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Window Plane Horizontal Alignment");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.window.aligned_right ? "Right" : "Left");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Window Plane Vertical Boundary");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIdLEAST8, vdp.window.vertical_boundary);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Window Plane Vertical Boundary");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("%" CC_PRIdLEAST8, vdp.window.vertical_boundary);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Window Plane Vertical Alignment");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.window.aligned_bottom ? "Bottom" : "Top");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Window Plane Vertical Alignment");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.window.aligned_bottom ? "Bottom" : "Top");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Plane Width");
-				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_width);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane Width");
+		ImGui::TableNextColumn();
+		ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_width);
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Plane Height");
-				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_height);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane Height");
+		ImGui::TableNextColumn();
+		ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_height);
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Display Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.display_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Display Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.display_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("V-Int Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.v_int_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("V-Int Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.v_int_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("H-Int Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.h_int_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("H-Int Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.h_int_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("H40 Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.h40_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("H40 Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.h40_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("V30 Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.v30_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("V30 Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.v30_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Shadow/Highlight Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.shadow_highlight_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Shadow/Highlight Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.shadow_highlight_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Double-Resolution Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.double_resolution_enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Double-Resolution Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.double_resolution_enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Background Colour");
-				ImGui::TableNextColumn();
-				ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, static_cast<cc_u8f>(vdp.background_colour / 16), static_cast<cc_u8f>(vdp.background_colour % 16));
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Background Colour");
+		ImGui::TableNextColumn();
+		ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, static_cast<cc_u8f>(vdp.background_colour / 16), static_cast<cc_u8f>(vdp.background_colour % 16));
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("H-Int Interval");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIdLEAST8, vdp.h_int_interval);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("H-Int Interval");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("%" CC_PRIdLEAST8, vdp.h_int_interval);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Horizontal Scrolling Mode");
-				ImGui::TableNextColumn();
-				const std::array<const char*, 3> horizontal_scrolling_modes = {
-					"Whole Screen",
-					"1-Tile Rows",
-					"1-Pixel Rows"
-				};
-				ImGui::TextUnformatted(horizontal_scrolling_modes[vdp.hscroll_mode]);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Horizontal Scrolling Mode");
+		ImGui::TableNextColumn();
+		const std::array<const char*, 3> horizontal_scrolling_modes = {
+			"Whole Screen",
+			"1-Tile Rows",
+			"1-Pixel Rows"
+		};
+		ImGui::TextUnformatted(horizontal_scrolling_modes[vdp.hscroll_mode]);
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Vertical Scrolling Mode");
-				ImGui::TableNextColumn();
-				const std::array<const char*, 2> vertical_scrolling_modes = {
-					"Whole Screen",
-					"2-Tile Columns"
-				};
-				ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Vertical Scrolling Mode");
+		ImGui::TableNextColumn();
+		const std::array<const char*, 2> vertical_scrolling_modes = {
+			"Whole Screen",
+			"2-Tile Columns"
+		};
+		ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
 
-				ImGui::EndTable();
-			}
+		ImGui::EndTable();
+	}
 
-			ImGui::SeparatorText("DMA");
+	ImGui::SeparatorText("DMA");
 
-			if (ImGui::BeginTable("DMA", 2, ImGuiTableFlags_Borders))
-			{
-				ImGui::TableSetupColumn("Property");
-				ImGui::TableSetupColumn("Value");
-				ImGui::TableHeadersRow();
+	if (ImGui::BeginTable("DMA", 2, ImGuiTableFlags_Borders))
+	{
+		ImGui::TableSetupColumn("Property");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableHeadersRow();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Enabled");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.dma.enabled ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Enabled");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.dma.enabled ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Pending");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted((vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Pending");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted((vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Mode");
-				ImGui::TableNextColumn();
-				static const std::array<const char*, 3> dma_modes = {
-					"ROM/RAM to VRAM/CRAM/VSRAM",
-					"VRAM Fill",
-					"VRAM to VRAM"
-				};
-				ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Mode");
+		ImGui::TableNextColumn();
+		static const std::array<const char*, 3> dma_modes = {
+			"ROM/RAM to VRAM/CRAM/VSRAM",
+			"VRAM Fill",
+			"VRAM to VRAM"
+		};
+		ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Source Address");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%06" CC_PRIXFAST32, static_cast<cc_u32f>((static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low));
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Source Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%06" CC_PRIXFAST32, static_cast<cc_u32f>((static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low));
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Length");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.dma.length);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Length");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.dma.length);
+		ImGui::PopFont();
 
-				ImGui::EndTable();
-			}
+		ImGui::EndTable();
+	}
 
-			ImGui::SeparatorText("Access");
+	ImGui::SeparatorText("Access");
 
-			if (ImGui::BeginTable("Access", 2, ImGuiTableFlags_Borders))
-			{
-				ImGui::TableSetupColumn("Property");
-				ImGui::TableSetupColumn("Value");
-				ImGui::TableHeadersRow();
+	if (ImGui::BeginTable("Access", 2, ImGuiTableFlags_Borders))
+	{
+		ImGui::TableSetupColumn("Property");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableHeadersRow();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Write Pending");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(vdp.access.write_pending ? "Yes" : "No");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Write Pending");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.access.write_pending ? "Yes" : "No");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Address Register");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.address_register);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Address Register");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.address_register);
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Command Register");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.code_register); // TODO: Enums or something.
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Command Register");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.code_register); // TODO: Enums or something.
+		ImGui::PopFont();
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Selected RAM");
-				ImGui::TableNextColumn();
-				static const std::array<const char*, 3> rams = {
-					"VRAM",
-					"CRAM",
-					"VSRAM"
-				};
-				ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Selected RAM");
+		ImGui::TableNextColumn();
+		static const std::array<const char*, 3> rams = {
+			"VRAM",
+			"CRAM",
+			"VSRAM"
+		};
+		ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Mode");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted((vdp.access.code_register & 1 ) != 0 ? "Write" : "Read");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Mode");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted((vdp.access.code_register & 1 ) != 0 ? "Write" : "Read");
 
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Increment");
-				ImGui::PushFont(monospace_font);
-				ImGui::TableNextColumn();
-				ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.increment);
-				ImGui::PopFont();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Increment");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.increment);
+		ImGui::PopFont();
 
-				ImGui::EndTable();
-			}
-		}
-	);
+		ImGui::EndTable();
+	}
 }

@@ -3,12 +3,19 @@
 
 #include "window-popup.h"
 
-class Disassembler : public WindowPopup
+class Disassembler : public WindowPopup<Disassembler>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<Disassembler>;
 
-	bool Display();
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal();
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
 #endif /* DISASSEMBLER_H */

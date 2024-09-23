@@ -3,12 +3,19 @@
 
 #include "window-popup.h"
 
-class DebugFrontend : public WindowPopup
+class DebugFrontend : public WindowPopup<DebugFrontend>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<DebugFrontend>;
 
-	bool Display();
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal();
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
 #endif /* DEBUG_FRONTEND_H */

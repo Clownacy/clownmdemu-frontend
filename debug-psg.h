@@ -5,12 +5,19 @@
 
 namespace DebugPSG
 {
-	class Registers : public WindowPopup
+	class Registers : public WindowPopup<Registers>
 	{
-	public:
-		using WindowPopup::WindowPopup;
+	private:
+		using Base = WindowPopup<Registers>;
 
-		bool Display();
+		static constexpr Uint32 window_flags = 0;
+
+		void DisplayInternal();
+
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 }
 

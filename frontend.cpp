@@ -82,696 +82,704 @@ struct RecentSoftware
 };
 #endif
 
-class AboutWindow : public WindowPopup
+class AboutWindow : public WindowPopup<AboutWindow>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<AboutWindow>;
 
-	bool Display()
+	static constexpr Uint32 window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+
+	void DisplayInternal()
 	{
-		return BeginAndEnd(ImGuiWindowFlags_HorizontalScrollbar,
-			[&]()
+		static const char licence_clownmdemu[] = {
+			#include "licences/clownmdemu.h"
+		};
+		static const char licence_dear_imgui[] = {
+			#include "licences/dear-imgui.h"
+		};
+	#ifdef __EMSCRIPTEN__
+		static const char licence_emscripten_browser_file[] = {
+			#include "licences/emscripten-browser-file.h"
+		};
+	#endif
+	#ifdef IMGUI_ENABLE_FREETYPE
+		static const char licence_freetype[] = {
+			#include "licences/freetype.h"
+		};
+		static const char licence_freetype_bdf[] = {
+			#include "licences/freetype-bdf.h"
+		};
+		static const char licence_freetype_pcf[] = {
+			#include "licences/freetype-pcf.h"
+		};
+		static const char licence_freetype_fthash[] = {
+			#include "licences/freetype-fthash.h"
+		};
+		static const char licence_freetype_ft_hb[] = {
+			#include "licences/freetype-ft-hb.h"
+		};
+	#endif
+		static const char licence_inih[] = {
+			#include "licences/inih.h"
+		};
+		static const char licence_noto_sans[] = {
+			#include "licences/noto-sans.h"
+		};
+		static const char licence_inconsolata[] = {
+			#include "licences/inconsolata.h"
+		};
+
+		const auto monospace_font = GetMonospaceFont();
+
+		ImGui::SeparatorText("clownmdemu-frontend " VERSION);
+
+		ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
+		const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
+		if (ImGui::Button(url))
+			SDL_OpenURL(url);
+
+		ImGui::SeparatorText("Licences");
+
+		if (ImGui::CollapsingHeader("clownmdemu"))
+		{
+			ImGui::PushFont(monospace_font);
+			ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
+			ImGui::PopFont();
+		}
+
+		if (ImGui::CollapsingHeader("Dear ImGui"))
+		{
+			ImGui::PushFont(monospace_font);
+			ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
+			ImGui::PopFont();
+		}
+
+	#ifdef __EMSCRIPTEN__
+		if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
+		{
+			ImGui::PushFont(monospace_font);
+			ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
+			ImGui::PopFont();
+		}
+	#endif
+
+	#ifdef IMGUI_ENABLE_FREETYPE
+		if (ImGui::CollapsingHeader("FreeType"))
+		{
+			if (ImGui::TreeNode("General"))
 			{
-				static const char licence_clownmdemu[] = {
-					#include "licences/clownmdemu.h"
-				};
-				static const char licence_dear_imgui[] = {
-					#include "licences/dear-imgui.h"
-				};
-			#ifdef __EMSCRIPTEN__
-				static const char licence_emscripten_browser_file[] = {
-					#include "licences/emscripten-browser-file.h"
-				};
-			#endif
-			#ifdef IMGUI_ENABLE_FREETYPE
-				static const char licence_freetype[] = {
-					#include "licences/freetype.h"
-				};
-				static const char licence_freetype_bdf[] = {
-					#include "licences/freetype-bdf.h"
-				};
-				static const char licence_freetype_pcf[] = {
-					#include "licences/freetype-pcf.h"
-				};
-				static const char licence_freetype_fthash[] = {
-					#include "licences/freetype-fthash.h"
-				};
-				static const char licence_freetype_ft_hb[] = {
-					#include "licences/freetype-ft-hb.h"
-				};
-			#endif
-				static const char licence_inih[] = {
-					#include "licences/inih.h"
-				};
-				static const char licence_noto_sans[] = {
-					#include "licences/noto-sans.h"
-				};
-				static const char licence_inconsolata[] = {
-					#include "licences/inconsolata.h"
-				};
-
-				const auto monospace_font = GetMonospaceFont();
-
-				ImGui::SeparatorText("clownmdemu-frontend " VERSION);
-
-				ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
-				const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
-				if (ImGui::Button(url))
-					SDL_OpenURL(url);
-
-				ImGui::SeparatorText("Licences");
-
-				if (ImGui::CollapsingHeader("clownmdemu"))
-				{
-					ImGui::PushFont(monospace_font);
-					ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
-					ImGui::PopFont();
-				}
-
-				if (ImGui::CollapsingHeader("Dear ImGui"))
-				{
-					ImGui::PushFont(monospace_font);
-					ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
-					ImGui::PopFont();
-				}
-
-			#ifdef __EMSCRIPTEN__
-				if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
-				{
-					ImGui::PushFont(monospace_font);
-					ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
-					ImGui::PopFont();
-				}
-			#endif
-
-			#ifdef IMGUI_ENABLE_FREETYPE
-				if (ImGui::CollapsingHeader("FreeType"))
-				{
-					if (ImGui::TreeNode("General"))
-					{
-						ImGui::PushFont(monospace_font);
-						ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
-						ImGui::PopFont();
-						ImGui::TreePop();
-					}
-
-					if (ImGui::TreeNode("BDF Driver"))
-					{
-						ImGui::PushFont(monospace_font);
-						ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
-						ImGui::PopFont();
-						ImGui::TreePop();
-					}
-
-					if (ImGui::TreeNode("PCF Driver"))
-					{
-						ImGui::PushFont(monospace_font);
-						ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
-						ImGui::PopFont();
-						ImGui::TreePop();
-					}
-
-					if (ImGui::TreeNode("fthash.c & fthash.h"))
-					{
-						ImGui::PushFont(monospace_font);
-						ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
-						ImGui::PopFont();
-						ImGui::TreePop();
-					}
-
-					if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
-					{
-						ImGui::PushFont(monospace_font);
-						ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
-						ImGui::PopFont();
-						ImGui::TreePop();
-					}
-				}
-			#endif
-
-				if (ImGui::CollapsingHeader("inih"))
-				{
-					ImGui::PushFont(monospace_font);
-					ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
-					ImGui::PopFont();
-				}
-
-				if (ImGui::CollapsingHeader("Noto Sans"))
-				{
-					ImGui::PushFont(monospace_font);
-					ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
-					ImGui::PopFont();
-				}
-
-				if (ImGui::CollapsingHeader("Inconsolata"))
-				{
-					ImGui::PushFont(monospace_font);
-					ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
-					ImGui::PopFont();
-				}
+				ImGui::PushFont(monospace_font);
+				ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
+				ImGui::PopFont();
+				ImGui::TreePop();
 			}
-		);
+
+			if (ImGui::TreeNode("BDF Driver"))
+			{
+				ImGui::PushFont(monospace_font);
+				ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
+				ImGui::PopFont();
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("PCF Driver"))
+			{
+				ImGui::PushFont(monospace_font);
+				ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
+				ImGui::PopFont();
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("fthash.c & fthash.h"))
+			{
+				ImGui::PushFont(monospace_font);
+				ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
+				ImGui::PopFont();
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
+			{
+				ImGui::PushFont(monospace_font);
+				ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
+				ImGui::PopFont();
+				ImGui::TreePop();
+			}
+		}
+	#endif
+
+		if (ImGui::CollapsingHeader("inih"))
+		{
+			ImGui::PushFont(monospace_font);
+			ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
+			ImGui::PopFont();
+		}
+
+		if (ImGui::CollapsingHeader("Noto Sans"))
+		{
+			ImGui::PushFont(monospace_font);
+			ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
+			ImGui::PopFont();
+		}
+
+		if (ImGui::CollapsingHeader("Inconsolata"))
+		{
+			ImGui::PushFont(monospace_font);
+			ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
+			ImGui::PopFont();
+		}
 	}
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
-class DebugOther : public WindowPopup
+class DebugOther : public WindowPopup<DebugOther>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<DebugOther>;
 
-	bool Display()
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal()
 	{
-		return BeginAndEnd(0,
-			[&]()
-			{
-				if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
-				{
-					const auto monospace_font = GetMonospaceFont();
-					const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
+		if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
+		{
+			const auto monospace_font = GetMonospaceFont();
+			const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
 
-					cc_u8f i;
+			cc_u8f i;
 
-					ImGui::TableSetupColumn("Property");
-					ImGui::TableSetupColumn("Value");
-					ImGui::TableHeadersRow();
+			ImGui::TableSetupColumn("Property");
+			ImGui::TableSetupColumn("Value");
+			ImGui::TableHeadersRow();
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Z80 Bank");
-					ImGui::TableNextColumn();
-					ImGui::PushFont(monospace_font);
-					ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
-					ImGui::PopFont();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Z80 Bank");
+			ImGui::TableNextColumn();
+			ImGui::PushFont(monospace_font);
+			ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
+			ImGui::PopFont();
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.z80.bus_requested ? "Yes" : "No");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.z80.bus_requested ? "Yes" : "No");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Z80 Reset Held");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.z80.reset_held ? "Yes" : "No");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Z80 Reset Held");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.z80.reset_held ? "Yes" : "No");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Sub 68000 Reset");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Sub 68000 Reset");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("PRG-RAM Bank");
-					ImGui::TableNextColumn();
-					ImGui::PushFont(monospace_font);
-					ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
-					ImGui::PopFont();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("PRG-RAM Bank");
+			ImGui::TableNextColumn();
+			ImGui::PushFont(monospace_font);
+			ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
+			ImGui::PopFont();
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("WORD-RAM Mode");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("WORD-RAM Mode");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("DMNA Bit");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("DMNA Bit");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("RET Bit");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("RET Bit");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Boot Mode");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Boot Mode");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("68000 Communication Flag");
-					ImGui::TableNextColumn();
-					ImGui::PushFont(monospace_font);
-					ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.flag);
-					ImGui::PopFont();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("68000 Communication Flag");
+			ImGui::TableNextColumn();
+			ImGui::PushFont(monospace_font);
+			ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.flag);
+			ImGui::PopFont();
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("68000 Communication Command");
-					ImGui::TableNextColumn();
-					ImGui::PushFont(monospace_font);
-					for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.command); i += 2)
-						ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
-					ImGui::PopFont();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("68000 Communication Command");
+			ImGui::TableNextColumn();
+			ImGui::PushFont(monospace_font);
+			for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.command); i += 2)
+				ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
+			ImGui::PopFont();
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("68000 Communication Status");
-					ImGui::TableNextColumn();
-					ImGui::PushFont(monospace_font);
-					for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.status); i += 2)
-						ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
-					ImGui::PopFont();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("68000 Communication Status");
+			ImGui::TableNextColumn();
+			ImGui::PushFont(monospace_font);
+			for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.status); i += 2)
+				ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
+			ImGui::PopFont();
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("SUB-CPU Graphics Interrupt");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SUB-CPU Graphics Interrupt");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("SUB-CPU Mega Drive Interrupt");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SUB-CPU Mega Drive Interrupt");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("SUB-CPU Timer Interrupt");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SUB-CPU Timer Interrupt");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("SUB-CPU CDD Interrupt");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SUB-CPU CDD Interrupt");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("SUB-CPU CDC Interrupt");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SUB-CPU CDC Interrupt");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
 
-					ImGui::EndTable();
-				}
-			}
-		);
+			ImGui::EndTable();
+		}
 	}
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
-class DebugToggles : public WindowPopup
+class DebugToggles : public WindowPopup<DebugToggles>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<DebugToggles>;
 
-	bool Display()
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal()
 	{
-		return BeginAndEnd(0,
-			[&]()
+		bool temp;
+
+		ImGui::SeparatorText("VDP");
+
+		if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
+		{
+			VDP_Configuration &vdp = Frontend::emulator->GetConfigurationVDP();
+
+			ImGui::TableNextColumn();
+			temp = !vdp.sprites_disabled;
+			if (ImGui::Checkbox("Sprite Plane", &temp))
+				vdp.sprites_disabled = !vdp.sprites_disabled;
+
+			ImGui::TableNextColumn();
+			temp = !vdp.window_disabled;
+			if (ImGui::Checkbox("Window Plane", &temp))
+				vdp.window_disabled = !vdp.window_disabled;
+
+			ImGui::TableNextColumn();
+			temp = !vdp.planes_disabled[0];
+			if (ImGui::Checkbox("Plane A", &temp))
+				vdp.planes_disabled[0] = !vdp.planes_disabled[0];
+
+			ImGui::TableNextColumn();
+			temp = !vdp.planes_disabled[1];
+			if (ImGui::Checkbox("Plane B", &temp))
+				vdp.planes_disabled[1] = !vdp.planes_disabled[1];
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("FM");
+
+		if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
+		{
+			FM_Configuration &fm = Frontend::emulator->GetConfigurationFM();
+
+			char buffer[] = "FM1";
+
+			for (std::size_t i = 0; i < CC_COUNT_OF(fm.fm_channels_disabled); ++i)
 			{
-				bool temp;
-
-				ImGui::SeparatorText("VDP");
-
-				if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
-				{
-					VDP_Configuration &vdp = Frontend::emulator->GetConfigurationVDP();
-
-					ImGui::TableNextColumn();
-					temp = !vdp.sprites_disabled;
-					if (ImGui::Checkbox("Sprite Plane", &temp))
-						vdp.sprites_disabled = !vdp.sprites_disabled;
-
-					ImGui::TableNextColumn();
-					temp = !vdp.window_disabled;
-					if (ImGui::Checkbox("Window Plane", &temp))
-						vdp.window_disabled = !vdp.window_disabled;
-
-					ImGui::TableNextColumn();
-					temp = !vdp.planes_disabled[0];
-					if (ImGui::Checkbox("Plane A", &temp))
-						vdp.planes_disabled[0] = !vdp.planes_disabled[0];
-
-					ImGui::TableNextColumn();
-					temp = !vdp.planes_disabled[1];
-					if (ImGui::Checkbox("Plane B", &temp))
-						vdp.planes_disabled[1] = !vdp.planes_disabled[1];
-
-					ImGui::EndTable();
-				}
-
-				ImGui::SeparatorText("FM");
-
-				if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
-				{
-					FM_Configuration &fm = Frontend::emulator->GetConfigurationFM();
-
-					char buffer[] = "FM1";
-
-					for (std::size_t i = 0; i < CC_COUNT_OF(fm.fm_channels_disabled); ++i)
-					{
-						buffer[2] = '1' + i;
-						ImGui::TableNextColumn();
-						temp = !fm.fm_channels_disabled[i];
-						if (ImGui::Checkbox(buffer, &temp))
-							fm.fm_channels_disabled[i] = !fm.fm_channels_disabled[i];
-					}
-
-					ImGui::TableNextColumn();
-					temp = !fm.dac_channel_disabled;
-					if (ImGui::Checkbox("DAC", &temp))
-						fm.dac_channel_disabled = !fm.dac_channel_disabled;
-
-					ImGui::EndTable();
-				}
-
-				ImGui::SeparatorText("PSG");
-
-				if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
-				{
-					PSG_Configuration &psg = Frontend::emulator->GetConfigurationPSG();
-
-					char buffer[] = "PSG1";
-
-					for (std::size_t i = 0; i < CC_COUNT_OF(psg.tone_disabled); ++i)
-					{
-						buffer[3] = '1' + i;
-						ImGui::TableNextColumn();
-						temp = !psg.tone_disabled[i];
-						if (ImGui::Checkbox(buffer, &temp))
-							psg.tone_disabled[i] = !psg.tone_disabled[i];
-					}
-
-					ImGui::TableNextColumn();
-					temp = !psg.noise_disabled;
-					if (ImGui::Checkbox("PSG Noise", &temp))
-						psg.noise_disabled = !psg.noise_disabled;
-
-					ImGui::EndTable();
-				}
-
-				ImGui::SeparatorText("PCM");
-
-				if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
-				{
-					PCM_Configuration &pcm = Frontend::emulator->GetConfigurationPCM();
-
-					char buffer[] = "PCM1";
-
-					for (std::size_t i = 0; i < CC_COUNT_OF(pcm.channels_disabled); ++i)
-					{
-						buffer[3] = '1' + i;
-						ImGui::TableNextColumn();
-						temp = !pcm.channels_disabled[i];
-						if (ImGui::Checkbox(buffer, &temp))
-							pcm.channels_disabled[i] = !pcm.channels_disabled[i];
-					}
-
-					ImGui::EndTable();
-				}
+				buffer[2] = '1' + i;
+				ImGui::TableNextColumn();
+				temp = !fm.fm_channels_disabled[i];
+				if (ImGui::Checkbox(buffer, &temp))
+					fm.fm_channels_disabled[i] = !fm.fm_channels_disabled[i];
 			}
-		);
+
+			ImGui::TableNextColumn();
+			temp = !fm.dac_channel_disabled;
+			if (ImGui::Checkbox("DAC", &temp))
+				fm.dac_channel_disabled = !fm.dac_channel_disabled;
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("PSG");
+
+		if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
+		{
+			PSG_Configuration &psg = Frontend::emulator->GetConfigurationPSG();
+
+			char buffer[] = "PSG1";
+
+			for (std::size_t i = 0; i < CC_COUNT_OF(psg.tone_disabled); ++i)
+			{
+				buffer[3] = '1' + i;
+				ImGui::TableNextColumn();
+				temp = !psg.tone_disabled[i];
+				if (ImGui::Checkbox(buffer, &temp))
+					psg.tone_disabled[i] = !psg.tone_disabled[i];
+			}
+
+			ImGui::TableNextColumn();
+			temp = !psg.noise_disabled;
+			if (ImGui::Checkbox("PSG Noise", &temp))
+				psg.noise_disabled = !psg.noise_disabled;
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("PCM");
+
+		if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
+		{
+			PCM_Configuration &pcm = Frontend::emulator->GetConfigurationPCM();
+
+			char buffer[] = "PCM1";
+
+			for (std::size_t i = 0; i < CC_COUNT_OF(pcm.channels_disabled); ++i)
+			{
+				buffer[3] = '1' + i;
+				ImGui::TableNextColumn();
+				temp = !pcm.channels_disabled[i];
+				if (ImGui::Checkbox(buffer, &temp))
+					pcm.channels_disabled[i] = !pcm.channels_disabled[i];
+			}
+
+			ImGui::EndTable();
+		}
 	}
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
-class OptionsWindow : public WindowPopup
+class OptionsWindow : public WindowPopup<OptionsWindow>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<OptionsWindow>;
 
-	bool Display()
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal()
 	{
-		return BeginAndEnd(0,
-			[&]()
+		ImGui::SeparatorText("Console");
+
+		if (ImGui::BeginTable("Console Options", 3))
+		{
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("TV Standard:");
+			DoToolTip("Some games only work with a certain TV standard.");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
+				if (Frontend::emulator->GetPALMode())
+					Frontend::SetAudioPALMode(false);
+			DoToolTip("60 FPS");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
+				if (!Frontend::emulator->GetPALMode())
+					Frontend::SetAudioPALMode(true);
+			DoToolTip("50 FPS");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Region:");
+			DoToolTip("Some games only work with a certain region.");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Japan", Frontend::emulator->GetDomestic()))
+				Frontend::emulator->SetDomestic(true);
+			DoToolTip("Games may show Japanese text.");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Elsewhere", !Frontend::emulator->GetDomestic()))
+				Frontend::emulator->SetDomestic(false);
+			DoToolTip("Games may show English text.");
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("Video");
+
+		if (ImGui::BeginTable("Video Options", 2))
+		{
+			ImGui::TableNextColumn();
+			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
+				if (!Frontend::fast_forward_in_progress)
+					SDL_RenderSetVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
+			DoToolTip("Prevents screen tearing.");
+
+			ImGui::TableNextColumn();
+			if (ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling) && Frontend::integer_screen_scaling)
 			{
-				ImGui::SeparatorText("Console");
+				// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
+				SDL_DestroyTexture(Frontend::framebuffer_texture_upscaled);
+				Frontend::framebuffer_texture_upscaled = nullptr;
+			}
+			DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
-				if (ImGui::BeginTable("Console Options", 3))
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
+			DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
+
+			ImGui::EndTable();
+		}
+
+		ImGui::SeparatorText("Audio");
+
+		if (ImGui::BeginTable("Audio Options", 2))
+		{
+			ImGui::TableNextColumn();
+			bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
+			if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
+				Frontend::emulator->SetLowPassFilter(low_pass_filter);
+			DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+
+			ImGui::TableNextColumn();
+			bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
+			if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
+				Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
+			DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
+
+			ImGui::EndTable();
+		}
+
+	#ifdef FILE_PICKER_POSIX
+		ImGui::SeparatorText("Preferred File Dialog");
+
+		if (ImGui::BeginTable("Preferred File Dialog", 2))
+		{
+			ImGui::TableNextColumn();
+
+			if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
+				file_utilities.prefer_kdialog = false;
+			DoToolTip("Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
+
+			ImGui::TableNextColumn();
+
+			if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
+				file_utilities.prefer_kdialog = true;
+			DoToolTip("Best with KDE, LXQt, Deepin, etc.");
+
+			ImGui::EndTable();
+		}
+	#endif
+
+		ImGui::SeparatorText("Keyboard Input");
+
+		static bool sorted_scancodes_done;
+		static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+
+		if (!sorted_scancodes_done)
+		{
+			sorted_scancodes_done = true;
+
+			for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
+				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
+
+			SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
+				[](const void* const a, const void* const b)
+			{
+				const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
+				const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
+
+				return Frontend::keyboard_bindings[*binding_1] - Frontend::keyboard_bindings[*binding_2];
+			}
+			);
+		}
+
+		static SDL_Scancode selected_scancode;
+
+		static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
+			"None",
+			"Control Pad Up",
+			"Control Pad Down",
+			"Control Pad Left",
+			"Control Pad Right",
+			"Control Pad A",
+			"Control Pad B",
+			"Control Pad C",
+			"Control Pad X",
+			"Control Pad Y",
+			"Control Pad Z",
+			"Control Pad Start",
+			"Control Pad Mode",
+			"Pause",
+			"Reset",
+			"Fast-Forward",
+#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+				"Rewind",
+#endif
+				"Quick Save State",
+				"Quick Load State",
+				"Toggle Fullscreen",
+				"Toggle Control Pad"
+		};
+
+		if (ImGui::BeginTable("Keyboard Input Options", 2))
+		{
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Control Pad #1", Frontend::keyboard_input.bound_joypad == 0))
+				Frontend::keyboard_input.bound_joypad = 0;
+			DoToolTip("Binds the keyboard to Control Pad #1.");
+
+
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Control Pad #2", Frontend::keyboard_input.bound_joypad == 1))
+				Frontend::keyboard_input.bound_joypad = 1;
+			DoToolTip("Binds the keyboard to Control Pad #2.");
+
+			ImGui::EndTable();
+		}
+
+		if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
+		{
+			ImGui::TableSetupColumn("Key");
+			ImGui::TableSetupColumn("Action");
+			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableHeadersRow();
+			for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
+			{
+				if (Frontend::keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
 				{
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("TV Standard:");
-					DoToolTip("Some games only work with a certain TV standard.");
-					ImGui::TableNextColumn();
-					if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
-						if (Frontend::emulator->GetPALMode())
-							Frontend::SetAudioPALMode(false);
-					DoToolTip("60 FPS");
-					ImGui::TableNextColumn();
-					if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
-						if (!Frontend::emulator->GetPALMode())
-							Frontend::SetAudioPALMode(true);
-					DoToolTip("50 FPS");
+					ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(sorted_scancodes[i])));
 
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted("Region:");
-					DoToolTip("Some games only work with a certain region.");
-					ImGui::TableNextColumn();
-					if (ImGui::RadioButton("Japan", Frontend::emulator->GetDomestic()))
-						Frontend::emulator->SetDomestic(true);
-					DoToolTip("Games may show Japanese text.");
-					ImGui::TableNextColumn();
-					if (ImGui::RadioButton("Elsewhere", !Frontend::emulator->GetDomestic()))
-						Frontend::emulator->SetDomestic(false);
-					DoToolTip("Games may show English text.");
+					ImGui::TextUnformatted(binding_names[Frontend::keyboard_bindings[sorted_scancodes[i]]]);
 
-					ImGui::EndTable();
+					ImGui::TableNextColumn();
+					ImGui::PushID(i);
+					if (ImGui::Button("X"))
+						Frontend::keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
+					ImGui::PopID();
 				}
+			}
+			ImGui::EndTable();
+		}
 
-				ImGui::SeparatorText("Video");
+		if (ImGui::Button("Add Binding"))
+			ImGui::OpenPopup("Select Key");
 
-				if (ImGui::BeginTable("Video Options", 2))
+		static bool scroll_to_add_bindings_button;
+
+		if (scroll_to_add_bindings_button)
+		{
+			scroll_to_add_bindings_button = false;
+			ImGui::SetScrollHereY(1.0f);
+		}
+
+		const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal("Select Key", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			bool next_menu = false;
+
+			ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
+			ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
+
+			int total_keys;
+			const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
+
+			for (int i = 0; i < total_keys; ++i)
+			{
+				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
 				{
-					ImGui::TableNextColumn();
-					if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
-						if (!Frontend::fast_forward_in_progress)
-							SDL_RenderSetVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
-					DoToolTip("Prevents screen tearing.");
+					ImGui::CloseCurrentPopup();
 
-					ImGui::TableNextColumn();
-					if (ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling) && Frontend::integer_screen_scaling)
+					// The 'escape' key will exit the menu without binding.
+					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
 					{
-						// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
-						SDL_DestroyTexture(Frontend::framebuffer_texture_upscaled);
-						Frontend::framebuffer_texture_upscaled = nullptr;
+						next_menu = true;
+						selected_scancode = static_cast<SDL_Scancode>(i);
 					}
-					DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
-
-					ImGui::TableNextColumn();
-					ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
-					DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
-
-					ImGui::EndTable();
+					break;
 				}
+			}
 
-				ImGui::SeparatorText("Audio");
+			if (ImGui::Button("Cancel"))
+				ImGui::CloseCurrentPopup();
 
-				if (ImGui::BeginTable("Audio Options", 2))
+			ImGui::EndPopup();
+
+			if (next_menu)
+				ImGui::OpenPopup("Select Action");
+		}
+
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			bool previous_menu = false;
+
+			ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
+
+			if (ImGui::BeginListBox("##Actions"))
+			{
+				for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
 				{
-					ImGui::TableNextColumn();
-					bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
-					if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
-						Frontend::emulator->SetLowPassFilter(low_pass_filter);
-					DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
-
-					ImGui::TableNextColumn();
-					bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
-					if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
-						Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
-					DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
-
-					ImGui::EndTable();
-				}
-
-			#ifdef FILE_PICKER_POSIX
-				ImGui::SeparatorText("Preferred File Dialog");
-
-				if (ImGui::BeginTable("Preferred File Dialog", 2))
-				{
-					ImGui::TableNextColumn();
-
-					if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
-						file_utilities.prefer_kdialog = false;
-					DoToolTip("Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
-
-					ImGui::TableNextColumn();
-
-					if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
-						file_utilities.prefer_kdialog = true;
-					DoToolTip("Best with KDE, LXQt, Deepin, etc.");
-
-					ImGui::EndTable();
-				}
-			#endif
-
-				ImGui::SeparatorText("Keyboard Input");
-
-				static bool sorted_scancodes_done;
-				static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-
-				if (!sorted_scancodes_done)
-				{
-					sorted_scancodes_done = true;
-
-					for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
-						sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
-
-					SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
-						[](const void* const a, const void* const b)
+					if (ImGui::Selectable(binding_names[i]))
 					{
-						const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
-						const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
-
-						return Frontend::keyboard_bindings[*binding_1] - Frontend::keyboard_bindings[*binding_2];
-					}
-					);
-				}
-
-				static SDL_Scancode selected_scancode;
-
-				static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
-					"None",
-					"Control Pad Up",
-					"Control Pad Down",
-					"Control Pad Left",
-					"Control Pad Right",
-					"Control Pad A",
-					"Control Pad B",
-					"Control Pad C",
-					"Control Pad X",
-					"Control Pad Y",
-					"Control Pad Z",
-					"Control Pad Start",
-					"Control Pad Mode",
-					"Pause",
-					"Reset",
-					"Fast-Forward",
-		#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-						"Rewind",
-		#endif
-						"Quick Save State",
-						"Quick Load State",
-						"Toggle Fullscreen",
-						"Toggle Control Pad"
-				};
-
-				if (ImGui::BeginTable("Keyboard Input Options", 2))
-				{
-					ImGui::TableNextColumn();
-					if (ImGui::RadioButton("Control Pad #1", Frontend::keyboard_input.bound_joypad == 0))
-						Frontend::keyboard_input.bound_joypad = 0;
-					DoToolTip("Binds the keyboard to Control Pad #1.");
-
-
-					ImGui::TableNextColumn();
-					if (ImGui::RadioButton("Control Pad #2", Frontend::keyboard_input.bound_joypad == 1))
-						Frontend::keyboard_input.bound_joypad = 1;
-					DoToolTip("Binds the keyboard to Control Pad #2.");
-
-					ImGui::EndTable();
-				}
-
-				if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
-				{
-					ImGui::TableSetupColumn("Key");
-					ImGui::TableSetupColumn("Action");
-					ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-					ImGui::TableHeadersRow();
-					for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
-					{
-						if (Frontend::keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
-						{
-							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(sorted_scancodes[i])));
-
-							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(binding_names[Frontend::keyboard_bindings[sorted_scancodes[i]]]);
-
-							ImGui::TableNextColumn();
-							ImGui::PushID(i);
-							if (ImGui::Button("X"))
-								Frontend::keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
-							ImGui::PopID();
-						}
-					}
-					ImGui::EndTable();
-				}
-
-				if (ImGui::Button("Add Binding"))
-					ImGui::OpenPopup("Select Key");
-
-				static bool scroll_to_add_bindings_button;
-
-				if (scroll_to_add_bindings_button)
-				{
-					scroll_to_add_bindings_button = false;
-					ImGui::SetScrollHereY(1.0f);
-				}
-
-				const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-				if (ImGui::BeginPopupModal("Select Key", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					bool next_menu = false;
-
-					ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
-					ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
-
-					int total_keys;
-					const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
-
-					for (int i = 0; i < total_keys; ++i)
-					{
-						if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
-						{
-							ImGui::CloseCurrentPopup();
-
-							// The 'escape' key will exit the menu without binding.
-							if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
-							{
-								next_menu = true;
-								selected_scancode = static_cast<SDL_Scancode>(i);
-							}
-							break;
-						}
-					}
-
-					if (ImGui::Button("Cancel"))
 						ImGui::CloseCurrentPopup();
-
-					ImGui::EndPopup();
-
-					if (next_menu)
-						ImGui::OpenPopup("Select Action");
-				}
-
-				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-				if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					bool previous_menu = false;
-
-					ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
-
-					if (ImGui::BeginListBox("##Actions"))
-					{
-						for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
-						{
-							if (ImGui::Selectable(binding_names[i]))
-							{
-								ImGui::CloseCurrentPopup();
-								Frontend::keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
-								sorted_scancodes_done = false;
-								scroll_to_add_bindings_button = true;
-							}
-						}
-						ImGui::EndListBox();
+						Frontend::keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
+						sorted_scancodes_done = false;
+						scroll_to_add_bindings_button = true;
 					}
-
-					if (ImGui::Button("Cancel"))
-					{
-						previous_menu = true;
-						ImGui::CloseCurrentPopup();
-					}
-
-					ImGui::EndPopup();
-
-					if (previous_menu)
-						ImGui::OpenPopup("Select Key");
 				}
+				ImGui::EndListBox();
 			}
-		);
+
+			if (ImGui::Button("Cancel"))
+			{
+				previous_menu = true;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+
+			if (previous_menu)
+				ImGui::OpenPopup("Select Key");
+		}
 	}
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
 DebugLog Frontend::debug_log;

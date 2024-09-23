@@ -7,12 +7,19 @@
 
 namespace DebugM68k
 {
-	class Registers : public WindowPopup
+	class Registers : public WindowPopup<Registers>
 	{
-	public:
-		using WindowPopup::WindowPopup;
+	private:
+		using Base = WindowPopup<Registers>;
 
-		bool Display(const Clown68000_State &m68k);
+		static constexpr Uint32 window_flags = 0;
+
+		void DisplayInternal(const Clown68000_State &m68k);
+
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 }
 

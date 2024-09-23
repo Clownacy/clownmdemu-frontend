@@ -17,7 +17,7 @@ namespace DebugVDP
 {
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 
-	struct SpriteCommon : public WindowPopup
+	struct SpriteCommon
 	{
 	private:
 		unsigned int cache_frame_counter = 0;
@@ -25,48 +25,69 @@ namespace DebugVDP
 	protected:
 		// TODO: Any way to share this between the two sprite viewers again when using Dear ImGui windows?
 		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
-		void DisplaySpriteCommon();
 
-	public:
-		using WindowPopup::WindowPopup;
+		void DisplaySpriteCommon(Window &window);
 	};
 
-	class SpriteViewer: public SpriteCommon
+	class SpriteViewer: public SpriteCommon, public WindowPopup<SpriteViewer>
 	{
 	private:
+		using Base = WindowPopup<SpriteViewer>;
+
+		static constexpr Uint32 window_flags = 0;
+
 		int scale = 0;
 		SDL::Texture texture = nullptr;
 
-	public:
-		using SpriteCommon::SpriteCommon;
+		void DisplayInternal();
 
-		bool Display();
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 
-	class SpriteList : public SpriteCommon
-	{
-	public:
-		using SpriteCommon::SpriteCommon;
-
-		bool Display();
-	};
-
-	class PlaneViewer : public WindowPopup
+	class SpriteList : public SpriteCommon, public WindowPopup<SpriteList>
 	{
 	private:
+		using Base = WindowPopup<SpriteList>;
+
+		static constexpr Uint32 window_flags = 0;
+
+		void DisplayInternal();
+
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
+	};
+
+	class PlaneViewer : public WindowPopup<PlaneViewer>
+	{
+	private:
+		using Base = WindowPopup<PlaneViewer>;
+
+		static constexpr Uint32 window_flags = 0;
+
 		int scale = 0;
 		SDL::Texture texture = nullptr;
 		unsigned int cache_frame_counter = 0;
 
-	public:
-		using WindowPopup::WindowPopup;
+		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 
-		bool Display(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 
-	class VRAMViewer : public WindowPopup
+	class VRAMViewer : public WindowPopup<VRAMViewer>
 	{
 	private:
+		using Base = WindowPopup<VRAMViewer>;
+
+		static constexpr Uint32 window_flags = 0;
+
 		SDL::Texture texture = nullptr;
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
@@ -74,29 +95,44 @@ namespace DebugVDP
 		int palette_line = 0;
 		unsigned int cache_frame_counter = 0;
 
-	public:
-		using WindowPopup::WindowPopup;
+		void DisplayInternal();
 
-		bool Display();
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 
-	class CRAMViewer : public WindowPopup
+	class CRAMViewer : public WindowPopup<CRAMViewer>
 	{
 	private:
+		using Base = WindowPopup<CRAMViewer>;
+
+		static constexpr Uint32 window_flags = 0;
+
 		int brightness = 1;
 
-	public:
-		using WindowPopup::WindowPopup;
+		void DisplayInternal();
 
-		bool Display();
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 
-	class Registers : public WindowPopup
+	class Registers : public WindowPopup<Registers>
 	{
-	public:
-		using WindowPopup::WindowPopup;
+	private:
+		using Base = WindowPopup<Registers>;
 
-		bool Display();
+		static constexpr Uint32 window_flags = 0;
+
+		void DisplayInternal();
+
+	public:
+		using Base::WindowPopup;
+
+		friend Base;
 	};
 }
 

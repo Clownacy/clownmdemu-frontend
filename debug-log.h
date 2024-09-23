@@ -30,12 +30,19 @@ public:
 	CC_ATTRIBUTE_PRINTF(2, 3) void Log(const char *format, ...);
 };
 
-class DebugLogViewer : public WindowPopup
+class DebugLogViewer : public WindowPopup<DebugLogViewer>
 {
-public:
-	using WindowPopup::WindowPopup;
+private:
+	using Base = WindowPopup<DebugLogViewer>;
 
-	bool Display();
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal();
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
 };
 
 #endif /* DEBUG_LOG_H */

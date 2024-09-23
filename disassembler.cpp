@@ -83,33 +83,28 @@ static void PrintCallback(void* /*const user_data*/, const char* const string)
 	assembly += '\n';
 }
 
-bool Disassembler::Display()
+void Disassembler::DisplayInternal()
 {
-	return BeginAndEnd(0,
-		[&]()
-		{
-			static const std::array<const char*, 6> memories = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
+	static const std::array<const char*, 6> memories = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
 
-			ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
+	ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
-			static int address_imgui;
+	static int address_imgui;
 
-			ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
+	ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
 
-			if (ImGui::Button("Disassemble"))
-			{
-				assembly.clear();
+	if (ImGui::Button("Disassemble"))
+	{
+		assembly.clear();
 
-				address = address_imgui;
-				Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &*Frontend::emulator);
+		address = address_imgui;
+		Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &*Frontend::emulator);
 
-				if (assembly[assembly.length() - 1] == '\n')
-					assembly.pop_back();
-			}
+		if (assembly[assembly.length() - 1] == '\n')
+			assembly.pop_back();
+	}
 
-			ImGui::PushFont(GetMonospaceFont());
-			ImGui::InputTextMultiline("##code", &assembly[0], assembly.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
-			ImGui::PopFont();
-		}
-	);
+	ImGui::PushFont(GetMonospaceFont());
+	ImGui::InputTextMultiline("##code", &assembly[0], assembly.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
+	ImGui::PopFont();
 }
