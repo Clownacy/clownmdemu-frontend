@@ -814,9 +814,7 @@ static EmulatorInstance::State quick_save_state;
 
 static bool dear_imgui_windows;
 
-static std::optional<OptionsWindow> options_window;
-static std::optional<AboutWindow> about_window;
-static std::optional<WindowPopup> debug_log_window;
+static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
 static std::optional<Disassembler> m68k_disassembler_window;
 static std::optional<DebugFrontend> debug_frontend_window;
@@ -840,10 +838,10 @@ static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
 static std::optional<DebugOther> other_status_window;
+static std::optional<OptionsWindow> options_window;
+static std::optional<AboutWindow> about_window;
 
 static constexpr auto popup_windows = std::make_tuple(
-	&options_window,
-	&about_window,
 	&debug_log_window,
 	&debugging_toggles_window,
 	&m68k_disassembler_window,
@@ -867,7 +865,9 @@ static constexpr auto popup_windows = std::make_tuple(
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
-	&other_status_window
+	&other_status_window,
+	&options_window,
+	&about_window
 );
 
 // Manages whether the program exits or not.
@@ -2793,12 +2793,6 @@ void Frontend::Update()
 
 	const auto &clownmdemu = emulator->CurrentState().clownmdemu;
 
-	if (debug_log_window.has_value())
-		debug_log.Display(*debug_log_window);
-
-	if (debug_frontend_window.has_value())
-		debug_frontend_window->Display();
-
 	const auto DisplayWindow = []<typename T, typename... Ts>(std::optional<T> &window, Ts&&... arguments)
 	{
 		if (window.has_value())
@@ -2806,6 +2800,10 @@ void Frontend::Update()
 				window.reset();
 	};
 
+	DisplayWindow(debug_log_window);
+	DisplayWindow(debugging_toggles_window);
+	DisplayWindow(m68k_disassembler_window);
+	DisplayWindow(debug_frontend_window);
 	DisplayWindow(m68k_status_window, clownmdemu.m68k.state);
 	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
 	DisplayWindow(z80_status_window);
@@ -2826,8 +2824,6 @@ void Frontend::Update()
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
 	DisplayWindow(other_status_window);
-	DisplayWindow(debugging_toggles_window);
-	DisplayWindow(m68k_disassembler_window);
 	DisplayWindow(options_window);
 	DisplayWindow(about_window);
 

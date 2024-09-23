@@ -1,6 +1,6 @@
 #include "debug-log.h"
 
-#include "window-popup.h"
+#include "frontend.h"
 
 void DebugLog::Log(const char* const format, std::va_list args)
 {
@@ -41,26 +41,26 @@ void DebugLog::Log(const char* const format, ...)
 	va_end(args);
 }
 
-void DebugLog::Display(WindowPopup &window)
+bool DebugLogViewer::Display()
 {
-	if (window.Begin())
-	{
-		ImGui::Checkbox("Enable Logging", &logging_enabled);
-		ImGui::SameLine();
-		ImGui::Checkbox("Log to Console", &log_to_console);
-		ImGui::SameLine();
-		if (ImGui::Button("Clear"))
-			lines.clear();
+	return BeginAndEnd(0,
+		[&]()
+		{
+			ImGui::Checkbox("Enable Logging", &Frontend::debug_log.logging_enabled);
+			ImGui::SameLine();
+			ImGui::Checkbox("Log to Console", &Frontend::debug_log.log_to_console);
+			ImGui::SameLine();
+			if (ImGui::Button("Clear"))
+				Frontend::debug_log.lines.clear();
 
-		ImGui::PushFont(window.GetMonospaceFont());
-		ImGui::InputTextMultiline("##log", &lines[0], lines.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
+			ImGui::PushFont(GetMonospaceFont());
+			ImGui::InputTextMultiline("##log", &Frontend::debug_log.lines[0], Frontend::debug_log.lines.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 
-		// When scrolled to the bottom, stay that way.
-		if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-			ImGui::SetScrollHereY(1.0f);
+			// When scrolled to the bottom, stay that way.
+			if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+				ImGui::SetScrollHereY(1.0f);
 
-		ImGui::PopFont();
-	}
-
-	window.End();
+			ImGui::PopFont();
+		}
+	);
 }

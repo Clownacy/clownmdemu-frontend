@@ -7,7 +7,6 @@
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 
-#include "debug-log.h"
 #include "raii-wrapper.h"
 #include "window.h"
 

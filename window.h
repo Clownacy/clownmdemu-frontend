@@ -5,8 +5,6 @@
 
 #include "sdl-wrapper.h"
 
-#include "debug-log.h"
-
 class Window
 {
 public:

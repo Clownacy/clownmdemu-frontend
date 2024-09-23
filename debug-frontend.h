@@ -8,7 +8,7 @@ class DebugFrontend : public WindowPopup
 public:
 	using WindowPopup::WindowPopup;
 
-	void Display();
+	bool Display();
 };
 
 #endif /* DEBUG_FRONTEND_H */
