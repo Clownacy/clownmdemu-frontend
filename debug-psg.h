@@ -10,7 +10,7 @@ namespace DebugPSG
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display();
+		bool Display();
 	};
 }
 

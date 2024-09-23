@@ -1,8 +1,14 @@
 #ifndef DISASSEMBLER_H
 #define DISASSEMBLER_H
 
-class WindowPopup;
+#include "window-popup.h"
 
-void Disassembler(WindowPopup &window);
+class Disassembler : public WindowPopup
+{
+public:
+	using WindowPopup::WindowPopup;
+
+	bool Display();
+};
 
 #endif /* DISASSEMBLER_H */

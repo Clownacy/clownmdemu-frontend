@@ -17,7 +17,7 @@ WindowPopup::WindowPopup(const char* const window_title, const int window_width,
 	}
 }
 
-bool WindowPopup::Begin(ImGuiWindowFlags window_flags)
+bool WindowPopup::Begin(bool* const open, ImGuiWindowFlags window_flags)
 {
 	if (window.has_value())
 	{
@@ -40,7 +40,7 @@ bool WindowPopup::Begin(ImGuiWindowFlags window_flags)
 		window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 	//ImGui::PushID(this);
-	return ImGui::Begin(title.c_str(), nullptr, window_flags);
+	return ImGui::Begin(title.c_str(), open, window_flags);
 }
 
 void WindowPopup::End()

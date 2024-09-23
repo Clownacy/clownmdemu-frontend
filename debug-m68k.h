@@ -12,7 +12,7 @@ namespace DebugM68k
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display(const Clown68000_State &m68k);
+		bool Display(const Clown68000_State &m68k);
 	};
 }
 

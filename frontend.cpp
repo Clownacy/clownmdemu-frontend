@@ -116,6 +116,408 @@ enum InputBinding
 	INPUT_BINDING__TOTAL
 };
 
+class AboutWindow : public WindowPopup
+{
+public:
+	using WindowPopup::WindowPopup;
+
+	bool Display()
+	{
+		return BeginAndEnd(ImGuiWindowFlags_HorizontalScrollbar,
+			[&]()
+			{
+				static const char licence_clownmdemu[] = {
+					#include "licences/clownmdemu.h"
+				};
+				static const char licence_dear_imgui[] = {
+					#include "licences/dear-imgui.h"
+				};
+			#ifdef __EMSCRIPTEN__
+				static const char licence_emscripten_browser_file[] = {
+					#include "licences/emscripten-browser-file.h"
+				};
+			#endif
+			#ifdef IMGUI_ENABLE_FREETYPE
+				static const char licence_freetype[] = {
+					#include "licences/freetype.h"
+				};
+				static const char licence_freetype_bdf[] = {
+					#include "licences/freetype-bdf.h"
+				};
+				static const char licence_freetype_pcf[] = {
+					#include "licences/freetype-pcf.h"
+				};
+				static const char licence_freetype_fthash[] = {
+					#include "licences/freetype-fthash.h"
+				};
+				static const char licence_freetype_ft_hb[] = {
+					#include "licences/freetype-ft-hb.h"
+				};
+			#endif
+				static const char licence_inih[] = {
+					#include "licences/inih.h"
+				};
+				static const char licence_noto_sans[] = {
+					#include "licences/noto-sans.h"
+				};
+				static const char licence_inconsolata[] = {
+					#include "licences/inconsolata.h"
+				};
+
+				const auto monospace_font = GetMonospaceFont();
+
+				ImGui::SeparatorText("clownmdemu-frontend " VERSION);
+
+				ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
+				const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
+				if (ImGui::Button(url))
+					SDL_OpenURL(url);
+
+				ImGui::SeparatorText("Licences");
+
+				if (ImGui::CollapsingHeader("clownmdemu"))
+				{
+					ImGui::PushFont(monospace_font);
+					ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
+					ImGui::PopFont();
+				}
+
+				if (ImGui::CollapsingHeader("Dear ImGui"))
+				{
+					ImGui::PushFont(monospace_font);
+					ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
+					ImGui::PopFont();
+				}
+
+			#ifdef __EMSCRIPTEN__
+				if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
+				{
+					ImGui::PushFont(monospace_font);
+					ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
+					ImGui::PopFont();
+				}
+			#endif
+
+			#ifdef IMGUI_ENABLE_FREETYPE
+				if (ImGui::CollapsingHeader("FreeType"))
+				{
+					if (ImGui::TreeNode("General"))
+					{
+						ImGui::PushFont(monospace_font);
+						ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
+						ImGui::PopFont();
+						ImGui::TreePop();
+					}
+
+					if (ImGui::TreeNode("BDF Driver"))
+					{
+						ImGui::PushFont(monospace_font);
+						ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
+						ImGui::PopFont();
+						ImGui::TreePop();
+					}
+
+					if (ImGui::TreeNode("PCF Driver"))
+					{
+						ImGui::PushFont(monospace_font);
+						ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
+						ImGui::PopFont();
+						ImGui::TreePop();
+					}
+
+					if (ImGui::TreeNode("fthash.c & fthash.h"))
+					{
+						ImGui::PushFont(monospace_font);
+						ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
+						ImGui::PopFont();
+						ImGui::TreePop();
+					}
+
+					if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
+					{
+						ImGui::PushFont(monospace_font);
+						ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
+						ImGui::PopFont();
+						ImGui::TreePop();
+					}
+				}
+			#endif
+
+				if (ImGui::CollapsingHeader("inih"))
+				{
+					ImGui::PushFont(monospace_font);
+					ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
+					ImGui::PopFont();
+				}
+
+				if (ImGui::CollapsingHeader("Noto Sans"))
+				{
+					ImGui::PushFont(monospace_font);
+					ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
+					ImGui::PopFont();
+				}
+
+				if (ImGui::CollapsingHeader("Inconsolata"))
+				{
+					ImGui::PushFont(monospace_font);
+					ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
+					ImGui::PopFont();
+				}
+			}
+		);
+	}
+};
+
+class DebugOther : public WindowPopup
+{
+public:
+	using WindowPopup::WindowPopup;
+
+	bool Display()
+	{
+		return BeginAndEnd(0,
+			[&]()
+			{
+				if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
+				{
+					const auto monospace_font = GetMonospaceFont();
+					const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
+
+					cc_u8f i;
+
+					ImGui::TableSetupColumn("Property");
+					ImGui::TableSetupColumn("Value");
+					ImGui::TableHeadersRow();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Z80 Bank");
+					ImGui::TableNextColumn();
+					ImGui::PushFont(monospace_font);
+					ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
+					ImGui::PopFont();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.z80.bus_requested ? "Yes" : "No");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Z80 Reset Held");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.z80.reset_held ? "Yes" : "No");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Sub 68000 Reset");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("PRG-RAM Bank");
+					ImGui::TableNextColumn();
+					ImGui::PushFont(monospace_font);
+					ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
+					ImGui::PopFont();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("WORD-RAM Mode");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("DMNA Bit");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("RET Bit");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Boot Mode");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("68000 Communication Flag");
+					ImGui::TableNextColumn();
+					ImGui::PushFont(monospace_font);
+					ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.flag);
+					ImGui::PopFont();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("68000 Communication Command");
+					ImGui::TableNextColumn();
+					ImGui::PushFont(monospace_font);
+					for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.command); i += 2)
+						ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
+					ImGui::PopFont();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("68000 Communication Status");
+					ImGui::TableNextColumn();
+					ImGui::PushFont(monospace_font);
+					for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.status); i += 2)
+						ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
+					ImGui::PopFont();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("SUB-CPU Graphics Interrupt");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("SUB-CPU Mega Drive Interrupt");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("SUB-CPU Timer Interrupt");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("SUB-CPU CDD Interrupt");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("SUB-CPU CDC Interrupt");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
+
+					ImGui::EndTable();
+				}
+			}
+		);
+	}
+};
+
+class DebugToggles : public WindowPopup
+{
+public:
+	using WindowPopup::WindowPopup;
+
+	bool Display()
+	{
+		return BeginAndEnd(0,
+			[&]()
+			{
+				bool temp;
+
+				ImGui::SeparatorText("VDP");
+
+				if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
+				{
+					VDP_Configuration &vdp = Frontend::emulator->GetConfigurationVDP();
+
+					ImGui::TableNextColumn();
+					temp = !vdp.sprites_disabled;
+					if (ImGui::Checkbox("Sprite Plane", &temp))
+						vdp.sprites_disabled = !vdp.sprites_disabled;
+
+					ImGui::TableNextColumn();
+					temp = !vdp.window_disabled;
+					if (ImGui::Checkbox("Window Plane", &temp))
+						vdp.window_disabled = !vdp.window_disabled;
+
+					ImGui::TableNextColumn();
+					temp = !vdp.planes_disabled[0];
+					if (ImGui::Checkbox("Plane A", &temp))
+						vdp.planes_disabled[0] = !vdp.planes_disabled[0];
+
+					ImGui::TableNextColumn();
+					temp = !vdp.planes_disabled[1];
+					if (ImGui::Checkbox("Plane B", &temp))
+						vdp.planes_disabled[1] = !vdp.planes_disabled[1];
+
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText("FM");
+
+				if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
+				{
+					FM_Configuration &fm = Frontend::emulator->GetConfigurationFM();
+
+					char buffer[] = "FM1";
+
+					for (std::size_t i = 0; i < CC_COUNT_OF(fm.fm_channels_disabled); ++i)
+					{
+						buffer[2] = '1' + i;
+						ImGui::TableNextColumn();
+						temp = !fm.fm_channels_disabled[i];
+						if (ImGui::Checkbox(buffer, &temp))
+							fm.fm_channels_disabled[i] = !fm.fm_channels_disabled[i];
+					}
+
+					ImGui::TableNextColumn();
+					temp = !fm.dac_channel_disabled;
+					if (ImGui::Checkbox("DAC", &temp))
+						fm.dac_channel_disabled = !fm.dac_channel_disabled;
+
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText("PSG");
+
+				if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
+				{
+					PSG_Configuration &psg = Frontend::emulator->GetConfigurationPSG();
+
+					char buffer[] = "PSG1";
+
+					for (std::size_t i = 0; i < CC_COUNT_OF(psg.tone_disabled); ++i)
+					{
+						buffer[3] = '1' + i;
+						ImGui::TableNextColumn();
+						temp = !psg.tone_disabled[i];
+						if (ImGui::Checkbox(buffer, &temp))
+							psg.tone_disabled[i] = !psg.tone_disabled[i];
+					}
+
+					ImGui::TableNextColumn();
+					temp = !psg.noise_disabled;
+					if (ImGui::Checkbox("PSG Noise", &temp))
+						psg.noise_disabled = !psg.noise_disabled;
+
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText("PCM");
+
+				if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
+				{
+					PCM_Configuration &pcm = Frontend::emulator->GetConfigurationPCM();
+
+					char buffer[] = "PCM1";
+
+					for (std::size_t i = 0; i < CC_COUNT_OF(pcm.channels_disabled); ++i)
+					{
+						buffer[3] = '1' + i;
+						ImGui::TableNextColumn();
+						temp = !pcm.channels_disabled[i];
+						if (ImGui::Checkbox(buffer, &temp))
+							pcm.channels_disabled[i] = !pcm.channels_disabled[i];
+					}
+
+					ImGui::EndTable();
+				}
+			}
+		);
+	}
+};
+
 using namespace Frontend;
 
 DebugLog Frontend::debug_log;
@@ -157,10 +559,10 @@ static bool dear_imgui_windows;
 static std::optional<WindowWithFramebuffer> window;
 
 static std::optional<WindowPopup> options_window;
-static std::optional<WindowPopup> about_window;
+static std::optional<AboutWindow> about_window;
 static std::optional<WindowPopup> debug_log_window;
-static std::optional<WindowPopup> debugging_toggles_window;
-static std::optional<WindowPopup> m68k_disassembler_window;
+static std::optional<DebugToggles> debugging_toggles_window;
+static std::optional<Disassembler> m68k_disassembler_window;
 static std::optional<DebugFrontend> debug_frontend_window;
 static std::optional<DebugM68k::Registers> m68k_status_window;
 static std::optional<DebugM68k::Registers> mcd_m68k_status_window;
@@ -181,7 +583,7 @@ static std::optional<DebugVDP::CRAMViewer> cram_viewer_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
-static std::optional<WindowPopup> other_status_window;
+static std::optional<DebugOther> other_status_window;
 
 static constexpr auto popup_windows = std::make_tuple(
 	&options_window,
@@ -2144,303 +2546,35 @@ void Frontend::Update()
 	if (debug_frontend_window.has_value())
 		debug_frontend_window->Display();
 
-	if (m68k_status_window.has_value())
-		m68k_status_window->Display(clownmdemu.m68k.state);
-
-	if (mcd_m68k_status_window.has_value())
-		mcd_m68k_status_window->Display(clownmdemu.mega_cd.m68k.state);
-
-	if (z80_status_window.has_value())
-		z80_status_window->Display();
-
-	if (m68k_ram_viewer_window.has_value())
-		m68k_ram_viewer_window->Display(clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
-
-	if (z80_ram_viewer_window.has_value())
-		z80_ram_viewer_window->Display(clownmdemu.z80.ram, CC_COUNT_OF(clownmdemu.z80.ram));
-
-	if (prg_ram_viewer_window.has_value())
-		prg_ram_viewer_window->Display(clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer));
-
-	if (word_ram_viewer_window.has_value())
-		word_ram_viewer_window->Display(clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer));
-
-	if (wave_ram_viewer_window.has_value())
-		wave_ram_viewer_window->Display(clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
-
-	if (vdp_registers_window.has_value())
-		vdp_registers_window->Display();
-
-	if (sprite_list_window.has_value())
-		sprite_list_window->Display();
-
-	if (sprite_viewer_window.has_value())
-		sprite_viewer_window->Display();
-
-	if (window_plane_viewer_window.has_value())
-		window_plane_viewer_window->Display(clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
-
-	if (plane_a_viewer_window.has_value())
-		plane_a_viewer_window->Display(clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
-
-	if (plane_b_viewer_window.has_value())
-		plane_b_viewer_window->Display(clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
-
-	if (vram_viewer_window.has_value())
-		vram_viewer_window->Display();
-
-	if (cram_viewer_window.has_value())
-		cram_viewer_window->Display();
-
-	if (fm_status_window)
-		fm_status_window->Display();
-
-	if (psg_status_window)
-		psg_status_window->Display();
-
-	if (pcm_status_window.has_value())
-		pcm_status_window->Display();
-
-	if (other_status_window.has_value())
+	const auto DisplayWindow = []<typename T, typename... Ts>(std::optional<T> &window, Ts&&... arguments)
 	{
-		if (other_status_window->Begin())
-		{
-			if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
-			{
-				const auto monospace_font = other_status_window->GetMonospaceFont();
-				const ClownMDEmu_State &clownmdemu_state = emulator->CurrentState().clownmdemu;
+		if (window.has_value())
+			if (!window->Display(arguments...))
+				window.reset();
+	};
 
-				cc_u8f i;
-
-				ImGui::TableSetupColumn("Property");
-				ImGui::TableSetupColumn("Value");
-				ImGui::TableHeadersRow();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Z80 Bank");
-				ImGui::TableNextColumn();
-				ImGui::PushFont(monospace_font);
-				ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
-				ImGui::PopFont();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.z80.bus_requested ? "Yes" : "No");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Z80 Reset Held");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.z80.reset_held ? "Yes" : "No");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Sub 68000 Reset");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("PRG-RAM Bank");
-				ImGui::TableNextColumn();
-				ImGui::PushFont(monospace_font);
-				ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
-				ImGui::PopFont();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("WORD-RAM Mode");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("DMNA Bit");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("RET Bit");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Boot Mode");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("68000 Communication Flag");
-				ImGui::TableNextColumn();
-				ImGui::PushFont(monospace_font);
-				ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.flag);
-				ImGui::PopFont();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("68000 Communication Command");
-				ImGui::TableNextColumn();
-				ImGui::PushFont(monospace_font);
-				for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.command); i += 2)
-					ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
-				ImGui::PopFont();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("68000 Communication Status");
-				ImGui::TableNextColumn();
-				ImGui::PushFont(monospace_font);
-				for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.status); i += 2)
-					ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
-				ImGui::PopFont();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU Graphics Interrupt");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU Mega Drive Interrupt");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU Timer Interrupt");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU CDD Interrupt");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU CDC Interrupt");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
-
-				ImGui::EndTable();
-			}
-		}
-
-		other_status_window->End();
-	}
-
-	if (debugging_toggles_window.has_value())
-	{
-		if (debugging_toggles_window->Begin())
-		{
-			bool temp;
-
-			ImGui::SeparatorText("VDP");
-
-			if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
-			{
-				VDP_Configuration &vdp = emulator->GetConfigurationVDP();
-
-				ImGui::TableNextColumn();
-				temp = !vdp.sprites_disabled;
-				if (ImGui::Checkbox("Sprite Plane", &temp))
-					vdp.sprites_disabled = !vdp.sprites_disabled;
-
-				ImGui::TableNextColumn();
-				temp = !vdp.window_disabled;
-				if (ImGui::Checkbox("Window Plane", &temp))
-					vdp.window_disabled = !vdp.window_disabled;
-
-				ImGui::TableNextColumn();
-				temp = !vdp.planes_disabled[0];
-				if (ImGui::Checkbox("Plane A", &temp))
-					vdp.planes_disabled[0] = !vdp.planes_disabled[0];
-
-				ImGui::TableNextColumn();
-				temp = !vdp.planes_disabled[1];
-				if (ImGui::Checkbox("Plane B", &temp))
-					vdp.planes_disabled[1] = !vdp.planes_disabled[1];
-
-				ImGui::EndTable();
-			}
-
-			ImGui::SeparatorText("FM");
-
-			if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
-			{
-				FM_Configuration &fm = emulator->GetConfigurationFM();
-
-				char buffer[] = "FM1";
-
-				for (std::size_t i = 0; i < CC_COUNT_OF(fm.fm_channels_disabled); ++i)
-				{
-					buffer[2] = '1' + i;
-					ImGui::TableNextColumn();
-					temp = !fm.fm_channels_disabled[i];
-					if (ImGui::Checkbox(buffer, &temp))
-						fm.fm_channels_disabled[i] = !fm.fm_channels_disabled[i];
-				}
-
-				ImGui::TableNextColumn();
-				temp = !fm.dac_channel_disabled;
-				if (ImGui::Checkbox("DAC", &temp))
-					fm.dac_channel_disabled = !fm.dac_channel_disabled;
-
-				ImGui::EndTable();
-			}
-
-			ImGui::SeparatorText("PSG");
-
-			if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
-			{
-				PSG_Configuration &psg = emulator->GetConfigurationPSG();
-
-				char buffer[] = "PSG1";
-
-				for (std::size_t i = 0; i < CC_COUNT_OF(psg.tone_disabled); ++i)
-				{
-					buffer[3] = '1' + i;
-					ImGui::TableNextColumn();
-					temp = !psg.tone_disabled[i];
-					if (ImGui::Checkbox(buffer, &temp))
-						psg.tone_disabled[i] = !psg.tone_disabled[i];
-				}
-
-				ImGui::TableNextColumn();
-				temp = !psg.noise_disabled;
-				if (ImGui::Checkbox("PSG Noise", &temp))
-					psg.noise_disabled = !psg.noise_disabled;
-
-				ImGui::EndTable();
-			}
-
-			ImGui::SeparatorText("PCM");
-
-			if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
-			{
-				PCM_Configuration &pcm = emulator->GetConfigurationPCM();
-
-				char buffer[] = "PCM1";
-
-				for (std::size_t i = 0; i < CC_COUNT_OF(pcm.channels_disabled); ++i)
-				{
-					buffer[3] = '1' + i;
-					ImGui::TableNextColumn();
-					temp = !pcm.channels_disabled[i];
-					if (ImGui::Checkbox(buffer, &temp))
-						pcm.channels_disabled[i] = !pcm.channels_disabled[i];
-				}
-
-				ImGui::EndTable();
-			}
-		}
-
-		debugging_toggles_window->End();
-	}
-
-	if (m68k_disassembler_window.has_value())
-		Disassembler(*m68k_disassembler_window);
+	DisplayWindow(m68k_status_window, clownmdemu.m68k.state);
+	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
+	DisplayWindow(z80_status_window);
+	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
+	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram, CC_COUNT_OF(clownmdemu.z80.ram));
+	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer));
+	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer));
+	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
+	DisplayWindow(vdp_registers_window);
+	DisplayWindow(sprite_list_window);
+	DisplayWindow(sprite_viewer_window);
+	DisplayWindow(window_plane_viewer_window, clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
+	DisplayWindow(plane_a_viewer_window, clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
+	DisplayWindow(plane_b_viewer_window, clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
+	DisplayWindow(vram_viewer_window);
+	DisplayWindow(cram_viewer_window);
+	DisplayWindow(fm_status_window);
+	DisplayWindow(psg_status_window);
+	DisplayWindow(pcm_status_window);
+	DisplayWindow(other_status_window);
+	DisplayWindow(debugging_toggles_window);
+	DisplayWindow(m68k_disassembler_window);
 
 	if (options_window.has_value())
 	{
@@ -2726,149 +2860,7 @@ void Frontend::Update()
 		options_window->End();
 	}
 
-	if (about_window.has_value())
-	{
-		if (about_window->Begin(ImGuiWindowFlags_HorizontalScrollbar))
-		{
-			static const char licence_clownmdemu[] = {
-				#include "licences/clownmdemu.h"
-			};
-			static const char licence_dear_imgui[] = {
-				#include "licences/dear-imgui.h"
-			};
-		#ifdef __EMSCRIPTEN__
-			static const char licence_emscripten_browser_file[] = {
-				#include "licences/emscripten-browser-file.h"
-			};
-		#endif
-		#ifdef IMGUI_ENABLE_FREETYPE
-			static const char licence_freetype[] = {
-				#include "licences/freetype.h"
-			};
-			static const char licence_freetype_bdf[] = {
-				#include "licences/freetype-bdf.h"
-			};
-			static const char licence_freetype_pcf[] = {
-				#include "licences/freetype-pcf.h"
-			};
-			static const char licence_freetype_fthash[] = {
-				#include "licences/freetype-fthash.h"
-			};
-			static const char licence_freetype_ft_hb[] = {
-				#include "licences/freetype-ft-hb.h"
-			};
-		#endif
-			static const char licence_inih[] = {
-				#include "licences/inih.h"
-			};
-			static const char licence_noto_sans[] = {
-				#include "licences/noto-sans.h"
-			};
-			static const char licence_inconsolata[] = {
-				#include "licences/inconsolata.h"
-			};
-
-			ImGui::SeparatorText("clownmdemu-frontend " VERSION);
-
-			ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
-			const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
-			if (ImGui::Button(url))
-				SDL_OpenURL(url);
-
-			ImGui::SeparatorText("Licences");
-
-			if (ImGui::CollapsingHeader("clownmdemu"))
-			{
-				ImGui::PushFont(about_window->GetMonospaceFont());
-				ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
-				ImGui::PopFont();
-			}
-
-			if (ImGui::CollapsingHeader("Dear ImGui"))
-			{
-				ImGui::PushFont(about_window->GetMonospaceFont());
-				ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
-				ImGui::PopFont();
-			}
-
-		#ifdef __EMSCRIPTEN__
-			if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
-			{
-				ImGui::PushFont(about_window->GetMonospaceFont());
-				ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
-				ImGui::PopFont();
-			}
-		#endif
-
-		#ifdef IMGUI_ENABLE_FREETYPE
-			if (ImGui::CollapsingHeader("FreeType"))
-			{
-				if (ImGui::TreeNode("General"))
-				{
-					ImGui::PushFont(about_window->GetMonospaceFont());
-					ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
-					ImGui::PopFont();
-					ImGui::TreePop();
-				}
-
-				if (ImGui::TreeNode("BDF Driver"))
-				{
-					ImGui::PushFont(about_window->GetMonospaceFont());
-					ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
-					ImGui::PopFont();
-					ImGui::TreePop();
-				}
-
-				if (ImGui::TreeNode("PCF Driver"))
-				{
-					ImGui::PushFont(about_window->GetMonospaceFont());
-					ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
-					ImGui::PopFont();
-					ImGui::TreePop();
-				}
-
-				if (ImGui::TreeNode("fthash.c & fthash.h"))
-				{
-					ImGui::PushFont(about_window->GetMonospaceFont());
-					ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
-					ImGui::PopFont();
-					ImGui::TreePop();
-				}
-
-				if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
-				{
-					ImGui::PushFont(about_window->GetMonospaceFont());
-					ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
-					ImGui::PopFont();
-					ImGui::TreePop();
-				}
-			}
-		#endif
-
-			if (ImGui::CollapsingHeader("inih"))
-			{
-				ImGui::PushFont(about_window->GetMonospaceFont());
-				ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
-				ImGui::PopFont();
-			}
-
-			if (ImGui::CollapsingHeader("Noto Sans"))
-			{
-				ImGui::PushFont(about_window->GetMonospaceFont());
-				ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
-				ImGui::PopFont();
-			}
-
-			if (ImGui::CollapsingHeader("Inconsolata"))
-			{
-				ImGui::PushFont(about_window->GetMonospaceFont());
-				ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
-				ImGui::PopFont();
-			}
-		}
-
-		about_window->End();
-	}
+	DisplayWindow(about_window);
 
 	file_utilities.DisplayFileDialog(drag_and_drop_filename);
 

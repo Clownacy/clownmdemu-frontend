@@ -40,7 +40,7 @@ namespace DebugVDP
 	public:
 		using SpriteCommon::SpriteCommon;
 
-		void Display();
+		bool Display();
 	};
 
 	class SpriteList : public SpriteCommon
@@ -48,7 +48,7 @@ namespace DebugVDP
 	public:
 		using SpriteCommon::SpriteCommon;
 
-		void Display();
+		bool Display();
 	};
 
 	class PlaneViewer : public WindowPopup
@@ -61,7 +61,7 @@ namespace DebugVDP
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
+		bool Display(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 	};
 
 	class VRAMViewer : public WindowPopup
@@ -77,7 +77,7 @@ namespace DebugVDP
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display();
+		bool Display();
 	};
 
 	class CRAMViewer : public WindowPopup
@@ -88,7 +88,7 @@ namespace DebugVDP
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display();
+		bool Display();
 	};
 
 	class Registers : public WindowPopup
@@ -96,7 +96,7 @@ namespace DebugVDP
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display();
+		bool Display();
 	};
 }
 

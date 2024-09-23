@@ -10,7 +10,7 @@ namespace DebugZ80
 	public:
 		using WindowPopup::WindowPopup;
 
-		void Display();
+		bool Display();
 	};
 }
 

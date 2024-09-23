@@ -1,6 +1,7 @@
 #ifndef WINDOW_POPUP_H
 #define WINDOW_POPUP_H
 
+#include <functional>
 #include <optional>
 #include <string>
 
@@ -20,8 +21,21 @@ private:
 public:
 	WindowPopup(const char *window_title, int window_width, int window_height, bool resizeable, WindowWithDearImGui *parent_window = nullptr);
 
-	bool Begin(ImGuiWindowFlags window_flags = 0);
+	bool Begin(bool *open = nullptr, ImGuiWindowFlags window_flags = 0);
 	void End();
+
+	template<typename Function, typename... Ts>
+	bool BeginAndEnd(ImGuiWindowFlags window_flags, const Function &function, Ts&&... arguments)
+	{
+		bool alive = true;
+
+		if (Begin(&alive, window_flags))
+			function(arguments...);
+
+		End();
+
+		return alive;
+	}
 
 	bool IsWindowID(const Uint32 window_id) const
 	{
