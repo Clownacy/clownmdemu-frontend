@@ -1,7 +1,7 @@
 #ifndef AUDIO_DEVICE_H
 #define AUDIO_DEVICE_H
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 

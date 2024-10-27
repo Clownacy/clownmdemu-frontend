@@ -1,7 +1,7 @@
 #ifndef WINAPI_H
 #define WINAPI_H
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #ifdef __cplusplus
 extern "C" {

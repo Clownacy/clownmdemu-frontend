@@ -6,7 +6,7 @@
  #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
 
- #include "SDL_syswm.h"
+ #include <SDL3/SDL_syswm.h>
 #endif
 
 void SetWindowTitleBarColour(SDL_Window* const window, const unsigned char red, const unsigned char green, const unsigned char blue)

@@ -18,7 +18,7 @@
 #include <tuple>
 #include <vector>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
@@ -539,7 +539,7 @@ private:
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
 				if (!Frontend::fast_forward_in_progress)
-					SDL_RenderSetVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
+					SDL_SetRenderVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
 			DoToolTip("Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
@@ -1226,7 +1226,7 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 	while (i < length - 1)
 	{
 		char character;
-		if (SDL_RWread(file->get(), &character, 1, 1) == 0)
+		if (SDL_ReadIO(file->get(), &character, 1, 1) == 0)
 		{
 			if (i == 0)
 				return 0;
@@ -1473,7 +1473,7 @@ static void SaveConfiguration()
 	}
 	else
 	{
-	#define PRINT_STRING(FILE, STRING) SDL_RWwrite(FILE, STRING, sizeof(STRING) - 1, 1)
+	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1, 1)
 		// Save keyboard bindings.
 		PRINT_STRING(file.get(), "[Miscellaneous]\n");
 
@@ -1498,7 +1498,7 @@ static void SaveConfiguration()
 		{
 			PRINT_STRING(file.get(), "last-directory = ");
 			const std::string last_file_dialog_directory = file_utilities.last_file_dialog_directory.string();
-			SDL_RWwrite(file.get(), last_file_dialog_directory.data(), last_file_dialog_directory.size(), 1);
+			SDL_WriteIO(file.get(), last_file_dialog_directory.data(), last_file_dialog_directory.size(), 1);
 			PRINT_STRING(file.get(), "\n");
 		}
 		PRINT_BOOLEAN_OPTION(file.get(), "prefer-kdialog", file_utilities.prefer_kdialog);
@@ -1610,7 +1610,7 @@ static void SaveConfiguration()
 				}
 
 				const std::string buffer = std::format("{} = {}\n", i, binding_string);
-				SDL_RWwrite(file.get(), buffer.data(), buffer.size(), 1);
+				SDL_WriteIO(file.get(), buffer.data(), buffer.size(), 1);
 			}
 		}
 
@@ -1628,7 +1628,7 @@ static void SaveConfiguration()
 
 			PRINT_STRING(file.get(), "path = ");
 			const auto path_string = recent_software.path.string();
-			SDL_RWwrite(file.get(), path_string.data(), 1, path_string.length());
+			SDL_WriteIO(file.get(), path_string.data(), 1, path_string.length());
 			PRINT_STRING(file.get(), "\n");
 		}
 	#endif
@@ -1667,7 +1667,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 #endif
 
 	// Initialise SDL2
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD) < 0)
 	{
 		debug_log.Log("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
@@ -1760,14 +1760,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 	switch (event.type)
 	{
 		case SDL_WINDOWEVENT:
-			if (event.window.event != SDL_WINDOWEVENT_CLOSE)
+			if (event.window.event != SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 				break;
 			[[fallthrough]];
-		case SDL_QUIT:
+		case SDL_EVENT_QUIT:
 			quit = true;
 			break;
 
-		case SDL_KEYDOWN:
+		case SDL_EVENT_KEY_DOWN:
 			// Ignore repeated key inputs caused by holding the key down
 			if (event.key.repeat)
 				break;
@@ -1775,10 +1775,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			anything_pressed_during_alt = true;
 
 			// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
-			if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
+			if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & SDL_KMOD_CTRL) != 0)
 				break;
 
-			if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & KMOD_ALT) != 0)
+			if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & SDL_KMOD_ALT) != 0)
 			{
 				window->ToggleFullscreen();
 				break;
@@ -1846,7 +1846,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				}
 			}
 			// Fallthrough
-		case SDL_KEYUP:
+		case SDL_EVENT_KEY_UP:
 		{
 			// Prevent invalid memory accesses due to future API expansions.
 			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
@@ -1856,7 +1856,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			// When a key-down is processed, cache the binding so that the corresponding key-up
 			// affects the same input. This is to prevent phantom inputs when a key is unbinded
 			// whilst it is being held.
-			const InputBinding binding = (event.type == SDL_KEYUP ? keyboard_bindings_cached : keyboard_bindings)[event.key.keysym.scancode];
+			const InputBinding binding = (event.type == SDL_EVENT_KEY_UP ? keyboard_bindings_cached : keyboard_bindings)[event.key.keysym.scancode];
 			keyboard_bindings_cached[event.key.keysym.scancode] = keyboard_bindings[event.key.keysym.scancode];
 
 			const bool pressed = event.key.state == SDL_PRESSED;
@@ -1931,22 +1931,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 		}
 
-		case SDL_CONTROLLERDEVICEADDED:
+		case SDL_EVENT_GAMEPAD_ADDED:
 		{
 			// Open the controller, and create an entry for it in the controller list.
-			SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
+			SDL_Gamepad *controller = SDL_OpenGamepad(event.cdevice.which);
 
 			if (controller == nullptr)
 			{
-				debug_log.Log("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
+				debug_log.Log("SDL_OpenGamepad failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
-				const SDL_JoystickID joystick_instance_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
+				const SDL_JoystickID joystick_instance_id = SDL_GetJoystickID(SDL_GetGamepadJoystick(controller));
 
 				if (joystick_instance_id < 0)
 				{
-					debug_log.Log("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
+					debug_log.Log("SDL_GetJoystickID failed with the following message - '%s'", SDL_GetError());
 				}
 				else
 				{
@@ -1961,24 +1961,24 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 					}
 				}
 
-				SDL_GameControllerClose(controller);
+				SDL_CloseGamepad(controller);
 			}
 
 			break;
 		}
 
-		case SDL_CONTROLLERDEVICEREMOVED:
+		case SDL_EVENT_GAMEPAD_REMOVED:
 		{
 			// Close the controller, and remove it from the controller list.
-			SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
+			SDL_Gamepad *controller = SDL_GetGamepadFromID(event.cdevice.which);
 
 			if (controller == nullptr)
 			{
-				debug_log.Log("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
+				debug_log.Log("SDL_GetGamepadFromID failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
-				SDL_GameControllerClose(controller);
+				SDL_CloseGamepad(controller);
 			}
 
 			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.cdevice.which;});
@@ -1986,8 +1986,8 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 		}
 
-		case SDL_CONTROLLERBUTTONDOWN:
-			if (event.cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSTICK)
+		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+			if (event.cbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle Dear ImGui gamepad controls.
 				io.ConfigFlags ^= ImGuiConfigFlags_NavEnableGamepad;
@@ -1999,7 +1999,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			switch (event.cbutton.button)
 			{
-				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+				case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
 					// Load save state
 					if (quick_save_exists)
 					{
@@ -2007,22 +2007,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 						emulator_paused = false;
 
-						SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF / 2, 0, 1000 / 8);
+						SDL_RumbleGamepad(SDL_GetGamepadFromID(event.cbutton.which), 0xFFFF / 2, 0, 1000 / 8);
 					}
 
 					break;
 
-				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+				case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
 					// Save save state
 					quick_save_exists = true;
 					quick_save_state = emulator->CurrentState();
 
-					SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
+					SDL_RumbleGamepad(SDL_GetGamepadFromID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
 					break;
 			}
 
 			// Fallthrough
-		case SDL_CONTROLLERBUTTONUP:
+		case SDL_EVENT_GAMEPAD_BUTTON_UP:
 		{
 			const bool pressed = event.cbutton.state == SDL_PRESSED;
 
@@ -2037,18 +2037,18 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
 
 						// TODO: X, Y, Z, and Mode buttons.
-						DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_GAMEPAD_BUTTON_WEST);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_GAMEPAD_BUTTON_NORTH);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_GAMEPAD_BUTTON_EAST);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_GAMEPAD_BUTTON_SOUTH);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START);
 
 						#undef DO_BUTTON
 
-						case SDL_CONTROLLER_BUTTON_DPAD_UP:
-						case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-						case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-						case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+						case SDL_GAMEPAD_BUTTON_DPAD_UP:
+						case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+						case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+						case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 						{
 							unsigned int direction;
 							unsigned int button;
@@ -2056,22 +2056,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							switch (event.cbutton.button)
 							{
 								default:
-								case SDL_CONTROLLER_BUTTON_DPAD_UP:
+								case SDL_GAMEPAD_BUTTON_DPAD_UP:
 									direction = 0;
 									button = CLOWNMDEMU_BUTTON_UP;
 									break;
 
-								case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+								case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
 									direction = 1;
 									button = CLOWNMDEMU_BUTTON_DOWN;
 									break;
 
-								case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+								case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
 									direction = 2;
 									button = CLOWNMDEMU_BUTTON_LEFT;
 									break;
 
-								case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+								case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 									direction = 3;
 									button = CLOWNMDEMU_BUTTON_RIGHT;
 									break;
@@ -2085,7 +2085,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							break;
 						}
 
-						case SDL_CONTROLLER_BUTTON_BACK:
+						case SDL_GAMEPAD_BUTTON_BACK:
 							// Toggle which joypad the controller is bound to.
 							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 								if (pressed)
@@ -2104,7 +2104,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 		}
 
-		case SDL_CONTROLLERAXISMOTION:
+		case SDL_EVENT_GAMEPAD_AXIS_MOTION:
 			// Look for the controller that this event belongs to.
 			for (auto &controller_input : controller_input_list)
 			{
@@ -2113,12 +2113,12 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				{
 					switch (event.caxis.axis)
 					{
-						case SDL_CONTROLLER_AXIS_LEFTX:
-						case SDL_CONTROLLER_AXIS_LEFTY:
+						case SDL_GAMEPAD_AXIS_LEFTX:
+						case SDL_GAMEPAD_AXIS_LEFTY:
 						{
-							if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+							if (event.caxis.axis == SDL_GAMEPAD_AXIS_LEFTX)
 								controller_input.left_stick_x = event.caxis.value;
-							else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+							else //if (event.caxis.axis == SDL_GAMEPAD_AXIS_LEFTY)
 								controller_input.left_stick_y = event.caxis.value;
 
 							// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
@@ -2171,16 +2171,16 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						}
 
 					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-						case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+						case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
 					#endif
-						case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+						case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
 						{
 							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 							{
 								const bool held = event.caxis.value > 0x7FFF / 8;
 
 							#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-								if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+								if (event.caxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
 								{
 									if (controller_input.left_trigger != held)
 									{
@@ -2216,7 +2216,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			break;
 
-		case SDL_DROPFILE:
+		case SDL_EVENT_DROP_FILE:
 			drag_and_drop_filename = event.drop.file;
 			SDL_free(event.drop.file);
 			break;
@@ -2238,36 +2238,36 @@ void Frontend::HandleEvent(const SDL_Event &event)
 			case SDL_WINDOWEVENT:
 				return event.window.windowID;
 
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
+			case SDL_EVENT_KEY_DOWN:
+			case SDL_EVENT_KEY_UP:
 				return event.key.windowID;
 
-			case SDL_TEXTEDITING:
+			case SDL_EVENT_TEXT_EDITING:
 				return event.edit.windowID;
 
-			case SDL_TEXTEDITING_EXT:
+			case SDL_EVENT_TEXT_EDITING_EXT:
 				return event.editExt.windowID;
 
-			case SDL_TEXTINPUT:
+			case SDL_EVENT_TEXT_INPUT:
 				return event.text.windowID;
 
-			case SDL_MOUSEMOTION:
+			case SDL_EVENT_MOUSE_MOTION:
 				return event.motion.windowID;
 
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
+			case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			case SDL_EVENT_MOUSE_BUTTON_UP:
 				return event.button.windowID;
 
-			case SDL_MOUSEWHEEL:
+			case SDL_EVENT_MOUSE_WHEEL:
 				return event.wheel.windowID;
 
-			case SDL_USEREVENT:
+			case SDL_EVENT_USER:
 				return event.user.windowID;
 
-			case SDL_DROPFILE:
-			case SDL_DROPTEXT:
-			case SDL_DROPBEGIN:
-			case SDL_DROPCOMPLETE:
+			case SDL_EVENT_DROP_FILE:
+			case SDL_EVENT_DROP_TEXT:
+			case SDL_EVENT_DROP_BEGIN:
+			case SDL_EVENT_DROP_COMPLETE:
 				return event.drop.windowID;
 		}
 
@@ -2288,7 +2288,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 		{
 			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
 			{
-				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
+				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 					popup_window.reset();
 				else
 					popup_window->ProcessEvent(event);
@@ -2520,7 +2520,7 @@ void Frontend::Update()
 							std::vector<unsigned char> save_state_buffer;
 							save_state_buffer.resize(emulator->GetSaveStateFileSize());
 
-							const SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer.data(), save_state_buffer.size()));
+							const SDL::RWops file = SDL::RWops(SDL_IOFromMem(save_state_buffer.data(), save_state_buffer.size()));
 
 							if (file != nullptr)
 							{
@@ -2770,7 +2770,7 @@ void Frontend::Update()
 					SDL_SetRenderTarget(window->GetRenderer(), framebuffer_texture_upscaled);
 
 					// Render.
-					SDL_RenderCopy(window->GetRenderer(), window->framebuffer_texture.get(), &framebuffer_rect, &upscaled_framebuffer_rect);
+					SDL_RenderTexture(window->GetRenderer(), window->framebuffer_texture.get(), &framebuffer_rect, &upscaled_framebuffer_rect);
 
 					// Switch back to actually rendering to the screen.
 					SDL_SetRenderTarget(window->GetRenderer(), nullptr);
