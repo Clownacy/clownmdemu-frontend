@@ -163,12 +163,12 @@ add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clownmdemu)
 
 # Link SDL2
-find_package(SDL2 2.0.18)
-if(SDL2_FOUND)
-	target_link_libraries(clownmdemu-frontend SDL2::SDL2main SDL2::SDL2)
+find_package(SDL3 3.1.3)
+if(SDL3_FOUND)
+	target_link_libraries(clownmdemu-frontend SDL3::SDL3)
 else()
 	add_subdirectory("libraries/SDL" EXCLUDE_FROM_ALL)
-	target_link_libraries(clownmdemu-frontend SDL2::SDL2main SDL2::SDL2-static)
+	target_link_libraries(clownmdemu-frontend SDL3::SDL3-static)
 endif()
 
 if(CLOWNMDEMU_FRONTEND_FREETYPE)

@@ -331,7 +331,7 @@ bool EmulatorInstance::WriteSaveStateFile(const SDL::RWops &file)
 {
 	bool success = false;
 
-	if (SDL_RWwrite(file.get(), &save_state_magic, sizeof(save_state_magic), 1) == 1 && SDL_RWwrite(file.get(), state, sizeof(*state), 1) == 1)
+	if (SDL_WriteIO(file.get(), &save_state_magic, sizeof(save_state_magic)) == 1 && SDL_WriteIO(file.get(), state, sizeof(*state)) == 1)
 		success = true;
 
 	return success;
