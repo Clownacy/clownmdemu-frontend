@@ -14,7 +14,7 @@
 #include "file-utilities.h"
 #include "windows/common/window-with-framebuffer.h"
 
-void DoToolTip(const std::string &text);
+void DoToolTip(const std::u8string &text);
 
 namespace Frontend
 {

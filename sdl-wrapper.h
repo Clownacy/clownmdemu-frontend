@@ -25,7 +25,7 @@ MAKE_RAII_POINTER(IOStream, SDL_IOStream, SDL_CloseIO        );
 
 inline IOStream RWFromFile(const char* const path, const char* const mode) { return IOStream(SDL_IOFromFile(path, mode)); }
 inline IOStream RWFromFile(const std::string &path, const char* const mode) { return RWFromFile(path.c_str(), mode); }
-inline IOStream RWFromFile(const std::filesystem::path &path, const char* const mode) { return RWFromFile(path.string(), mode); }
+inline IOStream RWFromFile(const std::filesystem::path &path, const char* const mode) { return RWFromFile(reinterpret_cast<const char*>(path.u8string().c_str()), mode); }
 
 }
 

@@ -506,29 +506,29 @@ private:
 		{
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("TV Standard:");
-			DoToolTip("Some games only work with a certain TV standard.");
+			DoToolTip(u8"Some games only work with a certain TV standard.");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
 				if (Frontend::emulator->GetPALMode())
 					Frontend::SetAudioPALMode(false);
-			DoToolTip("60 FPS");
+			DoToolTip(u8"60 FPS");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
 				if (!Frontend::emulator->GetPALMode())
 					Frontend::SetAudioPALMode(true);
-			DoToolTip("50 FPS");
+			DoToolTip(u8"50 FPS");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Region:");
-			DoToolTip("Some games only work with a certain region.");
+			DoToolTip(u8"Some games only work with a certain region.");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Japan", Frontend::emulator->GetDomestic()))
 				Frontend::emulator->SetDomestic(true);
-			DoToolTip("Games may show Japanese text.");
+			DoToolTip(u8"Games may show Japanese text.");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Elsewhere", !Frontend::emulator->GetDomestic()))
 				Frontend::emulator->SetDomestic(false);
-			DoToolTip("Games may show English text.");
+			DoToolTip(u8"Games may show English text.");
 
 			ImGui::EndTable();
 		}
@@ -541,7 +541,7 @@ private:
 			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
 				if (!Frontend::fast_forward_in_progress)
 					SDL_SetRenderVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
-			DoToolTip("Prevents screen tearing.");
+			DoToolTip(u8"Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling) && Frontend::integer_screen_scaling)
@@ -550,11 +550,11 @@ private:
 				SDL_DestroyTexture(Frontend::framebuffer_texture_upscaled);
 				Frontend::framebuffer_texture_upscaled = nullptr;
 			}
-			DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
+			DoToolTip(u8"Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
-			DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
+			DoToolTip(u8"Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
 
 			ImGui::EndTable();
 		}
@@ -567,13 +567,13 @@ private:
 			bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
 			if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
 				Frontend::emulator->SetLowPassFilter(low_pass_filter);
-			DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+			DoToolTip(u8"Makes the audio sound 'softer',\njust like on a real Mega Drive.");
 
 			ImGui::TableNextColumn();
 			bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
 			if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
 				Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
-			DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
+			DoToolTip(u8"Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
 
 			ImGui::EndTable();
 		}
@@ -587,13 +587,13 @@ private:
 
 			if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
 				file_utilities.prefer_kdialog = false;
-			DoToolTip("Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
+			DoToolTip(u8"Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
 
 			ImGui::TableNextColumn();
 
 			if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
 				file_utilities.prefer_kdialog = true;
-			DoToolTip("Best with KDE, LXQt, Deepin, etc.");
+			DoToolTip(u8"Best with KDE, LXQt, Deepin, etc.");
 
 			ImGui::EndTable();
 		}
@@ -655,13 +655,13 @@ private:
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Control Pad #1", Frontend::keyboard_input.bound_joypad == 0))
 				Frontend::keyboard_input.bound_joypad = 0;
-			DoToolTip("Binds the keyboard to Control Pad #1.");
+			DoToolTip(u8"Binds the keyboard to Control Pad #1.");
 
 
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Control Pad #2", Frontend::keyboard_input.bound_joypad == 1))
 				Frontend::keyboard_input.bound_joypad = 1;
-			DoToolTip("Binds the keyboard to Control Pad #2.");
+			DoToolTip(u8"Binds the keyboard to Control Pad #2.");
 
 			ImGui::EndTable();
 		}
@@ -1213,12 +1213,13 @@ static std::filesystem::path GetDearImGuiSettingsFilePath()
 // Tooltip //
 /////////////
 
-void DoToolTip(const std::string &text)
+void DoToolTip(const std::u8string &text)
 {
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
-		ImGui::TextUnformatted(text.data(), text.data() + text.size());
+		const char* const characters = reinterpret_cast<const char*>(text.c_str());
+		ImGui::TextUnformatted(characters, characters + text.size());
 		ImGui::EndTooltip();
 	}
 }
@@ -1647,8 +1648,8 @@ static void SaveConfiguration()
 				PRINT_STRING(file.get(), "false\n");
 
 			PRINT_STRING(file.get(), "path = ");
-			const auto path_string = recent_software.path.string();
-			SDL_WriteIO(file.get(), path_string.data(), path_string.length());
+			const auto path_string = recent_software.path.u8string();
+			SDL_WriteIO(file.get(), reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
 			PRINT_STRING(file.get(), "\n");
 		}
 	#endif
@@ -2424,13 +2425,13 @@ void Frontend::Update()
 						ImGui::PushID(&recent_software - &recent_software_list.front());
 
 						// Display only the filename.
-						if (ImGui::MenuItem(recent_software.path.filename().string().c_str()))
+						if (ImGui::MenuItem(reinterpret_cast<const char*>(recent_software.path.filename().u8string().c_str())))
 							selected_software = &recent_software;
 
 						ImGui::PopID();
 
 						// Show the full path as a tooltip.
-						DoToolTip(recent_software.path.string());
+						DoToolTip(recent_software.path.u8string());
 					}
 
 					if (selected_software != nullptr && LoadSoftwareFile(selected_software->is_cd_file, selected_software->path))
