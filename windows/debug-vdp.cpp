@@ -130,7 +130,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				Uint8 *plane_texture_pixels;
 				int plane_texture_pitch;
 
-				if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
+				if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch))
 				{
 					cc_u16f plane_index = plane_address;
 
@@ -223,7 +223,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 			Uint8 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
-			if (SDL_LockTexture(textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			if (SDL_LockTexture(textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch))
 			{
 				auto tile_metadata = sprite.tile_metadata;
 
@@ -525,7 +525,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			Uint8 *vram_texture_pixels;
 			int vram_texture_pitch;
 
-			if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
+			if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch))
 			{
 				// Generate VRAM bitmap.
 				cc_u16f vram_index = 0;
