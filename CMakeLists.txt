@@ -68,7 +68,7 @@ add_executable(clownmdemu-frontend WIN32
 	"windows/disassembler.h"
 	"windows/common/inconsolata-regular.h"
 	"windows/common/noto-sans-regular.h"
-	"windows/common/winapi.c"
+	"windows/common/winapi.cpp"
 	"windows/common/winapi.h"
 	"windows/common/window.cpp"
 	"windows/common/window.h"
