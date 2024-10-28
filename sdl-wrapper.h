@@ -21,11 +21,11 @@ using Pointer = std::unique_ptr<T, FreeFunctor>;
 MAKE_RAII_POINTER(Window,   SDL_Window,   SDL_DestroyWindow  );
 MAKE_RAII_POINTER(Renderer, SDL_Renderer, SDL_DestroyRenderer);
 MAKE_RAII_POINTER(Texture,  SDL_Texture,  SDL_DestroyTexture );
-MAKE_RAII_POINTER(RWops,    SDL_IOStream,    SDL_CloseIO        );
+MAKE_RAII_POINTER(IOStream, SDL_IOStream, SDL_CloseIO        );
 
-inline RWops RWFromFile(const char* const path, const char* const mode) { return RWops(SDL_IOFromFile(path, mode)); }
-inline RWops RWFromFile(const std::string &path, const char* const mode) { return RWFromFile(path.c_str(), mode); }
-inline RWops RWFromFile(const std::filesystem::path &path, const char* const mode) { return RWFromFile(path.string(), mode); }
+inline IOStream RWFromFile(const char* const path, const char* const mode) { return IOStream(SDL_IOFromFile(path, mode)); }
+inline IOStream RWFromFile(const std::string &path, const char* const mode) { return RWFromFile(path.c_str(), mode); }
+inline IOStream RWFromFile(const std::filesystem::path &path, const char* const mode) { return RWFromFile(path.string(), mode); }
 
 }
 

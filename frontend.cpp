@@ -1058,7 +1058,7 @@ static void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
 	SetWindowTitleToSoftwareName();
 }
 
-static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* const path, const SDL::RWops &file)
+static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* const path, const SDL::IOStream &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1081,7 +1081,7 @@ static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* cons
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	const SDL::RWops file = SDL::RWFromFile(path, "rb");
+	const SDL::IOStream file = SDL::RWFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -1093,7 +1093,7 @@ static bool LoadCartridgeFile(const std::filesystem::path &path)
 	return LoadCartridgeFile(&path, file);
 }
 
-static bool LoadCDFile(const std::filesystem::path* const path, SDL::RWops &&file)
+static bool LoadCDFile(const std::filesystem::path* const path, SDL::IOStream &&file)
 {
 #ifdef FILE_PATH_SUPPORT
 	if (path != nullptr)
@@ -1112,7 +1112,7 @@ static bool LoadCDFile(const std::filesystem::path* const path, SDL::RWops &&fil
 #ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::RWFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -1147,7 +1147,7 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 	return true;
 }
 
-static bool LoadSaveState(const SDL::RWops &file)
+static bool LoadSaveState(const SDL::IOStream &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1166,7 +1166,7 @@ static bool CreateSaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	const SDL::RWops file = SDL::RWFromFile(path, "wb");
+	const SDL::IOStream file = SDL::RWFromFile(path, "wb");
 
 	if (file == nullptr || !emulator->WriteSaveStateFile(file))
 	{
@@ -1230,7 +1230,7 @@ void DoToolTip(const std::string &text)
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
-	const SDL::RWops* const file = static_cast<const SDL::RWops*>(user);
+	const SDL::IOStream* const file = static_cast<const SDL::IOStream*>(user);
 
 	int i = 0;
 
@@ -1445,10 +1445,10 @@ static void LoadConfiguration()
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
 
-	const SDL::RWops file = SDL::RWFromFile(GetConfigurationFilePath(), "r");
+	const SDL::IOStream file = SDL::RWFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::RWops*>(&file), INIParseCallback, nullptr) != 0)
+	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
@@ -1485,7 +1485,7 @@ static void LoadConfiguration()
 static void SaveConfiguration()
 {
 	// Save configuration file:
-	const SDL::RWops file = SDL::RWFromFile(GetConfigurationFilePath(), "w");
+	const SDL::IOStream file = SDL::RWFromFile(GetConfigurationFilePath(), "w");
 
 	if (file == nullptr)
 	{
@@ -2351,7 +2351,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, const SDL::RWops &file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, const SDL::IOStream &file)
 					{
 						const bool success = LoadCartridgeFile(&path, file);
 
@@ -2377,7 +2377,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						if (!LoadCDFile(&path, std::move(file)))
 							return false;
@@ -2491,7 +2491,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, const SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, const SDL::IOStream &&file)
 					{
 						LoadSaveState(file);
 						return true;

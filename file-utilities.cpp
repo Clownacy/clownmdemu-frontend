@@ -348,7 +348,7 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::RWFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -359,7 +359,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 	return LoadFileToBuffer(file_buffer, file);
 }
 
-bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::RWops &file)
+bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::IOStream &file)
 {
 	const Sint64 size_s64 = SDL_GetIOSize(file.get());
 
@@ -411,7 +411,7 @@ void FileUtilities::LoadFile([[maybe_unused]] const Window &window, [[maybe_unus
 #else
 	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
-		SDL::RWops file = SDL::RWFromFile(path, "rb");
+		SDL::IOStream file = SDL::RWFromFile(path, "rb");
 
 		if (file == nullptr)
 			return false;
@@ -434,7 +434,7 @@ void FileUtilities::SaveFile([[maybe_unused]] const Window &window, [[maybe_unus
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			const SDL::RWops file = SDL::RWFromFile(path, "wb");
+			const SDL::IOStream file = SDL::RWFromFile(path, "wb");
 
 			if (file == nullptr)
 				return false;

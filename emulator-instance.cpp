@@ -272,7 +272,7 @@ void EmulatorInstance::UnloadCartridgeFile()
 	rom_buffer.clear();
 }
 
-bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
+bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
 {
 	cd_file.Open(std::move(stream), path);
 	if (!cd_file.SeekToSector(0))
@@ -327,7 +327,7 @@ std::size_t EmulatorInstance::GetSaveStateFileSize()
 	return save_state_magic.size() + sizeof(*state);
 }
 
-bool EmulatorInstance::WriteSaveStateFile(const SDL::RWops &file)
+bool EmulatorInstance::WriteSaveStateFile(const SDL::IOStream &file)
 {
 	bool success = false;
 

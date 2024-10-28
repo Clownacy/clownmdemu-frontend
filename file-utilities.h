@@ -32,7 +32,7 @@ public:
 
 private:
 	using PopupCallback = std::function<bool(const std::filesystem::path &path)>;
-	using LoadFileCallback = std::function<bool(const std::filesystem::path &path, SDL::RWops &&file)>;
+	using LoadFileCallback = std::function<bool(const std::filesystem::path &path, SDL::IOStream &&file)>;
 	using SaveFileCallback = std::function<bool(const SaveFileInnerCallback &save_file)>;
 
 	std::string text_buffer;
@@ -62,7 +62,7 @@ public:
 
 	bool FileExists(const std::filesystem::path &path);
 	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path);
-	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::RWops &file);
+	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::IOStream &file);
 
 	void LoadFile(const Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(const Window &window, const std::string &title, const SaveFileCallback &callback);
