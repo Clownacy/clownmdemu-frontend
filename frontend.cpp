@@ -1942,7 +1942,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 		case SDL_EVENT_GAMEPAD_ADDED:
 		{
 			// Open the controller, and create an entry for it in the controller list.
-			SDL_Gamepad *controller = SDL_OpenGamepad(event.cdevice.which);
+			SDL_Gamepad *controller = SDL_OpenGamepad(event.gdevice.which);
 
 			if (controller == nullptr)
 			{
@@ -1950,26 +1950,15 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			}
 			else
 			{
-				const SDL_JoystickID joystick_instance_id = SDL_GetJoystickID(SDL_GetGamepadJoystick(controller));
-
-				if (joystick_instance_id < 0)
+				try
 				{
-					debug_log.Log("SDL_GetJoystickID failed with the following message - '%s'", SDL_GetError());
+					controller_input_list.emplace_front(event.gdevice.which);
 				}
-				else
+				catch (const std::bad_alloc&)
 				{
-					try
-					{
-						controller_input_list.emplace_front(joystick_instance_id);
-						break;
-					}
-					catch (std::bad_alloc&)
-					{
-						debug_log.Log("Could not allocate memory for the new ControllerInput struct");
-					}
+					debug_log.Log("Could not allocate memory for the new ControllerInput struct");
+					SDL_CloseGamepad(controller);
 				}
-
-				SDL_CloseGamepad(controller);
 			}
 
 			break;
@@ -1978,18 +1967,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 		case SDL_EVENT_GAMEPAD_REMOVED:
 		{
 			// Close the controller, and remove it from the controller list.
-			SDL_Gamepad *controller = SDL_GetGamepadFromID(event.cdevice.which);
+			SDL_Gamepad *controller = SDL_GetGamepadFromID(event.gdevice.which);
 
 			if (controller == nullptr)
-			{
 				debug_log.Log("SDL_GetGamepadFromID failed with the following message - '%s'", SDL_GetError());
-			}
 			else
-			{
 				SDL_CloseGamepad(controller);
-			}
 
-			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.cdevice.which;});
+			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.gdevice.which;});
 
 			break;
 		}
@@ -2656,7 +2641,7 @@ void Frontend::Update()
 			{
 				default:
 					assert(false);
-					// Fallthrough
+					// Fallthrough // TODO: Replace these with '[[fallthrough]]'.
 				case 224:
 					destination_width = 320;
 					destination_height = 224;
