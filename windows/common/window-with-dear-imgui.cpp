@@ -94,7 +94,7 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.51f, 0.51f, 0.51f, 0.95f);
 	colors[ImGuiCol_Tab] = ImVec4(0.31f, 0.31f, 0.31f, 0.86f);
 	colors[ImGuiCol_TabHovered] = ImVec4(0.51f, 0.51f, 0.51f, 0.80f);
-	colors[ImGuiCol_TabActive] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
+	colors[ImGuiCol_TabSelected] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
 
 	style_backup = style;
 
@@ -155,7 +155,7 @@ void WindowWithDearImGui::FinishDearImGuiFrame()
 
 	// Render Dear ImGui.
 	ImGui::Render();
-	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), GetRenderer());
 
 	// Finally display the rendered frame to the user.
 	SDL_RenderPresent(GetRenderer());

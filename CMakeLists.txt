@@ -149,7 +149,7 @@ endif()
 target_compile_definitions(clownmdemu-frontend PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
 
 # Disable some deprecated junk in Dear ImGui
-target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
+target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO ImTextureID=void*)
 
 # Dear ImGui needs these directories in the include path
 target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
