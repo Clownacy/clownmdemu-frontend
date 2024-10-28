@@ -1014,7 +1014,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 			if (!SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE))
 				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-			SDL_SetTextureScaleMode(framebuffer_texture_upscaled, SDL_SCALEMODE_NEAREST);
+			SDL_SetTextureScaleMode(framebuffer_texture_upscaled, SDL_SCALEMODE_LINEAR);
 		}
 	}
 }
