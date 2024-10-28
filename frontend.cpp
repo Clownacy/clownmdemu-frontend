@@ -1260,52 +1260,52 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 
 static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* const section_cstr, const char* const name_cstr, const char* const value_cstr)
 {
-	const std::string_view section(section_cstr);
-	const std::string_view name(name_cstr);
-	const std::string_view value(value_cstr);
+	const std::u8string_view section(reinterpret_cast<const char8_t*>(section_cstr));
+	const std::u8string_view name(reinterpret_cast<const char8_t*>(name_cstr));
+	const std::u8string_view value(reinterpret_cast<const char8_t*>(value_cstr));
 
-	if (section == "Miscellaneous")
+	if (section == u8"Miscellaneous")
 	{
-		const bool state = value == "on";
+		const bool state = value == u8"on";
 
-		if (name == "vsync")
+		if (name == u8"vsync")
 			use_vsync = state;
-		else if (name == "integer-screen-scaling")
+		else if (name == u8"integer-screen-scaling")
 			integer_screen_scaling = state;
-		else if (name == "tall-interlace-mode-2")
+		else if (name == u8"tall-interlace-mode-2")
 			tall_double_resolution_mode = state;
-		else if (name == "dear-imgui-windows")
+		else if (name == u8"dear-imgui-windows")
 			dear_imgui_windows = state;
-		else if (name == "low-pass-filter")
+		else if (name == u8"low-pass-filter")
 			emulator->SetLowPassFilter(state);
-		else if (name == "low-volume-distortion")
+		else if (name == u8"low-volume-distortion")
 			emulator->GetConfigurationFM().ladder_effect_disabled = !state;
-		else if (name == "pal")
+		else if (name == u8"pal")
 			SetAudioPALMode(state);
-		else if (name == "japanese")
+		else if (name == u8"japanese")
 			emulator->SetDomestic(state);
 	#ifdef FILE_PICKER_POSIX
-		else if (name == "last-directory")
+		else if (name == u8"last-directory")
 			file_utilities.last_file_dialog_directory = value;
-		else if (name == "prefer-kdialog")
+		else if (name == u8"prefer-kdialog")
 			file_utilities.prefer_kdialog = state;
 	#endif
 	}
-	else if (section == "Keyboard Bindings")
+	else if (section == u8"Keyboard Bindings")
 	{
 		unsigned int scancode_integer;
-		const auto scancode_integer_result = std::from_chars(&name.front(), &name.back() + 1, scancode_integer, 10);
+		const auto scancode_integer_result = std::from_chars(reinterpret_cast<const char*>(&name.front()), reinterpret_cast<const char*>(&name.back()) + 1, scancode_integer, 10);
 
-		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == &name.back() + 1 && scancode_integer < SDL_SCANCODE_COUNT)
+		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == reinterpret_cast<const char*>(&name.back()) + 1 && scancode_integer < SDL_SCANCODE_COUNT)
 		{
 			const SDL_Scancode scancode = static_cast<SDL_Scancode>(scancode_integer);
 
 			unsigned int binding_index;
-			const auto binding_index_result = std::from_chars(&value.front(), &value.back() + 1, binding_index, 10);
+			const auto binding_index_result = std::from_chars(reinterpret_cast<const char*>(&value.front()), reinterpret_cast<const char*>(&value.back()) + 1, binding_index, 10);
 
 			InputBinding input_binding = INPUT_BINDING_NONE;
 
-			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == &value.back() + 1)
+			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == reinterpret_cast<const char*>(&value.back()) + 1)
 			{
 				// Legacy numerical input bindings.
 				static const std::array input_bindings = {
@@ -1337,47 +1337,47 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			}
 			else
 			{
-				if (value == "INPUT_BINDING_CONTROLLER_UP")
+				if (value == u8"INPUT_BINDING_CONTROLLER_UP")
 					input_binding = INPUT_BINDING_CONTROLLER_UP;
-				else if (value == "INPUT_BINDING_CONTROLLER_DOWN")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_DOWN")
 					input_binding = INPUT_BINDING_CONTROLLER_DOWN;
-				else if (value == "INPUT_BINDING_CONTROLLER_LEFT")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_LEFT")
 					input_binding = INPUT_BINDING_CONTROLLER_LEFT;
-				else if (value == "INPUT_BINDING_CONTROLLER_RIGHT")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_RIGHT")
 					input_binding = INPUT_BINDING_CONTROLLER_RIGHT;
-				else if (value == "INPUT_BINDING_CONTROLLER_A")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_A")
 					input_binding = INPUT_BINDING_CONTROLLER_A;
-				else if (value == "INPUT_BINDING_CONTROLLER_B")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_B")
 					input_binding = INPUT_BINDING_CONTROLLER_B;
-				else if (value == "INPUT_BINDING_CONTROLLER_C")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_C")
 					input_binding = INPUT_BINDING_CONTROLLER_C;
-				else if (value == "INPUT_BINDING_CONTROLLER_X")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_X")
 					input_binding = INPUT_BINDING_CONTROLLER_X;
-				else if (value == "INPUT_BINDING_CONTROLLER_Y")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_Y")
 					input_binding = INPUT_BINDING_CONTROLLER_Y;
-				else if (value == "INPUT_BINDING_CONTROLLER_Z")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_Z")
 					input_binding = INPUT_BINDING_CONTROLLER_Z;
-				else if (value == "INPUT_BINDING_CONTROLLER_START")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_START")
 					input_binding = INPUT_BINDING_CONTROLLER_START;
-				else if (value == "INPUT_BINDING_CONTROLLER_MODE")
+				else if (value == u8"INPUT_BINDING_CONTROLLER_MODE")
 					input_binding = INPUT_BINDING_CONTROLLER_MODE;
-				else if (value == "INPUT_BINDING_PAUSE")
+				else if (value == u8"INPUT_BINDING_PAUSE")
 					input_binding = INPUT_BINDING_PAUSE;
-				else if (value == "INPUT_BINDING_RESET")
+				else if (value == u8"INPUT_BINDING_RESET")
 					input_binding = INPUT_BINDING_RESET;
-				else if (value == "INPUT_BINDING_FAST_FORWARD")
+				else if (value == u8"INPUT_BINDING_FAST_FORWARD")
 					input_binding = INPUT_BINDING_FAST_FORWARD;
 			#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-				else if (value == "INPUT_BINDING_REWIND")
+				else if (value == u8"INPUT_BINDING_REWIND")
 					input_binding = INPUT_BINDING_REWIND;
 			#endif
-				else if (value == "INPUT_BINDING_QUICK_SAVE_STATE")
+				else if (value == u8"INPUT_BINDING_QUICK_SAVE_STATE")
 					input_binding = INPUT_BINDING_QUICK_SAVE_STATE;
-				else if (value == "INPUT_BINDING_QUICK_LOAD_STATE")
+				else if (value == u8"INPUT_BINDING_QUICK_LOAD_STATE")
 					input_binding = INPUT_BINDING_QUICK_LOAD_STATE;
-				else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
+				else if (value == u8"INPUT_BINDING_TOGGLE_FULLSCREEN")
 					input_binding = INPUT_BINDING_TOGGLE_FULLSCREEN;
-				else if (value == "INPUT_BINDING_TOGGLE_CONTROL_PAD")
+				else if (value == u8"INPUT_BINDING_TOGGLE_CONTROL_PAD")
 					input_binding = INPUT_BINDING_TOGGLE_CONTROL_PAD;
 			}
 
@@ -1386,15 +1386,15 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 
 	}
 #ifdef FILE_PATH_SUPPORT
-	else if (section == "Recent Software")
+	else if (section == u8"Recent Software")
 	{
 		static bool is_cd_file = false;
 
-		if (name == "cd")
+		if (name == u8"cd")
 		{
-			is_cd_file = value == "true";
+			is_cd_file = value == u8"true";
 		}
-		else if (name == "path")
+		else if (name == u8"path")
 		{
 			if (!value.empty())
 				AddToRecentSoftware(value, is_cd_file, true);
