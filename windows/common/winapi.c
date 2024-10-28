@@ -6,15 +6,16 @@
  #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
 
- #include <SDL3/SDL_syswm.h>
+ #include <SDL3/SDL.h>
 #endif
 
 void SetWindowTitleBarColour(SDL_Window* const window, const unsigned char red, const unsigned char green, const unsigned char blue)
 {
+// TODO: Replace all '_WIN32' checks with 'SDL_PLATFORM_WIN32'.
 #ifdef _WIN32
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	if (SDL_GetWindowWMInfo(window, &info))
+	const HWND hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+
+	if (hwnd != 0)
 	{
 		void* const handle = SDL_LoadObject("dwmapi.dll");
 
@@ -29,13 +30,13 @@ void SetWindowTitleBarColour(SDL_Window* const window, const unsigned char red, 
 				{
 					/* Colour the title bar. */
 					const COLORREF winapi_colour = RGB(red, green, blue);
-					DwmSetWindowAttribute_Function(info.info.win.window, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
+					DwmSetWindowAttribute_Function(hwnd, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
 				}
 
 				{
 					/* Disable the dumbass window rounding. */
 					const int rounding_mode = 1; /* DWMWCP_DONOTROUND */
-					DwmSetWindowAttribute_Function(info.info.win.window, 33/*DWMWA_WINDOW_CORNER_PREFERENCE*/, &rounding_mode, sizeof(rounding_mode));
+					DwmSetWindowAttribute_Function(hwnd, 33/*DWMWA_WINDOW_CORNER_PREFERENCE*/, &rounding_mode, sizeof(rounding_mode));
 				}
 			}
 

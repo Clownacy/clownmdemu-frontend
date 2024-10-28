@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <charconv>
 #include <climits> // For INT_MAX.
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <format>
@@ -24,8 +25,8 @@
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
 #include "libraries/imgui/imgui.h"
-#include "libraries/imgui/backends/imgui_impl_sdl2.h"
-#include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
+#include "libraries/imgui/backends/imgui_impl_sdl3.h"
+#include "libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
 #include "libraries/inih/ini.h"
 
 #include "cd-reader.h"
@@ -713,16 +714,16 @@ private:
 			ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
 
 			int total_keys;
-			const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
+			const bool* const keys_pressed = SDL_GetKeyboardState(&total_keys);
 
 			for (int i = 0; i < total_keys; ++i)
 			{
-				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
+				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT, nullptr))
 				{
 					ImGui::CloseCurrentPopup();
 
 					// The 'escape' key will exit the menu without binding.
-					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
+					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE, nullptr))
 					{
 						next_menu = true;
 						selected_scancode = static_cast<SDL_Scancode>(i);
@@ -1000,9 +1001,9 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
 
 		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 		framebuffer_texture_upscaled = SDL_CreateTexture(window->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
 
+		// TODO: De-duplicate this along with similar code in 'debug-vdp.cpp'.
 		if (framebuffer_texture_upscaled == nullptr)
 		{
 			debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
@@ -1010,8 +1011,10 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 		else
 		{
 			// Disable blending, since we don't need it
-			if (SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE) < 0)
+			if (!SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE))
 				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
+			SDL_SetTextureScaleMode(framebuffer_texture_upscaled, SDL_SCALEMODE_NEAREST);
 		}
 	}
 }
@@ -1021,7 +1024,15 @@ bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &hei
 	if (framebuffer_texture_upscaled == nullptr)
 		return false;
 
-	SDL_QueryTexture(framebuffer_texture_upscaled, nullptr, nullptr, reinterpret_cast<int*>(&width), reinterpret_cast<int*>(&height));
+	float width_float, height_float;
+	if (!SDL_GetTextureSize(framebuffer_texture_upscaled, &width_float, &height_float))
+	{
+		debug_log.Log("SDL_GetTextureSize failed with the following message - '%s'", SDL_GetError());
+		return false;
+	}
+
+	width = static_cast<unsigned int>(width_float);
+	height = static_cast<unsigned int>(height_float);
 	return true;
 }
 
@@ -1226,7 +1237,7 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 	while (i < length - 1)
 	{
 		char character;
-		if (SDL_ReadIO(file->get(), &character, 1, 1) == 0)
+		if (SDL_ReadIO(file->get(), &character, 1) == 0)
 		{
 			if (i == 0)
 				return 0;
@@ -1407,12 +1418,17 @@ static void LoadConfiguration()
 
 	if (display_index >= 0)
 	{
-		SDL_DisplayMode display_mode;
+		const SDL_DisplayMode* const display_mode = SDL_GetCurrentDisplayMode(display_index);
 
-		if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
+		if (display_mode == nullptr)
+		{
+			debug_log.Log("SDL_GetCurrentDisplayMode failed with the following message - '%s'", SDL_GetError());
+		}
+		else
 		{
 			// Enable V-sync on displays with an FPS of a multiple of 60.
-			use_vsync = display_mode.refresh_rate % 60 == 0;
+			// TODO: ...But what about PAL50?
+			use_vsync = std::lround(display_mode->refresh_rate) % 60 == 0;
 		}
 	}
 
@@ -1446,12 +1462,12 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_Z;
 		keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
 		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = INPUT_BINDING_CONTROLLER_MODE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE, nullptr)] = INPUT_BINDING_PAUSE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11, nullptr)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB, nullptr)] = INPUT_BINDING_RESET;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1, nullptr)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = INPUT_BINDING_QUICK_SAVE_STATE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = INPUT_BINDING_QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
@@ -1473,7 +1489,7 @@ static void SaveConfiguration()
 	}
 	else
 	{
-	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1, 1)
+	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1)
 		// Save keyboard bindings.
 		PRINT_STRING(file.get(), "[Miscellaneous]\n");
 
@@ -1610,7 +1626,7 @@ static void SaveConfiguration()
 				}
 
 				const std::string buffer = std::format("{} = {}\n", i, binding_string);
-				SDL_WriteIO(file.get(), buffer.data(), buffer.size(), 1);
+				SDL_WriteIO(file.get(), buffer.data(), buffer.size());
 			}
 		}
 
@@ -1628,7 +1644,7 @@ static void SaveConfiguration()
 
 			PRINT_STRING(file.get(), "path = ");
 			const auto path_string = recent_software.path.string();
-			SDL_WriteIO(file.get(), path_string.data(), 1, path_string.length());
+			SDL_WriteIO(file.get(), path_string.data(), path_string.length());
 			PRINT_STRING(file.get(), "\n");
 		}
 	#endif
@@ -1667,7 +1683,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 #endif
 
 	// Initialise SDL2
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD) < 0)
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
 	{
 		debug_log.Log("SDL_Init failed with the following message - '%s'", SDL_GetError());
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
@@ -1759,10 +1775,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 	// Process the event
 	switch (event.type)
 	{
-		case SDL_WINDOWEVENT:
-			if (event.window.event != SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-				break;
-			[[fallthrough]];
+		case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		case SDL_EVENT_QUIT:
 			quit = true;
 			break;
@@ -1775,16 +1788,16 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			anything_pressed_during_alt = true;
 
 			// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
-			if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & SDL_KMOD_CTRL) != 0)
+			if (event.key.key == SDLK_TAB && (SDL_GetModState() & SDL_KMOD_CTRL) != 0)
 				break;
 
-			if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & SDL_KMOD_ALT) != 0)
+			if (event.key.key == SDLK_RETURN && (SDL_GetModState() & SDL_KMOD_ALT) != 0)
 			{
 				window->ToggleFullscreen();
 				break;
 			}
 
-			if (event.key.keysym.sym == SDLK_ESCAPE)
+			if (event.key.key == SDLK_ESCAPE)
 			{
 				// Exit fullscreen
 				window->SetFullscreen(false);
@@ -1792,10 +1805,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			// Prevent invalid memory accesses due to future API expansions.
 			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
-			if (event.key.keysym.scancode >= keyboard_bindings.size())
+			if (event.key.scancode >= keyboard_bindings.size())
 				break;
 
-			switch (keyboard_bindings[event.key.keysym.scancode])
+			switch (keyboard_bindings[event.key.scancode])
 			{
 				case INPUT_BINDING_TOGGLE_FULLSCREEN:
 					window->ToggleFullscreen();
@@ -1813,7 +1826,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			// Many inputs should not be acted upon while the emulator is not running.
 			if (emulator_on && emulator_has_focus)
 			{
-				switch (keyboard_bindings[event.key.keysym.scancode])
+				switch (keyboard_bindings[event.key.scancode])
 				{
 					case INPUT_BINDING_PAUSE:
 						emulator_paused = !emulator_paused;
@@ -1850,24 +1863,24 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 		{
 			// Prevent invalid memory accesses due to future API expansions.
 			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
-			if (event.key.keysym.scancode >= keyboard_bindings.size())
+			if (event.key.scancode >= keyboard_bindings.size())
 				break;
 
 			// When a key-down is processed, cache the binding so that the corresponding key-up
 			// affects the same input. This is to prevent phantom inputs when a key is unbinded
 			// whilst it is being held.
-			const InputBinding binding = (event.type == SDL_EVENT_KEY_UP ? keyboard_bindings_cached : keyboard_bindings)[event.key.keysym.scancode];
-			keyboard_bindings_cached[event.key.keysym.scancode] = keyboard_bindings[event.key.keysym.scancode];
+			const InputBinding binding = (event.type == SDL_EVENT_KEY_UP ? keyboard_bindings_cached : keyboard_bindings)[event.key.scancode];
+			keyboard_bindings_cached[event.key.scancode] = keyboard_bindings[event.key.scancode];
 
-			const bool pressed = event.key.state == SDL_PRESSED;
+			const bool pressed = event.key.down;
 
-			if (key_pressed[event.key.keysym.scancode] != pressed)
+			if (key_pressed[event.key.scancode] != pressed)
 			{
-				key_pressed[event.key.keysym.scancode] = pressed;
+				key_pressed[event.key.scancode] = pressed;
 
 				// This chunk of code prevents ALT-ENTER from causing ImGui to enter the menu bar.
 				// TODO: Remove this when Dear ImGui stops being dumb.
-				if (event.key.keysym.scancode == SDL_SCANCODE_LALT)
+				if (event.key.scancode == SDL_SCANCODE_LALT)
 				{
 					if (pressed)
 					{
@@ -1987,7 +2000,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 		}
 
 		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-			if (event.cbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
+			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle Dear ImGui gamepad controls.
 				io.ConfigFlags ^= ImGuiConfigFlags_NavEnableGamepad;
@@ -1997,7 +2010,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
 				break;
 
-			switch (event.cbutton.button)
+			switch (event.gbutton.button)
 			{
 				case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
 					// Load save state
@@ -2007,7 +2020,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 						emulator_paused = false;
 
-						SDL_RumbleGamepad(SDL_GetGamepadFromID(event.cbutton.which), 0xFFFF / 2, 0, 1000 / 8);
+						SDL_RumbleGamepad(SDL_GetGamepadFromID(event.gbutton.which), 0xFFFF / 2, 0, 1000 / 8);
 					}
 
 					break;
@@ -2017,22 +2030,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 					quick_save_exists = true;
 					quick_save_state = emulator->CurrentState();
 
-					SDL_RumbleGamepad(SDL_GetGamepadFromID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
+					SDL_RumbleGamepad(SDL_GetGamepadFromID(event.gbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
 					break;
 			}
 
 			// Fallthrough
 		case SDL_EVENT_GAMEPAD_BUTTON_UP:
 		{
-			const bool pressed = event.cbutton.state == SDL_PRESSED;
+			const bool pressed = event.gbutton.down;
 
 			// Look for the controller that this event belongs to.
 			for (auto &controller_input : controller_input_list)
 			{
 				// Check if the current controller is the one that matches this event.
-				if (controller_input.joystick_instance_id == event.cbutton.which)
+				if (controller_input.joystick_instance_id == event.gbutton.which)
 				{
-					switch (event.cbutton.button)
+					switch (event.gbutton.button)
 					{
 						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
 
@@ -2053,7 +2066,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							unsigned int direction;
 							unsigned int button;
 
-							switch (event.cbutton.button)
+							switch (event.gbutton.button)
 							{
 								default:
 								case SDL_GAMEPAD_BUTTON_DPAD_UP:
@@ -2109,17 +2122,17 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			for (auto &controller_input : controller_input_list)
 			{
 				// Check if the current controller is the one that matches this event.
-				if (controller_input.joystick_instance_id == event.caxis.which)
+				if (controller_input.joystick_instance_id == event.gaxis.which)
 				{
-					switch (event.caxis.axis)
+					switch (event.gaxis.axis)
 					{
 						case SDL_GAMEPAD_AXIS_LEFTX:
 						case SDL_GAMEPAD_AXIS_LEFTY:
 						{
-							if (event.caxis.axis == SDL_GAMEPAD_AXIS_LEFTX)
-								controller_input.left_stick_x = event.caxis.value;
-							else //if (event.caxis.axis == SDL_GAMEPAD_AXIS_LEFTY)
-								controller_input.left_stick_y = event.caxis.value;
+							if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX)
+								controller_input.left_stick_x = event.gaxis.value;
+							else //if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTY)
+								controller_input.left_stick_y = event.gaxis.value;
 
 							// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
 
@@ -2177,10 +2190,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						{
 							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 							{
-								const bool held = event.caxis.value > 0x7FFF / 8;
+								const bool held = event.gaxis.value > 0x7FFF / 8;
 
 							#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-								if (event.caxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
+								if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
 								{
 									if (controller_input.left_trigger != held)
 									{
@@ -2217,8 +2230,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 
 		case SDL_EVENT_DROP_FILE:
-			drag_and_drop_filename = event.drop.file;
-			SDL_free(event.drop.file);
+			drag_and_drop_filename = event.drop.data;
 			break;
 
 		default:
@@ -2226,59 +2238,18 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 	}
 
 	if (give_event_to_imgui)
-		ImGui_ImplSDL2_ProcessEvent(&event);
+		ImGui_ImplSDL3_ProcessEvent(&event);
 }
 
 void Frontend::HandleEvent(const SDL_Event &event)
 {
-	const std::optional<Uint32> window_id = [&]() -> std::optional<Uint32>
-	{
-		switch (event.type)
-		{
-			case SDL_WINDOWEVENT:
-				return event.window.windowID;
+	SDL_Window* const event_window = SDL_GetWindowFromEvent(&event);
 
-			case SDL_EVENT_KEY_DOWN:
-			case SDL_EVENT_KEY_UP:
-				return event.key.windowID;
-
-			case SDL_EVENT_TEXT_EDITING:
-				return event.edit.windowID;
-
-			case SDL_EVENT_TEXT_EDITING_EXT:
-				return event.editExt.windowID;
-
-			case SDL_EVENT_TEXT_INPUT:
-				return event.text.windowID;
-
-			case SDL_EVENT_MOUSE_MOTION:
-				return event.motion.windowID;
-
-			case SDL_EVENT_MOUSE_BUTTON_DOWN:
-			case SDL_EVENT_MOUSE_BUTTON_UP:
-				return event.button.windowID;
-
-			case SDL_EVENT_MOUSE_WHEEL:
-				return event.wheel.windowID;
-
-			case SDL_EVENT_USER:
-				return event.user.windowID;
-
-			case SDL_EVENT_DROP_FILE:
-			case SDL_EVENT_DROP_TEXT:
-			case SDL_EVENT_DROP_BEGIN:
-			case SDL_EVENT_DROP_COMPLETE:
-				return event.drop.windowID;
-		}
-
-		return std::nullopt;
-	}();
-
-	if (!window_id.has_value())
+	if (event_window == nullptr)
 	{
 		HandleMainWindowEvent(event);
 	}
-	else if (*window_id == SDL_GetWindowID(window->GetSDLWindow()))
+	else if (event_window == window->GetSDLWindow())
 	{
 		HandleMainWindowEvent(event);
 	}
@@ -2286,9 +2257,9 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	{
 		const auto DoWindow = [&]<typename T>(std::optional<T> &popup_window)
 		{
-			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
+			if (popup_window.has_value() && popup_window->IsWindow(event_window))
 			{
-				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 					popup_window.reset();
 				else
 					popup_window->ProcessEvent(event);
@@ -2754,13 +2725,13 @@ void Frontend::Update()
 					selected_framebuffer_texture = framebuffer_texture_upscaled;
 
 					// Before we can do that though, we have to actually render the upscaled framebuffer.
-					SDL_Rect framebuffer_rect;
+					SDL_FRect framebuffer_rect;
 					framebuffer_rect.x = 0;
 					framebuffer_rect.y = 0;
 					framebuffer_rect.w = emulator->GetCurrentScreenWidth();
 					framebuffer_rect.h = emulator->GetCurrentScreenHeight();
 
-					SDL_Rect upscaled_framebuffer_rect;
+					SDL_FRect upscaled_framebuffer_rect;
 					upscaled_framebuffer_rect.x = 0;
 					upscaled_framebuffer_rect.y = 0;
 					upscaled_framebuffer_rect.w = destination_width * framebuffer_upscale_factor;

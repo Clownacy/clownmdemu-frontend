@@ -96,7 +96,6 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 	if (texture.get() == nullptr)
 	{
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
 
 		if (texture.get() == nullptr)
@@ -106,8 +105,10 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 		else
 		{
 			// Disable blending, since we don't need it
-			if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+			if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
+			SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
 		}
 	}
 
@@ -191,7 +192,6 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 	{
 		if (texture.get() == nullptr)
 		{
-			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 			texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
 
 			if (texture.get() == nullptr)
@@ -201,8 +201,10 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 			else
 			{
 				// Disable blending, since we don't need it
-				if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) < 0)
+				if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND))
 					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
+				SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
 			}
 		}
 	}
@@ -258,7 +260,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 	if (texture.get() == nullptr)
 	{
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+		// TODO: ...We really have to de-duplicate this.
 		texture = SDL::Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
 
 		if (texture.get() == nullptr)
@@ -268,8 +270,10 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		else
 		{
 			// Disable blending, since we don't need it
-			if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+			if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
+			SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
 		}
 	}
 
@@ -287,7 +291,12 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		SDL_RenderClear(renderer);
 		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
 		const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-		const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
+		const SDL_FRect visible_area_rectangle = {
+			static_cast<float>(0x80),
+			static_cast<float>(0x80 * vertical_scale),
+			static_cast<float>(vdp.h40_enabled ? 320 : 256),
+			static_cast<float>((vdp.v30_enabled ? 240 : 224) * vertical_scale)
+		};
 		SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
 		std::vector<cc_u8l> sprite_vector;
@@ -309,8 +318,8 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			const cc_u8f sprite_index = *it;
 			const Sprite sprite = GetSprite(vdp, sprite_index);
 
-			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+			const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+			const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
 			SDL_RenderTexture(renderer, textures[sprite_index].get(), &src_rect, &dst_rect);
 		}
 
@@ -437,7 +446,6 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		texture_width = vram_texture_width_rounded_up_to_8;
 		texture_height = vram_texture_height_rounded_up_to_16;
 
-		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height)));
 
 		if (texture == nullptr)
@@ -447,8 +455,10 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		else
 		{
 			// Disable blending, since we don't need it
-			if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE) < 0)
+			if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+
+			SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
 		}
 	}
 

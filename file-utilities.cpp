@@ -7,7 +7,6 @@
 #ifdef _WIN32
 #include <memory>
 #include <windows.h>
-#include <SDL3/SDL_syswm.h>
 #elif defined(FILE_PICKER_POSIX)
 #include <cstdio>
 #include <format>
@@ -45,16 +44,13 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] const Window &window, cons
 	{
 		const auto title_utf16 = UTF8ToString(title.c_str());
 
-		SDL_SysWMinfo info;
-		SDL_VERSION(&info.version);
-
 		std::array<TCHAR, MAX_PATH> path_buffer;
 		path_buffer[0] = '\0';
 
 		OPENFILENAME ofn;
 		ZeroMemory(&ofn, sizeof(ofn));
 		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = SDL_GetWindowWMInfo(window.GetSDLWindow(), &info) ? info.info.win.window : nullptr;
+		ofn.hwndOwner = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window.GetSDLWindow()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
 		ofn.lpstrFile = &path_buffer[0];
 		ofn.nMaxFile = path_buffer.size();
 		ofn.lpstrTitle = title_utf16.get(); // It's okay for this to be nullptr.
@@ -378,7 +374,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 		try
 		{
 			file_buffer.resize(size);
-			SDL_ReadIO(file.get(), file_buffer.data(), 1, size);
+			SDL_ReadIO(file.get(), file_buffer.data(), size);
 			return true;
 		}
 		catch (const std::bad_alloc&)
@@ -443,7 +439,7 @@ void FileUtilities::SaveFile([[maybe_unused]] const Window &window, [[maybe_unus
 			if (file == nullptr)
 				return false;
 
-			return SDL_WriteIO(file.get(), data, 1, data_size) == data_size;
+			return SDL_WriteIO(file.get(), data, data_size) == data_size;
 		};
 
 		return callback(save_file);
