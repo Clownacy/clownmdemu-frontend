@@ -13,9 +13,10 @@ public:
 
 	Window(const char *window_title, int window_width, int window_height, bool resizeable);
 
+	float GetSizeScale() const;
 	float GetDPIScale() const;
 	void SetFullscreen(bool enabled) { SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN : 0); }
-	bool GetFullscreen() const { return (SDL_GetWindowFlags(GetSDLWindow()) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN)) != 0; }
+	bool GetFullscreen() const { return (SDL_GetWindowFlags(GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL_Window* GetSDLWindow() const { return sdl_window.get(); }
 	SDL_Renderer* GetRenderer() const { return renderer.get(); }
