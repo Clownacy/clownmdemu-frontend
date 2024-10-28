@@ -14,6 +14,7 @@
 #include <iterator>
 #include <list>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -92,75 +93,69 @@ private:
 
 	void DisplayInternal()
 	{
-		static const char licence_clownmdemu[] = {
+		static const auto licence_clownmdemu = std::to_array<const char>({
 			#include "licences/clownmdemu.h"
-		};
-		static const char licence_dear_imgui[] = {
+		});
+		static const auto licence_dear_imgui = std::to_array<const char>({
 			#include "licences/dear-imgui.h"
-		};
+		});
 	#ifdef __EMSCRIPTEN__
-		static const char licence_emscripten_browser_file[] = {
+		static const auto licence_emscripten_browser_file = std::to_array<const char>({
 			#include "licences/emscripten-browser-file.h"
-		};
+		});
 	#endif
 	#ifdef IMGUI_ENABLE_FREETYPE
-		static const char licence_freetype[] = {
+		static const auto licence_freetype = std::to_array<const char>({
 			#include "licences/freetype.h"
-		};
-		static const char licence_freetype_bdf[] = {
+		});
+		static const auto licence_freetype_bdf = std::to_array<const char>({
 			#include "licences/freetype-bdf.h"
-		};
-		static const char licence_freetype_pcf[] = {
+		});
+		static const auto licence_freetype_pcf = std::to_array<const char>({
 			#include "licences/freetype-pcf.h"
-		};
-		static const char licence_freetype_fthash[] = {
+		});
+		static const auto licence_freetype_fthash = std::to_array<const char>({
 			#include "licences/freetype-fthash.h"
-		};
-		static const char licence_freetype_ft_hb[] = {
+		});
+		static const auto licence_freetype_ft_hb = std::to_array<const char>({
 			#include "licences/freetype-ft-hb.h"
-		};
+		});
 	#endif
-		static const char licence_inih[] = {
+		static const auto licence_inih = std::to_array<const char>({
 			#include "licences/inih.h"
-		};
-		static const char licence_noto_sans[] = {
+		});
+		static const auto licence_noto_sans = std::to_array<const char>({
 			#include "licences/noto-sans.h"
-		};
-		static const char licence_inconsolata[] = {
+		});
+		static const auto licence_inconsolata = std::to_array<const char>({
 			#include "licences/inconsolata.h"
-		};
+		});
 
 		const auto monospace_font = GetMonospaceFont();
 
 		ImGui::SeparatorText("clownmdemu-frontend " VERSION);
 
 		ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
-		const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
-		ImGui::TextLinkOpenURL(url);
+		ImGui::TextLinkOpenURL("https://github.com/Clownacy/clownmdemu-frontend");
 
 		ImGui::SeparatorText("Licences");
 
-		if (ImGui::CollapsingHeader("clownmdemu"))
+		const auto DoLicence = [&monospace_font](const std::span<const char> &text)
 		{
 			ImGui::PushFont(monospace_font);
-			ImGui::TextUnformatted(licence_clownmdemu, licence_clownmdemu + sizeof(licence_clownmdemu));
+			ImGui::TextUnformatted(&text.front(), &text.back());
 			ImGui::PopFont();
-		}
+		};
+
+		if (ImGui::CollapsingHeader("clownmdemu"))
+			DoLicence(licence_clownmdemu);
 
 		if (ImGui::CollapsingHeader("Dear ImGui"))
-		{
-			ImGui::PushFont(monospace_font);
-			ImGui::TextUnformatted(licence_dear_imgui, licence_dear_imgui + sizeof(licence_dear_imgui));
-			ImGui::PopFont();
-		}
+			DoLicence(licence_dear_imgui);
 
 	#ifdef __EMSCRIPTEN__
 		if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
-		{
-			ImGui::PushFont(monospace_font);
-			ImGui::TextUnformatted(licence_emscripten_browser_file, licence_emscripten_browser_file + sizeof(licence_emscripten_browser_file));
-			ImGui::PopFont();
-		}
+			DoLicence(licence_emscripten_browser_file);
 	#endif
 
 	#ifdef IMGUI_ENABLE_FREETYPE
@@ -168,66 +163,44 @@ private:
 		{
 			if (ImGui::TreeNode("General"))
 			{
-				ImGui::PushFont(monospace_font);
-				ImGui::TextUnformatted(licence_freetype, licence_freetype + sizeof(licence_freetype));
-				ImGui::PopFont();
+				DoLicence(licence_freetype);
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("BDF Driver"))
 			{
-				ImGui::PushFont(monospace_font);
-				ImGui::TextUnformatted(licence_freetype_bdf, licence_freetype_bdf + sizeof(licence_freetype_bdf));
-				ImGui::PopFont();
+				DoLicence(licence_freetype_bdf);
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("PCF Driver"))
 			{
-				ImGui::PushFont(monospace_font);
-				ImGui::TextUnformatted(licence_freetype_pcf, licence_freetype_pcf + sizeof(licence_freetype_pcf));
-				ImGui::PopFont();
+				DoLicence(licence_freetype_pcf);
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("fthash.c & fthash.h"))
 			{
-				ImGui::PushFont(monospace_font);
-				ImGui::TextUnformatted(licence_freetype_fthash, licence_freetype_fthash + sizeof(licence_freetype_fthash));
-				ImGui::PopFont();
+				DoLicence(licence_freetype_fthash);
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
 			{
-				ImGui::PushFont(monospace_font);
-				ImGui::TextUnformatted(licence_freetype_ft_hb, licence_freetype_ft_hb + sizeof(licence_freetype_ft_hb));
-				ImGui::PopFont();
+				DoLicence(licence_freetype_ft_hb);
 				ImGui::TreePop();
 			}
 		}
 	#endif
 
 		if (ImGui::CollapsingHeader("inih"))
-		{
-			ImGui::PushFont(monospace_font);
-			ImGui::TextUnformatted(licence_inih, licence_inih + sizeof(licence_inih));
-			ImGui::PopFont();
-		}
+			DoLicence(licence_inih);
 
 		if (ImGui::CollapsingHeader("Noto Sans"))
-		{
-			ImGui::PushFont(monospace_font);
-			ImGui::TextUnformatted(licence_noto_sans, licence_noto_sans + sizeof(licence_noto_sans));
-			ImGui::PopFont();
-		}
+			DoLicence(licence_noto_sans);
 
 		if (ImGui::CollapsingHeader("Inconsolata"))
-		{
-			ImGui::PushFont(monospace_font);
-			ImGui::TextUnformatted(licence_inconsolata, licence_inconsolata + sizeof(licence_inconsolata));
-			ImGui::PopFont();
-		}
+			DoLicence(licence_inconsolata);
 	}
 
 public:
