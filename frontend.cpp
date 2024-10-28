@@ -2570,18 +2570,21 @@ void Frontend::Update()
 					quit = true;
 			#endif
 
-			#ifndef NDEBUG
-				ImGui::SeparatorText("Development");
+				ImGui::EndMenu();
+			}
 
+		#ifndef NDEBUG
+			if (ImGui::BeginMenu("Development"))
+			{
 				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
 
 			#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
 				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
 			#endif
-			#endif
 
 				ImGui::EndMenu();
 			}
+		#endif
 
 			ImGui::EndMenuBar();
 		}
