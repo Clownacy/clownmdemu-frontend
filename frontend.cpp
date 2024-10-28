@@ -1081,7 +1081,7 @@ static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* cons
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	const SDL::IOStream file = SDL::RWFromFile(path, "rb");
+	const SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -1112,7 +1112,7 @@ static bool LoadCDFile(const std::filesystem::path* const path, SDL::IOStream &&
 #ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const std::filesystem::path &path)
 {
-	SDL::IOStream file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -1166,7 +1166,7 @@ static bool CreateSaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	const SDL::IOStream file = SDL::RWFromFile(path, "wb");
+	const SDL::IOStream file = SDL::IOFromFile(path, "wb");
 
 	if (file == nullptr || !emulator->WriteSaveStateFile(file))
 	{
@@ -1446,7 +1446,7 @@ static void LoadConfiguration()
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
 
-	const SDL::IOStream file = SDL::RWFromFile(GetConfigurationFilePath(), "r");
+	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
 	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, nullptr) != 0)
@@ -1486,7 +1486,7 @@ static void LoadConfiguration()
 static void SaveConfiguration()
 {
 	// Save configuration file:
-	const SDL::IOStream file = SDL::RWFromFile(GetConfigurationFilePath(), "w");
+	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "w");
 
 	if (file == nullptr)
 	{

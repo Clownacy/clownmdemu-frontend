@@ -343,12 +343,12 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 bool FileUtilities::FileExists(const std::filesystem::path &path)
 {
-	return SDL::RWFromFile(path, "rb") != nullptr;
+	return SDL::IOFromFile(path, "rb") != nullptr;
 }
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
 {
-	SDL::IOStream file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (file == nullptr)
 	{
@@ -411,7 +411,7 @@ void FileUtilities::LoadFile([[maybe_unused]] const Window &window, [[maybe_unus
 #else
 	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
-		SDL::IOStream file = SDL::RWFromFile(path, "rb");
+		SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 		if (file == nullptr)
 			return false;
@@ -434,7 +434,7 @@ void FileUtilities::SaveFile([[maybe_unused]] const Window &window, [[maybe_unus
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			const SDL::IOStream file = SDL::RWFromFile(path, "wb");
+			const SDL::IOStream file = SDL::IOFromFile(path, "wb");
 
 			if (file == nullptr)
 				return false;
