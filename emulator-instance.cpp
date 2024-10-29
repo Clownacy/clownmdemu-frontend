@@ -331,7 +331,7 @@ bool EmulatorInstance::WriteSaveStateFile(const SDL::IOStream &file)
 {
 	bool success = false;
 
-	if (SDL_WriteIO(file.get(), &save_state_magic, sizeof(save_state_magic)) == 1 && SDL_WriteIO(file.get(), state, sizeof(*state)) == 1)
+	if (SDL_WriteIO(file.get(), &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file.get(), state, sizeof(*state)) == sizeof(*state))
 		success = true;
 
 	return success;

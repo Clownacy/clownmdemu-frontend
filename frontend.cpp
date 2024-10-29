@@ -1491,7 +1491,7 @@ static void SaveConfiguration()
 		{
 			PRINT_STRING(file.get(), "last-directory = ");
 			const std::string last_file_dialog_directory = file_utilities.last_file_dialog_directory.string();
-			SDL_WriteIO(file.get(), last_file_dialog_directory.data(), last_file_dialog_directory.size(), 1);
+			SDL_WriteIO(file.get(), last_file_dialog_directory.data(), last_file_dialog_directory.size());
 			PRINT_STRING(file.get(), "\n");
 		}
 		PRINT_BOOLEAN_OPTION(file.get(), "prefer-kdialog", file_utilities.prefer_kdialog);
