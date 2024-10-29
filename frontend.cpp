@@ -550,27 +550,6 @@ private:
 			ImGui::EndTable();
 		}
 
-	#ifdef FILE_PICKER_POSIX
-		ImGui::SeparatorText("Preferred File Dialog");
-
-		if (ImGui::BeginTable("Preferred File Dialog", 2))
-		{
-			ImGui::TableNextColumn();
-
-			if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
-				file_utilities.prefer_kdialog = false;
-			DoToolTip(u8"Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
-
-			ImGui::TableNextColumn();
-
-			if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
-				file_utilities.prefer_kdialog = true;
-			DoToolTip(u8"Best with KDE, LXQt, Deepin, etc.");
-
-			ImGui::EndTable();
-		}
-	#endif
-
 		ImGui::SeparatorText("Keyboard Input");
 
 		static bool sorted_scancodes_done;
@@ -1256,12 +1235,6 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			SetAudioPALMode(state);
 		else if (name == u8"japanese")
 			emulator->SetDomestic(state);
-	#ifdef FILE_PICKER_POSIX
-		else if (name == u8"last-directory")
-			file_utilities.last_file_dialog_directory = value;
-		else if (name == u8"prefer-kdialog")
-			file_utilities.prefer_kdialog = state;
-	#endif
 	}
 	else if (section == u8"Keyboard Bindings")
 	{
@@ -1485,17 +1458,6 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file.get(), "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file.get(), "pal", emulator->GetPALMode());
 		PRINT_BOOLEAN_OPTION(file.get(), "japanese", emulator->GetDomestic());
-
-	#ifdef FILE_PICKER_POSIX
-		if (!file_utilities.last_file_dialog_directory.empty())
-		{
-			PRINT_STRING(file.get(), "last-directory = ");
-			const std::string last_file_dialog_directory = file_utilities.last_file_dialog_directory.string();
-			SDL_WriteIO(file.get(), last_file_dialog_directory.data(), last_file_dialog_directory.size());
-			PRINT_STRING(file.get(), "\n");
-		}
-		PRINT_BOOLEAN_OPTION(file.get(), "prefer-kdialog", file_utilities.prefer_kdialog);
-	#endif
 
 		// Save keyboard bindings.
 		PRINT_STRING(file.get(), "\n[Keyboard Bindings]\n");
@@ -2577,11 +2539,7 @@ void Frontend::Update()
 			if (ImGui::BeginMenu("Development"))
 			{
 				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
-
-			#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
 				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
-			#endif
-
 				ImGui::EndMenu();
 			}
 		#endif
