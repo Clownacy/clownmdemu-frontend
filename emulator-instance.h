@@ -95,7 +95,7 @@ public:
 	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	std::size_t GetSaveStateFileSize();
-	bool WriteSaveStateFile(const SDL::IOStream &file);
+	bool WriteSaveStateFile(SDL::IOStream &file);
 
 	bool IsCartridgeFileLoaded() const { return !rom_buffer.empty(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }

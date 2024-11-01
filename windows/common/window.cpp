@@ -30,7 +30,7 @@ static float GetDisplayDPIScale()
 	return HandleDPIError(SDL_GetDisplayContentScale(display_index));
 }
 
-float Window::GetSizeScale() const
+float Window::GetSizeScale()
 {
 	const SDL_DisplayID display_index = SDL_GetDisplayForWindow(GetSDLWindow());
 
@@ -43,7 +43,7 @@ float Window::GetSizeScale() const
 	return HandleDPIError(SDL_GetDisplayContentScale(display_index));
 }
 
-float Window::GetDPIScale() const
+float Window::GetDPIScale()
 {
 	return HandleDPIError(SDL_GetWindowDisplayScale(GetSDLWindow()));
 }
@@ -71,20 +71,20 @@ Window::Window(const char* const window_title, const int window_width, const int
 
 void Window::SetTitleBarColour(const unsigned char red, const unsigned char green, const unsigned char blue)
 {
-	SetWindowTitleBarColour(sdl_window.get(), red, green, blue);
+	SetWindowTitleBarColour(sdl_window, red, green, blue);
 }
 
-void Window::ShowWarningMessageBox(const char* const message) const
+void Window::ShowWarningMessageBox(const char* const message)
 {
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_WARNING, "Warning", message, GetSDLWindow());
 }
 
-void Window::ShowErrorMessageBox(const char* const message) const
+void Window::ShowErrorMessageBox(const char* const message)
 {
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message, GetSDLWindow());
 }
 
-void Window::ShowFatalMessageBox(const char* const message) const
+void Window::ShowFatalMessageBox(const char* const message)
 {
 	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", message, GetSDLWindow());
 }

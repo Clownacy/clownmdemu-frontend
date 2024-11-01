@@ -30,7 +30,7 @@ public:
 
 	WindowWithDearImGui(const char *window_title, int window_width, int window_height, bool resizeable);
 	~WindowWithDearImGui();
-	void MakeDearImGuiContextCurrent() { ImGui::SetCurrentContext(dear_imgui_context.get()); }
+	void MakeDearImGuiContextCurrent() { ImGui::SetCurrentContext(dear_imgui_context); }
 	void StartDearImGuiFrame();
 	void FinishDearImGuiFrame();
 	float GetMenuBarSize();

@@ -10,7 +10,7 @@
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
 
-void FileUtilities::CreateFileDialog([[maybe_unused]] const Window &window, const std::string &title, const PopupCallback &callback, const bool save)
+void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {
 	bool done = false;
 
@@ -52,12 +52,12 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] const Window &window, cons
 	}
 }
 
-void FileUtilities::CreateOpenFileDialog(const Window &window, const std::string &title, const PopupCallback &callback)
+void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback)
 {
 	CreateFileDialog(window, title, callback, false);
 }
 
-void FileUtilities::CreateSaveFileDialog(const Window &window, const std::string &title, const PopupCallback &callback)
+void FileUtilities::CreateSaveFileDialog(Window &window, const std::string &title, const PopupCallback &callback)
 {
 	CreateFileDialog(window, title, callback, true);
 }
@@ -203,14 +203,14 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 bool FileUtilities::FileExists(const std::filesystem::path &path)
 {
-	return SDL::IOFromFile(path, "rb") != nullptr;
+	return SDL::IOFromFile(path, "rb");
 }
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
 {
 	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
-	if (file == nullptr)
+	if (!file)
 	{
 		debug_log.Log("SDL_IOFromFile failed with the following message - '%s'", SDL_GetError());
 		return false;
@@ -219,9 +219,9 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 	return LoadFileToBuffer(file_buffer, file);
 }
 
-bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::IOStream &file)
+bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::IOStream &file)
 {
-	const Sint64 size_s64 = SDL_GetIOSize(file.get());
+	const Sint64 size_s64 = SDL_GetIOSize(file);
 
 	if (size_s64 < 0)
 	{
@@ -234,7 +234,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 		try
 		{
 			file_buffer.resize(size);
-			SDL_ReadIO(file.get(), file_buffer.data(), size);
+			SDL_ReadIO(file, file_buffer.data(), size);
 			return true;
 		}
 		catch (const std::bad_alloc&)
@@ -246,7 +246,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 	return false;
 }
 
-void FileUtilities::LoadFile([[maybe_unused]] const Window &window, [[maybe_unused]] const std::string &title, const LoadFileCallback &callback)
+void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const LoadFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
 	try
@@ -273,7 +273,7 @@ void FileUtilities::LoadFile([[maybe_unused]] const Window &window, [[maybe_unus
 	{
 		SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
-		if (file == nullptr)
+		if (!file)
 			return false;
 
 		return callback(path, std::move(file));
@@ -281,7 +281,7 @@ void FileUtilities::LoadFile([[maybe_unused]] const Window &window, [[maybe_unus
 #endif
 }
 
-void FileUtilities::SaveFile([[maybe_unused]] const Window &window, [[maybe_unused]] const std::string &title, const SaveFileCallback &callback)
+void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const SaveFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
 	callback([](const void* const data, const std::size_t data_size)
@@ -294,12 +294,12 @@ void FileUtilities::SaveFile([[maybe_unused]] const Window &window, [[maybe_unus
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			const SDL::IOStream file = SDL::IOFromFile(path, "wb");
+			SDL::IOStream file = SDL::IOFromFile(path, "wb");
 
-			if (file == nullptr)
+			if (!file)
 				return false;
 
-			return SDL_WriteIO(file.get(), data, data_size) == data_size;
+			return SDL_WriteIO(file, data, data_size) == data_size;
 		};
 
 		return callback(save_file);

@@ -1009,7 +1009,7 @@ static void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
 	SetWindowTitleToSoftwareName();
 }
 
-static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* const path, const SDL::IOStream &file)
+static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* const path, SDL::IOStream &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1032,9 +1032,9 @@ static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* cons
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	const SDL::IOStream file = SDL::IOFromFile(path, "rb");
+	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
-	if (file == nullptr)
+	if (!file)
 	{
 		debug_log.Log("Could not load the cartridge file");
 		window->ShowErrorMessageBox("Failed to load the cartridge file.");
@@ -1065,7 +1065,7 @@ static bool LoadCDFile(const std::filesystem::path &path)
 {
 	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
-	if (file == nullptr)
+	if (!file)
 	{
 		debug_log.Log("Could not load the CD file");
 		window->ShowErrorMessageBox("Failed to load the CD file.");
@@ -1098,7 +1098,7 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 	return true;
 }
 
-static bool LoadSaveState(const SDL::IOStream &file)
+static bool LoadSaveState(SDL::IOStream &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1117,9 +1117,9 @@ static bool CreateSaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	const SDL::IOStream file = SDL::IOFromFile(path, "wb");
+	SDL::IOStream file = SDL::IOFromFile(path, "wb");
 
-	if (file == nullptr || !emulator->WriteSaveStateFile(file))
+	if (!file || !emulator->WriteSaveStateFile(file))
 	{
 		debug_log.Log("Could not create save state file");
 		window->ShowErrorMessageBox("Could not create save state file.");
@@ -1182,14 +1182,14 @@ void DoToolTip(const std::u8string &text)
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
-	const SDL::IOStream* const file = static_cast<const SDL::IOStream*>(user);
+	SDL::IOStream &file = *static_cast<SDL::IOStream*>(user);
 
 	int i = 0;
 
 	while (i < length - 1)
 	{
 		char character;
-		if (SDL_ReadIO(file->get(), &character, 1) == 0)
+		if (SDL_ReadIO(file, &character, 1) == 0)
 		{
 			if (i == 0)
 				return 0;
@@ -1394,7 +1394,7 @@ static void LoadConfiguration()
 	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (file == nullptr || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, nullptr) != 0)
+	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
@@ -1431,9 +1431,9 @@ static void LoadConfiguration()
 static void SaveConfiguration()
 {
 	// Save configuration file:
-	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "w");
+	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "w");
 
-	if (file == nullptr)
+	if (!file)
 	{
 		debug_log.Log("Could not open configuration file for writing.");
 	}
@@ -1441,7 +1441,7 @@ static void SaveConfiguration()
 	{
 	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1)
 		// Save keyboard bindings.
-		PRINT_STRING(file.get(), "[Miscellaneous]\n");
+		PRINT_STRING(file, "[Miscellaneous]\n");
 
 	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
 		PRINT_STRING(FILE, NAME " = "); \
@@ -1450,17 +1450,17 @@ static void SaveConfiguration()
 		else \
 			PRINT_STRING(FILE, "off\n");
 
-		PRINT_BOOLEAN_OPTION(file.get(), "vsync", use_vsync);
-		PRINT_BOOLEAN_OPTION(file.get(), "integer-screen-scaling", integer_screen_scaling);
-		PRINT_BOOLEAN_OPTION(file.get(), "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file.get(), "dear-imgui-windows", dear_imgui_windows);
-		PRINT_BOOLEAN_OPTION(file.get(), "low-pass-filter", emulator->GetLowPassFilter());
-		PRINT_BOOLEAN_OPTION(file.get(), "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
-		PRINT_BOOLEAN_OPTION(file.get(), "pal", emulator->GetPALMode());
-		PRINT_BOOLEAN_OPTION(file.get(), "japanese", emulator->GetDomestic());
+		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
+		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
+		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file, "dear-imgui-windows", dear_imgui_windows);
+		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
+		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
+		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
 
 		// Save keyboard bindings.
-		PRINT_STRING(file.get(), "\n[Keyboard Bindings]\n");
+		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
 
 		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
 		{
@@ -1565,26 +1565,26 @@ static void SaveConfiguration()
 				}
 
 				const std::string buffer = std::format("{} = {}\n", i, binding_string);
-				SDL_WriteIO(file.get(), buffer.data(), buffer.size());
+				SDL_WriteIO(file, buffer.data(), buffer.size());
 			}
 		}
 
 	#ifdef FILE_PATH_SUPPORT
 		// Save recent software paths.
-		PRINT_STRING(file.get(), "\n[Recent Software]\n");
+		PRINT_STRING(file, "\n[Recent Software]\n");
 
 		for (const auto &recent_software : recent_software_list)
 		{
-			PRINT_STRING(file.get(), "cd = ");
+			PRINT_STRING(file, "cd = ");
 			if (recent_software.is_cd_file)
-				PRINT_STRING(file.get(), "true\n");
+				PRINT_STRING(file, "true\n");
 			else
-				PRINT_STRING(file.get(), "false\n");
+				PRINT_STRING(file, "false\n");
 
-			PRINT_STRING(file.get(), "path = ");
+			PRINT_STRING(file, "path = ");
 			const auto path_string = recent_software.path.u8string();
-			SDL_WriteIO(file.get(), reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
-			PRINT_STRING(file.get(), "\n");
+			SDL_WriteIO(file, reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
+			PRINT_STRING(file, "\n");
 		}
 	#endif
 	}
@@ -2286,7 +2286,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, const SDL::IOStream &file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						const bool success = LoadCartridgeFile(&path, file);
 
@@ -2426,7 +2426,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, const SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						LoadSaveState(file);
 						return true;
@@ -2563,7 +2563,7 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			SDL_Texture *selected_framebuffer_texture = window->framebuffer_texture.get();
+			SDL_Texture *selected_framebuffer_texture = window->framebuffer_texture;
 
 			const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
 			const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
@@ -2655,7 +2655,7 @@ void Frontend::Update()
 					SDL_SetRenderTarget(window->GetRenderer(), framebuffer_texture_upscaled);
 
 					// Render.
-					SDL_RenderTexture(window->GetRenderer(), window->framebuffer_texture.get(), &framebuffer_rect, &upscaled_framebuffer_rect);
+					SDL_RenderTexture(window->GetRenderer(), window->framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
 
 					// Switch back to actually rendering to the screen.
 					SDL_SetRenderTarget(window->GetRenderer(), nullptr);

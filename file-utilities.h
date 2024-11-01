@@ -30,23 +30,23 @@ private:
 	PopupCallback popup_callback;
 	bool is_save_dialog = false;
 
-	void CreateFileDialog(const Window &window, const std::string &title, const PopupCallback &callback, bool save);
+	void CreateFileDialog(Window &window, const std::string &title, const PopupCallback &callback, bool save);
 
 public:
 	bool use_native_file_dialogs = true;
 
 	FileUtilities(DebugLog &debug_log) : debug_log(debug_log) {}
-	void CreateOpenFileDialog(const Window &window, const std::string &title, const PopupCallback &callback);
-	void CreateSaveFileDialog(const Window &window, const std::string &title, const PopupCallback &callback);
+	void CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback);
+	void CreateSaveFileDialog(Window &window, const std::string &title, const PopupCallback &callback);
 	void DisplayFileDialog(std::filesystem::path &drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup.has_value(); }
 
 	bool FileExists(const std::filesystem::path &path);
 	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path);
-	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const SDL::IOStream &file);
+	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::IOStream &file);
 
-	void LoadFile(const Window &window, const std::string &title, const LoadFileCallback &callback);
-	void SaveFile(const Window &window, const std::string &title, const SaveFileCallback &callback);
+	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
+	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);
 };
 
 #endif /* FILE_UTILITIES_H */

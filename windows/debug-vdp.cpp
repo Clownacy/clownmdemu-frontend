@@ -94,25 +94,25 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 	const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 	const cc_u16f plane_texture_height = 64 * 16;
 
-	if (texture.get() == nullptr)
+	if (!texture)
 	{
 		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
 
-		if (texture.get() == nullptr)
+		if (!texture)
 		{
 			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
 			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE))
+			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-			SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
+			SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 		}
 	}
 
-	if (texture.get() != nullptr)
+	if (texture)
 	{
 		ImGui::InputInt("Zoom", &scale);
 		if (scale < 1)
@@ -130,7 +130,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				Uint8 *plane_texture_pixels;
 				int plane_texture_pitch;
 
-				if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch))
+				if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch))
 				{
 					cc_u16f plane_index = plane_address;
 
@@ -143,7 +143,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 						}
 					}
 
-					SDL_UnlockTexture(texture.get());
+					SDL_UnlockTexture(texture);
 				}
 			}
 
@@ -155,7 +155,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+			ImGui::Image(texture, ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -171,7 +171,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
 				const auto dpi_scale = GetWindow().GetDPIScale();
-				ImGui::Image(texture.get(), ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
+				ImGui::Image(texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
 				ImGui::SameLine();
 				ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -190,21 +190,21 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 	for (auto &texture : textures)
 	{
-		if (texture.get() == nullptr)
+		if (!texture)
 		{
 			texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
 
-			if (texture.get() == nullptr)
+			if (!texture)
 			{
 				Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 			}
 			else
 			{
 				// Disable blending, since we don't need it
-				if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND))
+				if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND))
 					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-				SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
+				SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 			}
 		}
 	}
@@ -223,7 +223,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 			Uint8 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
-			if (SDL_LockTexture(textures[i].get(), nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch))
+			if (SDL_LockTexture(textures[i], nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch))
 			{
 				auto tile_metadata = sprite.tile_metadata;
 
@@ -240,7 +240,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 					}
 				}
 
-				SDL_UnlockTexture(textures[i].get());
+				SDL_UnlockTexture(textures[i]);
 			}
 		}
 	}
@@ -258,22 +258,22 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	constexpr cc_u16f plane_texture_width = 512;
 	constexpr cc_u16f plane_texture_height = 1024;
 
-	if (texture.get() == nullptr)
+	if (!texture)
 	{
 		// TODO: ...We really have to de-duplicate this.
 		texture = SDL::Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
 
-		if (texture.get() == nullptr)
+		if (!texture)
 		{
 			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
 			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE))
+			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-			SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
+			SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 		}
 	}
 
@@ -286,7 +286,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 	if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 	{
-		SDL_SetRenderTarget(renderer, texture.get());
+		SDL_SetRenderTarget(renderer, texture);
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
 		SDL_RenderClear(renderer);
 		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
@@ -320,7 +320,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 			const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
 			const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-			SDL_RenderTexture(renderer, textures[sprite_index].get(), &src_rect, &dst_rect);
+			SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
 		}
 
 		SDL_SetRenderTarget(renderer, nullptr);
@@ -330,7 +330,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 		const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-		ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+		ImGui::Image(texture, ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 		if (ImGui::IsItemHovered())
 		{
@@ -383,7 +383,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 				ImGui::TableNextColumn();
 				ImGui::Text("%" CC_PRIuFAST8, i);
 				ImGui::TableNextColumn();
-				ImGui::Image(textures[i].get(), ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
+				ImGui::Image(textures[i], ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
 				ImGui::TableNextColumn();
 				ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
 				ImGui::TableNextColumn();
@@ -434,7 +434,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
 	// Create VRAM texture if it does not exist.
-	if (texture == nullptr)
+	if (!texture)
 	{
 		// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
 		const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
@@ -448,17 +448,17 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 
 		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height)));
 
-		if (texture == nullptr)
+		if (!texture)
 		{
 			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
 		}
 		else
 		{
 			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_NONE))
+			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
 
-			SDL_SetTextureScaleMode(texture.get(), SDL_SCALEMODE_NEAREST);
+			SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 		}
 	}
 
@@ -471,7 +471,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		});
 	}
 
-	if (texture != nullptr)
+	if (texture)
 	{
 		bool options_changed = false;
 
@@ -525,7 +525,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			Uint8 *vram_texture_pixels;
 			int vram_texture_pitch;
 
-			if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch))
+			if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch))
 			{
 				// Generate VRAM bitmap.
 				cc_u16f vram_index = 0;
@@ -553,7 +553,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 					}
 				}
 
-				SDL_UnlockTexture(texture.get());
+				SDL_UnlockTexture(texture);
 			}
 		}
 
@@ -623,7 +623,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 						tile_boundary_position_bottom_right.y - tile_spacing);
 
 					// Finally, display the tile.
-					draw_list->AddImage(texture.get(), tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+					draw_list->AddImage(texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
 
 					if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
 					{
@@ -633,7 +633,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 						ImGui::Text("%zd/0x%zX", tile_index, tile_index);
 
 						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-						ImGui::Image(texture.get(), ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+						ImGui::Image(texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
 
 						ImGui::EndTooltip();
 					}

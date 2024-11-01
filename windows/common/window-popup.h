@@ -55,7 +55,7 @@ private:
 	}
 
 public:
-	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, const Window &parent_window, WindowWithDearImGui* const host_window = nullptr)
+	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Window &parent_window, WindowWithDearImGui* const host_window = nullptr)
 		: title(window_title)
 		, resizeable(resizeable)
 		, host_window(host_window)

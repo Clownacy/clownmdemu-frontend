@@ -48,7 +48,7 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 	, dpi_scale(GetDPIScale())
 {
 	const auto &previous_context = ImGui::GetCurrentContext();
-	ImGui::SetCurrentContext(dear_imgui_context.get());
+	ImGui::SetCurrentContext(dear_imgui_context);
 
 	ImGuiIO &io = ImGui::GetIO();
 	ImGuiStyle &style = ImGui::GetStyle();
@@ -117,7 +117,7 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 WindowWithDearImGui::~WindowWithDearImGui()
 {
 	const auto &previous_context = ImGui::GetCurrentContext();
-	ImGui::SetCurrentContext(dear_imgui_context.get());
+	ImGui::SetCurrentContext(dear_imgui_context);
 
 	ImGui_ImplSDLRenderer3_Shutdown();
 	ImGui_ImplSDL3_Shutdown();
@@ -128,7 +128,7 @@ WindowWithDearImGui::~WindowWithDearImGui()
 void WindowWithDearImGui::StartDearImGuiFrame()
 {
 	previous_dear_imgui_context = ImGui::GetCurrentContext();
-	ImGui::SetCurrentContext(dear_imgui_context.get());
+	ImGui::SetCurrentContext(dear_imgui_context);
 
 	// Handle dynamic DPI support
 	const float new_dpi = GetDPIScale();
@@ -166,7 +166,7 @@ void WindowWithDearImGui::FinishDearImGuiFrame()
 float WindowWithDearImGui::GetMenuBarSize()
 {
 	const auto &previous_context = ImGui::GetCurrentContext();
-	ImGui::SetCurrentContext(dear_imgui_context.get());
+	ImGui::SetCurrentContext(dear_imgui_context);
 
 	const float menu_bar_size = UNSCALED_FONT_SIZE + ImGui::GetStyle().FramePadding.y * 2.0f; // An inlined ImGui::GetFrameHeight that actually works
 

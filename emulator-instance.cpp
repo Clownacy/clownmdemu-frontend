@@ -218,7 +218,7 @@ void EmulatorInstance::Update()
 	audio_output.MixerBegin();
 
 	// Lock the texture so that we can write to its pixels later
-	if (!SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
+	if (!SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
 		framebuffer_texture_pixels = nullptr;
 
 	framebuffer_texture_pitch /= sizeof(Uint32);
@@ -227,7 +227,7 @@ void EmulatorInstance::Update()
 	ClownMDEmu_Iterate(&clownmdemu);
 
 	// Unlock the texture so that we can draw it
-	SDL_UnlockTexture(texture.get());
+	SDL_UnlockTexture(texture);
 
 	// Resample, mix, and output the audio for this frame.
 	audio_output.MixerEnd();
@@ -327,11 +327,11 @@ std::size_t EmulatorInstance::GetSaveStateFileSize()
 	return save_state_magic.size() + sizeof(*state);
 }
 
-bool EmulatorInstance::WriteSaveStateFile(const SDL::IOStream &file)
+bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
 	bool success = false;
 
-	if (SDL_WriteIO(file.get(), &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file.get(), state, sizeof(*state)) == sizeof(*state))
+	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, state, sizeof(*state)) == sizeof(*state))
 		success = true;
 
 	return success;
