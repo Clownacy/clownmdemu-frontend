@@ -734,13 +734,12 @@ public:
 	friend Base;
 };
 
-DebugLog Frontend::debug_log;
 float Frontend::dpi_scale;
 std::optional<EmulatorInstance> Frontend::emulator;
 std::optional<WindowWithFramebuffer> Frontend::window;
 FileUtilities Frontend::file_utilities(debug_log);
 unsigned int Frontend::frame_counter;
-SDL_Texture *Frontend::framebuffer_texture_upscaled;
+SDL::Texture Frontend::framebuffer_texture_upscaled;
 
 unsigned int Frontend::output_width, Frontend::output_height;
 unsigned int Frontend::upscale_width, Frontend::upscale_height;
@@ -944,35 +943,20 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 
 	const unsigned int framebuffer_size_factor = std::max(1u, std::min(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
 
-	if (framebuffer_texture_upscaled == nullptr || framebuffer_size_factor != previous_framebuffer_size_factor)
+	if (!framebuffer_texture_upscaled || framebuffer_size_factor != previous_framebuffer_size_factor)
 	{
 		previous_framebuffer_size_factor = framebuffer_size_factor;
 
 		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
 		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
 
-		SDL_DestroyTexture(framebuffer_texture_upscaled); // It should be safe to pass nullptr to this
-		framebuffer_texture_upscaled = SDL_CreateTexture(window->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height);
-
-		// TODO: De-duplicate this along with similar code in 'debug-vdp.cpp'.
-		if (framebuffer_texture_upscaled == nullptr)
-		{
-			debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(framebuffer_texture_upscaled, SDL_BLENDMODE_NONE))
-				debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-			SDL_SetTextureScaleMode(framebuffer_texture_upscaled, SDL_SCALEMODE_LINEAR);
-		}
+		framebuffer_texture_upscaled = SDL::CreateTexture(window->GetRenderer(), SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height, SDL_SCALEMODE_LINEAR);
 	}
 }
 
 bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
 {
-	if (framebuffer_texture_upscaled == nullptr)
+	if (!framebuffer_texture_upscaled)
 		return false;
 
 	float width_float, height_float;
@@ -1672,8 +1656,7 @@ void Frontend::Deinitialise()
 		}, popup_windows
 	);
 
-	if (framebuffer_texture_upscaled != nullptr)
-		SDL_DestroyTexture(framebuffer_texture_upscaled);
+	framebuffer_texture_upscaled.release();
 
 	if (dear_imgui_windows)
 		ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
@@ -2633,7 +2616,7 @@ void Frontend::Update()
 				// Avoid blurring if...
 				// 1. The upscale texture failed to be created.
 				// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple.
-				if (framebuffer_texture_upscaled != nullptr && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
+				if (framebuffer_texture_upscaled && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
 				{
 					// Render the upscaled framebuffer to the screen.
 					selected_framebuffer_texture = framebuffer_texture_upscaled;

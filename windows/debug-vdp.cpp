@@ -95,22 +95,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 	const cc_u16f plane_texture_height = 64 * 16;
 
 	if (!texture)
-	{
-		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height));
-
-		if (!texture)
-		{
-			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
-				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-			SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-		}
-	}
+		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, SDL_SCALEMODE_NEAREST);
 
 	if (texture)
 	{
@@ -189,25 +174,8 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
 	for (auto &texture : textures)
-	{
 		if (!texture)
-		{
-			texture = SDL::Texture(SDL_CreateTexture(window.GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height));
-
-			if (!texture)
-			{
-				Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-			}
-			else
-			{
-				// Disable blending, since we don't need it
-				if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND))
-					Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-				SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-			}
-		}
-	}
+			texture = SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, SDL_SCALEMODE_NEAREST);
 
 	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
@@ -252,30 +220,14 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 {
 	DisplaySpriteCommon(GetWindow());
 
-	const auto renderer = GetWindow().GetRenderer();
+	SDL::Renderer &renderer = GetWindow().GetRenderer();
 	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
 
 	constexpr cc_u16f plane_texture_width = 512;
 	constexpr cc_u16f plane_texture_height = 1024;
 
 	if (!texture)
-	{
-		// TODO: ...We really have to de-duplicate this.
-		texture = SDL::Texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height));
-
-		if (!texture)
-		{
-			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
-				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-			SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-		}
-	}
+		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, SDL_SCALEMODE_NEAREST);
 
 	const cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
@@ -446,20 +398,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		texture_width = vram_texture_width_rounded_up_to_8;
 		texture_height = vram_texture_height_rounded_up_to_16;
 
-		texture = SDL::Texture(SDL_CreateTexture(GetWindow().GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height)));
-
-		if (!texture)
-		{
-			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
-		}
-		else
-		{
-			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
-				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-			SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-		}
+		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), SDL_SCALEMODE_NEAREST);
 	}
 
 	if (ImGui::Button("Save to File"))

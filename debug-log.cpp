@@ -1,5 +1,7 @@
 #include "debug-log.h"
 
+DebugLog Frontend::debug_log;
+
 void DebugLog::Log(const char* const format, std::va_list args)
 {
 	if (logging_enabled || force_console_output)

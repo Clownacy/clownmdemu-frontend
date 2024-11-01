@@ -28,4 +28,9 @@ public:
 	CC_ATTRIBUTE_PRINTF(2, 3) void Log(const char *format, ...);
 };
 
+namespace Frontend
+{
+	extern DebugLog debug_log;
+}
+
 #endif /* DEBUG_LOG_H */

@@ -56,13 +56,12 @@ namespace Frontend
 
 	using FrameRateCallback = std::function<void(bool pal_mode)>;
 
-	extern DebugLog debug_log;
 	extern float dpi_scale;
 	extern std::optional<EmulatorInstance> emulator;
 	extern std::optional<WindowWithFramebuffer> window;
 	extern FileUtilities file_utilities;
 	extern unsigned int frame_counter;
-	extern SDL_Texture *framebuffer_texture_upscaled;
+	extern SDL::Texture framebuffer_texture_upscaled;
 
 	extern Input keyboard_input;
 	extern std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
