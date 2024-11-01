@@ -7,10 +7,11 @@
 
 class Window
 {
-public:
+private:
 	SDL::Window sdl_window;
 	SDL::Renderer renderer;
 
+public:
 	Window(const char *window_title, int window_width, int window_height, bool resizeable);
 
 	float GetSizeScale();
