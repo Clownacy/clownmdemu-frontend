@@ -28,7 +28,7 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] const Window &window, cons
 				if (file_list == nullptr || *file_list == nullptr)
 					return;
 
-				(*callback.get())(*file_list);
+				(*callback.get())(reinterpret_cast<const char8_t*>(*file_list));
 			};
 
 			if (save)
