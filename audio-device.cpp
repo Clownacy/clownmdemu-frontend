@@ -11,7 +11,7 @@ static constexpr int BufferSizeFromSampleRate(const int sample_rate)
 	// TODO: Is there a C++ library function that could do this instead?
 	int samples = 1;
 	while (samples < sample_rate / (1000 / 10))
-		samples *= 2;	
+		samples *= 2;
 	return samples;
 }
 

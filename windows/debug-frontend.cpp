@@ -4,9 +4,9 @@
 
 void DebugFrontend::DisplayInternal()
 {
-	ImGui::SeparatorText("SDL2 Drivers");
+	ImGui::SeparatorText("SDL Drivers");
 
-	if (ImGui::BeginTable("SDL2 Drivers", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
+	if (ImGui::BeginTable("SDL Drivers", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
 	{
 		// Render
 		ImGui::TableNextColumn();

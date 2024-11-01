@@ -169,7 +169,7 @@ target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "librar
 add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clownmdemu)
 
-# Link SDL2
+# Link SDL
 find_package(SDL3 3.1.3 CONFIG COMPONENTS SDL3)
 if(SDL3_FOUND)
 	target_link_libraries(clownmdemu-frontend SDL3::SDL3)
