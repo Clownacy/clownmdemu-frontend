@@ -1122,7 +1122,7 @@ void Frontend::SetAudioPALMode(const bool enabled)
 
 static std::filesystem::path ConfigPath()
 {
-	const auto path_cstr = SDL::Pointer<char>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend"));
+	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
 
 	if (path_cstr == nullptr)
 		return {};
@@ -1613,7 +1613,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		LoadConfiguration();
 
 		if (dear_imgui_windows)
-			ImGui::LoadIniSettingsFromDisk(GetDearImGuiSettingsFilePath().string().c_str());
+			ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
@@ -1659,7 +1659,7 @@ void Frontend::Deinitialise()
 	framebuffer_texture_upscaled.release();
 
 	if (dear_imgui_windows)
-		ImGui::SaveIniSettingsToDisk(GetDearImGuiSettingsFilePath().string().c_str());
+		ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 	SaveConfiguration();
 
