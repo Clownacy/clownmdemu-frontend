@@ -32,8 +32,7 @@ public:
 	};
 
 private:
-	static bool clownmdemu_initialised;
-	static ClownMDEmu_Constant clownmdemu_constant;
+	static const ClownMDEmu_Constant clownmdemu_constant;
 
 	AudioOutput audio_output;
 	SDL::Texture &texture;

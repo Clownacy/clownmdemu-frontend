@@ -7,8 +7,7 @@
 #include "frontend.h"
 #include "text-encoding.h"
 
-bool EmulatorInstance::clownmdemu_initialised;
-ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant;
+const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = ClownMDEmu_Constant_Initialise();
 
 cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u32f address)
 {
@@ -156,13 +155,6 @@ EmulatorInstance::EmulatorInstance(
 {
 	// This should be called before any other clownmdemu functions are called!
 	ClownMDEmu_SetLogCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &Frontend::debug_log);
-
-	// Initialise persistent data such as lookup tables.
-	if (!clownmdemu_initialised)
-	{
-		clownmdemu_initialised = true;
-		ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
-	}
 
 	HardResetConsole();
 }
