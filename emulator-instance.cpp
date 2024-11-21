@@ -212,7 +212,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 			state = &next_state;
 		}
 
-		ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+		clownmdemu = ClownMDEmu_Parameters_Initialise(&clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 	#endif
 
 		// Reset the audio buffers so that they can be mixed into.
@@ -250,8 +250,8 @@ void EmulatorInstance::HardResetConsole()
 	auto &m68k_ram = state_rewind_buffer[0].clownmdemu.m68k.ram;
 	std::fill(std::begin(m68k_ram), std::end(m68k_ram), 0);
 
-	ClownMDEmu_State_Initialise(&state->clownmdemu);
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+	state->clownmdemu = ClownMDEmu_State_Initialise();
+	clownmdemu = ClownMDEmu_Parameters_Initialise(&clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 	SoftResetConsole();
 }
 
