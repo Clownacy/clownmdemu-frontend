@@ -50,7 +50,7 @@
 #define FILE_PATH_SUPPORT
 #endif
 
-#define VERSION "v0.7.1"
+#define VERSION "v0.8"
 
 using namespace Frontend;
 
