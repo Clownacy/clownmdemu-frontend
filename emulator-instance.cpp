@@ -168,7 +168,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 	framebuffer_texture_pitch /= sizeof(Uint32);
 
 	// Run the emulator for a frame
-	for (cc_u8f i = 0; i < (fast_forward ? 4 : 1); ++i)
+	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1); ++i)
 	{
 	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		// Handle rewinding.
