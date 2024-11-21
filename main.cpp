@@ -54,7 +54,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 			if (current_time >= next_time + 100.0)
 				next_time = current_time;
 
-			next_time += time_delta / (Frontend::IsFastForwarding() ? 4 : 1);
+			next_time += time_delta;
 
 			SDL_Event event;
 			while (SDL_PollEvent(&event))
@@ -126,7 +126,7 @@ SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
 	if (current_time >= next_time + one_second_in_nanoseconds / 10)
 		next_time = current_time;
 
-	next_time += time_delta / (Frontend::IsFastForwarding() ? 4 : 1);
+	next_time += time_delta;
 
 	Frontend::Update();
 	return Frontend::WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;

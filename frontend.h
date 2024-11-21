@@ -81,7 +81,6 @@ namespace Frontend
 	void Update();
 	void Deinitialise();
 	bool WantsToQuit();
-	bool IsFastForwarding();
 	template<typename T>
 	T DivideByPALFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(value); }
 	template<typename T>

@@ -80,7 +80,7 @@ private:
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);
-	void Update();
+	void Update(cc_bool fast_forward);
 	void SoftResetConsole();
 	void HardResetConsole();
 	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer);

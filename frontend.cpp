@@ -511,8 +511,7 @@ private:
 		{
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
-				if (!Frontend::fast_forward_in_progress)
-					SDL_SetRenderVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
+				SDL_SetRenderVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
 			DoToolTip(u8"Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
@@ -902,19 +901,10 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 
 static void UpdateFastForwardStatus()
 {
-	const bool previous_fast_forward_in_progress = fast_forward_in_progress;
-
 	fast_forward_in_progress = keyboard_input.fast_forward;
 
 	for (const auto &controller_input : controller_input_list)
 		fast_forward_in_progress |= controller_input.input.fast_forward != 0;
-
-	if (previous_fast_forward_in_progress != fast_forward_in_progress)
-	{
-		// Disable V-sync so that 60Hz displays aren't locked to 1x speed while fast-forwarding
-		if (Frontend::use_vsync)
-			SDL_SetRenderVSync(window->GetRenderer(), !fast_forward_in_progress);
-	}
 }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
@@ -2177,7 +2167,7 @@ void Frontend::Update()
 {
 	if (emulator_running)
 	{
-		emulator->Update();
+		emulator->Update(fast_forward_in_progress);
 		++frame_counter;
 	}
 
@@ -2712,9 +2702,4 @@ void Frontend::Update()
 bool Frontend::WantsToQuit()
 {
 	return quit;
-}
-
-bool Frontend::IsFastForwarding()
-{
-	return fast_forward_in_progress;
 }

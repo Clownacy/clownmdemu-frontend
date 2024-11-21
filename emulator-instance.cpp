@@ -159,56 +159,8 @@ EmulatorInstance::EmulatorInstance(
 	HardResetConsole();
 }
 
-void EmulatorInstance::Update()
+void EmulatorInstance::Update(const cc_bool fast_forward)
 {
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	// Handle rewinding.
-
-	// We maintain a ring buffer of emulator states:
-	// when rewinding, we go backwards through this buffer,
-	// and when not rewinding, we go forwards through it.
-	const auto rewind_buffer_size = state_rewind_buffer.size();
-
-	if (IsRewinding())
-	{
-		--state_rewind_remaining;
-
-		if (state_rewind_index == 0)
-			state_rewind_index = rewind_buffer_size - 1;
-		else
-			--state_rewind_index;
-	}
-	else
-	{
-		if (state_rewind_remaining < rewind_buffer_size - 2) // -2 because we use a slot to hold the current state, so -1 does not suffice.
-			++state_rewind_remaining;
-
-		if (state_rewind_index == rewind_buffer_size - 1)
-			state_rewind_index = 0;
-		else
-			++state_rewind_index;
-	}
-
-	auto &previous_state = state_rewind_buffer[state_rewind_index];
-	auto &next_state = state_rewind_buffer[(state_rewind_index + 1) % rewind_buffer_size];
-
-	if (IsRewinding())
-	{
-		state = &next_state;
-		LoadState(&previous_state);
-	}
-	else
-	{
-		SaveState(&next_state);
-		state = &next_state;
-	}
-
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
-#endif
-
-	// Reset the audio buffers so that they can be mixed into.
-	audio_output.MixerBegin();
-
 	// Lock the texture so that we can write to its pixels later
 	if (!SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
 		framebuffer_texture_pixels = nullptr;
@@ -216,13 +168,64 @@ void EmulatorInstance::Update()
 	framebuffer_texture_pitch /= sizeof(Uint32);
 
 	// Run the emulator for a frame
-	ClownMDEmu_Iterate(&clownmdemu);
+	for (cc_u8f i = 0; i < (fast_forward ? 4 : 1); ++i)
+	{
+	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
+		// Handle rewinding.
+
+		// We maintain a ring buffer of emulator states:
+		// when rewinding, we go backwards through this buffer,
+		// and when not rewinding, we go forwards through it.
+		const auto rewind_buffer_size = state_rewind_buffer.size();
+
+		if (IsRewinding())
+		{
+			--state_rewind_remaining;
+
+			if (state_rewind_index == 0)
+				state_rewind_index = rewind_buffer_size - 1;
+			else
+				--state_rewind_index;
+		}
+		else
+		{
+			if (state_rewind_remaining < rewind_buffer_size - 2) // -2 because we use a slot to hold the current state, so -1 does not suffice.
+				++state_rewind_remaining;
+
+			if (state_rewind_index == rewind_buffer_size - 1)
+				state_rewind_index = 0;
+			else
+				++state_rewind_index;
+		}
+
+		auto &previous_state = state_rewind_buffer[state_rewind_index];
+		auto &next_state = state_rewind_buffer[(state_rewind_index + 1) % rewind_buffer_size];
+
+		if (IsRewinding())
+		{
+			state = &next_state;
+			LoadState(&previous_state);
+		}
+		else
+		{
+			SaveState(&next_state);
+			state = &next_state;
+		}
+
+		ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+	#endif
+
+		// Reset the audio buffers so that they can be mixed into.
+		audio_output.MixerBegin();
+
+		ClownMDEmu_Iterate(&clownmdemu);
+
+		// Resample, mix, and output the audio for this frame.
+		audio_output.MixerEnd();
+	}
 
 	// Unlock the texture so that we can draw it
 	SDL_UnlockTexture(texture);
-
-	// Resample, mix, and output the audio for this frame.
-	audio_output.MixerEnd();
 
 	// Log CD state for this frame.
 	state->cd = cd_file.GetState();
