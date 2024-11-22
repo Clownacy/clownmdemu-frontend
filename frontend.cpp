@@ -1761,7 +1761,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						break;
 				}
 			}
-			// Fallthrough
+			[[fallthrough]];
 		case SDL_EVENT_KEY_UP:
 		{
 			// Prevent invalid memory accesses due to future API expansions.
@@ -1922,7 +1922,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 					break;
 			}
 
-			// Fallthrough
+			[[fallthrough]];
 		case SDL_EVENT_GAMEPAD_BUTTON_UP:
 		{
 			const bool pressed = event.gbutton.down;
@@ -2548,7 +2548,7 @@ void Frontend::Update()
 			{
 				default:
 					assert(false);
-					// Fallthrough // TODO: Replace these with '[[fallthrough]]'.
+					[[fallthrough]];
 				case 224:
 					destination_width = 320;
 					destination_height = 224;

@@ -182,7 +182,7 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 
 				case PlaybackSetting::ONCE:
 					audio_playing = false;
-					// Fallthrough
+					[[fallthrough]];
 				case PlaybackSetting::REPEAT:
 					if (!SeekToFrame(0))
 						audio_playing = false;
