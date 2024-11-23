@@ -82,7 +82,7 @@ public:
 	using Sector = std::array<cc_u8l, SECTOR_SIZE>;
 
 	CDReader() = default;
-	void Open(SDL::RWops &&stream, const std::filesystem::path &path);
+	void Open(SDL::IOStream &&stream, const std::filesystem::path &path);
 	void Close() { clowncd.Close(); }
 	bool IsOpen() const { return clowncd.IsOpen(); }
 	bool SeekToSector(SectorIndex sector_index);

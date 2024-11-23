@@ -85,7 +85,7 @@ public:
 	void HardResetConsole();
 	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer);
 	void UnloadCartridgeFile();
-	bool LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path);
+	bool LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();
 
 	void LoadState(const void *buffer);
@@ -94,7 +94,7 @@ public:
 	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	std::size_t GetSaveStateFileSize();
-	bool WriteSaveStateFile(SDL::RWops &file);
+	bool WriteSaveStateFile(SDL::IOStream &file);
 
 	bool IsCartridgeFileLoaded() const { return !rom_buffer.empty(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
