@@ -31,7 +31,7 @@ static bool EventFilter(void* /*const userdata*/, SDL_Event* const event)
 {
 	// The event loop will never have time to catch this, so we
 	// must use this callback to intercept it as soon as possible.
-	if (event->type == SDL_EVENT_TERMINATING)
+	if (event->type == SDL_APP_TERMINATING)
 		Terminate();
 
 	return 0;
@@ -113,7 +113,7 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 			for (;;)
 			{
 				static Uint64 next_time;
-				const Uint64 current_time = SDL_GetTicks() * FRAME_DELTA_MULTIPLIER;
+				const Uint64 current_time = SDL_GetTicks64() * FRAME_DELTA_MULTIPLIER;
 
 				int timeout = 0;
 

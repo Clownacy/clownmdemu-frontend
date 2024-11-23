@@ -12,7 +12,7 @@ float Window::GetDPIScale()
 	// TODO: Make the DPI scale two-dimensional.
 	int window_width, renderer_width;
 	SDL_GetWindowSize(GetSDLWindow(), &window_width, nullptr);
-	SDL_GetCurrentRenderOutputSize(GetRenderer(), &renderer_width, nullptr);
+	SDL_GetRendererOutputSize(GetRenderer(), &renderer_width, nullptr);
 
 	const float dpi_scale = static_cast<float>(renderer_width) / std::max(1, window_width); // Prevent a division by 0.
 

@@ -267,7 +267,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
 			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-			SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
+			SDL_RenderCopy(renderer, textures[sprite_index], &src_rect, &dst_rect);
 		}
 
 		SDL_SetRenderTarget(renderer, nullptr);

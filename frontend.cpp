@@ -574,7 +574,7 @@ private:
 		ImGui::SeparatorText("Keyboard Input");
 
 		static bool sorted_scancodes_done;
-		static std::array<SDL_Scancode, SDL_SCANCODE_COUNT> sorted_scancodes; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+		static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 		if (!sorted_scancodes_done)
 		{
@@ -771,10 +771,10 @@ bool Frontend::tall_double_resolution_mode;
 bool Frontend::fast_forward_in_progress;
 
 Input Frontend::keyboard_input;
-std::array<InputBinding, SDL_SCANCODE_COUNT > Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+std::array<InputBinding, SDL_NUM_SCANCODES> Frontend::keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
-static std::array<InputBinding, SDL_SCANCODE_COUNT > keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
-static std::array<bool, SDL_SCANCODE_COUNT > key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 static Frontend::FrameRateCallback frame_rate_callback;
 
@@ -1235,7 +1235,7 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 		unsigned int scancode_integer;
 		const auto scancode_integer_result = std::from_chars(reinterpret_cast<const char*>(&name.front()), reinterpret_cast<const char*>(&name.back()) + 1, scancode_integer, 10);
 
-		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == reinterpret_cast<const char*>(&name.back()) + 1 && scancode_integer < SDL_SCANCODE_COUNT)
+		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == reinterpret_cast<const char*>(&name.back()) + 1 && scancode_integer < SDL_NUM_SCANCODES)
 		{
 			const SDL_Scancode scancode = static_cast<SDL_Scancode>(scancode_integer);
 
@@ -1354,7 +1354,7 @@ static void LoadConfiguration()
 	// Set default settings.
 
 	// Default V-sync.
-	const int display_index = SDL_GetDisplayForWindow(window->GetSDLWindow());
+	const int display_index = SDL_GetWindowDisplayIndex(window->GetSDLWindow());
 
 	if (display_index >= 0)
 	{
@@ -1414,7 +1414,7 @@ static void LoadConfiguration()
 	}
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_SetRenderVSync(window->GetRenderer(), use_vsync);
+	SDL_RenderSetVSync(window->GetRenderer(), use_vsync);
 }
 
 static void SaveConfiguration()
@@ -1745,7 +1745,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			}
 
 			// Prevent invalid memory accesses due to future API expansions.
-			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
+			// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
 			if (event.key.keysym.scancode >= keyboard_bindings.size())
 				break;
 
@@ -1803,7 +1803,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 		case SDL_KEYUP:
 		{
 			// Prevent invalid memory accesses due to future API expansions.
-			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
+			// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
 			if (event.key.keysym.scancode >= keyboard_bindings.size())
 				break;
 
