@@ -1362,7 +1362,11 @@ static void LoadConfiguration()
 	emulator->SetLowPassFilter(true);
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
+#ifdef __EMSCRIPTEN__
 	dear_imgui_windows = true;
+#else
+	dear_imgui_windows = false;
+#endif
 
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
