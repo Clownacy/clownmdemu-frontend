@@ -1583,8 +1583,8 @@ static void SaveConfiguration()
 				PRINT_STRING(file, "false" ENDL);
 
 			PRINT_STRING(file, "path = ");
-			const auto path_string = recent_software.path.string();
-			SDL_RWwrite(file, path_string.data(), 1, path_string.length());
+			const auto path_string = recent_software.path.u8string();
+			SDL_RWwrite(file, reinterpret_cast<const char*>(path_string.c_str()), 1, path_string.length());
 			PRINT_STRING(file, ENDL);
 		}
 	#endif
