@@ -2,7 +2,7 @@
 
 #include <numeric>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #define CLOWNRESAMPLER_ASSERT SDL_assert
 #define CLOWNRESAMPLER_FABS SDL_fabs

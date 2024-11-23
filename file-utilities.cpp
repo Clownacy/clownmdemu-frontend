@@ -7,7 +7,7 @@
 #ifdef _WIN32
 #include <memory>
 #include <windows.h>
-#include "SDL_syswm.h"
+#include <SDL3/SDL_syswm.h>
 #elif defined(FILE_PICKER_POSIX)
 #include <cstdio>
 #include <format>
@@ -356,7 +356,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 
 	if (!file)
 	{
-		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_IOFromFile failed with the following message - '%s'", SDL_GetError());
 		return false;
 	}
 
@@ -365,11 +365,11 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::RWops &file)
 {
-	const Sint64 size_s64 = SDL_RWsize(file);
+	const Sint64 size_s64 = SDL_GetIOSize(file);
 
 	if (size_s64 < 0)
 	{
-		debug_log.Log("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_GetIOSize failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
@@ -378,7 +378,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 		try
 		{
 			file_buffer.resize(size);
-			SDL_RWread(file, file_buffer.data(), 1, size);
+			SDL_ReadIO(file, file_buffer.data(), 1, size);
 			return true;
 		}
 		catch (const std::bad_alloc&)
@@ -400,7 +400,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		const auto call_callback = [](const std::string &/*filename*/, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
 			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
-			SDL::RWops file = SDL::RWops(SDL_RWFromConstMem(buffer.data(), buffer.size()));
+			SDL::IOStream file = SDL::IOStream(SDL_IOFromConstMem(buffer.data(), buffer.size()));
 
 			if (file)
 				(*callback.get())(nullptr, std::move(file));
@@ -443,7 +443,7 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 			if (!file)
 				return false;
 
-			return SDL_RWwrite(file, data, 1, data_size) == data_size;
+			return SDL_WriteIO(file, data, 1, data_size) == data_size;
 		};
 
 		return callback(save_file);

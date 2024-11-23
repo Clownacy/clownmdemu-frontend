@@ -6,7 +6,7 @@
 #include <functional>
 #include <vector>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "../libraries/imgui/imgui.h"
 #include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
