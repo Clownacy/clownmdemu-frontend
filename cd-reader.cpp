@@ -75,7 +75,7 @@ static int FileSeekCallback(void* const stream, const long position, const Clown
 
 static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
 
-void CDReader::Open(SDL::IOStream &&stream, const std::filesystem::path &path)
+void CDReader::Open(SDL::RWops &&stream, const std::filesystem::path &path)
 {
 	// Transfer ownership of the stream to ClownCD.
 	clowncd.Open(ClownCD_OpenAlreadyOpen(stream.release(), path.string().c_str(), &callbacks));
