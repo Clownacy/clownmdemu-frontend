@@ -772,7 +772,7 @@ static bool emulator_frame_advance;
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
 
-static bool dear_imgui_windows;
+static bool native_windows;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -1201,8 +1201,8 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			integer_screen_scaling = state;
 		else if (name == u8"tall-interlace-mode-2")
 			tall_double_resolution_mode = state;
-		else if (name == u8"dear-imgui-windows")
-			dear_imgui_windows = state;
+		else if (name == u8"native-windows")
+			native_windows = state;
 		else if (name == u8"low-pass-filter")
 			emulator->SetLowPassFilter(state);
 		else if (name == u8"low-volume-distortion")
@@ -1363,9 +1363,9 @@ static void LoadConfiguration()
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
 #ifdef __EMSCRIPTEN__
-	dear_imgui_windows = true;
+	native_windows = false;
 #else
-	dear_imgui_windows = false;
+	native_windows = true;
 #endif
 
 	emulator->SetDomestic(false);
@@ -1438,7 +1438,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "dear-imgui-windows", dear_imgui_windows);
+		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
@@ -1614,7 +1614,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		LoadConfiguration();
 
-		if (dear_imgui_windows)
+		if (!native_windows)
 			ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 		// We shouldn't resize the window if something is overriding its size.
@@ -1660,7 +1660,7 @@ void Frontend::Deinitialise()
 
 	framebuffer_texture_upscaled.release();
 
-	if (dear_imgui_windows)
+	if (!native_windows)
 		ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 	SaveConfiguration();
@@ -2427,7 +2427,7 @@ void Frontend::Update()
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, dear_imgui_windows ? &*::window : nullptr);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, native_windows ? nullptr : &*::window);
 				}
 			};
 
@@ -2500,7 +2500,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
 
-				if (dear_imgui_windows)
+				if (!native_windows)
 				{
 					ImGui::MenuItem("Display Window", nullptr, &pop_out);
 					ImGui::Separator();
