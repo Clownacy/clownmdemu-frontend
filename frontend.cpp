@@ -1410,6 +1410,11 @@ static void LoadConfiguration()
 
 static void SaveConfiguration()
 {
+#ifdef _WIN32
+#define ENDL "\r\n"
+#else
+#define ENDL "\n"
+#endif
 	// Save configuration file:
 	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "w");
 
@@ -1421,14 +1426,14 @@ static void SaveConfiguration()
 	{
 	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1)
 		// Save keyboard bindings.
-		PRINT_STRING(file, "[Miscellaneous]\n");
+		PRINT_STRING(file, "[Miscellaneous]" ENDL);
 
 	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
 		PRINT_STRING(FILE, NAME " = "); \
 		if (VARIABLE) \
-			PRINT_STRING(FILE, "on\n"); \
+			PRINT_STRING(FILE, "on" ENDL); \
 		else \
-			PRINT_STRING(FILE, "off\n");
+			PRINT_STRING(FILE, "off" ENDL);
 
 		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
@@ -1440,7 +1445,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
 
 		// Save keyboard bindings.
-		PRINT_STRING(file, "\n[Keyboard Bindings]\n");
+		PRINT_STRING(file, ENDL "[Keyboard Bindings]" ENDL);
 
 		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
 		{
@@ -1544,30 +1549,31 @@ static void SaveConfiguration()
 						break;
 				}
 
-				const std::string buffer = std::format("{} = {}\n", i, binding_string);
+				const std::string buffer = std::format("{} = {}" ENDL, i, binding_string);
 				SDL_WriteIO(file, buffer.data(), buffer.size());
 			}
 		}
 
 	#ifdef FILE_PATH_SUPPORT
 		// Save recent software paths.
-		PRINT_STRING(file, "\n[Recent Software]\n");
+		PRINT_STRING(file, ENDL "[Recent Software]" ENDL);
 
 		for (const auto &recent_software : recent_software_list)
 		{
 			PRINT_STRING(file, "cd = ");
 			if (recent_software.is_cd_file)
-				PRINT_STRING(file, "true\n");
+				PRINT_STRING(file, "true" ENDL);
 			else
-				PRINT_STRING(file, "false\n");
+				PRINT_STRING(file, "false" ENDL);
 
 			PRINT_STRING(file, "path = ");
 			const auto path_string = recent_software.path.u8string();
 			SDL_WriteIO(file, reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
-			PRINT_STRING(file, "\n");
+			PRINT_STRING(file, ENDL);
 		}
 	#endif
 	}
+#undef ENDL
 }
 
 

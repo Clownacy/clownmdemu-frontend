@@ -16,7 +16,7 @@ void SetWindowTitleBarColour([[maybe_unused]] SDL_Window* const window, [[maybe_
 	if (hwnd == 0)
 		return;
 
-	SDL_SharedObject* const handle = SDL_LoadObject("dwmapi.dll");
+	void* const handle = SDL_LoadObject("dwmapi.dll");
 
 	if (handle == nullptr)
 		return;
