@@ -153,7 +153,10 @@ endif()
 target_compile_definitions(clownmdemu-frontend PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
 
 # Disable some deprecated junk in Dear ImGui
-target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO ImTextureID=void*)
+target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
+
+# 'ImTextureID' needs to be a pointer, not an integer
+target_compile_definitions(clownmdemu-frontend PRIVATE ImTextureID=void*)
 
 # Dear ImGui needs these directories in the include path
 target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
@@ -167,10 +170,12 @@ add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clownmdemu)
 
 # Link SDL
-find_package(SDL3 3.1.3)
+find_package(SDL3 3.1.3 CONFIG COMPONENTS SDL3)
 if(SDL3_FOUND)
 	target_link_libraries(clownmdemu-frontend SDL3::SDL3)
 else()
+	set(SDL_STATIC ON)
+	set(SDL_SHARED OFF)
 	add_subdirectory("libraries/SDL" EXCLUDE_FROM_ALL)
 	target_link_libraries(clownmdemu-frontend SDL3::SDL3-static)
 endif()
