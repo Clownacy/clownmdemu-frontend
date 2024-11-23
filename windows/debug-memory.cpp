@@ -1,6 +1,6 @@
 #include "debug-memory.h"
 
-#include <SDL3/SDL.h>
+#include "SDL.h"
 
 #include "../libraries/imgui/imgui.h"
 #include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"

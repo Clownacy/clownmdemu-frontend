@@ -12,7 +12,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 
 	SDL_zero(want);
 	want.freq = 48000;
-	want.format = SDL_AUDIO_S16;
+	want.format = AUDIO_S16SYS;
 	want.channels = channels;
 	// We want a 10ms buffer (this value must be a power of two).
 	want.samples = 1;

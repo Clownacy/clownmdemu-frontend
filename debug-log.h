@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <string>
 
-#include <SDL3/SDL.h>
+#include "SDL.h"
 
 #include "libraries/imgui/imgui.h"
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -18,7 +18,7 @@ public:
 
 	DebugLog()
 	{
-		SDL_SetLogPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
+		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 	}
 	void ForceConsoleOutput(bool forced)
 	{

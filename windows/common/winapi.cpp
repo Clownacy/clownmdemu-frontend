@@ -5,6 +5,8 @@
 #ifdef _WIN32
  #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
+
+ #include "SDL_syswm.h"
 #endif
 
 void SetWindowTitleBarColour([[maybe_unused]] SDL_Window* const window, [[maybe_unused]] const unsigned char red, [[maybe_unused]] const unsigned char green, [[maybe_unused]] const unsigned char blue)

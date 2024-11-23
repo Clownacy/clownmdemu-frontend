@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 
-#include <SDL3/SDL.h>
+#include "SDL.h"
 
 #include "window-with-dear-imgui.h"
 

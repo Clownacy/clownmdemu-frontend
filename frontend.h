@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 
-#include <SDL3/SDL.h>
+#include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
 
@@ -64,7 +64,7 @@ namespace Frontend
 	extern SDL::Texture framebuffer_texture_upscaled;
 
 	extern Input keyboard_input;
-	extern std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+	extern std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
 
 	extern unsigned int output_width, output_height;
 	extern unsigned int upscale_width, upscale_height;

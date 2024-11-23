@@ -22,7 +22,7 @@ float Window::GetDPIScale()
 
 static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
 {
-	Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+	Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI;
 
 	if (resizeable)
 		window_flags |= SDL_WINDOW_RESIZABLE;
