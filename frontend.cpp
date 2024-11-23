@@ -1363,13 +1363,9 @@ static void LoadConfiguration()
 	// Set default settings.
 
 	// Default V-sync.
-	const SDL_DisplayID display_index = SDL_GetDisplayForWindow(window->GetSDLWindow());
+	const int display_index = SDL_GetDisplayForWindow(window->GetSDLWindow());
 
-	if (display_index == 0)
-	{
-		debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '%s'", SDL_GetError());
-	}
-	else
+	if (display_index >= 0)
 	{
 		const SDL_DisplayMode* const display_mode = SDL_GetCurrentDisplayMode(display_index);
 
@@ -1653,12 +1649,11 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
 		int window_width, window_height;
 		SDL_GetWindowSize(window->GetSDLWindow(), &window_width, &window_height);
-		const float scale = window->GetSizeScale();
 
-		if (window_width == static_cast<int>(INITIAL_WINDOW_WIDTH * scale) && window_height == static_cast<int>(INITIAL_WINDOW_HEIGHT * scale))
+		if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
 		{
 			// Resize the window so that there's room for the menu bar.
-			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
+			SDL_SetWindowSize(window->GetSDLWindow(), INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize());
 		}
 
 		// If the user passed the path to the software on the command line, then load it here, automatically.

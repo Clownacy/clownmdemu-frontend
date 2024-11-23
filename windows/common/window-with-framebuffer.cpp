@@ -6,7 +6,6 @@
 
 SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height)
 {
-	// TODO: Gah, de-duplicate this as well as the code in 'frontend.cpp' and 'debug-vdp.cpp'!
 	// Create framebuffer texture
 	// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
 	SDL_Texture* const framebuffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, framebuffer_width, framebuffer_height);
