@@ -87,7 +87,7 @@ public:
 		return alive;
 	}
 
-	bool IsWindowID(const Uint32 window_id)
+	bool IsWindowID(const Uint32 window_id) const
 	{
 		if (!window.has_value())
 			return false;
