@@ -1,6 +1,18 @@
 #ifndef FILE_UTILITIES_H
 #define FILE_UTILITIES_H
 
+#if defined(__unix__) && !defined(__EMSCRIPTEN__)
+#include <unistd.h>
+
+#if defined(_POSIX_VERSION) && _POSIX_VERSION >= 200112L
+#define FILE_PICKER_POSIX
+#endif
+#endif
+
+#if defined(_WIN32) || defined(FILE_PICKER_POSIX)
+#define FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
+#endif
+
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -33,7 +45,14 @@ private:
 	void CreateFileDialog(Window &window, const std::string &title, const PopupCallback &callback, bool save);
 
 public:
+#ifdef FILE_PICKER_POSIX
+	std::filesystem::path last_file_dialog_directory;
+	bool prefer_kdialog = false;
+#endif
+
+#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
 	bool use_native_file_dialogs = true;
+#endif
 
 	FileUtilities(DebugLog &debug_log) : debug_log(debug_log) {}
 	void CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback);
