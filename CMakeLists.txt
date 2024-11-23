@@ -87,6 +87,10 @@ if(WIN32)
 
 	# Enable Unicode support so that non-ANSI file paths work
 	target_compile_definitions(clownmdemu-frontend PRIVATE UNICODE _UNICODE)
+
+	if(MINGW)
+		target_link_options(clownmdemu-frontend PRIVATE -municode)
+	endif()
 endif()
 
 ##############################
