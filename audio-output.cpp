@@ -40,7 +40,6 @@ AudioOutput::~AudioOutput()
 
 void AudioOutput::MixerBegin()
 {
-	// TODO: Given that SDL3 boasts its own internal mixer, perhaps we should rely on that instead of our own solution.
 	if (mixer_update_pending)
 	{
 		mixer_update_pending = false;

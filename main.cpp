@@ -5,8 +5,6 @@
 #include <emscripten/html5.h>
 #endif
 
-#include <SDL3/SDL_main.h>
-
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
