@@ -32,7 +32,7 @@ static void FrameRateCallback(const bool pal_mode)
 	time_delta = pal_mode ? Frontend::DivideByPALFramerate(1000.0) : Frontend::DivideByNTSCFramerate(1000.0);
 }
 
-static int EventFilter(void* /*const userdata*/, SDL_Event* const event)
+static bool EventFilter(void* /*const userdata*/, SDL_Event* const event)
 {
 	// The event loop will never have time to catch this, so we
 	// must use this callback to intercept it as soon as possible.
