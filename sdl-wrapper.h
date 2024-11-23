@@ -28,8 +28,9 @@ namespace SDL
 	inline RWops RWFromFile(const std::string &path, const char* const mode) { return RWFromFile(path.c_str(), mode); }
 	inline RWops RWFromFile(const std::filesystem::path &path, const char* const mode) { return RWFromFile(reinterpret_cast<const char*>(path.u8string().c_str()), mode); }
 
-	inline Texture CreateTexture(Renderer &renderer, const SDL_TextureAccess access, const int width, const int height, const SDL_ScaleMode scale_mode)
+	inline Texture CreateTexture(Renderer &renderer, const SDL_TextureAccess access, const int width, const int height, const char* const scale_mode)
 	{
+		SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, scale_mode);
 		Texture texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, access, width, height));
 
 		if (!texture)
@@ -39,11 +40,8 @@ namespace SDL
 		else
 		{
 			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
+			if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE) < 0)
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
-
-			if (!SDL_SetTextureScaleMode(texture, scale_mode))
-				Frontend::debug_log.Log("SDL_SetTextureScaleMode failed with the following message - '%s'", SDL_GetError());
 		}
 
 		return texture;

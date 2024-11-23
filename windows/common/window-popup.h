@@ -87,12 +87,12 @@ public:
 		return alive;
 	}
 
-	bool IsWindow(const SDL_Window* const other_window) const
+	bool IsWindowID(const Uint32 window_id) const
 	{
 		if (!window.has_value())
 			return false;
 
-		return window->GetSDLWindow() == other_window;
+		return window_id == SDL_GetWindowID(window->GetSDLWindow());
 	}
 
 	void ProcessEvent(const SDL_Event &event)
@@ -100,7 +100,7 @@ public:
 		const auto &previous_context = ImGui::GetCurrentContext();
 		window->MakeDearImGuiContextCurrent();
 
-		ImGui_ImplSDL3_ProcessEvent(&event);
+		ImGui_ImplSDL2_ProcessEvent(&event);
 
 		ImGui::SetCurrentContext(previous_context);
 	}

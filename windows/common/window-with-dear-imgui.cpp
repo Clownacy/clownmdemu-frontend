@@ -28,7 +28,7 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 	ImGuiIO &io = ImGui::GetIO();
 
 	io.Fonts->Clear();
-	ImGui_ImplSDLRenderer3_DestroyFontsTexture();
+	ImGui_ImplSDLRenderer2_DestroyFontsTexture();
 
 	ImFontConfig font_cfg = ImFontConfig();
 	SDL_snprintf(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "Noto Sans Regular, %upx", font_size);
@@ -105,8 +105,8 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 	SetTitleBarColour(menu_bar_bg_colour.x * 0xFF, menu_bar_bg_colour.y * 0xFF, menu_bar_bg_colour.z * 0xFF);
 
 	// Setup Platform/Renderer backends
-	ImGui_ImplSDL3_InitForSDLRenderer(GetSDLWindow(), GetRenderer());
-	ImGui_ImplSDLRenderer3_Init(GetRenderer());
+	ImGui_ImplSDL2_InitForSDLRenderer(GetSDLWindow(), GetRenderer());
+	ImGui_ImplSDLRenderer2_Init(GetRenderer());
 
 	// Load fonts
 	ReloadFonts(CalculateFontSize());
@@ -119,8 +119,8 @@ WindowWithDearImGui::~WindowWithDearImGui()
 	const auto &previous_context = ImGui::GetCurrentContext();
 	ImGui::SetCurrentContext(dear_imgui_context);
 
-	ImGui_ImplSDLRenderer3_Shutdown();
-	ImGui_ImplSDL3_Shutdown();
+	ImGui_ImplSDLRenderer2_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
 
 	ImGui::SetCurrentContext(previous_context);
 }
@@ -144,8 +144,8 @@ void WindowWithDearImGui::StartDearImGuiFrame()
 	}
 
 	// Start the Dear ImGui frame
-	ImGui_ImplSDLRenderer3_NewFrame();
-	ImGui_ImplSDL3_NewFrame();
+	ImGui_ImplSDLRenderer2_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
 	ImGui::NewFrame();
 }
 
@@ -155,7 +155,7 @@ void WindowWithDearImGui::FinishDearImGuiFrame()
 
 	// Render Dear ImGui.
 	ImGui::Render();
-	ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), GetRenderer());
+	ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), GetRenderer());
 
 	// Finally display the rendered frame to the user.
 	SDL_RenderPresent(GetRenderer());

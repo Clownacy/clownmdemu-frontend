@@ -4,8 +4,8 @@
 #include "../../sdl-wrapper.h"
 
 #include "../../libraries/imgui/imgui.h"
-#include "../../libraries/imgui/backends/imgui_impl_sdl3.h"
-#include "../../libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
+#include "../../libraries/imgui/backends/imgui_impl_sdl2.h"
+#include "../../libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
 
 #include "../../raii-wrapper.h"
 #include "window.h"

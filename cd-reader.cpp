@@ -50,7 +50,7 @@ static long FileTellCallback(void* const stream)
 
 static int FileSeekCallback(void* const stream, const long position, const ClownCD_FileOrigin origin)
 {
-	SDL_IOWhence whence;
+	int whence;
 
 	switch (origin)
 	{

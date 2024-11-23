@@ -11,7 +11,7 @@ private:
 	const cc_u8f channels;
 	const cc_s32f SIZE_OF_FRAME = channels * sizeof(cc_s16l);
 
-	SDL_AudioStream *stream;
+	SDL_AudioDeviceID device;
 
 public:
 	AudioDevice(cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames);

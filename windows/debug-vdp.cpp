@@ -95,7 +95,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 	const cc_u16f plane_texture_height = 64 * 16;
 
 	if (!texture)
-		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, SDL_SCALEMODE_NEAREST);
+		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest");
 
 	if (texture)
 	{
@@ -175,7 +175,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 	for (auto &texture : textures)
 		if (!texture)
-			texture = SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, SDL_SCALEMODE_NEAREST);
+			texture = SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest");
 
 	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
@@ -227,7 +227,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	constexpr cc_u16f plane_texture_height = 1024;
 
 	if (!texture)
-		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, SDL_SCALEMODE_NEAREST);
+		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, "nearest");
 
 	const cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
@@ -243,12 +243,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		SDL_RenderClear(renderer);
 		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
 		const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-		const SDL_FRect visible_area_rectangle = {
-			static_cast<float>(0x80),
-			static_cast<float>(0x80 * vertical_scale),
-			static_cast<float>(vdp.h40_enabled ? 320 : 256),
-			static_cast<float>((vdp.v30_enabled ? 240 : 224) * vertical_scale)
-		};
+		const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
 		SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
 		std::vector<cc_u8l> sprite_vector;
@@ -270,8 +265,8 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			const cc_u8f sprite_index = *it;
 			const Sprite sprite = GetSprite(vdp, sprite_index);
 
-			const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-			const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
+			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
 			SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
 		}
 
@@ -398,7 +393,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		texture_width = vram_texture_width_rounded_up_to_8;
 		texture_height = vram_texture_height_rounded_up_to_16;
 
-		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), SDL_SCALEMODE_NEAREST);
+		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest");
 	}
 
 	if (ImGui::Button("Save to File"))
