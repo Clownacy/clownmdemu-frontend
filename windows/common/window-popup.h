@@ -16,7 +16,7 @@ private:
 	std::optional<WindowWithDearImGui> window;
 	std::string title;
 	bool resizeable;
-	WindowWithDearImGui *parent_window;
+	WindowWithDearImGui *host_window;
 	int dear_imgui_window_width, dear_imgui_window_height;
 
 	bool Begin(bool* const open = nullptr, ImGuiWindowFlags window_flags = 0)
@@ -55,19 +55,20 @@ private:
 	}
 
 public:
-	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, WindowWithDearImGui* const parent_window = nullptr)
+	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Window &parent_window, WindowWithDearImGui* const host_window = nullptr)
 		: title(window_title)
 		, resizeable(resizeable)
-		, parent_window(parent_window)
+		, host_window(host_window)
 	{
-		if (parent_window != nullptr)
+		if (host_window != nullptr)
 		{
-			dear_imgui_window_width = window_width * parent_window->GetDPIScale();
-			dear_imgui_window_height = window_height * parent_window->GetDPIScale();
+			dear_imgui_window_width = window_width * host_window->GetDPIScale();
+			dear_imgui_window_height = window_height * host_window->GetDPIScale();
 		}
 		else
 		{
 			window.emplace(window_title, window_width, window_height, resizeable);
+			SDL_SetWindowParent(window->GetSDLWindow(), parent_window.GetSDLWindow());
 			SDL_ShowWindow(window->GetSDLWindow());
 		}
 	}
@@ -110,7 +111,7 @@ public:
 		if (window.has_value())
 			return *window;
 		else
-			return *parent_window;
+			return *host_window;
 	}
 
 	ImFont* GetMonospaceFont()

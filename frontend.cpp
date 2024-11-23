@@ -2474,7 +2474,7 @@ void Frontend::Update()
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, dear_imgui_windows ? &*::window : nullptr);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, dear_imgui_windows ? &*::window : nullptr);
 				}
 			};
 
