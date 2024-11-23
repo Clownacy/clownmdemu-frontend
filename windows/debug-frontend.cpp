@@ -14,11 +14,8 @@ void DebugFrontend::DisplayInternal()
 
 		ImGui::TableNextColumn();
 
-		SDL_RendererInfo info;
-		if (SDL_GetRendererInfo(GetWindow().GetRenderer(), &info) == 0)
-			ImGui::TextUnformatted(info.name);
-		else
-			ImGui::TextUnformatted("Unknown");
+		const char* const renderer_name = SDL_GetRendererName(GetWindow().GetRenderer());
+		ImGui::TextUnformatted(renderer_name == nullptr ? "Unknown" : renderer_name);
 
 		// Video
 		ImGui::TableNextColumn();

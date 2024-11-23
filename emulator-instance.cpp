@@ -162,7 +162,7 @@ EmulatorInstance::EmulatorInstance(
 void EmulatorInstance::Update(const cc_bool fast_forward)
 {
 	// Lock the texture so that we can write to its pixels later
-	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
+	if (!SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
 		framebuffer_texture_pixels = nullptr;
 
 	framebuffer_texture_pitch /= sizeof(Uint32);

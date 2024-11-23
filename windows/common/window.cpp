@@ -27,7 +27,7 @@ static SDL_Window* CreateWindow(const char* const window_title, const int window
 	if (resizeable)
 		window_flags |= SDL_WINDOW_RESIZABLE;
 
-	SDL_Window* const window = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, window_flags);
+	SDL_Window* const window = SDL_CreateWindow(window_title, window_width, window_height, window_flags);
 
 	if (window == nullptr)
 		throw std::runtime_error(std::string("SDL_CreateWindow failed with the following message - '") + SDL_GetError() + "'");
@@ -37,18 +37,7 @@ static SDL_Window* CreateWindow(const char* const window_title, const int window
 
 static SDL_Renderer* CreateRenderer(SDL_Window* const window)
 {
-	// Use batching even if the user forces a specific rendering backend (wtf SDL).
-	//
-	// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
-	// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
-	// for backwards compatibility reasons. Setting this hint prevents that.
-	//
-	// Normally if a user is setting an environment variable to force a specific rendering
-	// backend, then they're expected to set another environment variable to set this hint too,
-	// but I might as well just do it myself and save everyone else the hassle.
-	SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
-
-	SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
+	SDL_Renderer* const renderer = SDL_CreateRenderer(window, nullptr);
 
 	if (renderer == nullptr)
 		throw std::runtime_error(std::string("SDL_CreateRenderer failed with the following message - '") + SDL_GetError() + "'");
