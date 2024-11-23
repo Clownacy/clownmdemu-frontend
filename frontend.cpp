@@ -136,7 +136,9 @@ private:
 		ImGui::SeparatorText("clownmdemu-frontend " VERSION);
 
 		ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
-		ImGui::TextLinkOpenURL("https://github.com/Clownacy/clownmdemu-frontend");
+		const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
+		if (ImGui::TextLink(url))
+			SDL_OpenURL(url);
 
 		ImGui::SeparatorText("Licences");
 
@@ -1360,7 +1362,11 @@ static void LoadConfiguration()
 	emulator->SetLowPassFilter(true);
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
+#ifdef __EMSCRIPTEN__
+	dear_imgui_windows = true;
+#else
 	dear_imgui_windows = false;
+#endif
 
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
@@ -2259,9 +2265,9 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path* const path, SDL::IOStream &&file)
 					{
-						const bool success = LoadCartridgeFile(&path, file);
+						const bool success = LoadCartridgeFile(path, file);
 
 						if (success)
 							emulator_paused = false;
@@ -2285,9 +2291,9 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path* const path, SDL::IOStream &&file)
 					{
-						if (!LoadCDFile(&path, std::move(file)))
+						if (!LoadCDFile(path, std::move(file)))
 							return false;
 
 						emulator_paused = false;
@@ -2379,9 +2385,9 @@ void Frontend::Update()
 							std::vector<unsigned char> save_state_buffer;
 							save_state_buffer.resize(emulator->GetSaveStateFileSize());
 
-							const SDL::RWops file = SDL::RWops(SDL_IOFromMem(save_state_buffer.data(), save_state_buffer.size()));
+							SDL::IOStream file = SDL::IOStream(SDL_IOFromMem(save_state_buffer.data(), save_state_buffer.size()));
 
-							if (file != nullptr)
+							if (file)
 							{
 								emulator->WriteSaveStateFile(file);
 
@@ -2399,7 +2405,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path* const path, SDL::IOStream &&file)
 					{
 						LoadSaveState(file);
 						return true;
