@@ -30,18 +30,12 @@ static int FileCloseCallback(void* const stream)
 
 static size_t FileReadCallback(void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	if (size == 0 || count == 0)
-		return 0;
-
-	return SDL_ReadIO(static_cast<SDL_IOStream*>(stream), buffer, size * count) / size;
+	return SDL_ReadIO(static_cast<SDL_IOStream*>(stream), buffer, size * count);
 }
 
 static size_t FileWriteCallback(const void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	if (size == 0 || count == 0)
-		return 0;
-
-	return SDL_WriteIO(static_cast<SDL_IOStream*>(stream), buffer, size * count) / size;
+	return SDL_WriteIO(static_cast<SDL_IOStream*>(stream), buffer, size * count);
 }
 
 static long FileTellCallback(void* const stream)
@@ -84,7 +78,7 @@ static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallb
 void CDReader::Open(SDL::IOStream &&stream, const std::filesystem::path &path)
 {
 	// Transfer ownership of the stream to ClownCD.
-	clowncd.Open(ClownCD_OpenAlreadyOpen(stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks));
+	clowncd.Open(ClownCD_OpenAlreadyOpen(stream.release(), path.string().c_str(), &callbacks));
 
 	audio_playing = false;
 }
