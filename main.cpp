@@ -5,9 +5,6 @@
 #include <emscripten/html5.h>
 #endif
 
-#ifndef __EMSCRIPTEN__
-#define SDL_MAIN_USE_CALLBACKS
-#endif
 #include <SDL3/SDL_main.h>
 
 #include "frontend.h"
@@ -74,71 +71,77 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 	if (Frontend::Initialise(0, nullptr, FrameRateCallback))
 		SDL_AddEventWatch(EventFilter, nullptr);
 }
-
-int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
-{
-	// Initialise persistent storage.
-	EM_ASM({
-		FS.mkdir('/clownmdemu-frontend');
-		FS.mount(IDBFS, {}, '/clownmdemu-frontend');
-		FS.chdir('/clownmdemu-frontend');
-
-		FS.syncfs(true, function(err) {
-			Module._StorageLoaded();
-		});
-		}, 0);
-	return EXIT_SUCCESS;
-}
-
 #else
-static Uint64 time_delta;
+// 300 is the magic number that prevents the frame delta calculations from ever dipping into
+// numbers smaller than 1 (technically it's only required by the NTSC framerate: PAL doesn't need it).
+#define FRAME_DELTA_MULTIPLIER 300
+
+static Uint32 frame_rate_delta;
 
 static void FrameRateCallback(const bool pal_mode)
 {
 	if (pal_mode)
 	{
 		// Run at 50FPS
-		time_delta = Frontend::DivideByPALFramerate(1000ul);
+		frame_rate_delta = Frontend::DivideByPALFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
 	}
 	else
 	{
 		// Run at roughly 59.94FPS (60 divided by 1.001)
-		time_delta = Frontend::DivideByNTSCFramerate(1000ul);
+		frame_rate_delta = Frontend::DivideByNTSCFramerate(1000ul * FRAME_DELTA_MULTIPLIER);
 	}
 }
-
-SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc, char** const argv)
-{
-	return Frontend::Initialise(argc, argv, FrameRateCallback) ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
-}
-
-SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
-{
-	static Uint64 next_time;
-
-	const Uint64 current_time = SDL_GetTicks();
-
-	if (current_time < next_time)
-		return SDL_APP_CONTINUE;
-
-	// If massively delayed, resynchronise to avoid fast-forwarding.
-	if (current_time >= next_time + 100)
-		next_time = current_time;
-
-	next_time += time_delta;
-
-	Frontend::Update();
-	return Frontend::WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
-}
-
-SDL_AppResult SDL_AppEvent([[maybe_unused]] void* const appstate, SDL_Event* const event)
-{
-	Frontend::HandleEvent(*event);
-	return Frontend::WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
-}
-
-void SDL_AppQuit([[maybe_unused]] void* const appstate, [[maybe_unused]] const SDL_AppResult result)
-{
-	Frontend::Deinitialise();
-}
 #endif
+
+int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
+{
+#ifdef __EMSCRIPTEN__
+	// Initialise persistent storage.
+	EM_ASM({
+		FS.mkdir('/clownmdemu-frontend');
+		FS.mount(IDBFS, {}, '/clownmdemu-frontend');
+		FS.chdir('/clownmdemu-frontend');
+
+		FS.syncfs(true, function (err) {
+			Module._StorageLoaded();
+		});
+	}, 0);
+#else
+	if (Frontend::Initialise(argc, argv, FrameRateCallback))
+	{
+		while (!Frontend::WantsToQuit())
+		{
+			// This loop processes events and manages the framerate.
+			for (;;)
+			{
+				static Uint64 next_time;
+				const Uint64 current_time = SDL_GetTicks() * FRAME_DELTA_MULTIPLIER;
+
+				int timeout = 0;
+
+				if (current_time < next_time)
+					timeout = (next_time - current_time) / FRAME_DELTA_MULTIPLIER;
+				else if (current_time > next_time + 100 * FRAME_DELTA_MULTIPLIER) // If we're way past our deadline, then resync to the current tick instead of fast-forwarding
+					next_time = current_time;
+
+				// Obtain an event
+				SDL_Event event;
+				if (!SDL_WaitEventTimeout(&event, timeout)) // If the timeout has expired and there are no more events, exit this loop
+				{
+					// Calculate when the next frame will be
+					next_time += frame_rate_delta;
+					break;
+				}
+
+				Frontend::HandleEvent(event);
+			}
+
+			Frontend::Update();
+		}
+
+		Frontend::Deinitialise();
+	}
+#endif
+
+	return EXIT_SUCCESS;
+}
