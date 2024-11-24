@@ -189,12 +189,20 @@ target_link_libraries(clownmdemu-frontend clown68000-disassembler)
 add_subdirectory("libraries/clowncd" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clowncd)
 
+# Link fmt
+find_package(fmt)
+if(NOT fmt_FOUND)
+	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
+endif()
+target_link_libraries(clownmdemu-frontend fmt::fmt)
+
 ################
 # Installation #
 ################
 
 install(TARGETS clownmdemu-frontend DESTINATION "bin")
-install(FILES "assets/clownmdemu-frontend.desktop" DESTINATION "share/applications")
+install(FILES "assets/com.clownacy.clownmdemu.desktop" DESTINATION "share/applications")
+install(FILES "assets/com.clownacy.clownmdemu.appdata.xml" DESTINATION "share/metainfo")
 install(FILES "assets/icon/icon-512.png" DESTINATION "share/icons/hicolor/512x512/apps" RENAME "clownmdemu.png")
 install(FILES "assets/icon/icon-256.png" DESTINATION "share/icons/hicolor/256x256/apps" RENAME "clownmdemu.png")
 install(FILES "assets/icon/icon-128.png" DESTINATION "share/icons/hicolor/128x128/apps" RENAME "clownmdemu.png")

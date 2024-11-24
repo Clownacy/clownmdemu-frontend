@@ -7,18 +7,17 @@
 #include <climits> // For INT_MAX.
 #include <cstddef>
 #include <filesystem>
-#include <format>
 #include <forward_list>
 #include <functional>
 #include <iterator>
 #include <list>
 #include <optional>
-#include <span>
 #include <string>
 #include <string_view>
 #include <tuple>
 #include <vector>
 
+#include <fmt/core.h>
 #include "SDL.h"
 
 #include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
@@ -141,7 +140,7 @@ private:
 
 		ImGui::SeparatorText("Licences");
 
-		const auto DoLicence = [&monospace_font](const std::span<const char> &text)
+		const auto DoLicence = [&monospace_font]<size_t S>(const std::array<char, S> &text)
 		{
 			ImGui::PushFont(monospace_font);
 			ImGui::TextUnformatted(&text.front(), &text.back());
@@ -1565,7 +1564,7 @@ static void SaveConfiguration()
 						break;
 				}
 
-				const std::string buffer = std::format("{} = {}" ENDL, i, binding_string);
+				const std::string buffer = fmt::format("{} = {}" ENDL, i, binding_string);
 				SDL_RWwrite(file, buffer.data(), buffer.size(), 1);
 			}
 		}

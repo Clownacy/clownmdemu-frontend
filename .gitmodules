@@ -20,3 +20,6 @@
 [submodule "libraries/clowncd"]
 	path = libraries/clowncd
 	url = https://github.com/Clownacy/clowncd
+[submodule "libraries/fmt"]
+	path = libraries/fmt
+	url = https://github.com/fmtlib/fmt

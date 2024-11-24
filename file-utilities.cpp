@@ -10,8 +10,9 @@
 #include "SDL_syswm.h"
 #elif defined(FILE_PICKER_POSIX)
 #include <cstdio>
-#include <format>
 #include <sys/wait.h>
+
+#include <fmt/core.h>
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -89,12 +90,12 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 			{
 				// Construct the command to invoke Zenity/kdialog.
 				const std::string command = (i == 0) != prefer_kdialog ?
-					std::format("zenity --file-selection {} --title=\"{}\" --filename=\"{}\"",
+					fmt::format("zenity --file-selection {} --title=\"{}\" --filename=\"{}\"",
 						save ? "--save" : "",
 						title,
 						last_file_dialog_directory.string())
 					:
-					std::format("kdialog --get{}filename --title \"{}\" \"{}\"",
+					fmt::format("kdialog --get{}filename --title \"{}\" \"{}\"",
 						save ? "save" : "open",
 						title,
 						last_file_dialog_directory.string())
