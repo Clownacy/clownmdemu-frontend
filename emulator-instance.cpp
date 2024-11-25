@@ -168,7 +168,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 	framebuffer_texture_pitch /= sizeof(Uint32);
 
 	// Run the emulator for a frame
-	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1); ++i)
+	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1) && !RewindingExhausted(); ++i)
 	{
 	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		// Handle rewinding.
@@ -222,13 +222,13 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 
 		// Resample, mix, and output the audio for this frame.
 		audio_output.MixerEnd();
+
+		// Log CD state for this frame.
+		state->cd = cd_file.GetState();
 	}
 
 	// Unlock the texture so that we can draw it
 	SDL_UnlockTexture(texture);
-
-	// Log CD state for this frame.
-	state->cd = cd_file.GetState();
 }
 
 void EmulatorInstance::SoftResetConsole()
