@@ -14,9 +14,5 @@ void DebugLogViewer::DisplayInternal()
 	ImGui::PushFont(GetMonospaceFont());
 	ImGui::InputTextMultiline("##log", &Frontend::debug_log.lines[0], Frontend::debug_log.lines.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 
-	// When scrolled to the bottom, stay that way.
-	if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
-		ImGui::SetScrollHereY(1.0f);
-
 	ImGui::PopFont();
 }
