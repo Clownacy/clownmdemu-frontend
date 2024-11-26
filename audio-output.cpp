@@ -15,7 +15,7 @@
 #define MIXER_CALLOC SDL_calloc
 #define MIXER_MEMMOVE SDL_memmove
 #define MIXER_MEMSET SDL_memset
-#include "clownmdemu-frontend-common/mixer.h"
+#include "common/mixer.h"
 
 Mixer_Constant AudioOutput::mixer_constant;
 bool AudioOutput::mixer_constant_initialised;

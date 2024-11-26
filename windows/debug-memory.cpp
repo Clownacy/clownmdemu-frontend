@@ -3,7 +3,7 @@
 #include "SDL.h"
 
 #include "../libraries/imgui/imgui.h"
-#include "../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "../common/clownmdemu/clowncommon/clowncommon.h"
 
 void DebugMemory::DisplayInternal(const cc_u8l* const buffer, const std::size_t buffer_length)
 {

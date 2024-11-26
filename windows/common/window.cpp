@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include "../../clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "../../common/clownmdemu/clowncommon/clowncommon.h"
 
 #include "winapi.h"
 

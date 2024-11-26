@@ -4,7 +4,7 @@
 #include <optional>
 #include <string>
 
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/clownmdemu/clowncommon/clowncommon.h"
 
 /* Returns UTF-32 codepoint. */
 /* Reads a maximum of two bytes. */

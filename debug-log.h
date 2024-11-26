@@ -8,7 +8,7 @@
 #include "SDL.h"
 
 #include "libraries/imgui/imgui.h"
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/clownmdemu/clowncommon/clowncommon.h"
 
 class DebugLog
 {

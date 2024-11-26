@@ -9,7 +9,7 @@
 	url = https://github.com/Clownacy/imgui.git
 	branch = font-nonlinear
 [submodule "clownmdemu-frontend-common"]
-	path = clownmdemu-frontend-common
+	path = common
 	url = https://github.com/Clownacy/clownmdemu-frontend-common
 [submodule "libraries/inih"]
 	path = libraries/inih

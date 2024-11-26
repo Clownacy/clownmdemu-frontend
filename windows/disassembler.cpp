@@ -3,7 +3,7 @@
 #include <array>
 #include <string>
 
-#include "../clownmdemu-frontend-common/clownmdemu/clown68000/disassembler/disassembler.h"
+#include "../common/clownmdemu/clown68000/disassembler/disassembler.h"
 #include "../libraries/imgui/imgui.h"
 
 #include "../emulator-instance.h"

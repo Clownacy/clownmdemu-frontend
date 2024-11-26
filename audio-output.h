@@ -5,10 +5,10 @@
 #include <array>
 #include <cstddef>
 
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/clownmdemu/clowncommon/clowncommon.h"
 
 #define MIXER_FORMAT cc_s16l
-#include "clownmdemu-frontend-common/mixer.h"
+#include "common/mixer.h"
 
 #include "audio-device.h"
 

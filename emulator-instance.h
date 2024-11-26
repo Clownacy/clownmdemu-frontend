@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "clownmdemu-frontend-common/clownmdemu/clownmdemu.h"
+#include "common/clownmdemu/clownmdemu.h"
 
 #include "audio-output.h"
 #include "cd-reader.h"

@@ -3,7 +3,7 @@
 
 #include "SDL.h"
 
-#include "clownmdemu-frontend-common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/clownmdemu/clowncommon/clowncommon.h"
 
 class AudioDevice
 {

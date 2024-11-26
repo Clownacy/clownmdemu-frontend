@@ -29,7 +29,7 @@ add_executable(clownmdemu-frontend WIN32
 	"sdl-wrapper.h"
 	"text-encoding.cpp"
 	"text-encoding.h"
-	"clownmdemu-frontend-common/mixer.h"
+	"common/mixer.h"
 	"libraries/imgui/imconfig.h"
 	"libraries/imgui/imgui.cpp"
 	"libraries/imgui/imgui.h"
@@ -159,7 +159,7 @@ target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "librar
 ##################
 
 # Link clownmdemu core
-add_subdirectory("clownmdemu-frontend-common/clownmdemu" EXCLUDE_FROM_ALL)
+add_subdirectory("common/clownmdemu" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clownmdemu)
 
 # Link SDL
