@@ -2555,7 +2555,7 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("VDP"))
 				{
 					PopupButton("Registers", vdp_registers_window, 360, 824, false, "VDP Registers");
-					PopupButton("Sprites", sprite_list_window, 540, 540, false);
+					PopupButton("Sprites", sprite_list_window, 540, 540, true);
 					ImGui::SeparatorText("Visualisers");
 					PopupButton("Sprite Plane", sprite_viewer_window, 544 / dpi_scale, 560 / dpi_scale, true);
 					PopupButton("Window Plane", window_plane_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
