@@ -33,7 +33,7 @@ EmulatorInstance::Cartridge::Cartridge(const std::vector<unsigned char> &&rom_fi
 EmulatorInstance::Cartridge::~Cartridge()
 {
 	// Write save data to disk.
-	if (state->clownmdemu.external_ram.size != 0)
+	if (state->clownmdemu.external_ram.non_volatile && state->clownmdemu.external_ram.size != 0)
 	{
 		SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
 
