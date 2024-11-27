@@ -757,7 +757,7 @@ public:
 float Frontend::dpi_scale;
 std::optional<EmulatorInstance> Frontend::emulator;
 std::optional<WindowWithFramebuffer> Frontend::window;
-FileUtilities Frontend::file_utilities(debug_log);
+FileUtilities Frontend::file_utilities;
 unsigned int Frontend::frame_counter;
 SDL::Texture Frontend::framebuffer_texture_upscaled;
 

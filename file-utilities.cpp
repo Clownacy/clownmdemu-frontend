@@ -357,7 +357,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 
 	if (!file)
 	{
-		debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_RWFromFile failed with the following message - '%s'", SDL_GetError());
 		return false;
 	}
 
@@ -370,7 +370,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 
 	if (size_s64 < 0)
 	{
-		debug_log.Log("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_RWsize failed with the following message - '%s'", SDL_GetError());
 	}
 	else
 	{
@@ -384,7 +384,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 		}
 		catch (const std::bad_alloc&)
 		{
-			debug_log.Log("Could not allocate memory for file");
+			Frontend::debug_log.Log("Could not allocate memory for file");
 		}
 	}
 

@@ -37,7 +37,6 @@ private:
 
 	std::string text_buffer;
 
-	DebugLog &debug_log;
 	std::optional<std::string> active_file_picker_popup;
 	PopupCallback popup_callback;
 	bool is_save_dialog = false;
@@ -54,7 +53,6 @@ public:
 	bool use_native_file_dialogs = true;
 #endif
 
-	FileUtilities(DebugLog &debug_log) : debug_log(debug_log) {}
 	void CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback);
 	void CreateSaveFileDialog(Window &window, const std::string &title, const PopupCallback &callback);
 	void DisplayFileDialog(std::filesystem::path &drag_and_drop_filename);
