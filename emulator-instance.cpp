@@ -9,14 +9,52 @@
 
 const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = ClownMDEmu_Constant_Initialise();
 
+EmulatorInstance::Cartridge::Cartridge(const std::vector<unsigned char> &&rom_file_buffer, const std::filesystem::path &save_data_path, State *&state)
+	: rom_file_buffer(std::move(rom_file_buffer))
+	, save_data_path(save_data_path)
+	, state(state)
+{
+	// Load save data from disk.
+	std::vector<unsigned char> save_data_buffer;
+	if (Frontend::file_utilities.LoadFileToBuffer(save_data_buffer, save_data_path))
+	{
+		if (std::size(save_data_buffer) > std::size(state->clownmdemu.external_ram.buffer))
+		{
+			Frontend::debug_log.Log("Save data file size (0x%Xz bytes) is larger than the internal save data buffer size (0x%Xz bytes)", std::size(save_data_buffer), std::size(state->clownmdemu.external_ram.buffer));
+		}
+		else
+		{
+			std::copy(std::begin(save_data_buffer), std::end(save_data_buffer), state->clownmdemu.external_ram.buffer);
+			std::fill(std::begin(state->clownmdemu.external_ram.buffer) + std::size(save_data_buffer), std::end(state->clownmdemu.external_ram.buffer), 0xFF);
+		}
+	}
+}
+
+EmulatorInstance::Cartridge::~Cartridge()
+{
+	// Write save data to disk.
+	if (state->clownmdemu.external_ram.size != 0)
+	{
+		SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
+
+		if (!file || SDL_RWwrite(file, state->clownmdemu.external_ram.buffer, state->clownmdemu.external_ram.size, 1) != 1)
+			Frontend::debug_log.Log("Could not write save data file");
+	}
+}
+
+cc_u8f EmulatorInstance::Cartridge::Read(const cc_u32f address)
+{
+	if (address >= rom_file_buffer.size())
+		return 0;
+
+	return rom_file_buffer[address];
+}
+
 cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u32f address)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	if (address >= emulator->rom_buffer.size())
-		return 0;
-
-	return emulator->rom_buffer[address];
+	return emulator->cartridge->Read(address);
 }
 
 void EmulatorInstance::CartridgeWrittenCallback([[maybe_unused]] void* const user_data, [[maybe_unused]] const cc_u32f address, [[maybe_unused]] const cc_u8f value)
@@ -155,8 +193,6 @@ EmulatorInstance::EmulatorInstance(
 {
 	// This should be called before any other clownmdemu functions are called!
 	ClownMDEmu_SetLogCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &Frontend::debug_log);
-
-	HardResetConsole();
 }
 
 void EmulatorInstance::Update(const cc_bool fast_forward)
@@ -243,28 +279,22 @@ void EmulatorInstance::HardResetConsole()
 	state_rewind_index = 0;
 #endif
 	state = &state_rewind_buffer[0];
-	// A real console does not retain its RAM contents between games, as RAM
-	// is cleared when the console is powered-off.
-	// Failing to clear RAM causes issues with Sonic games and ROM-hacks,
-	// which skip initialisation when a certain magic number is found in RAM.
-	auto &m68k_ram = state_rewind_buffer[0].clownmdemu.m68k.ram;
-	std::fill(std::begin(m68k_ram), std::end(m68k_ram), 0);
 
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 	SoftResetConsole();
 }
 
-void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
+void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path)
 {
-	rom_buffer = std::move(file_buffer);
+	cartridge.emplace(std::move(file_buffer), path, state);
 
 	HardResetConsole();
 }
 
 void EmulatorInstance::UnloadCartridgeFile()
 {
-	rom_buffer.clear();
+	cartridge.reset();
 }
 
 bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
@@ -347,7 +377,7 @@ std::string EmulatorInstance::GetSoftwareName()
 
 		if (IsCartridgeFileLoaded())
 		{
-			header_bytes = &rom_buffer[0x100];
+			header_bytes = &cartridge->GetROMBuffer()[0x100];
 		}
 		else //if (cd_file.IsOpen())
 		{

@@ -979,6 +979,33 @@ bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &hei
 // Misc. //
 ///////////
 
+static std::filesystem::path ConfigPath()
+{
+	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
+
+	if (path_cstr == nullptr)
+		return {};
+
+	const std::filesystem::path path(path_cstr.get());
+
+	return path;
+}
+
+static std::filesystem::path GetConfigurationFilePath()
+{
+	return ConfigPath() / "configuration.ini";
+}
+
+static std::filesystem::path GetDearImGuiSettingsFilePath()
+{
+	return ConfigPath() / "dear-imgui-settings.ini";
+}
+
+static std::filesystem::path GetSaveDataFilePath(const std::filesystem::path &rom_path)
+{
+	return (ConfigPath() / "Save Data" / rom_path.stem()).replace_extension(".srm");
+}
+
 static void SetWindowTitleToSoftwareName()
 {
 	const std::string name = emulator->GetSoftwareName();
@@ -988,15 +1015,23 @@ static void SetWindowTitleToSoftwareName()
 	SDL_SetWindowTitle(window->GetSDLWindow(), name.empty() ? DEFAULT_TITLE : name.c_str());
 }
 
-static void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer)
+static void LoadCartridgeFile(const std::filesystem::path &path, const std::vector<unsigned char> &&file_buffer)
 {
+	const auto save_file_path = GetSaveDataFilePath(path);
+
+	std::filesystem::create_directories(save_file_path.parent_path());
+
+#ifdef FILE_PATH_SUPPORT
+	AddToRecentSoftware(path, false, false);
+#endif
+
 	quick_save_exists = false;
-	emulator->LoadCartridgeFile(std::move(file_buffer));
+	emulator->LoadCartridgeFile(std::move(file_buffer), save_file_path);
 
 	SetWindowTitleToSoftwareName();
 }
 
-static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* const path, SDL::RWops &file)
+static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::RWops &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1007,12 +1042,7 @@ static bool LoadCartridgeFile([[maybe_unused]] const std::filesystem::path* cons
 		return false;
 	}
 
-#ifdef FILE_PATH_SUPPORT
-	if (path != nullptr)
-		AddToRecentSoftware(*path, false, false);
-#endif
-
-	LoadCartridgeFile(std::move(file_buffer));
+	LoadCartridgeFile(path, std::move(file_buffer));
 
 	return true;
 }
@@ -1028,18 +1058,17 @@ static bool LoadCartridgeFile(const std::filesystem::path &path)
 		return false;
 	}
 
-	return LoadCartridgeFile(&path, file);
+	return LoadCartridgeFile(path, file);
 }
 
-static bool LoadCDFile(const std::filesystem::path* const path, SDL::RWops &&file)
+static bool LoadCDFile(const std::filesystem::path &path, SDL::RWops &&file)
 {
 #ifdef FILE_PATH_SUPPORT
-	if (path != nullptr)
-		AddToRecentSoftware(*path, true, false);
+	AddToRecentSoftware(path, true, false);
 #endif
 
 	// Load the CD.
-	if (!emulator->LoadCDFile(std::move(file), *path))
+	if (!emulator->LoadCDFile(std::move(file), path))
 		return false;
 
 	SetWindowTitleToSoftwareName();
@@ -1059,7 +1088,7 @@ static bool LoadCDFile(const std::filesystem::path &path)
 		return false;
 	}
 
-	return LoadCDFile(&path, std::move(file));
+	return LoadCDFile(path, std::move(file));
 }
 
 static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path &path)
@@ -1122,29 +1151,6 @@ void Frontend::SetAudioPALMode(const bool enabled)
 	frame_rate_callback(enabled);
 	emulator->SetPALMode(enabled);
 }
-
-static std::filesystem::path ConfigPath()
-{
-	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
-
-	if (path_cstr == nullptr)
-		return {};
-
-	const std::filesystem::path path(path_cstr.get());
-
-	return path;
-}
-
-static std::filesystem::path GetConfigurationFilePath()
-{
-	return ConfigPath()/"configuration.ini";
-}
-
-static std::filesystem::path GetDearImGuiSettingsFilePath()
-{
-	return ConfigPath()/"dear-imgui-settings.ini";
-}
-
 
 
 /////////////
@@ -2284,10 +2290,7 @@ void Frontend::Update()
 			else
 			{
 				// TODO: Handle dropping a CD file here.
-			#ifdef FILE_PATH_SUPPORT
-				AddToRecentSoftware(drag_and_drop_filename, false, false);
-			#endif
-				LoadCartridgeFile(std::move(file_buffer));
+				LoadCartridgeFile(drag_and_drop_filename, std::move(file_buffer));
 				emulator_paused = false;
 			}
 		}
@@ -2355,7 +2358,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path* const path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, SDL::RWops &&file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -2381,7 +2384,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path* const path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::RWops &&file)
 					{
 						if (!LoadCDFile(path, std::move(file)))
 							return false;
@@ -2495,7 +2498,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path* const path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, SDL::RWops &&file)
 					{
 						LoadSaveState(file);
 						return true;

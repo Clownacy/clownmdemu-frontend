@@ -398,13 +398,13 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	{
 		LoadFileCallback* const callback_detatched = new LoadFileCallback(callback);
 
-		const auto call_callback = [](const std::string &/*filename*/, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
+		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
 			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
 			SDL::RWops file = SDL::RWops(SDL_RWFromConstMem(buffer.data(), buffer.size()));
 
 			if (file)
-				(*callback.get())(nullptr, std::move(file));
+				(*callback.get())(filename, std::move(file));
 		};
 
 		emscripten_browser_file::upload("", call_callback, callback_detatched);
@@ -421,7 +421,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		if (!file)
 			return false;
 
-		return callback(&path, std::move(file));
+		return callback(path, std::move(file));
 	});
 #endif
 }

@@ -32,6 +32,21 @@ public:
 	};
 
 private:
+	class Cartridge
+	{
+	private:
+		const std::vector<unsigned char> rom_file_buffer;
+		const std::filesystem::path save_data_path;
+		State *&state;
+
+	public:
+		Cartridge(const std::vector<unsigned char> &&rom_file_buffer, const std::filesystem::path &save_data_path, State *&state);
+		~Cartridge();
+
+		cc_u8f Read(cc_u32f address);
+		const std::vector<unsigned char>& GetROMBuffer() const { return rom_file_buffer; }
+	};
+
 	static const ClownMDEmu_Constant clownmdemu_constant;
 
 	AudioOutput audio_output;
@@ -42,7 +57,7 @@ private:
 	ClownMDEmu_Configuration clownmdemu_configuration = {};
 	ClownMDEmu clownmdemu;
 
-	std::vector<unsigned char> rom_buffer;
+	std::optional<Cartridge> cartridge;
 	CDReader cd_file;
 
 	CDReader::Sector sector;
@@ -83,7 +98,7 @@ public:
 	void Update(cc_bool fast_forward);
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer);
+	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path);
 	void UnloadCartridgeFile();
 	bool LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();
@@ -96,7 +111,7 @@ public:
 	std::size_t GetSaveStateFileSize();
 	bool WriteSaveStateFile(SDL::RWops &file);
 
-	bool IsCartridgeFileLoaded() const { return !rom_buffer.empty(); }
+	bool IsCartridgeFileLoaded() const { return cartridge.has_value(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
@@ -109,7 +124,7 @@ public:
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 	const State& CurrentState() const { return *state; }
 	void OverwriteCurrentState(const State &new_state) { LoadState(&new_state); }
-	const std::vector<unsigned char>& GetROMBuffer() const { return rom_buffer; }
+	const std::vector<unsigned char>& GetROMBuffer() const { return cartridge->GetROMBuffer(); }
 
 	bool GetPALMode() const { return clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
 
