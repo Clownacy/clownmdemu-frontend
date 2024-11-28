@@ -20,7 +20,7 @@ EmulatorInstance::Cartridge::Cartridge(const std::vector<unsigned char> &&rom_fi
 	{
 		if (std::size(save_data_buffer) > std::size(state->clownmdemu.external_ram.buffer))
 		{
-			Frontend::debug_log.Log("Save data file size (0x%Xz bytes) is larger than the internal save data buffer size (0x%Xz bytes)", std::size(save_data_buffer), std::size(state->clownmdemu.external_ram.buffer));
+			Frontend::debug_log.Log("Save data file size (0x%zX bytes) is larger than the internal save data buffer size (0x%zX bytes)", std::size(save_data_buffer), std::size(state->clownmdemu.external_ram.buffer));
 		}
 		else
 		{
