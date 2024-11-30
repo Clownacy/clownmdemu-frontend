@@ -77,9 +77,12 @@ static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallb
 
 void CDReader::Open(SDL::RWops &&stream, const std::filesystem::path &path)
 {
-	// Transfer ownership of the stream to ClownCD.
-	clowncd.Open(ClownCD_OpenAlreadyOpen(stream.release(), path.string().c_str(), &callbacks));
+	if (IsOpen())
+		Close();
 
+	// Transfer ownership of the stream to ClownCD.
+	clowncd = ClownCD_OpenAlreadyOpen(stream.release(), path.string().c_str(), &callbacks);
+	open = true;
 	audio_playing = false;
 }
 
@@ -88,12 +91,12 @@ bool CDReader::SeekToSector(const SectorIndex sector_index)
 	if (!IsOpen())
 		return false;
 
-	const auto track_type = ClownCD_SeekTrackIndex(&clowncd.data, 1, 1);
+	const auto track_type = ClownCD_SeekTrackIndex(&clowncd, 1, 1);
 
 	if (track_type != CLOWNCD_CUE_TRACK_MODE1_2048 && track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
 		return false;
 
-	return ClownCD_SeekSector(&clowncd.data, sector_index);
+	return ClownCD_SeekSector(&clowncd, sector_index);
 }
 
 CDReader::Sector CDReader::ReadSector()
@@ -106,7 +109,7 @@ CDReader::Sector CDReader::ReadSector()
 		return sector;
 	}
 
-	ClownCD_ReadSector(&clowncd.data, sector.data());
+	ClownCD_ReadSector(&clowncd, sector.data());
 	return sector;
 }
 
@@ -131,7 +134,7 @@ bool CDReader::PlayAudio(const TrackIndex track_index, const PlaybackSetting set
 
 	audio_playing = false;
 
-	if (ClownCD_SeekTrackIndex(&clowncd.data, track_index, 1) != CLOWNCD_CUE_TRACK_AUDIO)
+	if (ClownCD_SeekTrackIndex(&clowncd, track_index, 1) != CLOWNCD_CUE_TRACK_AUDIO)
 		return false;
 
 	audio_playing = true;
@@ -142,7 +145,7 @@ bool CDReader::PlayAudio(const TrackIndex track_index, const PlaybackSetting set
 
 bool CDReader::SeekToFrame(const FrameIndex frame_index)
 {
-	if (!ClownCD_SeekAudioFrame(&clowncd.data, frame_index))
+	if (!ClownCD_SeekAudioFrame(&clowncd, frame_index))
 	{
 		audio_playing = false;
 		return false;
@@ -163,14 +166,14 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 
 	while (frames_read != total_frames)
 	{
-		frames_read += ClownCD_ReadFrames(&clowncd.data, &sample_buffer[frames_read * 2], total_frames - frames_read);
+		frames_read += ClownCD_ReadFrames(&clowncd, &sample_buffer[frames_read * 2], total_frames - frames_read);
 
 		if (frames_read != total_frames)
 		{
 			switch (playback_setting)
 			{
 				case PlaybackSetting::ALL:
-					if (!PlayAudio(clowncd.data.track.current_track + 1, playback_setting))
+					if (!PlayAudio(clowncd.track.current_track + 1, playback_setting))
 						audio_playing = false;
 					break;
 
@@ -194,9 +197,9 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 CDReader::State CDReader::GetState()
 {
 	State state;
-	state.track_index = clowncd.data.track.current_track;
-	state.sector_index = clowncd.data.track.current_sector;
-	state.frame_index = clowncd.data.track.current_frame;
+	state.track_index = clowncd.track.current_track;
+	state.sector_index = clowncd.track.current_sector;
+	state.frame_index = clowncd.track.current_frame;
 	state.playback_setting = playback_setting;
 	state.audio_playing = audio_playing;
 	return state;
@@ -207,7 +210,7 @@ bool CDReader::SetState(const State &state)
 	if (!IsOpen())
 		return false;
 
-	if (ClownCD_SetState(&clowncd.data, state.track_index, 1, state.sector_index, state.frame_index) == CLOWNCD_CUE_TRACK_INVALID)
+	if (ClownCD_SetState(&clowncd, state.track_index, 1, state.sector_index, state.frame_index) == CLOWNCD_CUE_TRACK_INVALID)
 		return false;
 
 	playback_setting = state.playback_setting;

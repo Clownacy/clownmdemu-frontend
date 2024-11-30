@@ -24,47 +24,8 @@ public:
 	using FrameIndex = std::size_t;
 
 private:
-	class ClownCDWrapper
-	{
-	private:
-		bool open = false;
-
-	public:
-		ClownCD data;
-
-		ClownCDWrapper() {}
-		ClownCDWrapper(ClownCD clowncd) { Open(clowncd); }
-		~ClownCDWrapper() { Close(); }
-		ClownCDWrapper(const ClownCDWrapper &other) = delete;
-		ClownCDWrapper(ClownCDWrapper &&other) = delete;
-		ClownCDWrapper& operator=(const ClownCDWrapper &other) = delete;
-		ClownCDWrapper& operator=(ClownCDWrapper &&other) = delete;
-
-		void Open(const ClownCD clowncd)
-		{
-			if (IsOpen())
-				Close();
-
-			data = clowncd;
-			open = true;
-		}
-
-		void Close()
-		{
-			if (!IsOpen())
-				return;
-
-			ClownCD_Close(&data); 
-			open = false;
-		}
-
-		bool IsOpen() const
-		{
-			return open;
-		}
-	};
-
-	ClownCDWrapper clowncd;
+	ClownCD clowncd;
+	bool open = false;
 	PlaybackSetting playback_setting = PlaybackSetting::ALL;
 	bool audio_playing = false;
 
@@ -82,9 +43,24 @@ public:
 	using Sector = std::array<cc_u8l, SECTOR_SIZE>;
 
 	CDReader() = default;
+	~CDReader()
+	{
+		Close();
+	}
+	CDReader(const CDReader &other) = delete;
+	CDReader(CDReader &&other) = delete;
+	CDReader& operator=(const CDReader &other) = delete;
+	CDReader& operator=(CDReader &&other) = delete;
 	void Open(SDL::RWops &&stream, const std::filesystem::path &path);
-	void Close() { clowncd.Close(); }
-	bool IsOpen() const { return clowncd.IsOpen(); }
+	void Close()
+	{
+		if (!IsOpen())
+			return;
+
+		ClownCD_Close(&clowncd);
+		open = false;
+	}
+	bool IsOpen() const { return open; }
 	bool SeekToSector(SectorIndex sector_index);
 	bool SeekToFrame(FrameIndex frame_index);
 	Sector ReadSector();
