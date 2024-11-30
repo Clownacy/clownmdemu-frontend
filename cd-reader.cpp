@@ -1,6 +1,7 @@
 #include "cd-reader.h"
 
 #include <climits>
+#include <string.h>
 
 static void* FileOpenCallback(const char* const filename, const ClownCD_FileMode mode)
 {
@@ -75,118 +76,140 @@ static int FileSeekCallback(void* const stream, const long position, const Clown
 
 static const ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
 
-void CDReader::Open(SDL::RWops &&stream, const std::filesystem::path &path)
+void CDReader_Initialise(CDReader_State* const state)
 {
-	if (IsOpen())
-		Close();
-
-	// Transfer ownership of the stream to ClownCD.
-	clowncd = ClownCD_OpenAlreadyOpen(stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
-	open = true;
-	audio_playing = false;
+	state->open = cc_false;
+	state->playback_setting = CDREADER_PLAYBACK_ALL;
+	state->audio_playing = cc_false;
 }
 
-bool CDReader::SeekToSector(const SectorIndex sector_index)
+void CDReader_Deinitialise(CDReader_State* const state)
 {
-	if (!IsOpen())
-		return false;
+	CDReader_Close(state);
+}
 
-	const auto track_type = ClownCD_SeekTrackIndex(&clowncd, 1, 1);
+void CDReader_Open(CDReader_State* const state, void* const stream, const char* const path)
+{
+	if (CDReader_IsOpen(state))
+		CDReader_Close(state);
+
+	state->clowncd = ClownCD_OpenAlreadyOpen(stream, path, &callbacks);
+	state->open = cc_true;
+	state->audio_playing = cc_false;
+}
+
+void CDReader_Close(CDReader_State* const state)
+{
+	if (!CDReader_IsOpen(state))
+		return;
+
+	ClownCD_Close(&state->clowncd);
+	state->open = cc_false;
+}
+
+cc_bool CDReader_IsOpen(const CDReader_State* const state)
+{
+	return state->open;
+}
+
+cc_bool CDReader_SeekToSector(CDReader_State* const state, const CDReader_SectorIndex sector_index)
+{
+	ClownCD_CueTrackType track_type;
+
+	if (!CDReader_IsOpen(state))
+		return cc_false;
+
+	track_type = ClownCD_SeekTrackIndex(&state->clowncd, 1, 1);
 
 	if (track_type != CLOWNCD_CUE_TRACK_MODE1_2048 && track_type != CLOWNCD_CUE_TRACK_MODE1_2352)
-		return false;
+		return cc_false;
 
-	return ClownCD_SeekSector(&clowncd, sector_index);
+	return ClownCD_SeekSector(&state->clowncd, sector_index);
 }
 
-CDReader::Sector CDReader::ReadSector()
+void CDReader_ReadSector(CDReader_State* const state, CDReader_Sector* const sector)
 {
-	Sector sector;
-
-	if (!IsOpen())
+	if (!CDReader_IsOpen(state))
 	{
-		sector.fill(0);
-		return sector;
+		memset(sector, 0, sizeof(*sector));
+		return;
 	}
 
-	ClownCD_ReadSector(&clowncd, sector.data());
-	return sector;
+	ClownCD_ReadSector(&state->clowncd, *sector);
 }
 
-CDReader::Sector CDReader::ReadSector(const SectorIndex sector_index)
+void CDReader_ReadSectorAt(CDReader_State* const state, CDReader_Sector* const sector, const CDReader_SectorIndex sector_index)
 {
-	Sector sector;
-
-	if (!IsOpen())
+	if (!CDReader_IsOpen(state))
 	{
-		sector.fill(0);
-		return sector;
+		memset(sector, 0, sizeof(*sector));
+		return;
 	}
 
-	SeekToSector(sector_index);
-	return ReadSector();
+	CDReader_SeekToSector(state, sector_index);
+	ClownCD_ReadSector(&state->clowncd, *sector);
 }
 
-bool CDReader::PlayAudio(const TrackIndex track_index, const PlaybackSetting setting)
+cc_bool CDReader_PlayAudio(CDReader_State* const state, const CDReader_TrackIndex track_index, const CDReader_PlaybackSetting setting)
 {
-	if (!IsOpen())
-		return false;
+	if (!CDReader_IsOpen(state))
+		return cc_false;
 
-	audio_playing = false;
+	state->audio_playing = cc_false;
 
-	if (ClownCD_SeekTrackIndex(&clowncd, track_index, 1) != CLOWNCD_CUE_TRACK_AUDIO)
-		return false;
+	if (ClownCD_SeekTrackIndex(&state->clowncd, track_index, 1) != CLOWNCD_CUE_TRACK_AUDIO)
+		return cc_false;
 
-	audio_playing = true;
-	playback_setting = setting;
+	state->audio_playing = cc_true;
+	state->playback_setting = setting;
 
-	return true;
+	return cc_true;
 }
 
-bool CDReader::SeekToFrame(const FrameIndex frame_index)
+cc_bool CDReader_SeekToFrame(CDReader_State* const state, const CDReader_FrameIndex frame_index)
 {
-	if (!ClownCD_SeekAudioFrame(&clowncd, frame_index))
+	if (!ClownCD_SeekAudioFrame(&state->clowncd, frame_index))
 	{
-		audio_playing = false;
-		return false;
+		state->audio_playing = cc_false;
+		return cc_false;
 	}
 
-	return true;
+	return cc_true;
 }
 
-cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
+cc_u32f CDReader_ReadAudio(CDReader_State* const state, cc_s16l* const sample_buffer, const cc_u32f total_frames)
 {
-	if (!IsOpen())
-		return 0;
-
-	if (!audio_playing)
-		return 0;
-
 	cc_u32f frames_read = 0;
+
+	if (!CDReader_IsOpen(state))
+		return 0;
+
+	if (!state->audio_playing)
+		return 0;
 
 	while (frames_read != total_frames)
 	{
-		frames_read += ClownCD_ReadFrames(&clowncd, &sample_buffer[frames_read * 2], total_frames - frames_read);
+		frames_read += ClownCD_ReadFrames(&state->clowncd, &sample_buffer[frames_read * 2], total_frames - frames_read);
 
 		if (frames_read != total_frames)
 		{
-			switch (playback_setting)
+			switch (state->playback_setting)
 			{
-				case PlaybackSetting::ALL:
-					if (!PlayAudio(clowncd.track.current_track + 1, playback_setting))
-						audio_playing = false;
+				case CDREADER_PLAYBACK_ALL:
+					if (!CDReader_PlayAudio(state, state->clowncd.track.current_track + 1, state->playback_setting))
+						state->audio_playing = cc_false;
 					break;
 
-				case PlaybackSetting::ONCE:
-					audio_playing = false;
-					[[fallthrough]];
-				case PlaybackSetting::REPEAT:
-					if (!SeekToFrame(0))
-						audio_playing = false;
+				case CDREADER_PLAYBACK_ONCE:
+					state->audio_playing = cc_false;
+					/* Fallthrough */
+				case CDREADER_PLAYBACK_REPEAT:
+					if (!CDReader_SeekToFrame(state, 0))
+						state->audio_playing = cc_false;
 					break;
 			}
 
-			if (!audio_playing)
+			if (!state->audio_playing)
 				break;
 		}
 	}
@@ -194,27 +217,25 @@ cc_u32f CDReader::ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_fr
 	return frames_read;
 }
 
-CDReader::State CDReader::GetState()
+void CDReader_GetStateBackup(CDReader_State* const state, CDReader_StateBackup* const backup)
 {
-	State state;
-	state.track_index = clowncd.track.current_track;
-	state.sector_index = clowncd.track.current_sector;
-	state.frame_index = clowncd.track.current_frame;
-	state.playback_setting = playback_setting;
-	state.audio_playing = audio_playing;
-	return state;
+	backup->track_index = state->clowncd.track.current_track;
+	backup->sector_index = state->clowncd.track.current_sector;
+	backup->frame_index = state->clowncd.track.current_frame;
+	backup->playback_setting = state->playback_setting;
+	backup->audio_playing = state->audio_playing;
 }
 
-bool CDReader::SetState(const State &state)
+cc_bool CDReader_SetStateBackup(CDReader_State* const state, const CDReader_StateBackup* const backup)
 {
-	if (!IsOpen())
-		return false;
+	if (!CDReader_IsOpen(state))
+		return cc_false;
 
-	if (ClownCD_SetState(&clowncd, state.track_index, 1, state.sector_index, state.frame_index) == CLOWNCD_CUE_TRACK_INVALID)
-		return false;
+	if (ClownCD_SetState(&state->clowncd, backup->track_index, 1, backup->sector_index, backup->frame_index) == CLOWNCD_CUE_TRACK_INVALID)
+		return cc_false;
 
-	playback_setting = state.playback_setting;
-	audio_playing = state.audio_playing;
+	state->playback_setting = backup->playback_setting;
+	state->audio_playing = backup->audio_playing;
 
-	return true;
+	return cc_true;
 }
