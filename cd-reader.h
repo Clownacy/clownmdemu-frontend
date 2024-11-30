@@ -1,72 +1,14 @@
 #ifndef CD_READER_H
 #define CD_READER_H
 
-#include <stddef.h>
+#include <array>
+#include <cstddef>
+#include <filesystem>
 
-#ifdef __cplusplus
-	#include <array>
-	#include <cstddef>
-	#include <filesystem>
+#include "sdl-wrapper.h"
 
-	#include "sdl-wrapper.h"
-#endif
+#include "common/cd-reader.h"
 
-#include "libraries/clowncd/clowncd.h"
-
-#define CDREADER_SECTOR_SIZE 2048
-
-typedef cc_u32f CDReader_SectorIndex;
-typedef cc_u16f CDReader_TrackIndex;
-typedef size_t CDReader_FrameIndex;
-typedef cc_u8l CDReader_Sector[CDREADER_SECTOR_SIZE];
-
-typedef enum CDReader_PlaybackSetting
-{
-	CDREADER_PLAYBACK_ALL,
-	CDREADER_PLAYBACK_ONCE,
-	CDREADER_PLAYBACK_REPEAT
-} CDReader_PlaybackSetting;
-
-typedef struct CDReader_State
-{
-	ClownCD clowncd;
-	cc_bool open;
-	CDReader_PlaybackSetting playback_setting;
-	cc_bool audio_playing;
-} CDReader_State;
-
-typedef struct CDReader_StateBackup
-{
-	CDReader_TrackIndex track_index;
-	CDReader_SectorIndex sector_index;
-	CDReader_FrameIndex frame_index;
-	CDReader_PlaybackSetting playback_setting;
-	cc_bool audio_playing;
-} CDReader_StateBackup;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void CDReader_Initialise(CDReader_State *state);
-void CDReader_Deinitialise(CDReader_State *state);
-void CDReader_Open(CDReader_State *state, void *stream, const char *path);
-void CDReader_Close(CDReader_State *state);
-cc_bool CDReader_IsOpen(const CDReader_State *state);
-cc_bool CDReader_SeekToSector(CDReader_State *state, CDReader_SectorIndex sector_index);
-cc_bool CDReader_SeekToFrame(CDReader_State *state, CDReader_FrameIndex frame_index);
-void CDReader_ReadSector(CDReader_State *state, CDReader_Sector *sector);
-void CDReader_ReadSectorAt(CDReader_State *state, CDReader_Sector *sector, CDReader_SectorIndex sector_index);
-cc_bool CDReader_PlayAudio(CDReader_State *state, CDReader_TrackIndex track_index, CDReader_PlaybackSetting setting);
-cc_u32f CDReader_ReadAudio(CDReader_State *state, cc_s16l *sample_buffer, cc_u32f total_frames);
-void CDReader_GetStateBackup(CDReader_State *state, CDReader_StateBackup *backup);
-cc_bool CDReader_SetStateBackup(CDReader_State *state, const CDReader_StateBackup *backup);
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
 class CDReader
 {
 public:
@@ -78,11 +20,20 @@ public:
 	};
 
 	using SectorIndex = CDReader_SectorIndex;
-	using TrackIndex = CDReader_TrackIndex;
-	using FrameIndex = CDReader_FrameIndex;
+	using TrackIndex  = CDReader_TrackIndex;
+	using FrameIndex  = CDReader_FrameIndex;
 
 private:
 	CDReader_State state;
+
+	static void* FileOpenCallback(const char *filename, ClownCD_FileMode mode);
+	static int FileCloseCallback(void *stream);
+	static std::size_t FileReadCallback(void *buffer, std::size_t size, std::size_t count, void *stream);
+	static std::size_t FileWriteCallback(const void *buffer, std::size_t size, std::size_t count, void *stream);
+	static long FileTellCallback(void *stream);
+	static int FileSeekCallback(void *stream, long position, ClownCD_FileOrigin origin);
+
+	static constexpr ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
 
 public:
 	using State = CDReader_StateBackup;
@@ -105,7 +56,7 @@ public:
 	void Open(SDL::RWops &&stream, const std::filesystem::path &path)
 	{
 		// Transfer ownership of the stream to ClownCD.
-		CDReader_Open(&state, stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()));
+		CDReader_Open(&state, stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
 	}
 	void Close()
 	{
@@ -155,6 +106,5 @@ public:
 		return CDReader_SetStateBackup(&this->state, &state);
 	}
 };
-#endif
 
 #endif /* CD_READER_H */

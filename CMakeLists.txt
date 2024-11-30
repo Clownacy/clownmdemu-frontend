@@ -29,6 +29,8 @@ add_executable(clownmdemu-frontend WIN32
 	"sdl-wrapper.h"
 	"text-encoding.cpp"
 	"text-encoding.h"
+	"common/cd-reader.c"
+	"common/cd-reader.h"
 	"common/mixer.h"
 	"libraries/imgui/imconfig.h"
 	"libraries/imgui/imgui.cpp"
