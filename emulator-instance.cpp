@@ -9,36 +9,42 @@
 
 const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = ClownMDEmu_Constant_Initialise();
 
-EmulatorInstance::Cartridge::Cartridge(const std::vector<unsigned char> &&rom_file_buffer, const std::filesystem::path &save_data_path, State *&state)
+EmulatorInstance::Cartridge::Cartridge(EmulatorInstance &emulator, const std::vector<unsigned char> &&rom_file_buffer, const std::filesystem::path &save_data_path)
 	: rom_file_buffer(std::move(rom_file_buffer))
 	, save_data_path(save_data_path)
-	, state(state)
+	, emulator(&emulator)
 {
-	// Load save data from disk.
-	std::vector<unsigned char> save_data_buffer;
-	if (Frontend::file_utilities.LoadFileToBuffer(save_data_buffer, save_data_path))
+	if (!save_data_path.empty())
 	{
-		if (std::size(save_data_buffer) > std::size(state->clownmdemu.external_ram.buffer))
+		// Load save data from disk.
+		std::vector<unsigned char> save_data_buffer;
+		if (Frontend::file_utilities.LoadFileToBuffer(save_data_buffer, save_data_path))
 		{
-			Frontend::debug_log.Log("Save data file size (0x%zX bytes) is larger than the internal save data buffer size (0x%zX bytes)", std::size(save_data_buffer), std::size(state->clownmdemu.external_ram.buffer));
-		}
-		else
-		{
-			std::copy(std::begin(save_data_buffer), std::end(save_data_buffer), state->clownmdemu.external_ram.buffer);
-			std::fill(std::begin(state->clownmdemu.external_ram.buffer) + std::size(save_data_buffer), std::end(state->clownmdemu.external_ram.buffer), 0xFF);
+			if (std::size(save_data_buffer) > std::size(emulator.state->clownmdemu.external_ram.buffer))
+			{
+				Frontend::debug_log.Log("Save data file size (0x%zX bytes) is larger than the internal save data buffer size (0x%zX bytes)", std::size(save_data_buffer), std::size(emulator.state->clownmdemu.external_ram.buffer));
+			}
+			else
+			{
+				std::copy(std::begin(save_data_buffer), std::end(save_data_buffer), emulator.state->clownmdemu.external_ram.buffer);
+				std::fill(std::begin(emulator.state->clownmdemu.external_ram.buffer) + std::size(save_data_buffer), std::end(emulator.state->clownmdemu.external_ram.buffer), 0xFF);
+			}
 		}
 	}
 }
 
 EmulatorInstance::Cartridge::~Cartridge()
 {
-	// Write save data to disk.
-	if (state->clownmdemu.external_ram.non_volatile && state->clownmdemu.external_ram.size != 0)
+	if (!save_data_path.empty())
 	{
-		SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
+		// Write save data to disk.
+		if (emulator->state->clownmdemu.external_ram.non_volatile && emulator->state->clownmdemu.external_ram.size != 0)
+		{
+			SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
 
-		if (!file || SDL_RWwrite(file, state->clownmdemu.external_ram.buffer, state->clownmdemu.external_ram.size, 1) != 1)
-			Frontend::debug_log.Log("Could not write save data file");
+			if (!file || SDL_RWwrite(file, emulator->state->clownmdemu.external_ram.buffer, emulator->state->clownmdemu.external_ram.size, 1) != 1)
+				Frontend::debug_log.Log("Could not write save data file");
+		}
 	}
 }
 
@@ -54,7 +60,7 @@ cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	return emulator->cartridge->Read(address);
+	return emulator->cartridge.Read(address);
 }
 
 void EmulatorInstance::CartridgeWrittenCallback([[maybe_unused]] void* const user_data, [[maybe_unused]] const cc_u32f address, [[maybe_unused]] const cc_u8f value)
@@ -287,14 +293,14 @@ void EmulatorInstance::HardResetConsole()
 
 void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path)
 {
-	cartridge.emplace(std::move(file_buffer), path, state);
+	cartridge = {*this, std::move(file_buffer), path};
 
 	HardResetConsole();
 }
 
 void EmulatorInstance::UnloadCartridgeFile()
 {
-	cartridge.reset();
+	cartridge = {*this};
 }
 
 bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
@@ -377,7 +383,8 @@ std::string EmulatorInstance::GetSoftwareName()
 
 		if (IsCartridgeFileLoaded())
 		{
-			header_bytes = &cartridge->GetROMBuffer()[0x100];
+			// TODO: This seems unsafe - add some bounds checks?
+			header_bytes = &cartridge.GetROMBuffer()[0x100];
 		}
 		else //if (cd_file.IsOpen())
 		{
