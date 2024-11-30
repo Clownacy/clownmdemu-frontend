@@ -81,7 +81,7 @@ void CDReader::Open(SDL::RWops &&stream, const std::filesystem::path &path)
 		Close();
 
 	// Transfer ownership of the stream to ClownCD.
-	clowncd = ClownCD_OpenAlreadyOpen(stream.release(), path.string().c_str(), &callbacks);
+	clowncd = ClownCD_OpenAlreadyOpen(stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
 	open = true;
 	audio_playing = false;
 }
