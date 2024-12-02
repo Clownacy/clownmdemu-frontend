@@ -43,7 +43,7 @@ void DebugPSG::Registers::DisplayInternal()
 		ImGui::TableSetupColumn("Attentuation");
 		ImGui::TableHeadersRow();
 
-		for (cc_u8f i = 0; i < CC_COUNT_OF(psg.tones); ++i)
+		for (cc_u8f i = 0; i < std::size(psg.tones); ++i)
 		{
 			ImGui::TableNextColumn();
 			ImGui::Text("Tone %" CC_PRIuFAST8, i + 1);

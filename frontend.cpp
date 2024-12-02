@@ -294,7 +294,7 @@ private:
 			ImGui::TextUnformatted("68000 Communication Command");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.command); i += 2)
+			for (i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
 				ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
 			ImGui::PopFont();
 
@@ -302,7 +302,7 @@ private:
 			ImGui::TextUnformatted("68000 Communication Status");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			for (i = 0; i < CC_COUNT_OF(clownmdemu_state.mega_cd.communication.status); i += 2)
+			for (i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
 				ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
 			ImGui::PopFont();
 
@@ -394,7 +394,7 @@ private:
 
 			char buffer[] = "FM1";
 
-			for (std::size_t i = 0; i < CC_COUNT_OF(fm.fm_channels_disabled); ++i)
+			for (std::size_t i = 0; i < std::size(fm.fm_channels_disabled); ++i)
 			{
 				buffer[2] = '1' + i;
 				ImGui::TableNextColumn();
@@ -419,7 +419,7 @@ private:
 
 			char buffer[] = "PSG1";
 
-			for (std::size_t i = 0; i < CC_COUNT_OF(psg.tone_disabled); ++i)
+			for (std::size_t i = 0; i < std::size(psg.tone_disabled); ++i)
 			{
 				buffer[3] = '1' + i;
 				ImGui::TableNextColumn();
@@ -444,7 +444,7 @@ private:
 
 			char buffer[] = "PCM1";
 
-			for (std::size_t i = 0; i < CC_COUNT_OF(pcm.channels_disabled); ++i)
+			for (std::size_t i = 0; i < std::size(pcm.channels_disabled); ++i)
 			{
 				buffer[3] = '1' + i;
 				ImGui::TableNextColumn();
@@ -2754,11 +2754,11 @@ void Frontend::Update()
 	DisplayWindow(m68k_status_window, clownmdemu.m68k.state);
 	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
 	DisplayWindow(z80_status_window);
-	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram, CC_COUNT_OF(clownmdemu.m68k.ram));
-	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram, CC_COUNT_OF(clownmdemu.z80.ram));
-	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer));
-	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer, CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer));
-	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, CC_COUNT_OF(clownmdemu.mega_cd.pcm.wave_ram));
+	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram, std::size(clownmdemu.m68k.ram));
+	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram, std::size(clownmdemu.z80.ram));
+	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer, std::size(clownmdemu.mega_cd.prg_ram.buffer));
+	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer, std::size(clownmdemu.mega_cd.word_ram.buffer));
+	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, std::size(clownmdemu.mega_cd.pcm.wave_ram));
 	DisplayWindow(vdp_registers_window);
 	DisplayWindow(sprite_list_window);
 	DisplayWindow(sprite_viewer_window);

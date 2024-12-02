@@ -17,7 +17,7 @@ void DebugFM::Registers::DisplayInternal()
 
 	ImGui::SeparatorText("FM Channels");
 
-	if (ImGui::BeginTable("FM Channel Table", 1 + CC_COUNT_OF(fm.channels), ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame))
+	if (ImGui::BeginTable("FM Channel Table", 1 + std::size(fm.channels), ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchSame))
 	{
 		ImGui::TableSetupColumn("Register", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("FM1");
@@ -32,7 +32,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Frequency Cache");
 
 		ImGui::PushFont(monospace_font);
-		for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(fm.channels); ++i)
 		{
 			ImGui::TableNextColumn();
 			ImGui::Text("0x%02" CC_PRIXLEAST8, fm.channels[i].cached_upper_frequency_bits);
@@ -43,7 +43,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Frequency");
 
 		ImGui::PushFont(monospace_font);
-		for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(fm.channels); ++i)
 		{
 			ImGui::TableNextColumn();
 			ImGui::Text("0x%04" CC_PRIXLEAST16, fm.channels[i].state.operators[0].phase.f_number_and_block);
@@ -54,7 +54,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Feedback");
 
 		ImGui::PushFont(monospace_font);
-		for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(fm.channels); ++i)
 		{
 			ImGui::TableNextColumn();
 
@@ -71,7 +71,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Algorithm");
 
 		ImGui::PushFont(monospace_font);
-		for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(fm.channels); ++i)
 		{
 			ImGui::TableNextColumn();
 			ImGui::Text("%" CC_PRIuLEAST16, fm.channels[i].state.algorithm);
@@ -81,7 +81,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Panning");
 
-		for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(fm.channels); ++i)
 		{
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(pannings[fm.channels[i].pan_left][fm.channels[i].pan_right]);
@@ -91,7 +91,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TextUnformatted("SSG-EG");
 
 		ImGui::PushFont(monospace_font);
-		for (cc_u8f i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(fm.channels); ++i)
 		{
 			const auto &ssgeg = fm.channels[i].state.operators[0].ssgeg;
 
@@ -118,7 +118,7 @@ void DebugFM::Registers::DisplayInternal()
 	{
 		char window_name_buffer[] = "FM1";
 
-		for (std::size_t i = 0; i < CC_COUNT_OF(fm.channels); ++i)
+		for (std::size_t i = 0; i < std::size(fm.channels); ++i)
 		{
 			window_name_buffer[2] = '1' + i;
 
@@ -138,7 +138,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Key On");
 
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted(channel.state.operators[operator_index].key_on ? "On" : "Off");
@@ -149,7 +149,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Detune");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("%" CC_PRIuLEAST16, channel.state.operators[operator_index].phase.detune);
@@ -161,7 +161,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Multiplier");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("%" CC_PRIuLEAST16, channel.state.operators[operator_index].phase.multiplier / 2);
@@ -173,7 +173,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Total Level");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].total_level >> 3);
@@ -185,7 +185,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Key Scale");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						static const std::array<cc_u8l, 8> decode = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
 
@@ -199,7 +199,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Attack Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_ATTACK]);
@@ -211,7 +211,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Decay Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_DECAY]);
@@ -223,7 +223,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Sustain Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("0x%02" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_SUSTAIN]);
@@ -235,7 +235,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Release Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("0x%" CC_PRIXLEAST16, channel.state.operators[operator_index].rates[FM_OPERATOR_ENVELOPE_MODE_RELEASE] >> 1);
@@ -247,7 +247,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Sustain Level");
 
 					ImGui::PushFont(monospace_font);
-					for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+					for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 					{
 						ImGui::TableNextColumn();
 						ImGui::Text("0x%" CC_PRIXLEAST16, (channel.state.operators[operator_index].sustain_level / 0x20) & 0xF);
@@ -261,7 +261,7 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::TextUnformatted("Frequency");
 
 						ImGui::PushFont(monospace_font);
-						for (cc_u16f operator_index = 0; operator_index < CC_COUNT_OF(channel.state.operators); ++operator_index)
+						for (cc_u16f operator_index = 0; operator_index < std::size(channel.state.operators); ++operator_index)
 						{
 							ImGui::TableNextColumn();
 							ImGui::Text("0x%04" CC_PRIXLEAST16, fm.channel_3_metadata.frequencies[operator_index]);
@@ -326,7 +326,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Enabled");
 
-			for (cc_u8f i = 0; i < CC_COUNT_OF(fm.timers); ++i)
+			for (cc_u8f i = 0; i < std::size(fm.timers); ++i)
 			{
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(fm.timers[i].enabled ? "Yes" : "No");
@@ -336,7 +336,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TextUnformatted("Cached Counter");
 
 			ImGui::PushFont(monospace_font);
-			for (cc_u8f i = 0; i < CC_COUNT_OF(fm.timers); ++i)
+			for (cc_u8f i = 0; i < std::size(fm.timers); ++i)
 			{
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%03" CC_PRIXLEAST32, CC_DIVIDE_CEILING(fm.timers[i].value, FM_SAMPLE_RATE_DIVIDER) - 1);
@@ -347,7 +347,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TextUnformatted("Active Counter");
 
 			ImGui::PushFont(monospace_font);
-			for (cc_u8f i = 0; i < CC_COUNT_OF(fm.timers); ++i)
+			for (cc_u8f i = 0; i < std::size(fm.timers); ++i)
 			{
 				ImGui::TableNextColumn();
 				ImGui::Text("0x%03" CC_PRIXLEAST32, CC_DIVIDE_CEILING(fm.timers[i].counter, FM_SAMPLE_RATE_DIVIDER) - 1);
@@ -357,7 +357,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Flag");
 
-			for (cc_u8f i = 0; i < CC_COUNT_OF(fm.timers); ++i)
+			for (cc_u8f i = 0; i < std::size(fm.timers); ++i)
 			{
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted((fm.status & (1 << i)) != 0 ? "Set" : "Cleared");

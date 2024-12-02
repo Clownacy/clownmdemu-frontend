@@ -38,7 +38,7 @@ static cc_u16f TileSizeInBytes(const VDP_State &vdp)
 
 static cc_u16f VRAMSizeInTiles(const VDP_State &vdp)
 {
-	return CC_COUNT_OF(vdp.vram) / TileSizeInBytes(vdp);
+	return std::size(vdp.vram) / TileSizeInBytes(vdp);
 }
 
 static constexpr cc_u8f sprite_texture_width = 4 * 8;
@@ -384,7 +384,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	if (!texture)
 	{
 		// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-		const std::size_t size_of_vram_in_pixels = CC_COUNT_OF(vdp.vram) * 2;
+		const std::size_t size_of_vram_in_pixels = std::size(vdp.vram) * 2;
 		const std::size_t vram_texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(size_of_vram_in_pixels))));
 		const std::size_t vram_texture_width_rounded_up_to_8 = (vram_texture_width_in_progress + (8 - 1)) / 8 * 8;
 		const std::size_t vram_texture_height_in_progress = (size_of_vram_in_pixels + (vram_texture_width_rounded_up_to_8 - 1)) / vram_texture_width_rounded_up_to_8;

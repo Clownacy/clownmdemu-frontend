@@ -43,31 +43,31 @@ static long ReadCallback(void* const user_data)
 
 		case 1:
 			// WORK-RAM
-			address %= CC_COUNT_OF(clownmdemu.m68k.ram) * 2;
+			address %= std::size(clownmdemu.m68k.ram) * 2;
 			value = clownmdemu.m68k.ram[address / 2];
 			break;
 
 		case 2:
 			// PRG-RAM
-			address %= CC_COUNT_OF(clownmdemu.mega_cd.prg_ram.buffer) * 2;
+			address %= std::size(clownmdemu.mega_cd.prg_ram.buffer) * 2;
 			value = clownmdemu.mega_cd.prg_ram.buffer[address / 2];
 			break;
 
 		case 3:
 			// WORD-RAM (1M) Bank 1
-			address %= CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer) * 2 / 2;
+			address %= std::size(clownmdemu.mega_cd.word_ram.buffer) * 2 / 2;
 			value = clownmdemu.mega_cd.word_ram.buffer[address / 2 * 2 + 0];
 			break;
 
 		case 4:
 			// WORD-RAM (1M) Bank 2
-			address %= CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer) * 2 / 2;
+			address %= std::size(clownmdemu.mega_cd.word_ram.buffer) * 2 / 2;
 			value = clownmdemu.mega_cd.word_ram.buffer[address / 2 * 2 + 1];
 			break;
 
 		case 5:
 			// WORD-RAM (2M)
-			address %= CC_COUNT_OF(clownmdemu.mega_cd.word_ram.buffer) * 2;
+			address %= std::size(clownmdemu.mega_cd.word_ram.buffer) * 2;
 			value = clownmdemu.mega_cd.word_ram.buffer[address / 2];
 			break;
 	}

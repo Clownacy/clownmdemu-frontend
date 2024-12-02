@@ -20,7 +20,7 @@ void DebugPCM::Registers::DisplayInternal()
 
 		const PCM_State &pcm = Frontend::emulator->CurrentState().clownmdemu.mega_cd.pcm;
 
-		for (cc_u8f i = 0; i < CC_COUNT_OF(pcm.channels); ++i)
+		for (cc_u8f i = 0; i < std::size(pcm.channels); ++i)
 		{
 			const auto &channel = pcm.channels[i];
 
