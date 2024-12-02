@@ -2150,7 +2150,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 
 		case SDL_DROPFILE:
-			drag_and_drop_filename = event.drop.file;
+			drag_and_drop_filename = reinterpret_cast<const char8_t*>(event.drop.file);
 			SDL_free(event.drop.file);
 			break;
 
