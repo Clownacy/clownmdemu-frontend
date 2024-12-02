@@ -53,10 +53,14 @@ public:
 	CDReader(CDReader &&other) = delete;
 	CDReader& operator=(const CDReader &other) = delete;
 	CDReader& operator=(CDReader &&other) = delete;
+	void Open(void* const stream, const std::filesystem::path &path)
+	{
+		CDReader_Open(&state, stream, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
+	}
 	void Open(SDL::RWops &&stream, const std::filesystem::path &path)
 	{
 		// Transfer ownership of the stream to ClownCD.
-		CDReader_Open(&state, stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
+		Open(stream.release(), path);
 	}
 	void Close()
 	{
@@ -104,6 +108,19 @@ public:
 	bool SetState(const State &state)
 	{
 		return CDReader_SetStateBackup(&this->state, &state);
+	}
+
+	bool IsMegaCDGame()
+	{
+		return CDReader_IsMegaCDGame(&state);
+	}
+	static bool IsMegaCDGame(const std::filesystem::path &path)
+	{
+		CDReader cd_reader;
+		cd_reader.Open(nullptr, path);
+		const bool is_mega_cd_game = cd_reader.IsMegaCDGame();
+		cd_reader.Close();
+		return is_mega_cd_game;
 	}
 };
 

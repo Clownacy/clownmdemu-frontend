@@ -153,7 +153,7 @@ const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
 	return emulator->sector.data();
 }
 
-cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index, ClownMDEmu_CDDAMode mode)
+cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 

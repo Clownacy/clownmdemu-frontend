@@ -2250,20 +2250,27 @@ void Frontend::Update()
 	// Handle drag-and-drop event.
 	if (!file_utilities.IsDialogOpen() && !drag_and_drop_filename.empty())
 	{
-		std::vector<unsigned char> file_buffer;
-
-		if (file_utilities.LoadFileToBuffer(file_buffer, drag_and_drop_filename))
+		if (CDReader::IsMegaCDGame(drag_and_drop_filename))
 		{
-			if (emulator->ValidateSaveStateFile(file_buffer))
+			LoadCDFile(drag_and_drop_filename, SDL::RWFromFile(drag_and_drop_filename, "rb"));
+			emulator_paused = false;
+		}
+		else
+		{
+			std::vector<unsigned char> file_buffer;
+
+			if (file_utilities.LoadFileToBuffer(file_buffer, drag_and_drop_filename))
 			{
-				if (emulator_on)
-					LoadSaveState(file_buffer);
-			}
-			else
-			{
-				// TODO: Handle dropping a CD file here.
-				LoadCartridgeFile(drag_and_drop_filename, std::move(file_buffer));
-				emulator_paused = false;
+				if (emulator->ValidateSaveStateFile(file_buffer))
+				{
+					if (emulator_on)
+						LoadSaveState(file_buffer);
+				}
+				else
+				{
+					LoadCartridgeFile(drag_and_drop_filename, std::move(file_buffer));
+					emulator_paused = false;
+				}
 			}
 		}
 
