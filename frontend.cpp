@@ -1958,30 +1958,6 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
 				break;
 
-			switch (event.cbutton.button)
-			{
-				case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
-					// Load save state
-					if (quick_save_exists)
-					{
-						emulator->OverwriteCurrentState(quick_save_state);
-
-						emulator_paused = false;
-
-						SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF / 2, 0, 1000 / 8);
-					}
-
-					break;
-
-				case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
-					// Save save state
-					quick_save_exists = true;
-					quick_save_state = emulator->CurrentState();
-
-					SDL_GameControllerRumble(SDL_GameControllerFromInstanceID(event.cbutton.which), 0xFFFF * 3 / 4, 0, 1000 / 8);
-					break;
-			}
-
 			[[fallthrough]];
 		case SDL_CONTROLLERBUTTONUP:
 		{
@@ -1997,12 +1973,16 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 					{
 						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
 
-						// TODO: X, Y, Z, and Mode buttons.
-						DO_BUTTON(CLOWNMDEMU_BUTTON_A, SDL_CONTROLLER_BUTTON_X);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_Y);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_C, SDL_CONTROLLER_BUTTON_B);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B, SDL_CONTROLLER_BUTTON_A);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START);
+						// TODO: This is currently just Genesis Plus GX's libretro button layout,
+						// but I would like something closer to a real 6-button controller's layout.
+						DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_CONTROLLER_BUTTON_X            );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_CONTROLLER_BUTTON_A            );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_CONTROLLER_BUTTON_B            );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_CONTROLLER_BUTTON_LEFTSHOULDER );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_CONTROLLER_BUTTON_Y            );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START        );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_CONTROLLER_BUTTON_BACK         );
 
 						#undef DO_BUTTON
 
@@ -2045,14 +2025,6 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 							break;
 						}
-
-						case SDL_CONTROLLER_BUTTON_BACK:
-							// Toggle which joypad the controller is bound to.
-							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-								if (pressed)
-									controller_input.input.bound_joypad ^= 1;
-
-							break;
 
 						default:
 							break;
