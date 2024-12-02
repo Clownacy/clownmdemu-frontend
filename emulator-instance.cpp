@@ -199,6 +199,8 @@ EmulatorInstance::EmulatorInstance(
 {
 	// This should be called before any other clownmdemu functions are called!
 	ClownMDEmu_SetLogCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &Frontend::debug_log);
+
+	ClownMDEmu_State_Initialise(&state->clownmdemu);
 }
 
 void EmulatorInstance::Update(const cc_bool fast_forward)
