@@ -431,11 +431,11 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			if (i != 0)
 				ImGui::SameLine();
 
-			static const std::array brightness_names = std::to_array<std::string>({
+			static const std::array brightness_names = {
 				"Normal",
 				"Shadow",
 				"Highlight"
-			});
+			};
 
 			options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
 		}
@@ -592,14 +592,16 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 
 	ImGui::SeparatorText("Colours");
 
-	const cc_u16f length_of_palette_line = 16;
-	const cc_u16f length_of_palette = length_of_palette_line * 4;
-
-	for (cc_u16f j = 0; j < length_of_palette; ++j)
+	for (auto it = std::cbegin(state.clownmdemu.vdp.cram); it != std::cend(state.clownmdemu.vdp.cram); ++it)
 	{
-		ImGui::PushID(j);
+		const auto cram_index = std::distance(std::cbegin(state.clownmdemu.vdp.cram), it);
+		constexpr cc_u16f length_of_palette_line = 16;
+		const cc_u16f palette_line_index = cram_index / length_of_palette_line;
+		const cc_u16f colour_index = cram_index % length_of_palette_line;
 
-		const cc_u16f value = state.clownmdemu.vdp.cram[j];
+		ImGui::PushID(cram_index);
+
+		const cc_u16f value = *it;
 		const cc_u16f blue = (value >> 9) & 7;
 		const cc_u16f green = (value >> 5) & 7;
 		const cc_u16f red = (value >> 1) & 7;
@@ -625,7 +627,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 		const cc_u16f green_shaded = (value_shaded >> 4) & 0xF;
 		const cc_u16f red_shaded = (value_shaded >> 0) & 0xF;
 
-		if (j % length_of_palette_line != 0)
+		if (colour_index != 0)
 		{
 			// Split the colours into palette lines.
 			ImGui::SameLine();
@@ -638,7 +640,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 		{
 			ImGui::BeginTooltip();
 
-			ImGui::TextFormatted("Line {}, Colour {}", j / length_of_palette_line, j % length_of_palette_line);
+			ImGui::TextFormatted("Line {}, Colour {}", palette_line_index, colour_index);
 			ImGui::Separator();
 			ImGui::PushFont(GetMonospaceFont());
 			ImGui::TextFormatted("Value: {:03X}", value);

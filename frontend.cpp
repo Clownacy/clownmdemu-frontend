@@ -223,8 +223,6 @@ private:
 			const auto monospace_font = GetMonospaceFont();
 			const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
 
-			cc_u8f i;
-
 			ImGui::TableSetupColumn("Property");
 			ImGui::TableSetupColumn("Value");
 			ImGui::TableHeadersRow();
@@ -294,7 +292,7 @@ private:
 			ImGui::TextUnformatted("68000 Communication Command");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			for (i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
+			for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
 				ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
 			ImGui::PopFont();
 
@@ -302,7 +300,7 @@ private:
 			ImGui::TextUnformatted("68000 Communication Status");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			for (i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
+			for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
 				ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
 			ImGui::PopFont();
 
@@ -355,7 +353,13 @@ private:
 
 	void DisplayInternal()
 	{
-		bool temp;
+		const auto DoButton = [](cc_bool &disabled, const char* const label)
+		{
+			ImGui::TableNextColumn();
+			bool temp = !disabled;
+			if (ImGui::Checkbox(label, &temp))
+				disabled = !disabled;
+		};
 
 		ImGui::SeparatorText("VDP");
 
@@ -363,25 +367,10 @@ private:
 		{
 			VDP_Configuration &vdp = Frontend::emulator->GetConfigurationVDP();
 
-			ImGui::TableNextColumn();
-			temp = !vdp.sprites_disabled;
-			if (ImGui::Checkbox("Sprite Plane", &temp))
-				vdp.sprites_disabled = !vdp.sprites_disabled;
-
-			ImGui::TableNextColumn();
-			temp = !vdp.window_disabled;
-			if (ImGui::Checkbox("Window Plane", &temp))
-				vdp.window_disabled = !vdp.window_disabled;
-
-			ImGui::TableNextColumn();
-			temp = !vdp.planes_disabled[0];
-			if (ImGui::Checkbox("Plane A", &temp))
-				vdp.planes_disabled[0] = !vdp.planes_disabled[0];
-
-			ImGui::TableNextColumn();
-			temp = !vdp.planes_disabled[1];
-			if (ImGui::Checkbox("Plane B", &temp))
-				vdp.planes_disabled[1] = !vdp.planes_disabled[1];
+			DoButton(vdp.sprites_disabled, "Sprite Plane");
+			DoButton(vdp.window_disabled, "Window Plane");
+			DoButton(vdp.planes_disabled[0], "Plane A");
+			DoButton(vdp.planes_disabled[1], "Plane B");
 
 			ImGui::EndTable();
 		}
@@ -394,19 +383,13 @@ private:
 
 			char buffer[] = "FM1";
 
-			for (std::size_t i = 0; i < std::size(fm.fm_channels_disabled); ++i)
+			for (auto disabled = std::begin(fm.fm_channels_disabled); disabled != std::end(fm.fm_channels_disabled); ++disabled)
 			{
-				buffer[2] = '1' + i;
-				ImGui::TableNextColumn();
-				temp = !fm.fm_channels_disabled[i];
-				if (ImGui::Checkbox(buffer, &temp))
-					fm.fm_channels_disabled[i] = !fm.fm_channels_disabled[i];
+				buffer[2] = '1' + std::distance(std::begin(fm.fm_channels_disabled), disabled);
+				DoButton(*disabled, buffer);
 			}
 
-			ImGui::TableNextColumn();
-			temp = !fm.dac_channel_disabled;
-			if (ImGui::Checkbox("DAC", &temp))
-				fm.dac_channel_disabled = !fm.dac_channel_disabled;
+			DoButton(fm.dac_channel_disabled, "DAC");
 
 			ImGui::EndTable();
 		}
@@ -419,19 +402,13 @@ private:
 
 			char buffer[] = "PSG1";
 
-			for (std::size_t i = 0; i < std::size(psg.tone_disabled); ++i)
+			for (auto disabled = std::begin(psg.tone_disabled); disabled != std::end(psg.tone_disabled); ++disabled)
 			{
-				buffer[3] = '1' + i;
-				ImGui::TableNextColumn();
-				temp = !psg.tone_disabled[i];
-				if (ImGui::Checkbox(buffer, &temp))
-					psg.tone_disabled[i] = !psg.tone_disabled[i];
+				buffer[3] = '1' + std::distance(std::begin(psg.tone_disabled), disabled);
+				DoButton(*disabled, buffer);
 			}
 
-			ImGui::TableNextColumn();
-			temp = !psg.noise_disabled;
-			if (ImGui::Checkbox("PSG Noise", &temp))
-				psg.noise_disabled = !psg.noise_disabled;
+			DoButton(psg.noise_disabled, "PSG Noise");
 
 			ImGui::EndTable();
 		}
@@ -444,13 +421,10 @@ private:
 
 			char buffer[] = "PCM1";
 
-			for (std::size_t i = 0; i < std::size(pcm.channels_disabled); ++i)
+			for (auto disabled = std::begin(pcm.channels_disabled); disabled != std::end(pcm.channels_disabled); ++disabled)
 			{
-				buffer[3] = '1' + i;
-				ImGui::TableNextColumn();
-				temp = !pcm.channels_disabled[i];
-				if (ImGui::Checkbox(buffer, &temp))
-					pcm.channels_disabled[i] = !pcm.channels_disabled[i];
+				buffer[3] = '1' + std::distance(std::begin(pcm.channels_disabled), disabled);
+				DoButton(*disabled, buffer);
 			}
 
 			ImGui::EndTable();
@@ -579,8 +553,8 @@ private:
 		{
 			sorted_scancodes_done = true;
 
-			for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
-				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
+			for (auto scancode = std::begin(sorted_scancodes); scancode != std::end(sorted_scancodes); ++scancode)
+				*scancode = static_cast<SDL_Scancode>(std::distance(std::begin(sorted_scancodes), scancode));
 
 			SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
 				[](const void* const a, const void* const b)
@@ -643,20 +617,20 @@ private:
 			ImGui::TableSetupColumn("Action");
 			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableHeadersRow();
-			for (std::size_t i = 0; i < sorted_scancodes.size(); ++i)
+			for (const auto &scancode : sorted_scancodes)
 			{
-				if (Frontend::keyboard_bindings[sorted_scancodes[i]] != INPUT_BINDING_NONE)
+				if (Frontend::keyboard_bindings[scancode] != INPUT_BINDING_NONE)
 				{
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(sorted_scancodes[i])));
+					ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(scancode)));
 
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(binding_names[Frontend::keyboard_bindings[sorted_scancodes[i]]]);
+					ImGui::TextUnformatted(binding_names[Frontend::keyboard_bindings[scancode]]);
 
 					ImGui::TableNextColumn();
-					ImGui::PushID(i);
+					ImGui::PushID(&scancode);
 					if (ImGui::Button("X"))
-						Frontend::keyboard_bindings[sorted_scancodes[i]] = INPUT_BINDING_NONE;
+						Frontend::keyboard_bindings[scancode] = INPUT_BINDING_NONE;
 					ImGui::PopID();
 				}
 			}
@@ -1387,8 +1361,8 @@ static void LoadConfiguration()
 	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::RWops*>(&file), INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
-		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
-			keyboard_bindings[i] = INPUT_BINDING_NONE;
+		for (auto &keyboard_binding : keyboard_bindings)
+			keyboard_binding = INPUT_BINDING_NONE;
 
 		keyboard_bindings[SDL_SCANCODE_UP] = INPUT_BINDING_CONTROLLER_UP;
 		keyboard_bindings[SDL_SCANCODE_DOWN] = INPUT_BINDING_CONTROLLER_DOWN;
@@ -1468,16 +1442,16 @@ static void SaveConfiguration()
 		// Save keyboard bindings.
 		PRINT_STRING(file, ENDL "[Keyboard Bindings]" ENDL);
 
-		for (std::size_t i = 0; i < keyboard_bindings.size(); ++i)
+		for (auto keyboard_binding = std::cbegin(keyboard_bindings); keyboard_binding != std::cend(keyboard_bindings); ++keyboard_binding)
 		{
-			if (keyboard_bindings[i] != INPUT_BINDING_NONE)
+			if (*keyboard_binding != INPUT_BINDING_NONE)
 			{
 				const char *binding_string;
 
 				// Default, to shut up potential warnings.
 				binding_string = "INPUT_BINDING_NONE";
 
-				switch (keyboard_bindings[i])
+				switch (*keyboard_binding)
 				{
 					case INPUT_BINDING_NONE:
 						binding_string = "INPUT_BINDING_NONE";
@@ -1570,7 +1544,7 @@ static void SaveConfiguration()
 						break;
 				}
 
-				const std::string buffer = fmt::format("{} = {}" ENDL, i, binding_string);
+				const std::string buffer = fmt::format("{} = {}" ENDL, std::distance(std::cbegin(keyboard_bindings), keyboard_binding), binding_string);
 				SDL_RWwrite(file, buffer.data(), buffer.size(), 1);
 			}
 		}
@@ -2407,7 +2381,7 @@ void Frontend::Update()
 
 					for (const auto &recent_software : recent_software_list)
 					{
-						ImGui::PushID(&recent_software - &recent_software_list.front());
+						ImGui::PushID(&recent_software);
 
 						// Display only the filename.
 						if (ImGui::MenuItem(reinterpret_cast<const char*>(recent_software.path.filename().u8string().c_str())))
