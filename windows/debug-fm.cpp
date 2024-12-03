@@ -87,27 +87,24 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TextUnformatted(pannings[channel.pan_left][channel.pan_right]);
 		}
 
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("SSG-EG");
-
-		ImGui::PushFont(monospace_font);
-		for (const auto &channel : fm.channels)
+		const auto DoSSGEG = [&](const char* const label, const std::function<bool(const FM_Operator_State &op)> &function)
 		{
-			const auto &ssgeg = channel.state.operators[0].ssgeg;
-
-			cc_u8f byte = 0;
-			byte |= ssgeg.enabled;
-			byte <<= 1;
-			byte |= ssgeg.attack;
-			byte <<= 1;
-			byte |= ssgeg.alternate;
-			byte <<= 1;
-			byte |= ssgeg.hold;
-
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:X}", byte);
-		}
-		ImGui::PopFont();
+			ImGui::TextUnformatted(label);
+
+			ImGui::PushFont(monospace_font);
+			for (const auto &channel : fm.channels)
+			{
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(function(channel.state.operators[0]) ? "Yes" : "No");
+			}
+			ImGui::PopFont();
+		};
+
+		DoSSGEG("SSG-EG Enabled", [](const FM_Operator_State &op) { return op.ssgeg.enabled; });
+		DoSSGEG("SSG-EG Attack", [](const FM_Operator_State &op) { return op.ssgeg.attack; });
+		DoSSGEG("SSG-EG Alternate", [](const FM_Operator_State &op) { return op.ssgeg.alternate; });
+		DoSSGEG("SSG-EG Hold", [](const FM_Operator_State &op) { return op.ssgeg.hold; });
 
 		ImGui::EndTable();
 	}
