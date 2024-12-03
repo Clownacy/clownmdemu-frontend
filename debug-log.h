@@ -26,11 +26,14 @@ public:
 	{
 		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 	}
-	void ForceConsoleOutput(bool forced)
+
+	void ForceConsoleOutput(const bool forced)
 	{
 		force_console_output = forced;
 	}
+
 	void Log(const char *format, std::va_list args);
+
 	template <typename... T>
 	void Log(fmt::format_string<T...> format, T&&... args)
 	{
