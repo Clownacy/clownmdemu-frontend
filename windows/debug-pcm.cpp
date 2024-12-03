@@ -23,7 +23,7 @@ void DebugPCM::Registers::DisplayInternal()
 		for (auto channel = std::cbegin(pcm.channels); channel != std::cend(pcm.channels); ++channel)
 		{
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", static_cast<cc_u8f>(std::distance(std::cbegin(pcm.channels), channel) + 1));
+			ImGui::TextFormatted("{}", std::distance(std::cbegin(pcm.channels), channel) + 1);
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(channel->disabled ? "No" : "Yes");
@@ -31,16 +31,16 @@ void DebugPCM::Registers::DisplayInternal()
 			ImGui::PushFont(GetMonospaceFont());
 
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:04X} ({:5}Hz)", channel->frequency, static_cast<cc_u32f>(channel->frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800));
+			ImGui::TextFormatted("0x{:04X} ({:5}Hz)", channel->frequency, channel->frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800);
 
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:02X}", channel->volume);
 
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:02X}", static_cast<cc_u8f>((channel->panning[0] << 0) | (channel->panning[1] << 4)));
+			ImGui::TextFormatted("0x{:02X}", (channel->panning[0] << 0) | (channel->panning[1] << 4));
 
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:04X}.{:03X}", static_cast<cc_u32f>(channel->address / (1 << 11)), static_cast<cc_u32f>((channel->address % (1 << 11)) * 2));
+			ImGui::TextFormatted("0x{:04X}.{:03X}", channel->address / (1 << 11), (channel->address % (1 << 11)) * 2);
 
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:02X}00", channel->start_address);

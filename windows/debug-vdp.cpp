@@ -776,7 +776,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Background Colour");
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("Palette Line {}, Entry {}", static_cast<cc_u8f>(vdp.background_colour / 16), static_cast<cc_u8f>(vdp.background_colour % 16));
+		ImGui::TextFormatted("Palette Line {}, Entry {}", vdp.background_colour / 16, vdp.background_colour % 16);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("H-Int Interval");
@@ -839,7 +839,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Source Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:06X}", static_cast<cc_u32f>((static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low));
+		ImGui::TextFormatted("0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
