@@ -48,11 +48,3 @@ void DebugLog::Log(const char* const format, std::va_list args)
 
 	Log(GetSize, WriteBuffer);
 }
-
-void DebugLog::Log(const char* const format, ...)
-{
-	std::va_list args;
-	va_start(args, format);
-	Log(format, args);
-	va_end(args);
-}

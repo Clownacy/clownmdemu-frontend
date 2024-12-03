@@ -357,7 +357,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, co
 
 	if (!file)
 	{
-		Frontend::debug_log.LogFormat("SDL_RWFromFile failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_RWFromFile failed with the following message - '{}'", SDL_GetError());
 		return false;
 	}
 
@@ -370,7 +370,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 
 	if (size_s64 < 0)
 	{
-		Frontend::debug_log.LogFormat("SDL_RWsize failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_RWsize failed with the following message - '{}'", SDL_GetError());
 	}
 	else
 	{

@@ -31,9 +31,8 @@ public:
 		force_console_output = forced;
 	}
 	void Log(const char *format, std::va_list args);
-	CC_ATTRIBUTE_PRINTF(2, 3) void Log(const char *format, ...);
 	template <typename... T>
-	void LogFormat(fmt::format_string<T...> format, T&&... args)
+	void Log(fmt::format_string<T...> format, T&&... args)
 	{
 		const auto GetSize = [&]()
 		{
