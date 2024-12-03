@@ -1,6 +1,10 @@
 #ifndef WINDOW_WITH_DEAR_IMGUI_H
 #define WINDOW_WITH_DEAR_IMGUI_H
 
+#include <utility>
+
+#include <fmt/core.h>
+
 #include "../../sdl-wrapper.h"
 
 #include "../../libraries/imgui/imgui.h"
@@ -9,6 +13,16 @@
 
 #include "../../raii-wrapper.h"
 #include "window.h"
+
+namespace ImGui
+{
+	template <typename... T>
+	void TextFormatted(fmt::format_string<T...> fmt, T&&... args)
+	{
+		const auto string = fmt::format(fmt, std::forward<T>(args)...);
+		ImGui::TextUnformatted(&string.front(), &string.back() + 1);
+	}
+}
 
 class WindowWithDearImGui : public Window
 {

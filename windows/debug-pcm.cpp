@@ -25,7 +25,7 @@ void DebugPCM::Registers::DisplayInternal()
 			const auto &channel = pcm.channels[i];
 
 			ImGui::TableNextColumn();
-			ImGui::Text("%" CC_PRIuFAST8, static_cast<cc_u8f>(i + 1));
+			ImGui::TextFormatted("{}", static_cast<cc_u8f>(i + 1));
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(channel.disabled ? "No" : "Yes");
@@ -33,22 +33,22 @@ void DebugPCM::Registers::DisplayInternal()
 			ImGui::PushFont(GetMonospaceFont());
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16 " (%5" CC_PRIuFAST32 "Hz)", channel.frequency, static_cast<cc_u32f>(channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800));
+			ImGui::TextFormatted("0x{:04X} ({:5}Hz)", channel.frequency, static_cast<cc_u32f>(channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800));
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%02" CC_PRIXLEAST8, channel.volume);
+			ImGui::TextFormatted("0x{:02X}", channel.volume);
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%02" CC_PRIXFAST8, static_cast<cc_u8f>((channel.panning[0] << 0) | (channel.panning[1] << 4)));
+			ImGui::TextFormatted("0x{:02X}", static_cast<cc_u8f>((channel.panning[0] << 0) | (channel.panning[1] << 4)));
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXFAST32 ".%03" CC_PRIXFAST32, static_cast<cc_u32f>(channel.address / (1 << 11)), static_cast<cc_u32f>((channel.address % (1 << 11)) * 2));
+			ImGui::TextFormatted("0x{:04X}.{:03X}", static_cast<cc_u32f>(channel.address / (1 << 11)), static_cast<cc_u32f>((channel.address % (1 << 11)) * 2));
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%02" CC_PRIXLEAST8 "00", channel.start_address);
+			ImGui::TextFormatted("0x{:02X}00", channel.start_address);
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%04" CC_PRIXLEAST16, channel.loop_address);
+			ImGui::TextFormatted("0x{:04X}", channel.loop_address);
 
 			ImGui::PopFont();
 		}

@@ -233,7 +233,7 @@ private:
 			ImGui::TextUnformatted("Z80 Bank");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
+			ImGui::TextFormatted("0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -260,7 +260,7 @@ private:
 			ImGui::TextUnformatted("PRG-RAM Bank");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			ImGui::Text("0x%06" CC_PRIXFAST16 "-0x%06" CC_PRIXFAST16, clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
+			ImGui::TextFormatted("0x{:06X}-0x{:06X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -287,7 +287,7 @@ private:
 			ImGui::TextUnformatted("68000 Communication Flag");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			ImGui::Text("0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.flag);
+			ImGui::TextFormatted("0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -295,7 +295,7 @@ private:
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
 			for (i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
-				ImGui::Text("0x%04" CC_PRIXFAST16 " 0x%04" CC_PRIXFAST16, clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
+				ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -303,7 +303,7 @@ private:
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
 			for (i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
-				ImGui::Text("0x%04" CC_PRIXLEAST16 " 0x%04" CC_PRIXLEAST16, clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
+				ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -718,7 +718,7 @@ private:
 		{
 			bool previous_menu = false;
 
-			ImGui::Text("Selected Key: %s", SDL_GetScancodeName(selected_scancode));
+			ImGui::TextFormatted("Selected Key: {}", SDL_GetScancodeName(selected_scancode));
 
 			if (ImGui::BeginListBox("##Actions"))
 			{

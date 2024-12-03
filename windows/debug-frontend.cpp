@@ -50,7 +50,7 @@ void DebugFrontend::DisplayInternal()
 
 		if (Frontend::output_width != 0 || Frontend::output_height != 0)
 		{
-			ImGui::Text("%ux%u", Frontend::output_width, Frontend::output_height);
+			ImGui::TextFormatted("{}x{}", Frontend::output_width, Frontend::output_height);
 
 			Frontend::output_width = Frontend::output_height = 0;
 		}
@@ -66,7 +66,7 @@ void DebugFrontend::DisplayInternal()
 
 		if (Frontend::upscale_width != 0 || Frontend::upscale_height != 0)
 		{
-			ImGui::Text("%ux%u", Frontend::upscale_width, Frontend::upscale_height);
+			ImGui::TextFormatted("{}x{}", Frontend::upscale_width, Frontend::upscale_height);
 
 			Frontend::upscale_width = Frontend::upscale_height = 0;
 		}
@@ -82,7 +82,7 @@ void DebugFrontend::DisplayInternal()
 
 		unsigned int texture_width, texture_height;
 		if (Frontend::GetUpscaledFramebufferSize(texture_width, texture_height))
-			ImGui::Text("%ux%u", texture_width, texture_height);
+			ImGui::TextFormatted("{}x{}", texture_width, texture_height);
 		else
 			ImGui::TextUnformatted("N/A");
 
@@ -97,25 +97,25 @@ void DebugFrontend::DisplayInternal()
 		ImGui::TextUnformatted("Sample Rate");
 		DoToolTip(u8"The number of audio frames played per second.");
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioSampleRate());
+		ImGui::TextFormatted("{}", Frontend::emulator->GetAudioSampleRate());
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Buffer Frames");
 		DoToolTip(u8"The number of audio frames that are pulled from the buffer in a single batch.");
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioTotalBufferFrames());
+		ImGui::TextFormatted("{}", Frontend::emulator->GetAudioTotalBufferFrames());
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Target Frames");
 		DoToolTip(u8"The number of buffered audio frames that the audio system tries to maintain.");
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioTargetFrames());
+		ImGui::TextFormatted("{}", Frontend::emulator->GetAudioTargetFrames());
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Average Frames");
 		DoToolTip(u8"The current average number of buffered audio frames.");
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIuFAST32, Frontend::emulator->GetAudioAverageFrames());
+		ImGui::TextFormatted("{}", Frontend::emulator->GetAudioAverageFrames());
 
 		ImGui::EndTable();
 	}

@@ -31,14 +31,10 @@ void DebugMemory::DisplayInternal(const cc_u8l* const buffer, const std::size_t 
 			const int offset = i * 0x10;
 			const cc_u8l* const bytes = &buffer[offset];
 
-			ImGui::Text("%04X: %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8
-								" %02" CC_PRIXLEAST8 " %02" CC_PRIXLEAST8, offset,
+			ImGui::TextFormatted("{:04X}: {:02X} {:02X} {:02X} {:02X}"
+			                            " {:02X} {:02X} {:02X} {:02X}"
+			                            " {:02X} {:02X} {:02X} {:02X}"
+			                            " {:02X} {:02X} {:02X} {:02X}", offset,
 				bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3], bytes[0x4], bytes[0x5], bytes[0x6], bytes[0x7],
 				bytes[0x8], bytes[0x9], bytes[0xA], bytes[0xB], bytes[0xC], bytes[0xD], bytes[0xE], bytes[0xF]);
 		}
@@ -73,14 +69,7 @@ void DebugMemory::DisplayInternal(const cc_u16l* const buffer, const std::size_t
 		{
 			const cc_u16l* const words = &buffer[i * 8];
 
-			ImGui::Text("%05X: %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16
-								" %04" CC_PRIXLEAST16, i * 0x10,
+			ImGui::TextFormatted("{:05X}: {:04X} {:04X} {:04X} {:04X} {:04X} {:04X} {:04X} {:04X}", i * 0x10,
 				words[0], words[1], words[2], words[3], words[4], words[5], words[6], words[7]);
 		}
 	}

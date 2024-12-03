@@ -22,7 +22,7 @@ void DebugPSG::Registers::DisplayInternal()
 		if (psg.latched_command.channel == 3)
 			ImGui::TextUnformatted("Noise");
 		else
-			ImGui::Text("Tone %" CC_PRIuLEAST8, psg.latched_command.channel + 1);
+			ImGui::TextFormatted("Tone {}", psg.latched_command.channel + 1);
 
 		ImGui::TableNextColumn();
 
@@ -46,18 +46,18 @@ void DebugPSG::Registers::DisplayInternal()
 		for (cc_u8f i = 0; i < std::size(psg.tones); ++i)
 		{
 			ImGui::TableNextColumn();
-			ImGui::Text("Tone %" CC_PRIuFAST8, i + 1);
+			ImGui::TextFormatted("Tone {}", i + 1);
 
 			ImGui::PushFont(monospace_font);
 
 			ImGui::TableNextColumn();
-			ImGui::Text("0x%03" CC_PRIXLEAST16 " (%6" CC_PRIuFAST32 "Hz)", psg.tones[i].countdown_master, psg.tones[i].countdown_master == 0 ? 0 : psg_clock / psg.tones[i].countdown_master / 2);
+			ImGui::TextFormatted("0x{:03X} ({:6}Hz)", psg.tones[i].countdown_master, psg.tones[i].countdown_master == 0 ? 0 : psg_clock / psg.tones[i].countdown_master / 2);
 
 			ImGui::TableNextColumn();
 			if (psg.tones[i].attenuation == 15)
 				ImGui::TextUnformatted("0xF (Mute)");
 			else
-				ImGui::Text("0x%" CC_PRIXLEAST8 " (%2" CC_PRIuLEAST8 "db)", psg.tones[i].attenuation, psg.tones[i].attenuation * 2);
+				ImGui::TextFormatted("0x{:X} ({:2}db)", psg.tones[i].attenuation, psg.tones[i].attenuation * 2);
 
 			ImGui::PopFont();
 		}
@@ -94,14 +94,14 @@ void DebugPSG::Registers::DisplayInternal()
 		if (psg.noise.frequency_mode == 3)
 			ImGui::TextUnformatted("Tone 3");
 		else
-			ImGui::Text("%" CC_PRIdLEAST8 " (%4" CC_PRIuFAST32 "Hz)", psg.noise.frequency_mode, psg_clock / (0x10 << psg.noise.frequency_mode) / 2);
+			ImGui::TextFormatted("{} ({:4}Hz)", psg.noise.frequency_mode, psg_clock / (0x10 << psg.noise.frequency_mode) / 2);
 
 		ImGui::TableNextColumn();
 
 		if (psg.noise.attenuation == 15)
 			ImGui::TextUnformatted("0xF (Mute)");
 		else
-			ImGui::Text("0x%" CC_PRIXLEAST8 " (%2" CC_PRIuLEAST8 "db)", psg.noise.attenuation, psg.noise.attenuation * 2);
+			ImGui::TextFormatted("0x{:X} ({:2}db)", psg.noise.attenuation, psg.noise.attenuation * 2);
 
 		ImGui::PopFont();
 

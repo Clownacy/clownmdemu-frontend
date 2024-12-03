@@ -158,7 +158,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				const auto dpi_scale = GetWindow().GetDPIScale();
 				ImGui::Image(texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
 				ImGui::SameLine();
-				ImGui::Text("Tile Index: %" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16 "\n" "Palette Line: %" CC_PRIdFAST16 "\n" "X-Flip: %s" "\n" "Y-Flip: %s" "\n" "Priority: %s", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
+				ImGui::TextFormatted("Tile Index: {}/0x{:X}" "\n" "Palette Line: {}" "\n" "X-Flip: {}" "\n" "Y-Flip: {}" "\n" "Priority: {}", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
 				ImGui::EndTooltip();
 			}
@@ -288,7 +288,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale);
 			const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale);
 
-			ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST16, pixel_x, pixel_y);
+			ImGui::TextFormatted("{},{}", pixel_x, pixel_y);
 
 			ImGui::EndTooltip();
 		}
@@ -328,19 +328,19 @@ void DebugVDP::SpriteList::DisplayInternal()
 				const auto dpi_scale = GetWindow().GetDPIScale();
 
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST8, i);
+				ImGui::TextFormatted("{}", i);
 				ImGui::TableNextColumn();
 				ImGui::Image(textures[i], ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST16 ",%" CC_PRIuFAST8, sprite.x, sprite.cached.y);
+				ImGui::TextFormatted("{},{}", sprite.x, sprite.cached.y);
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST8 "x%" CC_PRIuFAST8, sprite.cached.width, sprite.cached.height);
+				ImGui::TextFormatted("{}x{}", sprite.cached.width, sprite.cached.height);
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST8, sprite.cached.link);
+				ImGui::TextFormatted("{}", sprite.cached.link);
 				ImGui::TableNextColumn();
-				ImGui::Text("%" CC_PRIuFAST16 "/0x%" CC_PRIXFAST16, sprite.tile_metadata.tile_index, sprite.tile_metadata.tile_index);
+				ImGui::TextFormatted("{}/0x{:X}", sprite.tile_metadata.tile_index, sprite.tile_metadata.tile_index);
 				ImGui::TableNextColumn();
-				ImGui::Text("Line %" CC_PRIuFAST8, sprite.tile_metadata.palette_line);
+				ImGui::TextFormatted("Line {}", sprite.tile_metadata.palette_line);
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
 				ImGui::TableNextColumn();
@@ -564,7 +564,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 						ImGui::BeginTooltip();
 
 						// Display the tile's index.
-						ImGui::Text("%zd/0x%zX", tile_index, tile_index);
+						ImGui::TextFormatted("{}/0x{:X}", tile_index, tile_index);
 
 						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
 						ImGui::Image(texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
@@ -638,13 +638,13 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 		{
 			ImGui::BeginTooltip();
 
-			ImGui::Text("Line %" CC_PRIdFAST16 ", Colour %" CC_PRIdFAST16, j / length_of_palette_line, j % length_of_palette_line);
+			ImGui::TextFormatted("Line {}, Colour {}", j / length_of_palette_line, j % length_of_palette_line);
 			ImGui::Separator();
 			ImGui::PushFont(GetMonospaceFont());
-			ImGui::Text("Value: %03" CC_PRIXFAST16, value);
-			ImGui::Text("Blue:  %" CC_PRIdFAST16 "/7", blue);
-			ImGui::Text("Green: %" CC_PRIdFAST16 "/7", green);
-			ImGui::Text("Red:   %" CC_PRIdFAST16 "/7", red);
+			ImGui::TextFormatted("Value: {:03X}", value);
+			ImGui::TextFormatted("Blue:  {}/7", blue);
+			ImGui::TextFormatted("Green: {}/7", green);
+			ImGui::TextFormatted("Red:   {}/7", red);
 			ImGui::PopFont();
 
 			ImGui::EndTooltip();
@@ -671,42 +671,42 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Sprite Table Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.sprite_table_address);
+		ImGui::TextFormatted("0x{:04X}", vdp.sprite_table_address);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.window_address);
+		ImGui::TextFormatted("0x{:04X}", vdp.window_address);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane A Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_a_address);
+		ImGui::TextFormatted("0x{:04X}", vdp.plane_a_address);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane B Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.plane_b_address);
+		ImGui::TextFormatted("0x{:04X}", vdp.plane_b_address);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Horizontal Scroll Table Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.hscroll_address);
+		ImGui::TextFormatted("0x{:04X}", vdp.hscroll_address);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Horizontal Boundary");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIdLEAST8, vdp.window.horizontal_boundary);
+		ImGui::TextFormatted("{}", vdp.window.horizontal_boundary);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
@@ -718,7 +718,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Window Plane Vertical Boundary");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIdLEAST8, vdp.window.vertical_boundary);
+		ImGui::TextFormatted("{}", vdp.window.vertical_boundary);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
@@ -729,12 +729,12 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane Width");
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_width);
+		ImGui::TextFormatted("{} Tiles", vdp.plane_width);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane Height");
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIdLEAST16 " Tiles", vdp.plane_height);
+		ImGui::TextFormatted("{} Tiles", vdp.plane_height);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Display Enabled");
@@ -774,13 +774,13 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Background Colour");
 		ImGui::TableNextColumn();
-		ImGui::Text("Palette Line %" CC_PRIdFAST8 ", Entry %" CC_PRIdFAST8, static_cast<cc_u8f>(vdp.background_colour / 16), static_cast<cc_u8f>(vdp.background_colour % 16));
+		ImGui::TextFormatted("Palette Line {}, Entry {}", static_cast<cc_u8f>(vdp.background_colour / 16), static_cast<cc_u8f>(vdp.background_colour % 16));
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("H-Int Interval");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("%" CC_PRIdLEAST8, vdp.h_int_interval);
+		ImGui::TextFormatted("{}", vdp.h_int_interval);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
@@ -837,14 +837,14 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Source Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%06" CC_PRIXFAST32, static_cast<cc_u32f>((static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low));
+		ImGui::TextFormatted("0x{:06X}", static_cast<cc_u32f>((static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low));
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Length");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.dma.length);
+		ImGui::TextFormatted("0x{:04X}", vdp.dma.length);
 		ImGui::PopFont();
 
 		ImGui::EndTable();
@@ -867,14 +867,14 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Address Register");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.address_register);
+		ImGui::TextFormatted("0x{:04X}", vdp.access.address_register);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Command Register");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.code_register); // TODO: Enums or something.
+		ImGui::TextFormatted("0x{:04X}", vdp.access.code_register); // TODO: Enums or something.
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
@@ -896,7 +896,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Increment");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::Text("0x%04" CC_PRIXLEAST16, vdp.access.increment);
+		ImGui::TextFormatted("0x{:04X}", vdp.access.increment);
 		ImGui::PopFont();
 
 		ImGui::EndTable();
