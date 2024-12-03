@@ -1631,7 +1631,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	// Initialise SDL2
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
 	{
-		debug_log.Log("SDL_Init failed with the following message - '%s'", SDL_GetError());
+		debug_log.LogFormat("SDL_Init failed with the following message - '{}'", SDL_GetError());
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
 	}
 	else
@@ -1899,7 +1899,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			if (controller == nullptr)
 			{
-				debug_log.Log("SDL_GameControllerOpen failed with the following message - '%s'", SDL_GetError());
+				debug_log.LogFormat("SDL_GameControllerOpen failed with the following message - '{}'", SDL_GetError());
 			}
 			else
 			{
@@ -1907,7 +1907,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 				if (joystick_instance_id < 0)
 				{
-					debug_log.Log("SDL_JoystickInstanceID failed with the following message - '%s'", SDL_GetError());
+					debug_log.LogFormat("SDL_JoystickInstanceID failed with the following message - '{}'", SDL_GetError());
 				}
 				else
 				{
@@ -1935,7 +1935,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			if (controller == nullptr)
 			{
-				debug_log.Log("SDL_GameControllerFromInstanceID failed with the following message - '%s'", SDL_GetError());
+				debug_log.LogFormat("SDL_GameControllerFromInstanceID failed with the following message - '{}'", SDL_GetError());
 			}
 			else
 			{

@@ -17,9 +17,9 @@
 namespace ImGui
 {
 	template <typename... T>
-	void TextFormatted(fmt::format_string<T...> fmt, T&&... args)
+	void TextFormatted(fmt::format_string<T...> format, T&&... args)
 	{
-		const auto string = fmt::format(fmt, std::forward<T>(args)...);
+		const auto string = fmt::format(format, std::forward<T>(args)...);
 		ImGui::TextUnformatted(&string.front(), &string.back() + 1);
 	}
 }

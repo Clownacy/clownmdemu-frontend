@@ -19,7 +19,7 @@ SDL_Texture* WindowWithFramebuffer::CreateFramebufferTexture(SDL_Renderer* const
 	{
 		// Disable blending, since we don't need it
 		if (SDL_SetTextureBlendMode(framebuffer_texture, SDL_BLENDMODE_NONE) < 0)
-			Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+			Frontend::debug_log.LogFormat("SDL_SetTextureBlendMode failed with the following message - '{}'", SDL_GetError());
 	}
 
 	return framebuffer_texture;

@@ -35,13 +35,13 @@ namespace SDL
 
 		if (!texture)
 		{
-			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '%s'", SDL_GetError());
+			Frontend::debug_log.LogFormat("SDL_CreateTexture failed with the following message - '{}'", SDL_GetError());
 		}
 		else
 		{
 			// Disable blending, since we don't need it
 			if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE) < 0)
-				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '%s'", SDL_GetError());
+				Frontend::debug_log.LogFormat("SDL_SetTextureBlendMode failed with the following message - '{}'", SDL_GetError());
 		}
 
 		return texture;
