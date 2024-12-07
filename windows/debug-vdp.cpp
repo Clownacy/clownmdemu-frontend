@@ -706,10 +706,8 @@ void DebugVDP::Registers::DisplayInternal()
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Horizontal Boundary");
-		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{}", vdp.window.horizontal_boundary);
-		ImGui::PopFont();
+		ImGui::TextFormatted("{} Tiles", vdp.window.horizontal_boundary * 2);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Horizontal Alignment");
@@ -718,10 +716,8 @@ void DebugVDP::Registers::DisplayInternal()
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Vertical Boundary");
-		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{}", vdp.window.vertical_boundary);
-		ImGui::PopFont();
+		ImGui::TextFormatted("{} Tiles", vdp.window.vertical_boundary / 8);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Vertical Alignment");
