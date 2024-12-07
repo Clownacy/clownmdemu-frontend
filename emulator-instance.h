@@ -37,15 +37,22 @@ private:
 	private:
 		std::vector<unsigned char> rom_file_buffer;
 		std::filesystem::path save_data_path;
-		EmulatorInstance *emulator;
+		EmulatorInstance &emulator;
 
 	public:
-		Cartridge(EmulatorInstance &emulator, const std::vector<unsigned char> &&rom_file_buffer = {}, const std::filesystem::path &save_data_path = {});
-		~Cartridge();
+		Cartridge(EmulatorInstance &emulator)
+			: emulator(emulator)
+		{}
+		~Cartridge()
+		{
+			Eject();
+		}
 
 		cc_u8f Read(cc_u32f address);
 		const std::vector<unsigned char>& GetROMBuffer() const { return rom_file_buffer; }
-		bool Exists() const { return !rom_file_buffer.empty(); }
+		bool IsInserted() const { return !rom_file_buffer.empty(); }
+		void Insert(const std::vector<unsigned char> &rom_file_buffer, const std::filesystem::path &save_data_path);
+		void Eject();
 	};
 
 	static const ClownMDEmu_Constant clownmdemu_constant;
@@ -112,7 +119,7 @@ public:
 	std::size_t GetSaveStateFileSize();
 	bool WriteSaveStateFile(SDL::RWops &file);
 
-	bool IsCartridgeFileLoaded() const { return cartridge.Exists(); }
+	bool IsCartridgeFileLoaded() const { return cartridge.IsInserted(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING

@@ -9,43 +9,44 @@
 
 const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = ClownMDEmu_Constant_Initialise();
 
-EmulatorInstance::Cartridge::Cartridge(EmulatorInstance &emulator, const std::vector<unsigned char> &&rom_file_buffer, const std::filesystem::path &save_data_path)
-	: rom_file_buffer(std::move(rom_file_buffer))
-	, save_data_path(save_data_path)
-	, emulator(&emulator)
+void EmulatorInstance::Cartridge::Insert(const std::vector<unsigned char> &in_rom_file_buffer, const std::filesystem::path &in_save_data_path)
 {
-	if (!save_data_path.empty())
+	if (IsInserted())
+		Eject();
+
+	rom_file_buffer = in_rom_file_buffer;
+	save_data_path = in_save_data_path;
+
+	// Load save data from disk.
+	std::vector<unsigned char> save_data_buffer;
+	if (Frontend::file_utilities.LoadFileToBuffer(save_data_buffer, save_data_path))
 	{
-		// Load save data from disk.
-		std::vector<unsigned char> save_data_buffer;
-		if (Frontend::file_utilities.LoadFileToBuffer(save_data_buffer, save_data_path))
+		if (std::size(save_data_buffer) > std::size(emulator.state->clownmdemu.external_ram.buffer))
 		{
-			if (std::size(save_data_buffer) > std::size(emulator.state->clownmdemu.external_ram.buffer))
-			{
-				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(save_data_buffer), std::size(emulator.state->clownmdemu.external_ram.buffer));
-			}
-			else
-			{
-				std::copy(std::begin(save_data_buffer), std::end(save_data_buffer), emulator.state->clownmdemu.external_ram.buffer);
-				std::fill(std::begin(emulator.state->clownmdemu.external_ram.buffer) + std::size(save_data_buffer), std::end(emulator.state->clownmdemu.external_ram.buffer), 0xFF);
-			}
+			Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(save_data_buffer), std::size(emulator.state->clownmdemu.external_ram.buffer));
+		}
+		else
+		{
+			std::copy(std::begin(save_data_buffer), std::end(save_data_buffer), emulator.state->clownmdemu.external_ram.buffer);
+			std::fill(std::begin(emulator.state->clownmdemu.external_ram.buffer) + std::size(save_data_buffer), std::end(emulator.state->clownmdemu.external_ram.buffer), 0xFF);
 		}
 	}
 }
 
-EmulatorInstance::Cartridge::~Cartridge()
+void EmulatorInstance::Cartridge::Eject()
 {
-	if (!save_data_path.empty())
-	{
-		// Write save data to disk.
-		if (emulator->state->clownmdemu.external_ram.non_volatile && emulator->state->clownmdemu.external_ram.size != 0)
-		{
-			SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
+	rom_file_buffer.clear();
 
-			if (!file || SDL_RWwrite(file, emulator->state->clownmdemu.external_ram.buffer, emulator->state->clownmdemu.external_ram.size, 1) != 1)
-				Frontend::debug_log.Log("Could not write save data file");
-		}
+	// Write save data to disk.
+	if (emulator.state->clownmdemu.external_ram.non_volatile && emulator.state->clownmdemu.external_ram.size != 0)
+	{
+		SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
+
+		if (!file || SDL_RWwrite(file, emulator.state->clownmdemu.external_ram.buffer, emulator.state->clownmdemu.external_ram.size, 1) != 1)
+			Frontend::debug_log.Log("Could not write save data file");
 	}
+
+	save_data_path.clear();
 }
 
 cc_u8f EmulatorInstance::Cartridge::Read(const cc_u32f address)
@@ -284,9 +285,7 @@ void EmulatorInstance::HardResetConsole()
 {
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	state_rewind_remaining = 0;
-	state_rewind_index = 0;
 #endif
-	state = &state_rewind_buffer[0];
 
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
@@ -295,14 +294,14 @@ void EmulatorInstance::HardResetConsole()
 
 void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path)
 {
-	cartridge = {*this, std::move(file_buffer), path};
+	cartridge.Insert(std::move(file_buffer), path);
 
 	HardResetConsole();
 }
 
 void EmulatorInstance::UnloadCartridgeFile()
 {
-	cartridge = {*this};
+	cartridge.Eject();
 }
 
 bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
