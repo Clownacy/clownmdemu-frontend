@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
-#include <span>
 #include <string>
 #include <vector>
 
@@ -32,7 +31,7 @@ public:
 
 		auto GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
 		{
-			return std::span<const decltype(colours)::value_type, total_colours_in_palette_line>(colours.cbegin() + (brightness * total_palette_lines * total_colours_in_palette_line + palette_line), total_colours_in_palette_line);
+			return &colours[brightness * total_palette_lines * total_colours_in_palette_line + palette_line * total_colours_in_palette_line];
 		}
 		auto GetColour(const cc_u8f brightness, const cc_u8f palette_line, const cc_u8f colour_index) const
 		{
