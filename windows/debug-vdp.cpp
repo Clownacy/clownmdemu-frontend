@@ -711,7 +711,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Vertical Boundary");
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.window.vertical_boundary / 8);
+		ImGui::TextFormatted("{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Window Plane Vertical Alignment");
