@@ -781,13 +781,15 @@ static std::optional<DebugMemory> prg_ram_viewer_window;
 static std::optional<DebugMemory> wave_ram_viewer_window;
 static std::optional<DebugVDP::Registers> vdp_registers_window;
 static std::optional<DebugVDP::SpriteList> sprite_list_window;
-static std::optional<DebugVDP::SpriteViewer> sprite_viewer_window;
-static std::optional<DebugVDP::PlaneViewer> window_plane_viewer_window;
-static std::optional<DebugVDP::PlaneViewer> plane_a_viewer_window;
-static std::optional<DebugVDP::PlaneViewer> plane_b_viewer_window;
-static std::optional<DebugVDP::VRAMViewer> vram_viewer_window;
-static std::optional<DebugVDP::CRAMViewer> cram_viewer_window;
+static std::optional<DebugMemory> vram_viewer_window;
+static std::optional<DebugMemory> cram_viewer_window;
 static std::optional<DebugMemory> vsram_viewer_window;
+static std::optional<DebugVDP::SpriteViewer> sprite_plane_visualiser_window;
+static std::optional<DebugVDP::PlaneViewer> window_plane_visualiser_window;
+static std::optional<DebugVDP::PlaneViewer> plane_a_visualiser_window;
+static std::optional<DebugVDP::PlaneViewer> plane_b_visualiser_window;
+static std::optional<DebugVDP::VRAMViewer> vram_visualiser_window;
+static std::optional<DebugVDP::CRAMViewer> cram_visualiser_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
@@ -810,13 +812,15 @@ static constexpr auto popup_windows = std::make_tuple(
 	&wave_ram_viewer_window,
 	&vdp_registers_window,
 	&sprite_list_window,
-	&sprite_viewer_window,
-	&window_plane_viewer_window,
-	&plane_a_viewer_window,
-	&plane_b_viewer_window,
 	&vram_viewer_window,
 	&cram_viewer_window,
 	&vsram_viewer_window,
+	&sprite_plane_visualiser_window,
+	&window_plane_visualiser_window,
+	&plane_a_visualiser_window,
+	&plane_b_visualiser_window,
+	&vram_visualiser_window,
+	&cram_visualiser_window,
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
@@ -2511,14 +2515,18 @@ void Frontend::Update()
 				{
 					PopupButton("Registers", vdp_registers_window, 360, 824, false, "VDP Registers");
 					PopupButton("Sprites", sprite_list_window, 540, 540, true);
-					ImGui::SeparatorText("Visualisers");
-					PopupButton("Sprite Plane", sprite_viewer_window, 544 / dpi_scale, 560 / dpi_scale, true);
-					PopupButton("Window Plane", window_plane_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Plane A", plane_a_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Plane B", plane_b_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("VRAM", vram_viewer_window, 480, 480, true);
-					PopupButton("CRAM", cram_viewer_window, 456, 186, false);
+					PopupButton("VRAM", vram_viewer_window, 384, 384, true);
+					PopupButton("CRAM", cram_viewer_window, 384, 192, false);
 					PopupButton("VSRAM", vsram_viewer_window, 384, 192, false);
+					ImGui::SeparatorText("Visualisers");
+					ImGui::PushID("Visualisers");
+					PopupButton("Sprite Plane", sprite_plane_visualiser_window, 544 / dpi_scale, 560 / dpi_scale, true);
+					PopupButton("Window Plane", window_plane_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Plane A", plane_a_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Plane B", plane_b_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("VRAM", vram_visualiser_window, 480, 480, true);
+					PopupButton("CRAM", cram_visualiser_window, 456, 186, false);
+					ImGui::PopID();
 					ImGui::EndMenu();
 				}
 
@@ -2738,13 +2746,15 @@ void Frontend::Update()
 	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, std::size(clownmdemu.mega_cd.pcm.wave_ram));
 	DisplayWindow(vdp_registers_window);
 	DisplayWindow(sprite_list_window);
-	DisplayWindow(sprite_viewer_window);
-	DisplayWindow(window_plane_viewer_window, clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
-	DisplayWindow(plane_a_viewer_window, clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
-	DisplayWindow(plane_b_viewer_window, clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
-	DisplayWindow(vram_viewer_window);
-	DisplayWindow(cram_viewer_window);
+	DisplayWindow(vram_viewer_window, clownmdemu.vdp.vram, std::size(clownmdemu.vdp.vram));
+	DisplayWindow(cram_viewer_window, clownmdemu.vdp.cram, std::size(clownmdemu.vdp.cram));
 	DisplayWindow(vsram_viewer_window, clownmdemu.vdp.vsram, std::size(clownmdemu.vdp.vsram));
+	DisplayWindow(sprite_plane_visualiser_window);
+	DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
+	DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
+	DisplayWindow(plane_b_visualiser_window, clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
+	DisplayWindow(vram_visualiser_window);
+	DisplayWindow(cram_visualiser_window);
 	DisplayWindow(fm_status_window);
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
