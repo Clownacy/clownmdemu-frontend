@@ -787,6 +787,7 @@ static std::optional<DebugVDP::PlaneViewer> plane_a_viewer_window;
 static std::optional<DebugVDP::PlaneViewer> plane_b_viewer_window;
 static std::optional<DebugVDP::VRAMViewer> vram_viewer_window;
 static std::optional<DebugVDP::CRAMViewer> cram_viewer_window;
+static std::optional<DebugMemory> vsram_viewer_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
@@ -815,6 +816,7 @@ static constexpr auto popup_windows = std::make_tuple(
 	&plane_b_viewer_window,
 	&vram_viewer_window,
 	&cram_viewer_window,
+	&vsram_viewer_window,
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
@@ -2516,6 +2518,7 @@ void Frontend::Update()
 					PopupButton("Plane B", plane_b_viewer_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("VRAM", vram_viewer_window, 480, 480, true);
 					PopupButton("CRAM", cram_viewer_window, 456, 186, false);
+					PopupButton("VSRAM", vsram_viewer_window, 384, 192, false);
 					ImGui::EndMenu();
 				}
 
@@ -2741,6 +2744,7 @@ void Frontend::Update()
 	DisplayWindow(plane_b_viewer_window, clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
 	DisplayWindow(vram_viewer_window);
 	DisplayWindow(cram_viewer_window);
+	DisplayWindow(vsram_viewer_window, clownmdemu.vdp.vsram, std::size(clownmdemu.vdp.vsram));
 	DisplayWindow(fm_status_window);
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
