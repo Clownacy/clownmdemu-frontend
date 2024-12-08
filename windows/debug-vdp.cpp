@@ -411,7 +411,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 
 		// Handle VRAM viewing options.
 		ImGui::SeparatorText("Brightness");
-		for (std::size_t i = 0; i < state.colours.size(); ++i)
+		for (std::size_t i = 0; i < state.total_brightnesses; ++i)
 		{
 			if (i != 0)
 				ImGui::SameLine();
