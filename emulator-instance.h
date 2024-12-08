@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <functional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -21,13 +22,21 @@ public:
 
 	struct State
 	{
+		static constexpr unsigned int total_brightnesses = 3;
+		static constexpr unsigned int total_palette_lines = 4;
+		static constexpr unsigned int total_colours_in_palette_line = 16;
+
 		ClownMDEmu_State clownmdemu;
-		std::array<std::array<std::array<Uint32, 16>, 4>, 3> colours;
+		std::array<Uint32, total_colours_in_palette_line * total_palette_lines * total_brightnesses> colours;
 		CDReader::State cd;
 
-		decltype(colours[0][0][0])& Colours(const cc_u16f index)
+		auto GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
 		{
-			return colours[index / (colours[0].size() * colours[0][0].size()) % colours.size()][index / colours[0][0].size() % colours[0].size()][index % colours[0][0].size()];
+			return std::span<const decltype(colours)::value_type, total_colours_in_palette_line>(colours.cbegin() + (brightness * total_palette_lines * total_colours_in_palette_line + palette_line), total_colours_in_palette_line);
+		}
+		auto GetColour(const cc_u8f brightness, const cc_u8f palette_line, const cc_u8f colour_index) const
+		{
+			return GetPaletteLine(brightness, palette_line)[colour_index];
 		}
 	};
 

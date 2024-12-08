@@ -64,7 +64,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-	const auto &palette_line = state.colours[state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority][tile_metadata.palette_line];
+	const auto &palette_line = state.GetPaletteLine(state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority, tile_metadata.palette_line);
 
 	cc_u16f vram_index = tile_metadata.tile_index * tile_size_in_bytes;
 
@@ -426,16 +426,10 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		}
 
 		ImGui::SeparatorText("Palette Line");
-		for (std::size_t i = 0; i < state.colours[0].size(); ++i)
+		for (std::size_t i = 0; i < state.total_palette_lines; ++i)
 		{
 			if (i != 0)
 				ImGui::SameLine();
-
-			static const std::array brightness_names = {
-				"Normal",
-				"Shadow",
-				"Highlight"
-			};
 
 			options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
 		}
@@ -453,7 +447,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			cache_frame_counter = Frontend::frame_counter;
 
 			// Select the correct palette line.
-			const auto &selected_palette = state.colours[brightness_index][palette_line];
+			const auto &selected_palette = state.GetPaletteLine(brightness_index, palette_line);
 
 			// Lock texture so that we can write into it.
 			Uint8 *vram_texture_pixels;

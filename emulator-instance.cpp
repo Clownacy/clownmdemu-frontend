@@ -88,7 +88,7 @@ void EmulatorInstance::ColourUpdatedCallback(void* const user_data, const cc_u16
 	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	emulator->state->Colours(index) = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
+	emulator->state->colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
 void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f screen_width, const cc_u16f screen_height)
@@ -98,9 +98,14 @@ void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_
 	emulator->current_screen_width = screen_width;
 	emulator->current_screen_height = screen_height;
 
-	if (emulator->framebuffer_texture_pixels != nullptr)
-		for (cc_u16f i = 0; i < screen_width; ++i)
-			emulator->framebuffer_texture_pixels[scanline * emulator->framebuffer_texture_pitch + i] = emulator->state->Colours(pixels[i]);
+	if (emulator->framebuffer_texture_pixels == nullptr)
+		return;
+
+	auto input_pointer = pixels;
+	auto output_pointer = &emulator->framebuffer_texture_pixels[scanline * emulator->framebuffer_texture_pitch];
+
+	for (cc_u16f i = 0; i < screen_width; ++i)
+		*output_pointer++ = emulator->state->colours[*input_pointer++];
 }
 
 cc_bool EmulatorInstance::ReadInputCallback(void* const user_data, const cc_u8f player_id, const ClownMDEmu_Button button_id)
