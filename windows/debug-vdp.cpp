@@ -671,64 +671,6 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Window Plane Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.window_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane A Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.plane_a_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane B Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.plane_b_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Horizontal Scroll Table Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.hscroll_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Window Plane Horizontal Boundary");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.window.horizontal_boundary * 2);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Window Plane Horizontal Alignment");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.window.aligned_right ? "Right" : "Left");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Window Plane Vertical Boundary");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Window Plane Vertical Alignment");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.window.aligned_bottom ? "Bottom" : "Top");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane Width");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_width);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane Height");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_height);
-
-		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Display Enabled");
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted(vdp.display_enabled ? "Yes" : "No");
@@ -775,6 +717,48 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextFormatted("{}", vdp.h_int_interval);
 		ImGui::PopFont();
 
+		ImGui::EndTable();
+	}
+
+	ImGui::SeparatorText("Scrolling Planes");
+
+	if (ImGui::BeginTable("Scrolling Planes", 2, ImGuiTableFlags_Borders))
+	{
+		ImGui::TableSetupColumn("Property");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableHeadersRow();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane A Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("0x{:04X}", vdp.plane_a_address);
+		ImGui::PopFont();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane B Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("0x{:04X}", vdp.plane_b_address);
+		ImGui::PopFont();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Horizontal Scroll Table Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("0x{:04X}", vdp.hscroll_address);
+		ImGui::PopFont();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane Width");
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("{} Tiles", vdp.plane_width);
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane Height");
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("{} Tiles", vdp.plane_height);
+
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Horizontal Scrolling Mode");
 		ImGui::TableNextColumn();
@@ -793,6 +777,44 @@ void DebugVDP::Registers::DisplayInternal()
 			"2-Tile Columns"
 		};
 		ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
+
+		ImGui::EndTable();
+	}
+
+	ImGui::SeparatorText("Window Plane");
+
+	if (ImGui::BeginTable("Window Plane", 2, ImGuiTableFlags_Borders))
+	{
+		ImGui::TableSetupColumn("Property");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableHeadersRow();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Address");
+		ImGui::PushFont(monospace_font);
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("0x{:04X}", vdp.window_address);
+		ImGui::PopFont();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Horizontal Alignment");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.window.aligned_right ? "Right" : "Left");
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Horizontal Boundary");
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("{} Tiles", vdp.window.horizontal_boundary * 2);
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Vertical Alignment");
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(vdp.window.aligned_bottom ? "Bottom" : "Top");
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Vertical Boundary");
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
 
 		ImGui::EndTable();
 	}
