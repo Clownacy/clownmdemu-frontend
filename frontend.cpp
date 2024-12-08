@@ -788,8 +788,8 @@ static std::optional<DebugVDP::SpriteViewer> sprite_plane_visualiser_window;
 static std::optional<DebugVDP::PlaneViewer> window_plane_visualiser_window;
 static std::optional<DebugVDP::PlaneViewer> plane_a_visualiser_window;
 static std::optional<DebugVDP::PlaneViewer> plane_b_visualiser_window;
-static std::optional<DebugVDP::VRAMViewer> vram_visualiser_window;
-static std::optional<DebugVDP::CRAMViewer> cram_visualiser_window;
+static std::optional<DebugVDP::VRAMViewer> tile_visualiser_window;
+static std::optional<DebugVDP::CRAMViewer> colour_visualiser_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
@@ -819,8 +819,8 @@ static constexpr auto popup_windows = std::make_tuple(
 	&window_plane_visualiser_window,
 	&plane_a_visualiser_window,
 	&plane_b_visualiser_window,
-	&vram_visualiser_window,
-	&cram_visualiser_window,
+	&tile_visualiser_window,
+	&colour_visualiser_window,
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
@@ -2524,8 +2524,8 @@ void Frontend::Update()
 					PopupButton("Window Plane", window_plane_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane A", plane_a_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane B", plane_b_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Tiles", vram_visualiser_window, 480, 480, true);
-					PopupButton("Colours", cram_visualiser_window, 456, 186, false);
+					PopupButton("Tiles", tile_visualiser_window, 480, 480, true);
+					PopupButton("Colours", colour_visualiser_window, 456, 186, false);
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}
@@ -2753,8 +2753,8 @@ void Frontend::Update()
 	DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
 	DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
 	DisplayWindow(plane_b_visualiser_window, clownmdemu.vdp.plane_b_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);
-	DisplayWindow(vram_visualiser_window);
-	DisplayWindow(cram_visualiser_window);
+	DisplayWindow(tile_visualiser_window);
+	DisplayWindow(colour_visualiser_window);
 	DisplayWindow(fm_status_window);
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
