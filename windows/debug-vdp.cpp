@@ -338,7 +338,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 				ImGui::TableNextColumn();
 				ImGui::TextFormatted("{}", sprite.cached.link);
 				ImGui::TableNextColumn();
-				ImGui::TextFormatted("{}/0x{:X}", sprite.tile_metadata.tile_index, sprite.tile_metadata.tile_index);
+				ImGui::TextFormatted("0x{:X}", sprite.tile_metadata.tile_index);
 				ImGui::TableNextColumn();
 				ImGui::TextFormatted("Line {}", sprite.tile_metadata.palette_line);
 				ImGui::TableNextColumn();
@@ -558,7 +558,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 						ImGui::BeginTooltip();
 
 						// Display the tile's index.
-						ImGui::TextFormatted("{}/0x{:X}", tile_index, tile_index);
+						ImGui::TextFormatted("Tile: 0x{:X}\nAddress: 0x{:X}", tile_index, tile_index * TileSizeInBytes(vdp));
 
 						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
 						ImGui::Image(texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
