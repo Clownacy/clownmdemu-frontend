@@ -2524,8 +2524,8 @@ void Frontend::Update()
 					PopupButton("Window Plane", window_plane_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane A", plane_a_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane B", plane_b_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("VRAM", vram_visualiser_window, 480, 480, true);
-					PopupButton("CRAM", cram_visualiser_window, 456, 186, false);
+					PopupButton("Tiles", vram_visualiser_window, 480, 480, true);
+					PopupButton("Colours", cram_visualiser_window, 456, 186, false);
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}
