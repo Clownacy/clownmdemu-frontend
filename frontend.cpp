@@ -20,8 +20,8 @@
 #include <fmt/core.h>
 #include "SDL.h"
 
-#include "common/clownmdemu/clowncommon/clowncommon.h"
-#include "common/clownmdemu/clownmdemu.h"
+#include "common/core/clowncommon/clowncommon.h"
+#include "common/core/clownmdemu.h"
 
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl2.h"

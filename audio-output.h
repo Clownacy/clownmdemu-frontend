@@ -5,7 +5,7 @@
 #include <array>
 #include <cstddef>
 
-#include "common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/core/clowncommon/clowncommon.h"
 
 #define MIXER_FORMAT cc_s16l
 #include "common/mixer.h"

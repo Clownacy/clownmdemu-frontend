@@ -7,7 +7,7 @@
 
 #include "SDL.h"
 
-#include "common/clownmdemu/clownmdemu.h"
+#include "common/core/clownmdemu.h"
 
 #include "debug-log.h"
 #include "emulator-instance.h"

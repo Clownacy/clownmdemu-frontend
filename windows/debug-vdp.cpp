@@ -9,8 +9,8 @@
 #include "SDL.h"
 
 #include "../libraries/imgui/imgui.h"
-#include "../common/clownmdemu/clowncommon/clowncommon.h"
-#include "../common/clownmdemu/clownmdemu.h"
+#include "../common/core/clowncommon/clowncommon.h"
+#include "../common/core/clownmdemu.h"
 
 #include "../frontend.h"
 

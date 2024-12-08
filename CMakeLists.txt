@@ -161,7 +161,7 @@ target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "librar
 ##################
 
 # Link clownmdemu core
-add_subdirectory("common/clownmdemu" EXCLUDE_FROM_ALL)
+add_subdirectory("common/core" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clownmdemu)
 
 # Link SDL

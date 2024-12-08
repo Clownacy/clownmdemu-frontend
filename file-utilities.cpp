@@ -20,7 +20,7 @@
 #endif
 #include "libraries/imgui/imgui.h"
 
-#include "common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/core/clowncommon/clowncommon.h"
 
 #ifdef _WIN32
 // Adapted from SDL2.

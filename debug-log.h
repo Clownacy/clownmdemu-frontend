@@ -11,7 +11,7 @@
 #include "SDL.h"
 
 #include "libraries/imgui/imgui.h"
-#include "common/clownmdemu/clowncommon/clowncommon.h"
+#include "common/core/clowncommon/clowncommon.h"
 
 class DebugLog
 {
