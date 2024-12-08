@@ -720,9 +720,9 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::EndTable();
 	}
 
-	ImGui::SeparatorText("Scrolling Planes");
+	ImGui::SeparatorText("Scroll Planes");
 
-	if (ImGui::BeginTable("Scrolling Planes", 2, ImGuiTableFlags_Borders))
+	if (ImGui::BeginTable("Scroll Planes", 2, ImGuiTableFlags_Borders))
 	{
 		ImGui::TableSetupColumn("Property");
 		ImGui::TableSetupColumn("Value");
