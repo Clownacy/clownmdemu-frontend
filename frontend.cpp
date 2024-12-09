@@ -2733,7 +2733,7 @@ void Frontend::Update()
 	const auto DisplayWindow = []<typename T, typename... Ts>(std::optional<T> &window, Ts&&... arguments)
 	{
 		if (window.has_value())
-			if (!window->Display(arguments...))
+			if (!window->Display(std::forward<Ts>(arguments)...))
 				window.reset();
 	};
 
@@ -2744,16 +2744,16 @@ void Frontend::Update()
 	DisplayWindow(m68k_status_window, clownmdemu.m68k.state);
 	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
 	DisplayWindow(z80_status_window);
-	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram, std::size(clownmdemu.m68k.ram));
-	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram, std::size(clownmdemu.z80.ram));
-	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer, std::size(clownmdemu.mega_cd.prg_ram.buffer));
-	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer, std::size(clownmdemu.mega_cd.word_ram.buffer));
-	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram, std::size(clownmdemu.mega_cd.pcm.wave_ram));
+	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram);
+	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram);
+	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer);
+	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer);
+	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram);
 	DisplayWindow(vdp_registers_window);
 	DisplayWindow(sprite_list_window);
-	DisplayWindow(vram_viewer_window, clownmdemu.vdp.vram, std::size(clownmdemu.vdp.vram));
-	DisplayWindow(cram_viewer_window, clownmdemu.vdp.cram, std::size(clownmdemu.vdp.cram));
-	DisplayWindow(vsram_viewer_window, clownmdemu.vdp.vsram, std::size(clownmdemu.vdp.vsram));
+	DisplayWindow(vram_viewer_window, clownmdemu.vdp.vram);
+	DisplayWindow(cram_viewer_window, clownmdemu.vdp.cram);
+	DisplayWindow(vsram_viewer_window, clownmdemu.vdp.vsram);
 	DisplayWindow(sprite_plane_visualiser_window);
 	DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, clownmdemu.vdp.h40_enabled ? 64 : 32, 32);
 	DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, clownmdemu.vdp.plane_width, clownmdemu.vdp.plane_height);

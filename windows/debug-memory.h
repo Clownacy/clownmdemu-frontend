@@ -16,6 +16,11 @@ private:
 
 	void DisplayInternal(const cc_u8l *buffer, std::size_t buffer_length);
 	void DisplayInternal(const cc_u16l *buffer, std::size_t buffer_length);
+	template<typename T>
+	void DisplayInternal(const T &buffer)
+	{
+		DisplayInternal(std::data(buffer), std::size(buffer));
+	}
 
 public:
 	using Base::WindowPopup;
