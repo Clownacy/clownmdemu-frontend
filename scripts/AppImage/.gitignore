@@ -1,0 +1,5 @@
+# AppImage build directory.
+/build
+
+# Produced files.
+/clownmdemu*-x86_64.AppImage*
