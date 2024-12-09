@@ -192,7 +192,7 @@ add_subdirectory("libraries/clowncd" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clowncd)
 
 # Link fmt
-find_package(fmt)
+find_package(fmt 8.0.0)
 if(NOT fmt_FOUND)
 	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
 endif()
