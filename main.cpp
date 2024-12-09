@@ -98,7 +98,6 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 	EM_ASM({
 		FS.mkdir('/clownmdemu-frontend');
 		FS.mount(IDBFS, {}, '/clownmdemu-frontend');
-		FS.chdir('/clownmdemu-frontend');
 
 		FS.syncfs(true, function (err) {
 			Module._StorageLoaded();

@@ -961,6 +961,10 @@ bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &hei
 
 static std::filesystem::path ConfigPath()
 {
+#ifdef __EMSCRIPTEN__
+	// See 'main.cpp'.
+	return "/clownmdemu-frontend";
+#else
 	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
 
 	if (path_cstr == nullptr)
@@ -969,6 +973,7 @@ static std::filesystem::path ConfigPath()
 	const std::filesystem::path path(path_cstr.get());
 
 	return path;
+#endif
 }
 
 static std::filesystem::path GetConfigurationFilePath()
