@@ -411,7 +411,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	}
 	catch (const std::bad_alloc&)
 	{
-		debug_log.Log("FileUtilities::LoadFile: Failed to allocate memory.");
+		Frontend::debug_log.Log("FileUtilities::LoadFile: Failed to allocate memory.");
 	}
 #else
 	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
