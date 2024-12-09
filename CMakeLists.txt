@@ -188,7 +188,7 @@ endif()
 target_link_libraries(clownmdemu-frontend clown68000-disassembler)
 
 # Link clowncd
-add_subdirectory("libraries/clowncd" EXCLUDE_FROM_ALL)
+add_subdirectory("common/clowncd" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu-frontend clowncd)
 
 # Link fmt
