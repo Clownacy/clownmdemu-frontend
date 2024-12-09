@@ -2,20 +2,19 @@
 
 # Try It Yourself
 
-You can try clownmdemu in your web browser at [clownmdemu.clownacy.com](http://clownmdemu.clownacy.com).
+You can try ClownMDEmu in your web browser at [clownmdemu.clownacy.com](http://clownmdemu.clownacy.com).
 
 # Overview
 
-This is clownmdemu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
+This is ClownMDEmu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
 
-It is currently in the very early stages of development: it can run some games,
-but many standard features of the Mega Drive are unemulated (see
-`clownmdemu-frontend-common/clownmdemu/TODO.md` for more information).
+Some standard features of the Mega Drive are currently unemulated (see
+`common/core/TODO.md` for more information).
 
 ![Minimal](/assets/screenshot-minimal.png)
 ![Debug](/assets/screenshot-debug.png)
 
-The repository contains clownmdemu's standalone frontend; it is written in
+The repository contains ClownMDEmu's standalone frontend; it is written in
 C++11 and leverages the SDL2, Dear ImGui, FreeType, and inih libraries. On
 Unix platforms, there is also an optional dependency on the Zenity and kdialog
 projects.
@@ -67,5 +66,5 @@ The default control scheme is as follows:
 
 # Licence
 
-clownmdemu is free software, licensed under the AGPLv3 (or any later version).
+ClownMDEmu is free software, licensed under the AGPLv3 (or any later version).
 See `LICENCE.txt` for more information.

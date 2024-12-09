@@ -58,7 +58,7 @@ static constexpr unsigned int INITIAL_WINDOW_HEIGHT = 224 * 2;
 static constexpr unsigned int FRAMEBUFFER_WIDTH = 320;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = 240 * 2; // *2 because of double-resolution mode.
 
-static constexpr char DEFAULT_TITLE[] = "clownmdemu";
+static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
 struct ControllerInput
 {
@@ -131,7 +131,7 @@ private:
 
 		const auto monospace_font = GetMonospaceFont();
 
-		ImGui::SeparatorText("clownmdemu-frontend " VERSION);
+		ImGui::SeparatorText("ClownMDEmu " VERSION);
 
 		ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
 		const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
@@ -147,7 +147,7 @@ private:
 			ImGui::PopFont();
 		};
 
-		if (ImGui::CollapsingHeader("clownmdemu"))
+		if (ImGui::CollapsingHeader("ClownMDEmu"))
 			DoLicence(licence_clownmdemu);
 
 		if (ImGui::CollapsingHeader("Dear ImGui"))
