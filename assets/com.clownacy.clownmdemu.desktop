@@ -1,7 +1,7 @@
 [Desktop Entry]
 Version=1.0
 Icon=clownmdemu
-Exec=clownmdemu-frontend
+Exec=clownmdemu
 Terminal=false
 Type=Application
 MimeType=application/x-genesis-rom

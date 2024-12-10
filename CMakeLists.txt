@@ -9,7 +9,7 @@ project(clownmdemu-frontend LANGUAGES C CXX)
 # Sources #
 ###########
 
-add_executable(clownmdemu-frontend WIN32
+add_executable(clownmdemu WIN32
 	"main.cpp"
 	"audio-device.cpp"
 	"audio-device.h"
@@ -82,13 +82,13 @@ add_executable(clownmdemu-frontend WIN32
 	"windows/common/window-with-framebuffer.h"
 )
 
-set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu-frontend)
+set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu)
 
 if(WIN32)
-	target_sources(clownmdemu-frontend PRIVATE "assets/clownmdemu-frontend.rc")
+	target_sources(clownmdemu PRIVATE "assets/clownmdemu.rc")
 
 	# Enable Unicode support so that non-ANSI file paths work
-	target_compile_definitions(clownmdemu-frontend PRIVATE UNICODE _UNICODE)
+	target_compile_definitions(clownmdemu PRIVATE UNICODE _UNICODE)
 endif()
 
 ##############################
@@ -96,7 +96,7 @@ endif()
 ##############################
 
 # Only require C90 and C++20
-set_target_properties(clownmdemu-frontend PROPERTIES
+set_target_properties(clownmdemu PROPERTIES
 	C_STANDARD 90
 	C_STANDARD_REQUIRED NO
 	C_EXTENSIONS OFF
@@ -111,13 +111,13 @@ set_target_properties(clownmdemu-frontend PROPERTIES
 
 if(EMSCRIPTEN)
 	# Add the file dialog library
-	target_sources(clownmdemu-frontend PRIVATE "libraries/emscripten-browser-file/emscripten_browser_file.h")
+	target_sources(clownmdemu PRIVATE "libraries/emscripten-browser-file/emscripten_browser_file.h")
 
 	# Dependencies of the 'emscripten-browser-file' library
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXPORTED_FUNCTIONS=[_main,_malloc,_free] -sEXPORTED_RUNTIME_METHODS=[ccall] -sALLOW_MEMORY_GROWTH=1")
 
 	# Link the persistent file storage library
-	target_link_libraries(clownmdemu-frontend "idbfs.js")
+	target_link_libraries(clownmdemu "idbfs.js")
 endif()
 
 ##################
@@ -126,21 +126,21 @@ endif()
 
 # Handle selecting either FreeType or stb_truetype font rendering
 if(CLOWNMDEMU_FRONTEND_FREETYPE)
-	target_sources(clownmdemu-frontend PRIVATE
+	target_sources(clownmdemu PRIVATE
 		"libraries/imgui/misc/freetype/imgui_freetype.cpp"
 		"libraries/imgui/misc/freetype/imgui_freetype.h"
 	)
 
-	target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_ENABLE_FREETYPE)
+	target_compile_definitions(clownmdemu PRIVATE IMGUI_ENABLE_FREETYPE)
 else()
-	target_sources(clownmdemu-frontend PRIVATE
+	target_sources(clownmdemu PRIVATE
 		"libraries/imgui/imstb_truetype.h"
 	)
 endif()
 
 # Handle enabling rewinding
 if(CLOWNMDEMU_FRONTEND_REWINDING)
-	target_compile_definitions(clownmdemu-frontend PRIVATE CLOWNMDEMU_FRONTEND_REWINDING)
+	target_compile_definitions(clownmdemu PRIVATE CLOWNMDEMU_FRONTEND_REWINDING)
 endif()
 
 ####################
@@ -148,13 +148,13 @@ endif()
 ####################
 
 # Disable development stuff in non-development builds
-target_compile_definitions(clownmdemu-frontend PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
+target_compile_definitions(clownmdemu PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
 
 # Disable some deprecated junk in Dear ImGui
-target_compile_definitions(clownmdemu-frontend PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO ImTextureID=void*)
+target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO ImTextureID=void*)
 
 # Dear ImGui needs these directories in the include path
-target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "libraries/imgui/backends")
+target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui/backends")
 
 ##################
 # Link libraries #
@@ -162,47 +162,47 @@ target_include_directories(clownmdemu-frontend PRIVATE "libraries/imgui" "librar
 
 # Link clownmdemu core
 add_subdirectory("common/core" EXCLUDE_FROM_ALL)
-target_link_libraries(clownmdemu-frontend clownmdemu-core)
+target_link_libraries(clownmdemu clownmdemu-core)
 
 # Link SDL
 find_package(SDL2 2.0.18)
 if(SDL2_FOUND)
-	target_link_libraries(clownmdemu-frontend SDL2::SDL2main SDL2::SDL2)
+	target_link_libraries(clownmdemu SDL2::SDL2main SDL2::SDL2)
 else()
 	add_subdirectory("libraries/SDL" EXCLUDE_FROM_ALL)
-	target_link_libraries(clownmdemu-frontend SDL2::SDL2main SDL2::SDL2-static)
+	target_link_libraries(clownmdemu SDL2::SDL2main SDL2::SDL2-static)
 endif()
 
 if(CLOWNMDEMU_FRONTEND_FREETYPE)
 	# Link FreeType
 	find_package(Freetype)
 	if(FREETYPE_FOUND)
-		target_link_libraries(clownmdemu-frontend Freetype::Freetype)
+		target_link_libraries(clownmdemu Freetype::Freetype)
 	else()
 		add_subdirectory("libraries/freetype" EXCLUDE_FROM_ALL)
-		target_link_libraries(clownmdemu-frontend freetype)
+		target_link_libraries(clownmdemu freetype)
 	endif()
 endif()
 
 # Link 68000 disassembler
-target_link_libraries(clownmdemu-frontend clown68000-disassembler)
+target_link_libraries(clownmdemu clown68000-disassembler)
 
 # Link clowncd
 add_subdirectory("common/clowncd" EXCLUDE_FROM_ALL)
-target_link_libraries(clownmdemu-frontend clowncd)
+target_link_libraries(clownmdemu clowncd)
 
 # Link fmt
 find_package(fmt 8.0.0)
 if(NOT fmt_FOUND)
 	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
 endif()
-target_link_libraries(clownmdemu-frontend fmt::fmt)
+target_link_libraries(clownmdemu fmt::fmt)
 
 ################
 # Installation #
 ################
 
-install(TARGETS clownmdemu-frontend DESTINATION "bin")
+install(TARGETS clownmdemu DESTINATION "bin")
 install(FILES "assets/com.clownacy.clownmdemu.desktop" DESTINATION "share/applications")
 install(FILES "assets/com.clownacy.clownmdemu.appdata.xml" DESTINATION "share/metainfo")
 install(FILES "assets/icon/icon-512.png" DESTINATION "share/icons/hicolor/512x512/apps" RENAME "clownmdemu.png")
