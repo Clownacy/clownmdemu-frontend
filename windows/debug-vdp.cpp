@@ -1,3 +1,5 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #include "debug-vdp.h"
 
 #include <algorithm>
@@ -175,7 +177,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 	for (auto &texture : textures)
 		if (!texture)
-			texture = SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest");
+			texture = SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest");
 
 	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
@@ -193,6 +195,8 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 			if (SDL_LockTexture(textures[i], nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
 			{
+				std::fill(&sprite_texture_pixels[0], &sprite_texture_pixels[sprite_texture_pitch * sprite_texture_height], 0);
+
 				auto tile_metadata = sprite.tile_metadata;
 
 				for (cc_u8f x = 0; x < sprite.cached.width; ++x)
@@ -308,7 +312,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 		if (ImGui::BeginTable("Sprite Table", 10, ImGuiTableFlags_Borders))
 		{
 			ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Image");
+			ImGui::TableSetupColumn("Image", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Link", ImGuiTableColumnFlags_WidthFixed);
@@ -330,7 +334,14 @@ void DebugVDP::SpriteList::DisplayInternal()
 				ImGui::TableNextColumn();
 				ImGui::TextFormatted("{}", i);
 				ImGui::TableNextColumn();
-				ImGui::Image(textures[i], ImVec2(sprite.cached.width * tile_width * SDL_roundf(2.0f * dpi_scale), sprite.cached.height * tile_height * SDL_roundf(2.0f * dpi_scale)), ImVec2(0, 0), ImVec2(static_cast<float>(sprite.cached.width * tile_width) / sprite_texture_width, static_cast<float>(sprite.cached.height * tile_height) / sprite_texture_height));
+				const auto image_scale  = SDL_roundf(2.0f * dpi_scale);
+				const auto image_space  = ImVec2(sprite_texture_width, sprite_texture_height) * image_scale;
+				const auto image_size   = ImVec2(sprite.cached.width * tile_width, sprite.cached.height * tile_height) * image_scale;
+				const auto image_offset = (image_space - image_size) / 2;
+				const auto cursor_position = ImGui::GetCursorPos();
+				ImGui::Dummy(image_space);
+				ImGui::SetCursorPos(cursor_position + image_offset);
+				ImGui::Image(textures[i], image_size, ImVec2(0, 0), image_size / image_space);
 				ImGui::TableNextColumn();
 				ImGui::TextFormatted("{},{}", sprite.x, sprite.cached.y);
 				ImGui::TableNextColumn();
