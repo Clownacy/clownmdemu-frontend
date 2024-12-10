@@ -396,15 +396,6 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest");
 	}
 
-	if (ImGui::Button("Save to File"))
-	{
-		Frontend::file_utilities.SaveFile(GetWindow(), "Save VRAM Dump",
-		[vdp](const FileUtilities::SaveFileInnerCallback &callback)
-		{
-			return callback(vdp.vram, sizeof(vdp.vram));
-		});
-	}
-
 	if (texture)
 	{
 		bool options_changed = false;

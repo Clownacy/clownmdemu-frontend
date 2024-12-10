@@ -117,6 +117,8 @@ public:
 	{
 		return GetWindow().monospace_font;
 	}
+
+	bool IsResizeable() const { return resizeable; }
 };
 
 #endif /* WINDOW_POPUP_H */

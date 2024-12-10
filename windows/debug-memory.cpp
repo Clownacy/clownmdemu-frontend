@@ -5,6 +5,7 @@
 #include "../libraries/imgui/imgui.h"
 #include "../common/core/clowncommon/clowncommon.h"
 
+#if 0
 void DebugMemory::DisplayInternal(const cc_u8l* const buffer, const std::size_t buffer_length)
 {
 #if 0
@@ -75,4 +76,28 @@ void DebugMemory::DisplayInternal(const cc_u16l* const buffer, const std::size_t
 	}
 
 	ImGui::PopFont();
+}
+#endif
+
+template<>
+void DebugMemory::PrintLine(const cc_u8l* const buffer, const std::size_t buffer_length_digits, const int index)
+{
+	const int offset = index * 0x10;
+	const cc_u8l* const bytes = &buffer[offset];
+
+	ImGui::TextFormatted("{:0{}X}: {:02X} {:02X} {:02X} {:02X}"
+	                             " {:02X} {:02X} {:02X} {:02X}"
+	                             " {:02X} {:02X} {:02X} {:02X}"
+	                             " {:02X} {:02X} {:02X} {:02X}", offset, buffer_length_digits,
+		bytes[0x0], bytes[0x1], bytes[0x2], bytes[0x3], bytes[0x4], bytes[0x5], bytes[0x6], bytes[0x7],
+		bytes[0x8], bytes[0x9], bytes[0xA], bytes[0xB], bytes[0xC], bytes[0xD], bytes[0xE], bytes[0xF]);
+}
+
+template<>
+void DebugMemory::PrintLine(const cc_u16l* const buffer, const std::size_t buffer_length_digits, const int index)
+{
+	const cc_u16l* const words = &buffer[index * 8];
+
+	ImGui::TextFormatted("{:0{}X}: {:04X} {:04X} {:04X} {:04X} {:04X} {:04X} {:04X} {:04X}", index * 0x10, buffer_length_digits,
+		words[0], words[1], words[2], words[3], words[4], words[5], words[6], words[7]);
 }
