@@ -392,38 +392,6 @@ void DebugVDP::SpriteList::DisplayInternal()
 			ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
 		});
 
-#if 0
-			if (ImGui::BeginTable("Properties Table", 2, ImGuiTableFlags_Borders))
-			{
-				const auto start_y = ImGui::GetCursorScreenPos().y;
-				ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed);
-				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed);
-				ImGui::TableHeadersRow();
-
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Palette Line");
-				ImGui::TableNextColumn();
-				ImGui::TextFormatted("{}", sprite.tile_metadata.palette_line);
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("X-Flip");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Y-Flip");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(sprite.tile_metadata.y_flip ? "Yes" : "No");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted("Priority");
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
-				const auto end_y = ImGui::GetCursorScreenPos().y;
-
-				image_space.y = end_y - start_y;
-			}
-
-			ImGui::EndTable();
-		}
-#endif
 		ImGui::EndTable();
 	}
 }
