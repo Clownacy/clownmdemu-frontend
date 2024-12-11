@@ -2497,39 +2497,39 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("Main-68000"))
 				{
 					PopupButton("Registers", m68k_status_window, 376, 120, false, "Main-68000 Registers");
-					PopupButton("WORK-RAM", m68k_ram_viewer_window, 384, 384, true);
+					PopupButton("WORK-RAM", m68k_ram_viewer_window, 400, 400, true);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
 					PopupButton("Registers", mcd_m68k_status_window, 376, 120, false, "Sub-68000 Registers");
-					PopupButton("PRG-RAM", prg_ram_viewer_window, 384, 384, true);
-					PopupButton("WORD-RAM", word_ram_viewer_window, 384, 384, true);
+					PopupButton("PRG-RAM", prg_ram_viewer_window, 410, 410, true);
+					PopupButton("WORD-RAM", word_ram_viewer_window, 410, 410, true);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Z80"))
 				{
 					PopupButton("Registers", z80_status_window, 390, 80, false, "Z80 Registers");
-					PopupButton("SOUND-RAM", z80_ram_viewer_window, 436, 436, true);
+					PopupButton("SOUND-RAM", z80_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("VDP"))
 				{
 					PopupButton("Registers", vdp_registers_window, 360, 824, false, "VDP Registers");
-					PopupButton("Sprites", sprite_list_window, 540, 540, true);
-					PopupButton("VRAM", vram_viewer_window, 384, 384, true);
+					PopupButton("Sprites", sprite_list_window, 540, 364, true);
+					PopupButton("VRAM", vram_viewer_window, 460, 460, true);
 					PopupButton("CRAM", cram_viewer_window, 384, 192, false);
 					PopupButton("VSRAM", vsram_viewer_window, 384, 192, false);
 					ImGui::SeparatorText("Visualisers");
 					ImGui::PushID("Visualisers");
-					PopupButton("Sprite Plane", sprite_plane_visualiser_window, 544 / dpi_scale, 560 / dpi_scale, true);
-					PopupButton("Window Plane", window_plane_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Sprite Plane", sprite_plane_visualiser_window, 540 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Window Plane", window_plane_visualiser_window, 540 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane A", plane_a_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Plane B", plane_b_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Tiles", tile_visualiser_window, 480, 480, true);
+					PopupButton("Tiles", tile_visualiser_window, 530, 530, true);
 					PopupButton("Colours", colour_visualiser_window, 456, 186, false);
 					ImGui::PopID();
 					ImGui::EndMenu();
@@ -2542,7 +2542,7 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("PCM"))
 				{
 					PopupButton("Registers", pcm_status_window, 630, 200, false, "PCM Registers");
-					PopupButton("WAVE-RAM", wave_ram_viewer_window, 436, 436, true);
+					PopupButton("WAVE-RAM", wave_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
 				}
 
