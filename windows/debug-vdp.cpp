@@ -306,65 +306,126 @@ void DebugVDP::SpriteList::DisplayInternal()
 	DisplaySpriteCommon(GetWindow());
 
 	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
-
-	if (ImGui::BeginChild("Sprites", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar))
-	{
-		if (ImGui::BeginTable("Sprite Table", 10, ImGuiTableFlags_Borders))
-		{
-			ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Image", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Link", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Tile Index", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Palette Line", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("X-Flip", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Y-Flip", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableSetupColumn("Priority", ImGuiTableColumnFlags_WidthFixed);
-			ImGui::TableHeadersRow();
-
+#if 0
 			for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
 			{
-				const cc_u16f tile_width = TileWidth();
-				const cc_u16f tile_height = TileHeight(vdp);
+				ImGui::TextUnformatted("my ass");
+				ImGui::SameLine();
+			}
+#endif
+	if (ImGui::BeginTable("Sprite Table", 1 + TOTAL_SPRITES, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX))
+	{
+		ImGui::TableSetupScrollFreeze(1, 0);
+		ImGui::TableSetupColumn("Sprite #", ImGuiTableColumnFlags_WidthFixed);
+		for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
+			ImGui::TableSetupColumn(fmt::format("{}", i).c_str(), ImGuiTableColumnFlags_WidthFixed);
+		ImGui::TableHeadersRow();
 
+		const auto EverySprite = [&vdp](const std::string &label, const std::function<void(const Sprite &sprite, cc_u8f index)> &callback)
+		{
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(&label.front(), &label.back() + 1);
+			for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
+			{
 				const Sprite sprite = GetSprite(vdp, i);
-				const auto dpi_scale = GetWindow().GetDPIScale();
+				ImGui::TableNextColumn();
+				callback(sprite, i);
+			}
+		};
+
+		EverySprite("Image", [&](const Sprite &sprite, const cc_u8f index)
+		{
+			const cc_u16f tile_width = TileWidth();
+			const cc_u16f tile_height = TileHeight(vdp);
+
+			const auto dpi_scale = GetWindow().GetDPIScale();
+
+			const auto image_scale  = SDL_roundf(2.0f * dpi_scale);
+			auto image_space = ImVec2(sprite_texture_width, sprite_texture_height) * image_scale;
+
+			const auto image_internal_size = ImVec2(sprite_texture_width, sprite_texture_height) * image_scale;
+			const auto image_size = ImVec2(sprite.cached.width * tile_width, sprite.cached.height * tile_height) * image_scale;
+			const auto image_offset = (image_space - image_size) / 2;
+			const auto cursor_position = ImGui::GetCursorPos();
+			ImGui::Dummy(image_space);
+			ImGui::SetCursorPos(cursor_position + image_offset);
+			ImGui::Image(textures[index], image_size, ImVec2(0, 0), image_size / image_internal_size);
+		});
+
+		EverySprite("Position", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextFormatted("{},{}", sprite.x, sprite.cached.y);
+		});
+
+		EverySprite("Size", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextFormatted("{}x{}", sprite.cached.width, sprite.cached.height);
+		});
+
+		EverySprite("Link", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextFormatted("{}", sprite.cached.link);
+		});
+
+		EverySprite("Tile Index", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextFormatted("0x{:X}", sprite.tile_metadata.tile_index);
+		});
+
+		EverySprite("Palette Line", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextFormatted("{}", sprite.tile_metadata.palette_line);
+		});
+
+		EverySprite("X-Flip", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
+		});
+
+		EverySprite("Y-Flip", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextUnformatted(sprite.tile_metadata.y_flip ? "Yes" : "No");
+		});
+
+		EverySprite("Priority", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
+		{
+			ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
+		});
+
+#if 0
+			if (ImGui::BeginTable("Properties Table", 2, ImGuiTableFlags_Borders))
+			{
+				const auto start_y = ImGui::GetCursorScreenPos().y;
+				ImGui::TableSetupColumn("Property", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed);
+				ImGui::TableHeadersRow();
 
 				ImGui::TableNextColumn();
-				ImGui::TextFormatted("{}", i);
+				ImGui::TextUnformatted("Palette Line");
 				ImGui::TableNextColumn();
-				const auto image_scale  = SDL_roundf(2.0f * dpi_scale);
-				const auto image_space  = ImVec2(sprite_texture_width, sprite_texture_height) * image_scale;
-				const auto image_size   = ImVec2(sprite.cached.width * tile_width, sprite.cached.height * tile_height) * image_scale;
-				const auto image_offset = (image_space - image_size) / 2;
-				const auto cursor_position = ImGui::GetCursorPos();
-				ImGui::Dummy(image_space);
-				ImGui::SetCursorPos(cursor_position + image_offset);
-				ImGui::Image(textures[i], image_size, ImVec2(0, 0), image_size / image_space);
+				ImGui::TextFormatted("{}", sprite.tile_metadata.palette_line);
 				ImGui::TableNextColumn();
-				ImGui::TextFormatted("{},{}", sprite.x, sprite.cached.y);
-				ImGui::TableNextColumn();
-				ImGui::TextFormatted("{}x{}", sprite.cached.width, sprite.cached.height);
-				ImGui::TableNextColumn();
-				ImGui::TextFormatted("{}", sprite.cached.link);
-				ImGui::TableNextColumn();
-				ImGui::TextFormatted("0x{:X}", sprite.tile_metadata.tile_index);
-				ImGui::TableNextColumn();
-				ImGui::TextFormatted("Line {}", sprite.tile_metadata.palette_line);
+				ImGui::TextUnformatted("X-Flip");
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(sprite.tile_metadata.x_flip ? "Yes" : "No");
 				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Y-Flip");
+				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(sprite.tile_metadata.y_flip ? "Yes" : "No");
 				ImGui::TableNextColumn();
+				ImGui::TextUnformatted("Priority");
+				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(sprite.tile_metadata.priority ? "Yes" : "No");
+				const auto end_y = ImGui::GetCursorScreenPos().y;
+
+				image_space.y = end_y - start_y;
 			}
 
 			ImGui::EndTable();
 		}
+#endif
+		ImGui::EndTable();
 	}
-
-	ImGui::EndChild();
 }
 
 void DebugVDP::VRAMViewer::DisplayInternal()
