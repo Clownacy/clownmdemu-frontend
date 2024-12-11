@@ -73,6 +73,7 @@ namespace Frontend
 	extern bool integer_screen_scaling;
 	extern bool tall_double_resolution_mode;
 	extern bool fast_forward_in_progress;
+	extern bool dear_imgui_windows;
 
 	bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 	void SetAudioPALMode(bool enabled);

@@ -544,6 +544,13 @@ private:
 		}
 	#endif
 
+		ImGui::SeparatorText("Experimental");
+		bool native_windows = !dear_imgui_windows;
+		if (ImGui::Checkbox("Native Windows", &native_windows))
+			dear_imgui_windows = !dear_imgui_windows;
+		DoToolTip(u8"Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
+
+
 		ImGui::SeparatorText("Keyboard Input");
 
 		static bool sorted_scancodes_done;
@@ -742,6 +749,7 @@ bool Frontend::use_vsync;
 bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
 bool Frontend::fast_forward_in_progress;
+bool Frontend::dear_imgui_windows;
 
 Input Frontend::keyboard_input;
 std::array<InputBinding, SDL_NUM_SCANCODES> Frontend::keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
@@ -764,8 +772,6 @@ static bool emulator_frame_advance;
 
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
-
-static bool dear_imgui_windows;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
