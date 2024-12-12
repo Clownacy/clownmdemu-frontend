@@ -88,7 +88,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
+void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height, const cc_u16l plane_pitch)
 {
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
@@ -119,10 +119,10 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 				if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
 				{
-					cc_u16f plane_index = plane_address;
-
 					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 					{
+						cc_u16f plane_index = plane_address + tile_y_in_plane * plane_pitch * 2;
+
 						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 						{
 							DrawTile(state, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
@@ -783,12 +783,17 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane Width");
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_width);
+		ImGui::TextFormatted("{} Tiles", vdp.plane_width_bitmask + 1);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane Height");
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_height);
+		ImGui::TextFormatted("{} Tiles", vdp.plane_height_bitmask + 1);
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Plane Pitch");
+		ImGui::TableNextColumn();
+		ImGui::TextFormatted("{} Tiles", vdp.plane_pitch);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Horizontal Scrolling Mode");
