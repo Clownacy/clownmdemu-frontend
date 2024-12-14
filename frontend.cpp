@@ -781,6 +781,7 @@ static std::optional<DebugM68k::Registers> m68k_status_window;
 static std::optional<DebugM68k::Registers> mcd_m68k_status_window;
 static std::optional<DebugZ80::Registers> z80_status_window;
 static std::optional<DebugMemory> m68k_ram_viewer_window;
+static std::optional<DebugMemory> external_ram_viewer_window;
 static std::optional<DebugMemory> z80_ram_viewer_window;
 static std::optional<DebugMemory> word_ram_viewer_window;
 static std::optional<DebugMemory> prg_ram_viewer_window;
@@ -812,6 +813,7 @@ static constexpr auto popup_windows = std::make_tuple(
 	&mcd_m68k_status_window,
 	&z80_status_window,
 	&m68k_ram_viewer_window,
+	&external_ram_viewer_window,
 	&z80_ram_viewer_window,
 	&word_ram_viewer_window,
 	&prg_ram_viewer_window,
@@ -2504,6 +2506,7 @@ void Frontend::Update()
 				{
 					PopupButton("Registers", m68k_status_window, 376, 120, false, "Main-68000 Registers");
 					PopupButton("WORK-RAM", m68k_ram_viewer_window, 400, 400, true);
+					PopupButton("External RAM", external_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
 				}
 
@@ -2751,6 +2754,7 @@ void Frontend::Update()
 	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
 	DisplayWindow(z80_status_window);
 	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram);
+	DisplayWindow(external_ram_viewer_window, clownmdemu.external_ram.buffer);
 	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram);
 	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer);
 	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer);
