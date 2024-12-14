@@ -22,17 +22,21 @@ private:
 	static constexpr std::size_t IntegerSize()
 	{
 		using Type = std::remove_cvref_t<T>;
-		if constexpr (std::is_same_v<Type, cc_u8l>)
+		if constexpr (std::is_same_v<Type, cc_u8l> || std::is_same_v<Type, cc_u8f>)
 		{
 			return 1;
 		}
-		else if constexpr (std::is_same_v<Type, cc_u16l>)
+		else if constexpr (std::is_same_v<Type, cc_u16l> || std::is_same_v<Type, cc_u16f>)
 		{
 			return 2;
 		}
+		else if constexpr (std::is_same_v<Type, cc_u32l> || std::is_same_v<Type, cc_u32f>)
+		{
+			return 4;
+		}
 		else
 		{
-			static_assert(false, "Unsupported type passed to IntegerSize");
+			static_assert(!sizeof(Type), "Unsupported type passed to IntegerSize");
 			return 0;
 		}
 	}
