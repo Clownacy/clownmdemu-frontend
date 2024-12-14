@@ -153,7 +153,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
 				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
 
-				const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
+				const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_pitch + tile_x) * 2);
 
 				const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
