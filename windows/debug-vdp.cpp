@@ -88,7 +88,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height, const cc_u16l plane_pitch)
+void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
 {
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
@@ -121,7 +121,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				{
 					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 					{
-						cc_u16f plane_index = plane_address + tile_y_in_plane * plane_pitch * 2;
+						cc_u16f plane_index = plane_address + tile_y_in_plane * plane_width * 2;
 
 						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 						{
@@ -153,7 +153,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
 				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
 
-				const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_pitch + tile_x) * 2);
+				const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
 
 				const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
@@ -789,11 +789,6 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Plane Height");
 		ImGui::TableNextColumn();
 		ImGui::TextFormatted("{} Tiles", vdp.plane_height_bitmask + 1);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane Pitch");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_pitch);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Horizontal Scrolling Mode");

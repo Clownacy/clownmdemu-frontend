@@ -69,7 +69,7 @@ namespace DebugVDP
 		SDL::Texture texture = nullptr;
 		unsigned int cache_frame_counter = 0;
 
-		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height, cc_u16l plane_pitch);
+		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 
 	public:
 		using Base::WindowPopup;

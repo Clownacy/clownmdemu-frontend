@@ -2768,15 +2768,13 @@ void Frontend::Update()
 	{
 		const auto window_plane_width = clownmdemu.vdp.h40_enabled ? 64 : 32;
 		const auto window_plane_height = 32;
-		const auto window_plane_pitch = window_plane_width;
-		DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, window_plane_width, window_plane_height, window_plane_pitch);
+		DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, window_plane_width, window_plane_height);
 	}
 	{
 		const auto scrolling_plane_width = clownmdemu.vdp.plane_width_bitmask + 1;
 		const auto scrolling_plane_height = clownmdemu.vdp.plane_height_bitmask + 1;
-		const auto scrolling_plane_pitch = clownmdemu.vdp.plane_pitch;
-		DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, scrolling_plane_width, scrolling_plane_height, scrolling_plane_pitch);
-		DisplayWindow(plane_b_visualiser_window, clownmdemu.vdp.plane_b_address, scrolling_plane_width, scrolling_plane_height, scrolling_plane_pitch);
+		DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, scrolling_plane_width, scrolling_plane_height);
+		DisplayWindow(plane_b_visualiser_window, clownmdemu.vdp.plane_b_address, scrolling_plane_width, scrolling_plane_height);
 	}
 	DisplayWindow(tile_visualiser_window);
 	DisplayWindow(colour_visualiser_window);
