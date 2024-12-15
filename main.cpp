@@ -96,13 +96,12 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 #ifdef __EMSCRIPTEN__
 	// Initialise persistent storage.
 	EM_ASM({
-		FS.mkdir('/clownmdemu-frontend');
-		FS.mount(IDBFS, {}, '/clownmdemu-frontend');
+		FS.mount(IDBFS, {}, UTF8ToString($0));
 
 		FS.syncfs(true, function (err) {
 			Module._StorageLoaded();
 		});
-	}, 0);
+	}, Frontend::GetConfigurationDirectoryPath().u8string().c_str());
 #else
 	if (Frontend::Initialise(argc, argv, FrameRateCallback))
 	{

@@ -967,12 +967,8 @@ bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &hei
 // Misc. //
 ///////////
 
-static std::filesystem::path ConfigPath()
+std::filesystem::path Frontend::GetConfigurationDirectoryPath()
 {
-#ifdef __EMSCRIPTEN__
-	// See 'main.cpp'.
-	return "/clownmdemu-frontend";
-#else
 	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
 
 	if (path_cstr == nullptr)
@@ -981,22 +977,21 @@ static std::filesystem::path ConfigPath()
 	const std::filesystem::path path(path_cstr.get());
 
 	return path;
-#endif
 }
 
 static std::filesystem::path GetConfigurationFilePath()
 {
-	return ConfigPath() / "configuration.ini";
+	return GetConfigurationDirectoryPath() / "configuration.ini";
 }
 
 static std::filesystem::path GetDearImGuiSettingsFilePath()
 {
-	return ConfigPath() / "dear-imgui-settings.ini";
+	return GetConfigurationDirectoryPath() / "dear-imgui-settings.ini";
 }
 
 static std::filesystem::path GetSaveDataFilePath(const std::filesystem::path &rom_path)
 {
-	return (ConfigPath() / "Save Data" / rom_path.stem()).replace_extension(".srm");
+	return (GetConfigurationDirectoryPath() / "Save Data" / rom_path.stem()).replace_extension(".srm");
 }
 
 static void SetWindowTitleToSoftwareName()

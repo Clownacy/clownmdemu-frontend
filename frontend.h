@@ -1,6 +1,7 @@
 #ifndef FRONTEND_H
 #define FRONTEND_H
 
+#include <filesystem>
 #include <functional>
 #include <optional>
 #include <string>
@@ -75,6 +76,7 @@ namespace Frontend
 	extern bool fast_forward_in_progress;
 	extern bool dear_imgui_windows;
 
+	std::filesystem::path GetConfigurationDirectoryPath();
 	bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 	void SetAudioPALMode(bool enabled);
 	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
