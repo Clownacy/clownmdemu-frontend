@@ -114,4 +114,10 @@ public:
 	friend Base;
 };
 
+template<>
+void DebugMemory::PrintLine(const cc_u8l *buffer, std::size_t buffer_length_digits, int index);
+
+template<>
+void DebugMemory::PrintLine(const cc_u16l *buffer, std::size_t buffer_length_digits, int index);
+
 #endif /* DEBUG_MEMORY_H */
