@@ -46,8 +46,6 @@ add_executable(clownmdemu WIN32
 	"libraries/imgui/backends/imgui_impl_sdl2.h"
 	"libraries/imgui/backends/imgui_impl_sdlrenderer2.cpp"
 	"libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
-	"libraries/inih/ini.c"
-	"libraries/inih/ini.h"
 	"windows/debug-m68k.cpp"
 	"windows/debug-m68k.h"
 	"windows/debug-memory.cpp"
@@ -197,6 +195,18 @@ if(NOT fmt_FOUND)
 	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
 endif()
 target_link_libraries(clownmdemu fmt::fmt)
+
+# Link inih
+target_sources(clownmdemu PRIVATE
+	"libraries/inih/ini.c"
+	"libraries/inih/ini.h"
+)
+# Allow long lines
+target_compile_definitions(clownmdemu PRIVATE
+	INI_USE_STACK=0
+	INI_MAX_LINE=65536
+	INI_ALLOW_REALLOC=1
+)
 
 ################
 # Installation #
