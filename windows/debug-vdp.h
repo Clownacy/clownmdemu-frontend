@@ -25,7 +25,7 @@ namespace DebugVDP
 		void DisplaySpriteCommon(Window &window);
 	};
 
-	class SpriteViewer: public SpriteCommon, public WindowPopup<SpriteViewer>
+	class SpriteViewer: public WindowPopup<SpriteViewer>, public SpriteCommon
 	{
 	private:
 		using Base = WindowPopup<SpriteViewer>;
@@ -43,7 +43,7 @@ namespace DebugVDP
 		friend Base;
 	};
 
-	class SpriteList : public SpriteCommon, public WindowPopup<SpriteList>
+	class SpriteList : public WindowPopup<SpriteList>, public SpriteCommon
 	{
 	private:
 		using Base = WindowPopup<SpriteList>;
