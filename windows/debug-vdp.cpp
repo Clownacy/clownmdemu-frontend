@@ -925,17 +925,18 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Selected RAM");
 		ImGui::TableNextColumn();
-		static const std::array<const char*, 3> rams = {
+		static const std::array<const char*, 4> rams = {
 			"VRAM",
 			"CRAM",
-			"VSRAM"
+			"VSRAM",
+			"Invalid"
 		};
 		ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Mode");
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted((vdp.access.code_register & 1 ) != 0 ? "Write" : "Read");
+		ImGui::TextUnformatted((vdp.access.code_register & 1) != 0 ? "Write" : "Read");
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Increment");
