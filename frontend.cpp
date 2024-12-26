@@ -892,6 +892,7 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 			if (recent_software != recent_software_list.begin())
 				recent_software_list.splice(recent_software_list.begin(), recent_software_list, recent_software, std::next(recent_software));
 
+			recent_software_list.front().is_cd_file = is_cd_file;
 			return;
 		}
 	}
