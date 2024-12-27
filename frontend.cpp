@@ -209,6 +209,75 @@ public:
 	friend Base;
 };
 
+class DebugCDC : public WindowPopup<DebugCDC>
+{
+private:
+	using Base = WindowPopup<DebugCDC>;
+
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal()
+	{
+		const auto monospace_font = GetMonospaceFont();
+		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
+
+		const auto DoTable = [](const char* const name, const std::function<void()>& callback)
+		{
+			ImGui::SeparatorText(name);
+
+			if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
+			{
+				ImGui::TableSetupColumn("Property");
+				ImGui::TableSetupColumn("Value");
+				ImGui::TableHeadersRow();
+
+				callback();
+
+				ImGui::EndTable();
+			}
+		};
+
+		const auto DoProperty = [&monospace_font]<typename... T>(ImFont* const font, const char* const label, fmt::format_string<T...> format, T&&... args)
+		{
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(label);
+			ImGui::TableNextColumn();
+			if (font != nullptr)
+				ImGui::PushFont(monospace_font);
+			ImGui::TextFormatted(format, std::forward<T>(args)...);
+			if (font != nullptr)
+				ImGui::PopFont();
+		};
+
+		DoTable("Sector Buffer", [&]()
+			{
+				DoProperty(nullptr, "Total Buffered Sectors", "{}", clownmdemu_state.mega_cd.cd.cdc.buffered_sectors_total);
+				DoProperty(nullptr, "Read Index", "{}", clownmdemu_state.mega_cd.cd.cdc.buffered_sectors_read_index);
+				DoProperty(nullptr, "Write Index", "{}", clownmdemu_state.mega_cd.cd.cdc.buffered_sectors_write_index);
+			});
+
+		DoTable("Host Data", [&]()
+			{
+				DoProperty(nullptr, "Bound", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_bound ? "Yes" : "No");
+				DoProperty(nullptr, "Target SUB-CPU", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_target_sub_cpu ? "Yes" : "No");
+				DoProperty(nullptr, "Buffered Sector Index", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_buffered_sector_index);
+				DoProperty(nullptr, "Word Index", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_word_index);
+			});
+
+		DoTable("Other", [&]()
+			{
+				DoProperty(nullptr, "Current Sector", "{}", clownmdemu_state.mega_cd.cd.cdc.current_sector);
+				DoProperty(nullptr, "Sectors Remaining", "{}", clownmdemu_state.mega_cd.cd.cdc.sectors_remaining);
+				DoProperty(nullptr, "Device Destination", "{}", clownmdemu_state.mega_cd.cd.cdc.device_destination);
+			});
+	}
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
+};
+
 class DebugOther : public WindowPopup<DebugOther>
 {
 private:
@@ -800,6 +869,7 @@ static std::optional<DebugVDP::CRAMViewer> colour_visualiser_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
+static std::optional<DebugCDC> cdc_status_window;
 static std::optional<DebugOther> other_status_window;
 static std::optional<OptionsWindow> options_window;
 static std::optional<AboutWindow> about_window;
@@ -832,6 +902,7 @@ static constexpr auto popup_windows = std::make_tuple(
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
+	&cdc_status_window,
 	&other_status_window,
 	&options_window,
 	&about_window
@@ -2551,6 +2622,8 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
+				PopupButton("CDC", cdc_status_window, 350, 536, false);
+
 				PopupButton("Other", other_status_window, 350, 536, false);
 
 				ImGui::EndMenu();
@@ -2777,6 +2850,7 @@ void Frontend::Update()
 	DisplayWindow(fm_status_window);
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
+	DisplayWindow(cdc_status_window);
 	DisplayWindow(other_status_window);
 	DisplayWindow(options_window);
 	DisplayWindow(about_window);
