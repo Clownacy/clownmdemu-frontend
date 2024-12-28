@@ -237,13 +237,13 @@ private:
 			}
 		};
 
-		const auto DoProperty = [&monospace_font]<typename... T>(ImFont* const font, const char* const label, fmt::format_string<T...> format, T&&... args)
+		const auto DoProperty = []<typename... T>(ImFont* const font, const char* const label, fmt::format_string<T...> format, T&&... args)
 		{
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(label);
 			ImGui::TableNextColumn();
 			if (font != nullptr)
-				ImGui::PushFont(monospace_font);
+				ImGui::PushFont(font);
 			ImGui::TextFormatted(format, std::forward<T>(args)...);
 			if (font != nullptr)
 				ImGui::PopFont();
