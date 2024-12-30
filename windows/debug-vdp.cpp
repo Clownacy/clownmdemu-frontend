@@ -925,10 +925,11 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Selected RAM");
 		ImGui::TableNextColumn();
-		static const std::array<const char*, 4> rams = {
+		static const std::array<const char*, 5> rams = {
 			"VRAM",
 			"CRAM",
 			"VSRAM",
+			"VRAM (8-bit)",
 			"Invalid"
 		};
 		ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
