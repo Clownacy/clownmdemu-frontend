@@ -218,7 +218,6 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto monospace_font = GetMonospaceFont();
 		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
 
 		const auto DoTable = [](const char* const name, const std::function<void()>& callback)
