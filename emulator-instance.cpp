@@ -7,7 +7,12 @@
 #include "frontend.h"
 #include "text-encoding.h"
 
-const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = ClownMDEmu_Constant_Initialise();
+const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = []()
+{
+	ClownMDEmu_Constant constant;
+	ClownMDEmu_Constant_Initialise(&constant);
+	return constant;
+}();
 
 void EmulatorInstance::Cartridge::Insert(const std::vector<unsigned char> &in_rom_file_buffer, const std::filesystem::path &in_save_data_path)
 {
