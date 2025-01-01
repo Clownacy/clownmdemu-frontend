@@ -25,14 +25,18 @@ The default control scheme is as follows:
 
 ### Keyboard
 
-- Up    = Up
-- Down  = Down
-- Left  = Left
-- Right = Right
-- Z     = A
-- X     = B
-- C     = C
-- Enter = Start
+- Up        = Up
+- Down      = Down
+- Left      = Left
+- Right     = Right
+- Z         = A
+- X         = B
+- C         = C
+- A         = X
+- S         = Y
+- D         = Z
+- Enter     = Start
+- Backspace = Mode
 
 ### Controller
 
@@ -41,13 +45,13 @@ The default control scheme is as follows:
 - Left  = Left
 - Right = Right
 - X     = A
-- Y     = B
-- B     = C
 - A     = B
+- B     = C
+- LB    = X
+- Y     = Y
+- RB    = Z
 - Start = Start
-- Back  = Toggle which Control Pad the controller controls
-- LB    = Load save state
-- RB    = Create save state
+- Back  = Mode
 - LT    = Rewind
 - RT    = Fast-forward
 - RSB   = Toggle menu controls (see http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
