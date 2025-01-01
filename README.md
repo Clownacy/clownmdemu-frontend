@@ -67,7 +67,6 @@ The default control scheme is as follows:
 - F9    = Load save state
 - F11   = Toggle fullscreen
 
-
 # Licence
 
 ClownMDEmu is free software, licensed under the AGPLv3 (or any later version).
