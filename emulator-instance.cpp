@@ -155,13 +155,11 @@ void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f secto
 	emulator->cd_file.SeekToSector(sector_index);
 }
 
-const cc_u8l* EmulatorInstance::CDSectorReadCallback(void* const user_data)
+void EmulatorInstance::CDSectorReadCallback(void* const user_data, cc_u16l* const buffer)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
-	emulator->sector = emulator->cd_file.ReadSector();
-
-	return emulator->sector.data();
+	emulator->cd_file.ReadSector(buffer);
 }
 
 cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
@@ -392,7 +390,7 @@ std::string EmulatorInstance::GetSoftwareName()
 		name_buffer.reserve(name_buffer_size * 4);
 
 		const unsigned char* header_bytes;
-		CDReader::Sector sector;
+		std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
 
 		if (IsCartridgeFileLoaded())
 		{
@@ -401,7 +399,7 @@ std::string EmulatorInstance::GetSoftwareName()
 		}
 		else //if (cd_file.IsOpen())
 		{
-			sector = cd_file.ReadSector(0);
+			cd_file.ReadMegaCDHeaderSector(sector.data());
 			header_bytes = &sector[0x100];
 		}
 

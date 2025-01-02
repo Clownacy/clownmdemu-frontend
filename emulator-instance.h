@@ -76,8 +76,6 @@ private:
 	Cartridge cartridge = {*this};
 	CDReader cd_file;
 
-	CDReader::Sector sector;
-
 	Uint32 *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 
@@ -105,7 +103,7 @@ private:
 	static void PCMAudioCallback(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void CDDAAudioCallback(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void CDSeekCallback(void *user_data, cc_u32f sector_index);
-	static const cc_u8l* CDSectorReadCallback(void *user_data);
+	static void CDSectorReadCallback(void *user_data, cc_u16l *buffer);
 	static cc_bool CDSeekTrackCallback(void *user_data, cc_u16f track_index, ClownMDEmu_CDDAMode mode);
 	static std::size_t CDAudioReadCallback(void *user_data, cc_s16l *sample_buffer, std::size_t total_frames);
 

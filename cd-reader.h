@@ -39,7 +39,6 @@ public:
 	using State = CDReader_StateBackup;
 
 	static constexpr cc_u16f SECTOR_SIZE = CDREADER_SECTOR_SIZE;
-	using Sector = std::array<cc_u8l, SECTOR_SIZE>;
 
 	CDReader()
 	{
@@ -78,17 +77,9 @@ public:
 	{
 		return CDReader_SeekToFrame(&state, frame_index);
 	}
-	Sector ReadSector()
+	void ReadSector(cc_u16l* const buffer)
 	{
-		Sector sector;
-		CDReader_ReadSector(&state, reinterpret_cast<CDReader_Sector*>(sector.data()));
-		return sector;
-	}
-	Sector ReadSector(const SectorIndex sector_index)
-	{
-		Sector sector;
-		CDReader_ReadSectorAt(&state, reinterpret_cast<CDReader_Sector*>(sector.data()), sector_index);
-		return sector;
+		CDReader_ReadSector(&state, buffer);
 	}
 	bool PlayAudio(const TrackIndex track_index, const PlaybackSetting setting)
 	{
@@ -110,6 +101,10 @@ public:
 		return CDReader_SetStateBackup(&this->state, &state);
 	}
 
+	bool ReadMegaCDHeaderSector(unsigned char* const buffer)
+	{
+		return CDReader_ReadMegaCDHeaderSector(&state, buffer);
+	}
 	bool IsMegaCDGame()
 	{
 		return CDReader_IsMegaCDGame(&state);
