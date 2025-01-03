@@ -209,6 +209,35 @@ public:
 	friend Base;
 };
 
+static void Popup_DoTable(const char* const name, const std::function<void()> &callback)
+{
+	ImGui::SeparatorText(name);
+
+	if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
+	{
+		ImGui::TableSetupColumn("Property");
+		ImGui::TableSetupColumn("Value");
+		ImGui::TableHeadersRow();
+
+		callback();
+
+		ImGui::EndTable();
+	}
+};
+
+template<typename... T>
+static void Popup_DoProperty(ImFont* const font, const char* const label, fmt::format_string<T...> format, T &&...args)
+{
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted(label);
+	ImGui::TableNextColumn();
+	if (font != nullptr)
+		ImGui::PushFont(font);
+	ImGui::TextFormatted(format, std::forward<T>(args)...);
+	if (font != nullptr)
+		ImGui::PopFont();
+};
+
 class DebugCDC : public WindowPopup<DebugCDC>
 {
 private:
@@ -218,56 +247,62 @@ private:
 
 	void DisplayInternal()
 	{
-		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
+		const auto &cdc = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cd.cdc;
 
-		const auto DoTable = [](const char* const name, const std::function<void()>& callback)
-		{
-			ImGui::SeparatorText(name);
-
-			if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
+		Popup_DoTable("Sector Buffer", [&]()
 			{
-				ImGui::TableSetupColumn("Property");
-				ImGui::TableSetupColumn("Value");
-				ImGui::TableHeadersRow();
-
-				callback();
-
-				ImGui::EndTable();
-			}
-		};
-
-		const auto DoProperty = []<typename... T>(ImFont* const font, const char* const label, fmt::format_string<T...> format, T&&... args)
-		{
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(label);
-			ImGui::TableNextColumn();
-			if (font != nullptr)
-				ImGui::PushFont(font);
-			ImGui::TextFormatted(format, std::forward<T>(args)...);
-			if (font != nullptr)
-				ImGui::PopFont();
-		};
-
-		DoTable("Sector Buffer", [&]()
-			{
-				DoProperty(nullptr, "Total Buffered Sectors", "{}", clownmdemu_state.mega_cd.cd.cdc.buffered_sectors_total);
-				DoProperty(nullptr, "Read Index", "{}", clownmdemu_state.mega_cd.cd.cdc.buffered_sectors_read_index);
-				DoProperty(nullptr, "Write Index", "{}", clownmdemu_state.mega_cd.cd.cdc.buffered_sectors_write_index);
+				Popup_DoProperty(nullptr, "Total Buffered Sectors", "{}", cdc.buffered_sectors_total);
+				Popup_DoProperty(nullptr, "Read Index", "{}", cdc.buffered_sectors_read_index);
+				Popup_DoProperty(nullptr, "Write Index", "{}", cdc.buffered_sectors_write_index);
 			});
 
-		DoTable("Host Data", [&]()
+		Popup_DoTable("Host Data", [&]()
 			{
-				DoProperty(nullptr, "Bound", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_bound ? "Yes" : "No");
-				DoProperty(nullptr, "Target SUB-CPU", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_target_sub_cpu ? "Yes" : "No");
-				DoProperty(nullptr, "Buffered Sector Index", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_buffered_sector_index);
-				DoProperty(nullptr, "Word Index", "{}", clownmdemu_state.mega_cd.cd.cdc.host_data_word_index);
+				Popup_DoProperty(nullptr, "Bound", "{}", cdc.host_data_bound ? "Yes" : "No");
+				Popup_DoProperty(nullptr, "Target SUB-CPU", "{}", cdc.host_data_target_sub_cpu ? "Yes" : "No");
+				Popup_DoProperty(nullptr, "Buffered Sector Index", "{}", cdc.host_data_buffered_sector_index);
+				Popup_DoProperty(nullptr, "Word Index", "{}", cdc.host_data_word_index);
 			});
 
-		DoTable("Other", [&]()
+		Popup_DoTable("Other", [&]()
 			{
-				DoProperty(nullptr, "Current Sector", "{}", clownmdemu_state.mega_cd.cd.cdc.current_sector);
-				DoProperty(nullptr, "Sectors Remaining", "{}", clownmdemu_state.mega_cd.cd.cdc.sectors_remaining);
-				DoProperty(nullptr, "Device Destination", "{}", clownmdemu_state.mega_cd.cd.cdc.device_destination);
+				Popup_DoProperty(nullptr, "Current Sector", "{}", cdc.current_sector);
+				Popup_DoProperty(nullptr, "Sectors Remaining", "{}", cdc.sectors_remaining);
+				Popup_DoProperty(nullptr, "Device Destination", "{}", cdc.device_destination);
+			});
+	}
+
+public:
+	using Base::WindowPopup;
+
+	friend Base;
+};
+
+class DebugCDDA : public WindowPopup<DebugCDDA>
+{
+private:
+	using Base = WindowPopup<DebugCDDA>;
+
+	static constexpr Uint32 window_flags = 0;
+
+	void DisplayInternal()
+	{
+		const auto &cdda = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdda;
+
+		Popup_DoTable("Fade", [&]()
+			{
+				Popup_DoProperty(nullptr, "Target Volume", "{:X}", cdda.target_volume);
+				Popup_DoProperty(nullptr, "Fade Step", "{:X}", cdda.fade_step);
+				Popup_DoProperty(nullptr, "Fade Remaining", "{:X}", cdda.fade_remaining);
+				Popup_DoProperty(nullptr, "Fade Direction", "{}", cdda.subtract_fade_step ? "Negative" : "Positive");
+			});
+
+		Popup_DoTable("Other", [&]()
+			{
+				Popup_DoProperty(nullptr, "Volume", "{:X}", cdda.volume);
+				Popup_DoProperty(nullptr, "Master Volume", "{:X}", cdda.master_volume);
+				Popup_DoProperty(nullptr, "Playing", "{}", cdda.playing ? "True" : "False");
+				Popup_DoProperty(nullptr, "Paused", "{}", cdda.paused ? "True" : "False");
 			});
 	}
 
@@ -876,6 +911,7 @@ static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
 static std::optional<DebugCDC> cdc_status_window;
+static std::optional<DebugCDDA> cdda_status_window;
 static std::optional<DebugOther> other_status_window;
 static std::optional<OptionsWindow> options_window;
 static std::optional<AboutWindow> about_window;
@@ -909,6 +945,7 @@ static constexpr auto popup_windows = std::make_tuple(
 	&psg_status_window,
 	&pcm_status_window,
 	&cdc_status_window,
+	&cdda_status_window,
 	&other_status_window,
 	&options_window,
 	&about_window
@@ -2630,6 +2667,8 @@ void Frontend::Update()
 
 				PopupButton("CDC", cdc_status_window, 350, 536, false);
 
+				PopupButton("CDDA", cdda_status_window, 350, 536, false);
+
 				PopupButton("Other", other_status_window, 350, 536, false);
 
 				ImGui::EndMenu();
@@ -2857,6 +2896,7 @@ void Frontend::Update()
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
 	DisplayWindow(cdc_status_window);
+	DisplayWindow(cdda_status_window);
 	DisplayWindow(other_status_window);
 	DisplayWindow(options_window);
 	DisplayWindow(about_window);
