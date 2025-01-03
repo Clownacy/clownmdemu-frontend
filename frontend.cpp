@@ -289,18 +289,22 @@ private:
 	{
 		const auto &cdda = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdda;
 
+		Popup_DoTable("Volume", [&]()
+			{
+				Popup_DoProperty(nullptr, "Volume", "0x{:03X}", cdda.volume);
+				Popup_DoProperty(nullptr, "Master Volume", "0x{:03X}", cdda.master_volume);
+			});
+
 		Popup_DoTable("Fade", [&]()
 			{
-				Popup_DoProperty(nullptr, "Target Volume", "{:X}", cdda.target_volume);
-				Popup_DoProperty(nullptr, "Fade Step", "{:X}", cdda.fade_step);
-				Popup_DoProperty(nullptr, "Fade Remaining", "{:X}", cdda.fade_remaining);
+				Popup_DoProperty(nullptr, "Target Volume", "0x{:03X}", cdda.target_volume);
+				Popup_DoProperty(nullptr, "Fade Step", "0x{:03X}", cdda.fade_step);
+				Popup_DoProperty(nullptr, "Fade Remaining", "0x{:03X}", cdda.fade_remaining);
 				Popup_DoProperty(nullptr, "Fade Direction", "{}", cdda.subtract_fade_step ? "Negative" : "Positive");
 			});
 
 		Popup_DoTable("Other", [&]()
 			{
-				Popup_DoProperty(nullptr, "Volume", "{:X}", cdda.volume);
-				Popup_DoProperty(nullptr, "Master Volume", "{:X}", cdda.master_volume);
 				Popup_DoProperty(nullptr, "Playing", "{}", cdda.playing ? "True" : "False");
 				Popup_DoProperty(nullptr, "Paused", "{}", cdda.paused ? "True" : "False");
 			});
