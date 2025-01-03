@@ -302,7 +302,7 @@ void EmulatorInstance::HardResetConsole()
 	SoftResetConsole();
 }
 
-void EmulatorInstance::LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path)
+void EmulatorInstance::LoadCartridgeFile(std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path)
 {
 	cartridge.Insert(std::move(file_buffer), path);
 

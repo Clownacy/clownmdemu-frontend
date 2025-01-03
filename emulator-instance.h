@@ -112,7 +112,7 @@ public:
 	void Update(cc_bool fast_forward);
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFile(const std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path);
+	void LoadCartridgeFile(std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path);
 	void UnloadCartridgeFile();
 	bool LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();

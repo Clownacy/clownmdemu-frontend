@@ -1118,7 +1118,7 @@ static void SetWindowTitleToSoftwareName()
 	SDL_SetWindowTitle(window->GetSDLWindow(), name.empty() ? DEFAULT_TITLE : name.c_str());
 }
 
-static void LoadCartridgeFile(const std::filesystem::path &path, const std::vector<unsigned char> &&file_buffer)
+static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<unsigned char> &&file_buffer)
 {
 	const auto save_file_path = GetSaveDataFilePath(path);
 
