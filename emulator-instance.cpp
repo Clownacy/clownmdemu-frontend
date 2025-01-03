@@ -317,11 +317,8 @@ void EmulatorInstance::UnloadCartridgeFile()
 bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
 {
 	cd_file.Open(std::move(stream), path);
-	if (!cd_file.SeekToSector(0))
-	{
-		cd_file.Close();
+	if (!cd_file.IsOpen())
 		return false;
-	}
 
 	HardResetConsole();
 	return true;
