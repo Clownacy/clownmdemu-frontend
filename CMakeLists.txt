@@ -158,9 +158,9 @@ target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui
 # Link libraries #
 ##################
 
-# Link clownmdemu core
-add_subdirectory("common/core" EXCLUDE_FROM_ALL)
-target_link_libraries(clownmdemu clownmdemu-core)
+# Link clownmdemu-frontend-common
+add_subdirectory("common" EXCLUDE_FROM_ALL)
+target_link_libraries(clownmdemu clownmdemu-frontend-common)
 
 # Link SDL
 find_package(SDL2 2.0.18)
@@ -185,10 +185,6 @@ endif()
 
 # Link 68000 disassembler
 target_link_libraries(clownmdemu clown68000-disassembler)
-
-# Link clowncd
-add_subdirectory("common/clowncd" EXCLUDE_FROM_ALL)
-target_link_libraries(clownmdemu clowncd)
 
 # Link fmt
 find_package(fmt 8.0.0)
