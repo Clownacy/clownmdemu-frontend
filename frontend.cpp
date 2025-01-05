@@ -911,6 +911,7 @@ static std::optional<DebugVDP::PlaneViewer> plane_a_visualiser_window;
 static std::optional<DebugVDP::PlaneViewer> plane_b_visualiser_window;
 static std::optional<DebugVDP::VRAMViewer> tile_visualiser_window;
 static std::optional<DebugVDP::CRAMViewer> colour_visualiser_window;
+static std::optional<DebugVDP::StampViewer> stamp_visualiser_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
@@ -945,6 +946,7 @@ static constexpr auto popup_windows = std::make_tuple(
 	&plane_b_visualiser_window,
 	&tile_visualiser_window,
 	&colour_visualiser_window,
+	&stamp_visualiser_window,
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
@@ -2654,6 +2656,7 @@ void Frontend::Update()
 					PopupButton("Plane B", plane_b_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
 					PopupButton("Tiles", tile_visualiser_window, 530, 530, true);
 					PopupButton("Colours", colour_visualiser_window, 456, 186, false);
+					PopupButton("Stamps", stamp_visualiser_window, 530, 530, true);
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}
@@ -2896,6 +2899,7 @@ void Frontend::Update()
 	}
 	DisplayWindow(tile_visualiser_window);
 	DisplayWindow(colour_visualiser_window);
+	DisplayWindow(stamp_visualiser_window);
 	DisplayWindow(fm_status_window);
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);

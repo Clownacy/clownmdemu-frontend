@@ -117,6 +117,20 @@ namespace DebugVDP
 		friend Base::Base;
 	};
 
+	class StampViewer : public GridViewer<StampViewer>
+	{
+	private:
+		using Base = GridViewer<StampViewer>;
+
+		void DisplayInternal();
+
+	public:
+		using Base::GridViewer;
+
+		friend Base;
+		friend Base::Base;
+	};
+
 	class CRAMViewer : public WindowPopup<CRAMViewer>
 	{
 	private:

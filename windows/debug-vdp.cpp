@@ -37,9 +37,17 @@ static cc_u16f TileHeight(const VDP_State &vdp)
 	return vdp.double_resolution_enabled ? tile_height_double_resolution : tile_height_normal;
 }
 
+static constexpr cc_u16f PixelsToBytes(const cc_u16f pixels)
+{
+	constexpr cc_u8f bits_per_byte = 8;
+	constexpr cc_u8f bits_per_pixel = 4;
+	constexpr cc_u8f pixels_per_byte = bits_per_byte / bits_per_pixel;
+	return pixels / pixels_per_byte;
+}
+
 static cc_u16f TileSizeInBytes(const VDP_State &vdp)
 {
-	return TileWidth() * TileHeight(vdp) / 2;
+	return PixelsToBytes(TileWidth() * TileHeight(vdp));
 }
 
 static cc_u16f VRAMSizeInTiles(const VDP_State &vdp)
@@ -47,8 +55,9 @@ static cc_u16f VRAMSizeInTiles(const VDP_State &vdp)
 	return std::size(vdp.vram) / TileSizeInBytes(vdp);
 }
 
-static constexpr cc_u8f sprite_texture_width = 4 * tile_width;
-static constexpr cc_u8f sprite_texture_height = 4 * tile_height_double_resolution;
+static constexpr cc_u8f maximum_sprite_diameter_in_tiles = 4;
+static constexpr cc_u8f sprite_texture_width = maximum_sprite_diameter_in_tiles * tile_width;
+static constexpr cc_u8f sprite_texture_height = maximum_sprite_diameter_in_tiles * tile_height_double_resolution;
 
 static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 {
@@ -61,11 +70,9 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
+static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
-	constexpr cc_u16f tile_width = TileWidth();
-	const cc_u16f tile_height = TileHeight(state.clownmdemu.vdp);
-	const cc_u16f tile_size_in_bytes = TileSizeInBytes(state.clownmdemu.vdp);
+	const cc_u16f tile_size_in_bytes = PixelsToBytes(tile_width * tile_height);
 
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
@@ -76,18 +83,34 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 
 	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 	{
-		Uint32 *plane_texture_pixels_row = &pixels[x * tile_width + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch];
+		Uint32* const plane_texture_pixels_row = &pixels[x * tile_width + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch];
 
-		for (cc_u16f i = 0; i < 2; ++i)
+		for (cc_u16f i = 0; i < PixelsToBytes(tile_width) / 2; ++i)
 		{
-			const cc_u16l tile_pixels = VDP_ReadVRAMWord(&state.clownmdemu.vdp, vram_index);
+			const cc_u16f tile_pixels = read_tile_word(vram_index);
 			vram_index += 2;
 
-			for (cc_u16f j = 0; j < 4; ++j)
+			for (cc_u16f j = 0; j < 16 / 4; ++j)
 			{
 				const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
 				plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
 			}
+		}
+	}
+}
+
+static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness)
+{
+	for (cc_u8f x = 0; x < width; ++x)
+	{
+		const cc_u8f x_corrected = tile_metadata.x_flip ? width - 1 - x : x;
+
+		for (cc_u8f y = 0; y < height; ++y)
+		{
+			const cc_u8f y_corrected = tile_metadata.y_flip ? height - 1 - y : y;
+
+			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, x_corrected, y_corrected, true, 0);
+			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
 		}
 	}
 }
@@ -144,7 +167,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 					{
 						const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
 						const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-						DrawTile(state, tile_metadata, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
+						DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index);}, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
 						plane_index += 2;
 					}
 				}
@@ -199,27 +222,13 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest"));
 	}
 
-	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
-
 	RegenerateTexturesIfNeeded([&](const unsigned int texture_index, Uint32* const pixels, const int pitch)
 	{
 		std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
 
 		const Sprite sprite = GetSprite(vdp, texture_index);
-		auto tile_metadata = sprite.tile_metadata;
 
-		for (cc_u8f x = 0; x < sprite.cached.width; ++x)
-		{
-			const cc_u8f x_corrected = tile_metadata.x_flip ? sprite.cached.width - 1 - x : x;
-
-			for (cc_u8f y = 0; y < sprite.cached.height; ++y)
-			{
-				const cc_u8f y_corrected = tile_metadata.y_flip ? sprite.cached.height - 1 - y : y;
-
-				DrawTile(state, tile_metadata, pixels, pitch, x_corrected, y_corrected, true, 0);
-				tile_metadata.tile_index = (tile_metadata.tile_index + 1) % size_of_vram_in_tiles;
-			}
-		}
+		DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index);}, pixels, pitch, sprite.cached.width, sprite.cached.height, true, 0);
 	});
 }
 
@@ -480,8 +489,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 			{
 				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 				{
-					const auto size_of_row = vram_texture_width_in_tiles * entry_width;
-					Uint32* const entry_pixels = pixels + y * size_of_row * entry_height + x * entry_width;
+					Uint32* const entry_pixels = pixels + y * entry_height * pitch + x * entry_width;
 					render_entry_callback(entry_index++, brightness_index, palette_line, entry_pixels, pitch);
 				}
 			}
@@ -560,7 +568,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 						ImGui::BeginTooltip();
 
 						// Display the tile's index.
-						const auto bytes_per_entry = entry_width * entry_height / 2;
+						const auto bytes_per_entry = PixelsToBytes(entry_width * entry_height);
 						ImGui::TextFormatted("Tile: 0x{:X}\nAddress: 0x{:X}", tile_index, tile_index * bytes_per_entry);
 
 						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
@@ -591,8 +599,30 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		if (entry_index >= VRAMSizeInTiles(vdp))
 			return;
 
-		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = static_cast<cc_u8f>(palette_line), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawTile(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
+		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+		DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index);}, pixels, pitch, 0, 0, false, brightness);
+	});
+}
+
+void DebugVDP::StampViewer::DisplayInternal()
+{
+	const auto &state = Frontend::emulator->CurrentState();
+	const auto &rotation = state.clownmdemu.mega_cd.rotation;
+
+	const cc_u8f entry_diameter_in_tiles = rotation.large_stamp ? 4 : 2;
+	const cc_u16f entry_width_in_pixels = entry_diameter_in_tiles * tile_width;
+	const cc_u16f entry_height_in_pixels = entry_diameter_in_tiles * tile_height_normal;
+	const cc_u16f tiles_per_stamp = entry_diameter_in_tiles * entry_diameter_in_tiles;
+	const std::size_t total_entries = 0x200 / tiles_per_stamp;
+	const std::size_t entry_buffer_size_in_pixels = total_entries * entry_width_in_pixels * entry_height_in_pixels;
+
+	DisplayGrid(entry_width_in_pixels, entry_height_in_pixels, total_entries, tile_width, tile_height_double_resolution, entry_buffer_size_in_pixels, [&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+	{
+		if (entry_index >= total_entries)
+			return;
+
+		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_entries * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, entry_diameter_in_tiles, entry_diameter_in_tiles, false, brightness);
 	});
 }
 
