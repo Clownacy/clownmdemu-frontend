@@ -27,6 +27,12 @@ static constexpr cc_u16f tile_width = 8;
 static constexpr cc_u16f tile_height_normal = 8;
 static constexpr cc_u16f tile_height_double_resolution = 16;
 
+static constexpr cc_u8f bits_per_word = 16;
+static constexpr cc_u8f bits_per_byte = 8;
+static constexpr cc_u8f bits_per_pixel = 4;
+static constexpr cc_u8f pixels_per_word = bits_per_word / bits_per_pixel;
+static constexpr cc_u8f pixels_per_byte = bits_per_byte / bits_per_pixel;
+
 static constexpr cc_u16f TileWidth()
 {
 	return tile_width;
@@ -39,9 +45,6 @@ static cc_u16f TileHeight(const VDP_State &vdp)
 
 static constexpr cc_u16f PixelsToBytes(const cc_u16f pixels)
 {
-	constexpr cc_u8f bits_per_byte = 8;
-	constexpr cc_u8f bits_per_pixel = 4;
-	constexpr cc_u8f pixels_per_byte = bits_per_byte / bits_per_pixel;
 	return pixels / pixels_per_byte;
 }
 
@@ -72,28 +75,33 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 
 static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
-	const cc_u16f tile_size_in_bytes = PixelsToBytes(tile_width * tile_height);
+	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
+	{
+		return PixelsToBytes(pixels) / 2;
+	};
+
+	const cc_u16f tile_size_in_words = PixelsToWords(tile_width * tile_height);
 
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
 	const auto &palette_line = state.GetPaletteLine(brightness, tile_metadata.palette_line);
 
-	cc_u16f vram_index = tile_metadata.tile_index * tile_size_in_bytes;
+	cc_u16f word_index = tile_metadata.tile_index * tile_size_in_words;
 
 	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 	{
 		Uint32* const plane_texture_pixels_row = &pixels[x * tile_width + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch];
 
-		for (cc_u16f i = 0; i < PixelsToBytes(tile_width) / 2; ++i)
+		for (cc_u16f i = 0; i < PixelsToWords(tile_width); ++i)
 		{
-			const cc_u16f tile_pixels = read_tile_word(vram_index);
-			vram_index += 2;
+			const cc_u16f tile_pixels = read_tile_word(word_index);
+			++word_index;
 
-			for (cc_u16f j = 0; j < 16 / 4; ++j)
+			for (cc_u16f j = 0; j < pixels_per_word; ++j)
 			{
-				const cc_u16f colour_index = ((tile_pixels << (4 * j)) & 0xF000) >> 12;
-				plane_texture_pixels_row[(i * 4 + j) ^ x_flip_xor] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
+				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
+				plane_texture_pixels_row[(i * pixels_per_word + j) ^ x_flip_xor] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
 			}
 		}
 	}
@@ -109,7 +117,7 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 		{
 			const cc_u8f y_corrected = tile_metadata.y_flip ? height - 1 - y : y;
 
-			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, x_corrected, y_corrected, true, 0);
+			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, x_corrected, y_corrected, transparency, brightness);
 			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
 		}
 	}
@@ -167,7 +175,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 					{
 						const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
 						const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-						DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index);}, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
+						DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
 						plane_index += 2;
 					}
 				}
@@ -228,7 +236,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 		const Sprite sprite = GetSprite(vdp, texture_index);
 
-		DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index);}, pixels, pitch, sprite.cached.width, sprite.cached.height, true, 0);
+		DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, sprite.cached.width, sprite.cached.height, true, 0);
 	});
 }
 
@@ -600,7 +608,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			return;
 
 		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index);}, pixels, pitch, 0, 0, false, brightness);
+		DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, false, brightness);
 	});
 }
 
