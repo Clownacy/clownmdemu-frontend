@@ -57,16 +57,16 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency)
+static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
-	const cc_u16f tile_width = TileWidth();
+	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(state.clownmdemu.vdp);
 	const cc_u16f tile_size_in_bytes = TileSizeInBytes(state.clownmdemu.vdp);
 
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-	const auto &palette_line = state.GetPaletteLine(state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority, tile_metadata.palette_line);
+	const auto &palette_line = state.GetPaletteLine(brightness, tile_metadata.palette_line);
 
 	cc_u16f vram_index = tile_metadata.tile_index * tile_size_in_bytes;
 
@@ -125,7 +125,9 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 						{
-							DrawTile(state, VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index)), plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false);
+							const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
+							const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
+							DrawTile(state, tile_metadata, plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
 							plane_index += 2;
 						}
 					}
@@ -134,7 +136,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				}
 			}
 
-			const cc_u16f tile_width = TileWidth();
+			constexpr cc_u16f tile_width = TileWidth();
 			const cc_u16f tile_height = TileHeight(vdp);
 
 			const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
@@ -207,7 +209,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 					{
 						const cc_u8f y_corrected = tile_metadata.y_flip ? sprite.cached.height - 1 - y : y;
 
-						DrawTile(state, tile_metadata, sprite_texture_pixels, sprite_texture_pitch, x_corrected, y_corrected, true);
+						DrawTile(state, tile_metadata, sprite_texture_pixels, sprite_texture_pitch, x_corrected, y_corrected, true, 0);
 						tile_metadata.tile_index = (tile_metadata.tile_index + 1) % size_of_vram_in_tiles;
 					}
 				}
@@ -233,7 +235,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	if (!texture)
 		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, "nearest");
 
-	const cc_u16f tile_width = TileWidth();
+	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
 
 	ImGui::InputInt("Zoom", &scale);
@@ -335,7 +337,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 
 		EverySprite("Image", [&](const Sprite &sprite, const cc_u8f index)
 		{
-			const cc_u16f tile_width = TileWidth();
+			constexpr cc_u16f tile_width = TileWidth();
 			const cc_u16f tile_height = TileHeight(vdp);
 
 			const auto dpi_scale = GetWindow().GetDPIScale();
@@ -416,7 +418,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	const cc_u16f tile_width = TileWidth();
+	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
 	const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
@@ -477,9 +479,6 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		{
 			cache_frame_counter = Frontend::frame_counter;
 
-			// Select the correct palette line.
-			const auto &selected_palette = state.GetPaletteLine(brightness_index, palette_line);
-
 			// Lock texture so that we can write into it.
 			Uint8 *vram_texture_pixels;
 			int vram_texture_pitch;
@@ -487,28 +486,17 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
 			{
 				// Generate VRAM bitmap.
-				cc_u16f vram_index = 0;
+				cc_u16f tile_index = 0;
 
-				// As an optimisation, the tiles are ordered top-to-bottom then left-to-right,
-				// instead of left-to-right then top-to-bottom.
-				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+				for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
 				{
-					for (std::size_t y = 0; y < vram_texture_height_in_tiles * tile_height; ++y)
+					for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 					{
-						Uint32 *pixels_pointer = reinterpret_cast<Uint32*>(vram_texture_pixels + x * tile_width * sizeof(Uint32) + y * vram_texture_pitch);
+						if (static_cast<std::size_t>(tile_index) * TileSizeInBytes(vdp) >= std::size(vdp.vram))
+							break;
 
-						for (cc_u16f i = 0; i < 2; ++i)
-						{
-							// TODO: Stop reading past the end of VRAM so that this bitmask is not necessary!
-							const cc_u16l tile_row = VDP_ReadVRAMWord(&vdp, vram_index & 0xFFFF);
-							vram_index += 2;
-
-							for (cc_u16f j = 0; j < 4; ++j)
-							{
-								const cc_u16f colour_index = ((tile_row << (4 * j)) & 0xF000) >> 12;
-								*pixels_pointer++ = selected_palette[colour_index];
-							}
-						}
+						const VDP_TileMetadata tile_metadata = {.tile_index = tile_index++, .palette_line = static_cast<cc_u8f>(palette_line), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+						DrawTile(state, tile_metadata, vram_texture_pixels, vram_texture_pitch, x, y, false, brightness_index);
 					}
 				}
 
@@ -550,8 +538,8 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 					const std::size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
 
 					// Obtain texture coordinates for the current tile.
-					const std::size_t current_tile_src_x = (tile_index / vram_texture_height_in_tiles) * tile_width;
-					const std::size_t current_tile_src_y = (tile_index % vram_texture_height_in_tiles) * tile_height;
+					const std::size_t current_tile_src_x = (tile_index % vram_texture_width_in_tiles) * tile_width;
+					const std::size_t current_tile_src_y = (tile_index / vram_texture_width_in_tiles) * tile_height;
 
 					const ImVec2 current_tile_uv0(
 						static_cast<float>(current_tile_src_x) / static_cast<float>(texture_width),
