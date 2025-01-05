@@ -247,7 +247,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdc = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cd.cdc;
+		const auto &cdc = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdc;
 
 		Popup_DoTable("Sector Buffer", [&]()
 			{
