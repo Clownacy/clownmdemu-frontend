@@ -506,13 +506,9 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 		// Actually display the VRAM now.
 		ImGui::BeginChild("VRAM contents");
 
-		const ImVec2 dst_tile_size(
-			entry_width  * tile_scale,
-			entry_height * tile_scale);
-
-		const ImVec2 dst_tile_size_and_padding(
-			dst_tile_size.x + tile_spacing * 2,
-			dst_tile_size.y + tile_spacing * 2);
+		const auto dst_tile_size = ImVec2(entry_width, entry_height) * tile_scale;
+		const auto padding = ImVec2(tile_spacing, tile_spacing);
+		const auto dst_tile_size_and_padding = padding + dst_tile_size + padding;
 
 		// Calculate the size of the VRAM display region.
 		// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
@@ -536,37 +532,21 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 				{
 					const std::size_t tile_index = (y * vram_display_region_width_in_tiles) + x;
 
+					const auto texture_size = ImVec2(texture_width, texture_height);
+					const auto entry_size = ImVec2(entry_width, entry_height);
+					const auto position = ImVec2(x, y);
+
 					// Obtain texture coordinates for the current tile.
-					const std::size_t current_tile_src_x = (tile_index % vram_texture_width_in_tiles) * entry_width;
-					const std::size_t current_tile_src_y = (tile_index / vram_texture_width_in_tiles) * entry_height;
-
-					const ImVec2 current_tile_uv0(
-						static_cast<float>(current_tile_src_x) / static_cast<float>(texture_width),
-						static_cast<float>(current_tile_src_y) / static_cast<float>(texture_height));
-
-					const ImVec2 current_tile_uv1(
-						static_cast<float>(current_tile_src_x + entry_width) / static_cast<float>(texture_width),
-						static_cast<float>(current_tile_src_y + entry_height) / static_cast<float>(texture_height));
+					const auto current_tile_src = ImVec2(tile_index % vram_texture_width_in_tiles, tile_index / vram_texture_width_in_tiles) * entry_size;
+					const auto current_tile_uv0 = current_tile_src / texture_size;
+					const auto current_tile_uv1 = (current_tile_src + entry_size) / texture_size;
 
 					// Figure out where the tile goes in the viewer.
-					const float current_tile_dst_x = static_cast<float>(x) * dst_tile_size_and_padding.x;
-					const float current_tile_dst_y = static_cast<float>(y) * dst_tile_size_and_padding.y;
-
-					const ImVec2 tile_boundary_position_top_left(
-						canvas_position.x + current_tile_dst_x,
-						canvas_position.y + current_tile_dst_y);
-
-					const ImVec2 tile_boundary_position_bottom_right(
-						tile_boundary_position_top_left.x + dst_tile_size_and_padding.x,
-						tile_boundary_position_top_left.y + dst_tile_size_and_padding.y);
-
-					const ImVec2 tile_position_top_left(
-						tile_boundary_position_top_left.x + tile_spacing,
-						tile_boundary_position_top_left.y + tile_spacing);
-
-					const ImVec2 tile_position_bottom_right(
-						tile_boundary_position_bottom_right.x - tile_spacing,
-						tile_boundary_position_bottom_right.y - tile_spacing);
+					const auto current_tile_dst = position * dst_tile_size_and_padding;
+					const auto tile_boundary_position_top_left = canvas_position + current_tile_dst;
+					const auto tile_boundary_position_bottom_right = tile_boundary_position_top_left + dst_tile_size_and_padding;
+					const auto tile_position_top_left = tile_boundary_position_top_left + padding;
+					const auto tile_position_bottom_right = tile_boundary_position_bottom_right - padding;
 
 					// Finally, display the tile.
 					draw_list->AddImage(textures[0], tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
