@@ -57,7 +57,7 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint8* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
+static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
 	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(state.clownmdemu.vdp);
@@ -72,7 +72,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 
 	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 	{
-		Uint32 *plane_texture_pixels_row = reinterpret_cast<Uint32*>(&pixels[x * tile_width * sizeof(*plane_texture_pixels_row) + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch]);
+		Uint32 *plane_texture_pixels_row = &pixels[x * tile_width + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch];
 
 		for (cc_u16f i = 0; i < 2; ++i)
 		{
@@ -88,7 +88,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint8 *pixels, int pitch)> &callback)
+void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback)
 {
 	// Only update the texture if we know that the frame has changed.
 	// This prevents constant texture generation even when the emulator is paused.
@@ -99,12 +99,12 @@ void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::funct
 		for (std::size_t i = 0; i < std::size(textures); ++i)
 		{
 			// Lock texture so that we can write into it.
-			Uint8 *sprite_texture_pixels;
+			Uint32 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
 			if (SDL_LockTexture(textures[i], nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
 			{
-				callback(i, sprite_texture_pixels, sprite_texture_pitch);
+				callback(i, sprite_texture_pixels, sprite_texture_pitch / sizeof(*sprite_texture_pixels));
 				SDL_UnlockTexture(textures[i]);
 			}
 		}
@@ -130,7 +130,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint8* const pixels, const int pitch)
+			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
 			{
 				for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 				{
@@ -197,7 +197,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
-	RegenerateTexturesIfNeeded([&](const unsigned int texture_index, Uint8* const pixels, const int pitch)
+	RegenerateTexturesIfNeeded([&](const unsigned int texture_index, Uint32* const pixels, const int pitch)
 	{
 		std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
 
@@ -470,7 +470,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		const std::size_t vram_texture_width_in_tiles = texture_width / tile_width;
 		const std::size_t vram_texture_height_in_tiles = texture_height / tile_height;
 
-		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint8* const pixels, const int pitch)
+		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
 		{
 			// Generate VRAM bitmap.
 			cc_u16f tile_index = 0;

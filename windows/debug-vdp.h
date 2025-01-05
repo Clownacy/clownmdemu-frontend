@@ -23,7 +23,7 @@ namespace DebugVDP
 		// TODO: Any way to share this between the two sprite viewers again when using Dear ImGui windows?
 		std::vector<SDL::Texture> textures;
 
-		void RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint8 *pixels, int pitch)> &callback);
+		void RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback);
 	};
 
 	struct SpriteCommon : protected RegeneratingTextures
