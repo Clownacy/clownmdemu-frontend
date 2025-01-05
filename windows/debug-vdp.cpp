@@ -88,6 +88,29 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
+void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint8 *pixels, int pitch)> &callback)
+{
+	// Only update the texture if we know that the frame has changed.
+	// This prevents constant texture generation even when the emulator is paused.
+	if (cache_frame_counter != Frontend::frame_counter)
+	{
+		cache_frame_counter = Frontend::frame_counter;
+
+		for (std::size_t i = 0; i < std::size(textures); ++i)
+		{
+			// Lock texture so that we can write into it.
+			Uint8 *sprite_texture_pixels;
+			int sprite_texture_pitch;
+
+			if (SDL_LockTexture(textures[i], nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			{
+				callback(i, sprite_texture_pixels, sprite_texture_pitch);
+				SDL_UnlockTexture(textures[i]);
+			}
+		}
+	}
+}
+
 void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
 {
 	const auto &state = Frontend::emulator->CurrentState();
@@ -96,10 +119,10 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 	const cc_u16f plane_texture_width = 128 * 8; // 128 is the maximum plane size
 	const cc_u16f plane_texture_height = 64 * 16;
 
-	if (!texture)
-		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest");
+	if (textures.empty())
+		textures.emplace_back(SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest"));
 
-	if (texture)
+	if (!textures.empty())
 	{
 		ImGui::InputInt("Zoom", &scale);
 		if (scale < 1)
@@ -107,34 +130,21 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			// Only update the texture if we know that the frame has changed.
-			// This prevents constant texture generation even when the emulator is paused.
-			if (cache_frame_counter != Frontend::frame_counter)
+			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint8* const pixels, const int pitch)
 			{
-				cache_frame_counter = Frontend::frame_counter;
-
-				// Lock texture so that we can write into it.
-				Uint8 *plane_texture_pixels;
-				int plane_texture_pitch;
-
-				if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&plane_texture_pixels), &plane_texture_pitch) == 0)
+				for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
 				{
-					for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
+					cc_u16f plane_index = plane_address + tile_y_in_plane * plane_width * 2;
+
+					for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
 					{
-						cc_u16f plane_index = plane_address + tile_y_in_plane * plane_width * 2;
-
-						for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
-						{
-							const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
-							const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-							DrawTile(state, tile_metadata, plane_texture_pixels, plane_texture_pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
-							plane_index += 2;
-						}
+						const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
+						const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
+						DrawTile(state, tile_metadata, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
+						plane_index += 2;
 					}
-
-					SDL_UnlockTexture(texture);
 				}
-			}
+			});
 
 			constexpr cc_u16f tile_width = TileWidth();
 			const cc_u16f tile_height = TileHeight(vdp);
@@ -144,7 +154,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(texture, ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+			ImGui::Image(textures[0], ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -160,7 +170,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 
 				const auto dpi_scale = GetWindow().GetDPIScale();
-				ImGui::Image(texture, ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
+				ImGui::Image(textures[0], ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
 				ImGui::SameLine();
 				ImGui::TextFormatted("Tile Index: {}/0x{:X}" "\n" "Palette Line: {}" "\n" "X-Flip: {}" "\n" "Y-Flip: {}" "\n" "Priority: {}", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 
@@ -177,49 +187,36 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	for (auto &texture : textures)
-		if (!texture)
-			texture = SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest");
+	if (textures.empty())
+	{
+		textures.reserve(TOTAL_SPRITES);
+
+		for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
+			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest"));
+	}
 
 	const cc_u16f size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
-	for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
+	RegenerateTexturesIfNeeded([&](const unsigned int texture_index, Uint8* const pixels, const int pitch)
 	{
-		const Sprite sprite = GetSprite(vdp, i);
+		std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
 
-		// Only update the texture if we know that the frame has changed.
-		// This prevents constant texture generation even when the emulator is paused.
-		if (cache_frame_counter != Frontend::frame_counter)
+		const Sprite sprite = GetSprite(vdp, texture_index);
+		auto tile_metadata = sprite.tile_metadata;
+
+		for (cc_u8f x = 0; x < sprite.cached.width; ++x)
 		{
-			// Lock texture so that we can write into it.
-			Uint8 *sprite_texture_pixels;
-			int sprite_texture_pitch;
+			const cc_u8f x_corrected = tile_metadata.x_flip ? sprite.cached.width - 1 - x : x;
 
-			if (SDL_LockTexture(textures[i], nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			for (cc_u8f y = 0; y < sprite.cached.height; ++y)
 			{
-				std::fill(&sprite_texture_pixels[0], &sprite_texture_pixels[sprite_texture_pitch * sprite_texture_height], 0);
+				const cc_u8f y_corrected = tile_metadata.y_flip ? sprite.cached.height - 1 - y : y;
 
-				auto tile_metadata = sprite.tile_metadata;
-
-				for (cc_u8f x = 0; x < sprite.cached.width; ++x)
-				{
-					const cc_u8f x_corrected = tile_metadata.x_flip ? sprite.cached.width - 1 - x : x;
-
-					for (cc_u8f y = 0; y < sprite.cached.height; ++y)
-					{
-						const cc_u8f y_corrected = tile_metadata.y_flip ? sprite.cached.height - 1 - y : y;
-
-						DrawTile(state, tile_metadata, sprite_texture_pixels, sprite_texture_pitch, x_corrected, y_corrected, true, 0);
-						tile_metadata.tile_index = (tile_metadata.tile_index + 1) % size_of_vram_in_tiles;
-					}
-				}
-
-				SDL_UnlockTexture(textures[i]);
+				DrawTile(state, tile_metadata, pixels, pitch, x_corrected, y_corrected, true, 0);
+				tile_metadata.tile_index = (tile_metadata.tile_index + 1) % size_of_vram_in_tiles;
 			}
 		}
-	}
-
-	cache_frame_counter = Frontend::frame_counter;
+	});
 }
 
 void DebugVDP::SpriteViewer::DisplayInternal()
@@ -423,7 +420,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	const std::size_t size_of_vram_in_tiles = VRAMSizeInTiles(vdp);
 
 	// Create VRAM texture if it does not exist.
-	if (!texture)
+	if (textures.empty())
 	{
 		// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
 		const std::size_t size_of_vram_in_pixels = std::size(vdp.vram) * 2;
@@ -435,10 +432,10 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		texture_width = vram_texture_width_rounded_up_to_8;
 		texture_height = vram_texture_height_rounded_up_to_16;
 
-		texture = SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest");
+		textures.emplace_back(SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest"));
 	}
 
-	if (texture)
+	if (!textures.empty())
 	{
 		bool options_changed = false;
 
@@ -473,36 +470,23 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 		const std::size_t vram_texture_width_in_tiles = texture_width / tile_width;
 		const std::size_t vram_texture_height_in_tiles = texture_height / tile_height;
 
-		// Only update the texture if we know that the frame has changed.
-		// This prevents constant texture generation even when the emulator is paused.
-		if (cache_frame_counter != Frontend::frame_counter || options_changed)
+		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint8* const pixels, const int pitch)
 		{
-			cache_frame_counter = Frontend::frame_counter;
+			// Generate VRAM bitmap.
+			cc_u16f tile_index = 0;
 
-			// Lock texture so that we can write into it.
-			Uint8 *vram_texture_pixels;
-			int vram_texture_pitch;
-
-			if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&vram_texture_pixels), &vram_texture_pitch) == 0)
+			for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
 			{
-				// Generate VRAM bitmap.
-				cc_u16f tile_index = 0;
-
-				for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
+				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 				{
-					for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
-					{
-						if (static_cast<std::size_t>(tile_index) * TileSizeInBytes(vdp) >= std::size(vdp.vram))
-							break;
+					if (tile_index >= VRAMSizeInTiles(vdp))
+						break;
 
-						const VDP_TileMetadata tile_metadata = {.tile_index = tile_index++, .palette_line = static_cast<cc_u8f>(palette_line), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-						DrawTile(state, tile_metadata, vram_texture_pixels, vram_texture_pitch, x, y, false, brightness_index);
-					}
+					const VDP_TileMetadata tile_metadata = {.tile_index = tile_index++, .palette_line = static_cast<cc_u8f>(palette_line), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+					DrawTile(state, tile_metadata, pixels, pitch, x, y, false, brightness_index);
 				}
-
-				SDL_UnlockTexture(texture);
 			}
-		}
+		});
 
 		// Actually display the VRAM now.
 		ImGui::BeginChild("VRAM contents");
@@ -570,7 +554,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 						tile_boundary_position_bottom_right.y - tile_spacing);
 
 					// Finally, display the tile.
-					draw_list->AddImage(texture, tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
+					draw_list->AddImage(textures[0], tile_position_top_left, tile_position_bottom_right, current_tile_uv0, current_tile_uv1);
 
 					if (window_is_hovered && ImGui::IsMouseHoveringRect(tile_boundary_position_top_left, tile_boundary_position_bottom_right))
 					{
@@ -580,7 +564,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 						ImGui::TextFormatted("Tile: 0x{:X}\nAddress: 0x{:X}", tile_index, tile_index * TileSizeInBytes(vdp));
 
 						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-						ImGui::Image(texture, ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+						ImGui::Image(textures[0], ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
 
 						ImGui::EndTooltip();
 					}

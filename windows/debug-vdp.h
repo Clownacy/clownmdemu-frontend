@@ -2,6 +2,7 @@
 #define DEBUG_VDP_H
 
 #include <cstddef>
+#include <functional>
 
 #include "../sdl-wrapper.h"
 
@@ -13,15 +14,21 @@ namespace DebugVDP
 {
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 
-	struct SpriteCommon
+	struct RegeneratingTextures
 	{
 	private:
 		unsigned int cache_frame_counter = 0;
 
 	protected:
 		// TODO: Any way to share this between the two sprite viewers again when using Dear ImGui windows?
-		SDL::Texture textures[TOTAL_SPRITES] = {nullptr};
+		std::vector<SDL::Texture> textures;
 
+		void RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint8 *pixels, int pitch)> &callback);
+	};
+
+	struct SpriteCommon : protected RegeneratingTextures
+	{
+	protected:
 		void DisplaySpriteCommon(Window &window);
 	};
 
@@ -58,7 +65,7 @@ namespace DebugVDP
 		friend Base;
 	};
 
-	class PlaneViewer : public WindowPopup<PlaneViewer>
+	class PlaneViewer : public WindowPopup<PlaneViewer>, protected RegeneratingTextures
 	{
 	private:
 		using Base = WindowPopup<PlaneViewer>;
@@ -66,8 +73,6 @@ namespace DebugVDP
 		static constexpr Uint32 window_flags = 0;
 
 		int scale = 0;
-		SDL::Texture texture = nullptr;
-		unsigned int cache_frame_counter = 0;
 
 		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 
@@ -77,19 +82,17 @@ namespace DebugVDP
 		friend Base;
 	};
 
-	class VRAMViewer : public WindowPopup<VRAMViewer>
+	class VRAMViewer : public WindowPopup<VRAMViewer>, protected RegeneratingTextures
 	{
 	private:
 		using Base = WindowPopup<VRAMViewer>;
 
 		static constexpr Uint32 window_flags = 0;
 
-		SDL::Texture texture = nullptr;
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
 		int brightness_index = 0;
 		int palette_line = 0;
-		unsigned int cache_frame_counter = 0;
 
 		void DisplayInternal();
 
