@@ -80,7 +80,7 @@ public:
 		bool alive = true;
 
 		if (Begin(&alive, derived->window_flags))
-			derived->DisplayInternal(arguments...);
+			derived->DisplayInternal(std::forward<Ts>(arguments)...);
 
 		End();
 
