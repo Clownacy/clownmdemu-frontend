@@ -595,14 +595,15 @@ void DebugVDP::StampViewer::DisplayInternal()
 	const auto &state = Frontend::emulator->CurrentState();
 	const auto &rotation = state.clownmdemu.mega_cd.rotation;
 
-	const cc_u8f entry_diameter_in_tiles = rotation.large_stamp ? 4 : 2;
+	constexpr cc_u8f maximum_entry_diameter_in_tile = 4;
+	const cc_u8f entry_diameter_in_tiles = rotation.large_stamp ? maximum_entry_diameter_in_tile : 2;
 	const cc_u16f entry_width_in_pixels = entry_diameter_in_tiles * tile_width;
 	const cc_u16f entry_height_in_pixels = entry_diameter_in_tiles * tile_height_normal;
 	const cc_u16f tiles_per_stamp = entry_diameter_in_tiles * entry_diameter_in_tiles;
 	const std::size_t total_entries = 0x200 / tiles_per_stamp;
 	const std::size_t entry_buffer_size_in_pixels = total_entries * entry_width_in_pixels * entry_height_in_pixels;
 
-	DisplayGrid(entry_width_in_pixels, entry_height_in_pixels, total_entries, tile_width, tile_height_double_resolution, entry_buffer_size_in_pixels, [&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+	DisplayGrid(entry_width_in_pixels, entry_height_in_pixels, total_entries, maximum_entry_diameter_in_tile * tile_width, maximum_entry_diameter_in_tile * tile_height_normal, entry_buffer_size_in_pixels, [&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
 	{
 		if (entry_index >= total_entries)
 			return;
