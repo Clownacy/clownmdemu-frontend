@@ -511,15 +511,13 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 		const auto dst_tile_size_and_padding = padding + dst_tile_size + padding;
 
 		// Calculate the size of the VRAM display region.
-		// Round down to the nearest multiple of the tile size + spacing, to simplify some calculations later on.
-		const float vram_display_region_width = ImGui::GetContentRegionAvail().x - SDL_fmodf(ImGui::GetContentRegionAvail().x, dst_tile_size_and_padding.x);
-		const std::size_t vram_display_region_width_in_tiles = SDL_floorf(vram_display_region_width / dst_tile_size_and_padding.x);
+		const std::size_t vram_display_region_width_in_tiles = static_cast<std::size_t>(ImGui::GetContentRegionAvail().x / dst_tile_size_and_padding.x);
 
 		const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
 		const bool window_is_hovered = ImGui::IsWindowHovered();
 
 		// Draw the list of tiles.
-		ImDrawList *draw_list = ImGui::GetWindowDrawList();
+		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
 
 		// Here we use a clipper so that we only render the tiles that we can actually see.
 		ImGuiListClipper clipper;
