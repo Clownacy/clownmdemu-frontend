@@ -82,11 +82,10 @@ namespace DebugVDP
 		friend Base;
 	};
 
-	class VRAMViewer : public WindowPopup<VRAMViewer>, protected RegeneratingTextures
+	template<typename Derived>
+	class GridViewer : public WindowPopup<Derived>, protected RegeneratingTextures
 	{
 	private:
-		using Base = WindowPopup<VRAMViewer>;
-
 		static constexpr Uint32 window_flags = 0;
 
 		std::size_t texture_width = 0;
@@ -94,12 +93,28 @@ namespace DebugVDP
 		int brightness_index = 0;
 		int palette_line = 0;
 
-		void DisplayInternal();
+	protected:
+		void DisplayGrid(cc_u16f entry_width, cc_u16f entry_height, std::size_t total_entries, cc_u16f maximum_entry_width, cc_u16f maximum_entry_height, std::size_t entry_buffer_size_in_pixels, const std::function<void(cc_u16f entry_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)> &render_entry_callback);
 
 	public:
+		using Base = WindowPopup<Derived>;
 		using Base::WindowPopup;
 
 		friend Base;
+	};
+
+	class VRAMViewer : public GridViewer<VRAMViewer>
+	{
+	private:
+		using Base = GridViewer<VRAMViewer>;
+
+		void DisplayInternal();
+
+	public:
+		using Base::GridViewer;
+
+		friend Base;
+		friend Base::Base;
 	};
 
 	class CRAMViewer : public WindowPopup<CRAMViewer>
