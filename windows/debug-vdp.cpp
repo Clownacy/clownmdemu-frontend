@@ -417,7 +417,16 @@ void DebugVDP::SpriteList::DisplayInternal()
 }
 
 template<typename Derived>
-void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const cc_u16f entry_height, const std::size_t total_entries, const cc_u16f maximum_entry_width, const cc_u16f maximum_entry_height, const std::size_t entry_buffer_size_in_pixels, const std::function<void(cc_u16f entry_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)> &render_entry_callback)
+void DebugVDP::GridViewer<Derived>::DisplayGrid(
+	const cc_u16f entry_width,
+	const cc_u16f entry_height,
+	const std::size_t total_entries,
+	const cc_u16f maximum_entry_width,
+	const cc_u16f maximum_entry_height,
+	const std::size_t entry_buffer_size_in_pixels,
+	const std::function<void(cc_u16f entry_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)> &render_entry_callback,
+	const char* const label_singular,
+	const char* const label_plural)
 {
 	const auto derived = static_cast<Derived*>(this);
 
@@ -482,7 +491,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 			options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
 		}
 
-		ImGui::SeparatorText("Tiles");
+		ImGui::SeparatorText(label_plural);
 
 		// Set up some variables that we're going to need soon.
 		const std::size_t vram_texture_width_in_tiles = texture_width / entry_width;
@@ -555,10 +564,13 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(const cc_u16f entry_width, const
 
 						// Display the tile's index.
 						const auto bytes_per_entry = PixelsToBytes(entry_width * entry_height);
-						ImGui::TextFormatted("Tile: 0x{:X}\nAddress: 0x{:X}", tile_index, tile_index * bytes_per_entry);
+						ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, tile_index, tile_index * bytes_per_entry);
 
-						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-						ImGui::Image(textures[0], ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+						if (dst_tile_size.x < 16 || dst_tile_size.y < 16)
+						{
+							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
+							ImGui::Image(textures[0], ImVec2(dst_tile_size.x * 3.0f, dst_tile_size.y * 3.0f), current_tile_uv0, current_tile_uv1);
+						}
 
 						ImGui::EndTooltip();
 					}
@@ -587,7 +599,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 
 		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
 		DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, false, brightness);
-	});
+	}, "Tile", "Tiles");
 }
 
 void DebugVDP::StampViewer::DisplayInternal()
@@ -610,7 +622,7 @@ void DebugVDP::StampViewer::DisplayInternal()
 
 		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
 		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_entries * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, entry_diameter_in_tiles, entry_diameter_in_tiles, false, brightness);
-	});
+	}, "Stamp", "Stamps");
 }
 
 void DebugVDP::CRAMViewer::DisplayInternal()
