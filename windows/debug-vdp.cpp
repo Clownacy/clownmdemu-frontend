@@ -308,7 +308,7 @@ struct StampMetadata
 
 static StampMetadata DecomposeStampMetadata(const cc_u16f data)
 {
-	return StampMetadata{.stamp_index = data & 0x7FF, .angle = data >> 13 & 3, .horizontal_flip = (data & 0x8000) != 0};
+	return {.stamp_index = data & 0x7FF, .angle = data >> 13 & 3, .horizontal_flip = (data & 0x8000) != 0};
 }
 
 void DebugVDP::StampMapViewer::DisplayInternal()
