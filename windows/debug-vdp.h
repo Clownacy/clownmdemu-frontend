@@ -18,6 +18,13 @@ namespace DebugVDP
 	using DrawMapPiece = std::function<void(Uint32 *pixels, int pitch, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
 
+	struct BrightnessAndPaletteLineSettings
+	{
+		int brightness_index = 0, palette_line_index = 0;
+
+		bool DisplayBrightnessAndPaletteLineSettings();
+	};
+
 	struct RegeneratingTextures
 	{
 	private:
@@ -86,7 +93,8 @@ namespace DebugVDP
 			cc_u8f piece_width,
 			cc_u8f piece_height,
 			const DrawMapPiece &draw_piece,
-			const MapPieceTooltip &piece_tooltip);
+			const MapPieceTooltip &piece_tooltip,
+			bool force_regenerate = false);
 
 	public:
 		using Base = WindowPopup<Derived>;
@@ -109,7 +117,7 @@ namespace DebugVDP
 		friend Base::Base;
 	};
 
-	class StampMapViewer : public MapViewer<StampMapViewer>
+	class StampMapViewer : public MapViewer<StampMapViewer>, protected BrightnessAndPaletteLineSettings
 	{
 	private:
 		using Base = MapViewer<StampMapViewer>;
@@ -124,15 +132,13 @@ namespace DebugVDP
 	};
 
 	template<typename Derived>
-	class GridViewer : public WindowPopup<Derived>, protected RegeneratingTextures
+	class GridViewer : public WindowPopup<Derived>, protected RegeneratingTextures, protected BrightnessAndPaletteLineSettings
 	{
 	private:
 		static constexpr Uint32 window_flags = 0;
 
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
-		int brightness_index = 0;
-		int palette_line = 0;
 
 	protected:
 		void DisplayGrid(

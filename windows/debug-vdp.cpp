@@ -188,6 +188,40 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 	}
 }
 
+bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
+{
+	bool options_changed = false;
+
+	const auto &state = Frontend::emulator->CurrentState();
+
+	// Handle VRAM viewing options.
+	ImGui::SeparatorText("Brightness");
+	for (std::size_t i = 0; i < state.total_brightnesses; ++i)
+	{
+		if (i != 0)
+			ImGui::SameLine();
+
+		static const std::array brightness_names = {
+			"Normal",
+			"Shadow",
+			"Highlight"
+		};
+
+		options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_index, i);
+	}
+
+	ImGui::SeparatorText("Palette Line");
+	for (std::size_t i = 0; i < state.total_palette_lines; ++i)
+	{
+		if (i != 0)
+			ImGui::SameLine();
+
+		options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line_index, i);
+	}
+
+	return options_changed;
+}
+
 void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback, const bool force_regenerate)
 {
 	// Only update the texture if we know that the frame has changed.
@@ -220,7 +254,8 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const cc_u8f piece_width,
 	const cc_u8f piece_height,
 	const DrawMapPiece &draw_piece,
-	const MapPieceTooltip &piece_tooltip)
+	const MapPieceTooltip &piece_tooltip,
+	const bool force_regenerate)
 {
 	const auto derived = static_cast<Derived*>(this);
 
@@ -243,7 +278,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
 					for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
 						draw_piece(pixels, pitch, x, y);
-			});
+			}, force_regenerate);
 
 			const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
 			const float map_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
@@ -315,6 +350,10 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 {
 	const auto &state = Frontend::emulator->CurrentState();
 
+	const bool options_changed = DisplayBrightnessAndPaletteLineSettings();
+
+	ImGui::SeparatorText("Stamp Map");
+
 	const auto stamp_map_width_in_stamps = StampMapWidthInStamps(state);
 	const auto stamp_map_height_in_stamps = StampMapHeightInStamps(state);
 
@@ -354,8 +393,8 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			else
 				x_flip ^= stamp_metadata.horizontal_flip;
 
-			const VDP_TileMetadata tile_metadata = {.tile_index = tile_index, .palette_line = 1, .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
-			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, TotalStamps(state) * TilesPerStamp(state), [&](const cc_u16f word_index){return mega_cd.word_ram.buffer[word_index];}, pixels, pitch, x, y, StampDiameterInTiles(state), StampDiameterInTiles(state), false, 0, swap_coordinates);
+			const VDP_TileMetadata tile_metadata = {.tile_index = tile_index, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
+			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, TotalStamps(state) * TilesPerStamp(state), [&](const cc_u16f word_index){return mega_cd.word_ram.buffer[word_index];}, pixels, pitch, x, y, StampDiameterInTiles(state), StampDiameterInTiles(state), false, brightness_index, swap_coordinates);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -365,7 +404,8 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			const cc_u16f stamp_index = (stamp_metadata.stamp_index * 4) / TilesPerStamp(state);
 
 			ImGui::TextFormatted("Stamp Index: 0x{:X}" "\n" "Angle: {} degrees" "\n" "Horizontal Flip: {}", stamp_index, stamp_metadata.angle * 90, stamp_metadata.horizontal_flip ? "True" : "False");
-		}
+		},
+		options_changed
 	);
 }
 
@@ -616,32 +656,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 
 	if (!textures.empty())
 	{
-		bool options_changed = false;
-
-		// Handle VRAM viewing options.
-		ImGui::SeparatorText("Brightness");
-		for (std::size_t i = 0; i < state.total_brightnesses; ++i)
-		{
-			if (i != 0)
-				ImGui::SameLine();
-
-			static const std::array brightness_names = {
-				"Normal",
-				"Shadow",
-				"Highlight"
-			};
-
-			options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_index, i);
-		}
-
-		ImGui::SeparatorText("Palette Line");
-		for (std::size_t i = 0; i < state.total_palette_lines; ++i)
-		{
-			if (i != 0)
-				ImGui::SameLine();
-
-			options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line, i);
-		}
+		const bool options_changed = DisplayBrightnessAndPaletteLineSettings();
 
 		ImGui::SeparatorText(label_plural);
 
@@ -659,7 +674,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 				{
 					Uint32* const entry_pixels = pixels + y * entry_height * pitch + x * entry_width;
-					render_entry_callback(entry_index++, brightness_index, palette_line, entry_pixels, pitch);
+					render_entry_callback(entry_index++, brightness_index, palette_line_index, entry_pixels, pitch);
 				}
 			}
 		}, options_changed);
