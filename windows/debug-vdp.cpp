@@ -364,7 +364,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			const auto stamp_metadata = DecomposeStampMetadata(mega_cd.word_ram.buffer[mega_cd.rotation.stamp_map_address * 2 + stamp_map_index]);
 			const cc_u16f stamp_index = (stamp_metadata.stamp_index * 4) / TilesPerStamp(state);
 
-			ImGui::TextFormatted("Stamp Index: {}/0x{:X}" "\n" "Angle: {}" "\n" "Horizontal Flip: {}", stamp_index, stamp_index, stamp_metadata.angle == 0 ? "0 degrees" : stamp_metadata.angle == 1 ? "90 degrees" : stamp_metadata.angle == 2 ? "180 degrees" : stamp_metadata.angle == 3 ? "270 degrees" : "ERROR", stamp_metadata.horizontal_flip ? "True" : "False");
+			ImGui::TextFormatted("Stamp Index: {}/0x{:X}" "\n" "Angle: {} degrees" "\n" "Horizontal Flip: {}", stamp_index, stamp_index, stamp_metadata.angle * 90, stamp_metadata.horizontal_flip ? "True" : "False");
 		}
 	);
 }
