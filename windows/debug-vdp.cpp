@@ -263,7 +263,8 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
 
 				const auto dpi_scale = derived->GetWindow().GetDPIScale();
-				ImGui::Image(textures[0], ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
+				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
+				ImGui::Image(textures[0], ImVec2(destination_width, destination_width * tile_height / tile_width), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
 				ImGui::SameLine();
 				tooltip(tile_x, tile_y);
 				ImGui::EndTooltip();
