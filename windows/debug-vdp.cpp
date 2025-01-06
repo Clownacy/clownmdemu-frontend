@@ -73,7 +73,7 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
+static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
 	{
@@ -91,7 +91,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 
 	for (cc_u16f pixel_y_in_tile = 0; pixel_y_in_tile < tile_height; ++pixel_y_in_tile)
 	{
-		Uint32* const plane_texture_pixels_row = &pixels[x * tile_width + (y * tile_height + (pixel_y_in_tile ^ y_flip_xor)) * pitch];
+		const cc_u16f pixel_y_in_tile_1 = pixel_y_in_tile ^ y_flip_xor;
 
 		for (cc_u16f i = 0; i < PixelsToWords(tile_width); ++i)
 		{
@@ -100,8 +100,17 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 
 			for (cc_u16f j = 0; j < pixels_per_word; ++j)
 			{
+				const cc_u16f pixel_x_in_tile_1 = (i * pixels_per_word + j) ^ x_flip_xor;
+
+				const cc_u16f final_pixel_x_in_tile = swap_coordinates ? pixel_y_in_tile_1 : pixel_x_in_tile_1;
+				const cc_u16f final_pixel_y_in_tile = swap_coordinates ? pixel_x_in_tile_1 : pixel_y_in_tile_1;
+
+				const cc_u16f destination_x = x * tile_width + final_pixel_x_in_tile;
+				const cc_u16f destination_y = y * tile_height + final_pixel_y_in_tile;
+
 				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
-				plane_texture_pixels_row[(i * pixels_per_word + j) ^ x_flip_xor] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
+
+				pixels[destination_x + destination_y * pitch] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
 			}
 		}
 	}
@@ -114,17 +123,20 @@ static void DrawTileFromVRAM(const EmulatorInstance::State &state, const VDP_Til
 	DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
 }
 
-static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness)
+static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
 {
-	for (cc_u8f x = 0; x < width; ++x)
+	for (cc_u8f ix = 0; ix < width; ++ix)
 	{
-		const cc_u8f x_corrected = tile_metadata.x_flip ? width - 1 - x : x;
+		const cc_u8f x_unswapped = tile_metadata.x_flip ? width - 1 - ix : ix;
 
-		for (cc_u8f y = 0; y < height; ++y)
+		for (cc_u8f iy = 0; iy < height; ++iy)
 		{
-			const cc_u8f y_corrected = tile_metadata.y_flip ? height - 1 - y : y;
+			const cc_u8f y_unswapped = tile_metadata.y_flip ? height - 1 - iy : iy;
 
-			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, x_corrected, y_corrected, transparency, brightness);
+			const cc_u8f x = swap_coordinates ? y_unswapped : x_unswapped;
+			const cc_u8f y = swap_coordinates ? x_unswapped : y_unswapped;
+
+			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, x, y, transparency, brightness, swap_coordinates);
 			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
 		}
 	}
