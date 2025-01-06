@@ -224,11 +224,11 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 {
 	const auto derived = static_cast<Derived*>(this);
 
-	const cc_u16f plane_texture_width = maximum_map_width_in_pixels;
-	const cc_u16f plane_texture_height = maximum_map_height_in_pixels;
+	const cc_u16f map_texture_width = maximum_map_width_in_pixels;
+	const cc_u16f map_texture_height = maximum_map_height_in_pixels;
 
 	if (textures.empty())
-		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest"));
+		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, map_texture_width, map_texture_height, "nearest"));
 
 	if (!textures.empty())
 	{
@@ -240,17 +240,17 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 		{
 			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
 			{
-				for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < map_height_in_pieces; ++tile_y_in_plane)
-					for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < map_width_in_pieces; ++tile_x_in_plane)
-						draw_piece(pixels, pitch, tile_x_in_plane, tile_y_in_plane);
+				for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
+					for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
+						draw_piece(pixels, pitch, x, y);
 			});
 
-			const float plane_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
-			const float plane_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
+			const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
+			const float map_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(textures[0], ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+			ImGui::Image(textures[0], ImVec2(map_width_in_pixels * scale, map_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -258,14 +258,14 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 				const ImVec2 mouse_position = ImGui::GetMousePos();
 
-				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / piece_width);
-				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / piece_height);
+				const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / piece_width);
+				const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / piece_height);
 
 				const auto dpi_scale = derived->GetWindow().GetDPIScale();
 				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
-				ImGui::Image(textures[0], ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(tile_x * piece_width) / plane_texture_width, static_cast<float>(tile_y * piece_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * piece_width) / plane_texture_width, static_cast<float>((tile_y + 1) * piece_height) / plane_texture_height));
+				ImGui::Image(textures[0], ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
 				ImGui::SameLine();
-				piece_tooltip(tile_x, tile_y);
+				piece_tooltip(piece_x, piece_y);
 				ImGui::EndTooltip();
 			}
 		}
