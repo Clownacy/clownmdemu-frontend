@@ -79,15 +79,14 @@ namespace DebugVDP
 
 	protected:
 		void DisplayMap(
-			cc_u16f plane_width,
-			cc_u16f plane_height,
-			cc_u16f maximum_plane_width_in_pixels,
-			cc_u16f maximum_plane_height_in_pixels,
-			cc_u8f tile_width,
-			cc_u8f tile_height,
-			cc_u16f maximum_tile_index,
+			cc_u16f map_width_in_pieces,
+			cc_u16f map_height_in_pieces,
+			cc_u16f maximum_map_width_in_pixels,
+			cc_u16f maximum_map_height_in_pixels,
+			cc_u8f piece_width,
+			cc_u8f piece_height,
 			const DrawMapPiece &draw_piece,
-			const MapPieceTooltip &tooltip);
+			const MapPieceTooltip &piece_tooltip);
 
 	public:
 		using Base = WindowPopup<Derived>;

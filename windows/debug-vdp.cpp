@@ -213,20 +213,19 @@ void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::funct
 
 template<typename Derived>
 void DebugVDP::MapViewer<Derived>::DisplayMap(
-	const cc_u16f plane_width,
-	const cc_u16f plane_height,
-	const cc_u16f maximum_plane_width_in_pixels,
-	const cc_u16f maximum_plane_height_in_pixels,
-	const cc_u8f tile_width,
-	const cc_u8f tile_height,
-	const cc_u16f maximum_tile_index,
+	const cc_u16f map_width_in_pieces,
+	const cc_u16f map_height_in_pieces,
+	const cc_u16f maximum_map_width_in_pixels,
+	const cc_u16f maximum_map_height_in_pixels,
+	const cc_u8f piece_width,
+	const cc_u8f piece_height,
 	const DrawMapPiece &draw_piece,
-	const MapPieceTooltip &tooltip)
+	const MapPieceTooltip &piece_tooltip)
 {
 	const auto derived = static_cast<Derived*>(this);
 
-	const cc_u16f plane_texture_width = maximum_plane_width_in_pixels;
-	const cc_u16f plane_texture_height = maximum_plane_height_in_pixels;
+	const cc_u16f plane_texture_width = maximum_map_width_in_pixels;
+	const cc_u16f plane_texture_height = maximum_map_height_in_pixels;
 
 	if (textures.empty())
 		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest"));
@@ -241,13 +240,13 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 		{
 			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
 			{
-				for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
-					for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
+				for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < map_height_in_pieces; ++tile_y_in_plane)
+					for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < map_width_in_pieces; ++tile_x_in_plane)
 						draw_piece(pixels, pitch, tile_x_in_plane, tile_y_in_plane);
 			});
 
-			const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
-			const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
+			const float plane_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
+			const float plane_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
@@ -259,14 +258,14 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 				const ImVec2 mouse_position = ImGui::GetMousePos();
 
-				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
-				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
+				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / piece_width);
+				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / piece_height);
 
 				const auto dpi_scale = derived->GetWindow().GetDPIScale();
 				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
-				ImGui::Image(textures[0], ImVec2(destination_width, destination_width * tile_height / tile_width), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
+				ImGui::Image(textures[0], ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(tile_x * piece_width) / plane_texture_width, static_cast<float>(tile_y * piece_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * piece_width) / plane_texture_width, static_cast<float>((tile_y + 1) * piece_height) / plane_texture_height));
 				ImGui::SameLine();
-				tooltip(tile_x, tile_y);
+				piece_tooltip(tile_x, tile_y);
 				ImGui::EndTooltip();
 			}
 		}
@@ -283,7 +282,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 	const cc_u16f maximum_plane_width_in_pixels = 128 * tile_width; // 128 is the maximum plane size
 	const cc_u16f maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
 
-	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp),
+	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, TileWidth(), TileHeight(vdp),
 		[&](Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
 		{
 			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
@@ -319,7 +318,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 	const auto stamp_map_width_in_stamps = StampMapWidthInStamps(state);
 	const auto stamp_map_height_in_stamps = StampMapHeightInStamps(state);
 
-	DisplayMap(stamp_map_width_in_stamps, stamp_map_height_in_stamps, maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, StampWidthInPixels(state), StampHeightInPixels(state), TotalStamps(state),
+	DisplayMap(stamp_map_width_in_stamps, stamp_map_height_in_stamps, maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, StampWidthInPixels(state), StampHeightInPixels(state),
 		[&](Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
 		{
 			const auto &mega_cd = state.clownmdemu.mega_cd;
