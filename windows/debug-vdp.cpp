@@ -107,6 +107,13 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
+static void DrawTileFromVRAM(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
+{
+	const auto &vdp = state.clownmdemu.vdp;
+
+	DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
+}
+
 static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness)
 {
 	for (cc_u8f x = 0; x < width; ++x)
@@ -175,7 +182,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 					{
 						const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
 						const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-						DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
+						DrawTileFromVRAM(state, tile_metadata, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
 						plane_index += 2;
 					}
 				}
@@ -598,7 +605,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			return;
 
 		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, false, brightness);
+		DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
 	}, "Tile", "Tiles");
 }
 
