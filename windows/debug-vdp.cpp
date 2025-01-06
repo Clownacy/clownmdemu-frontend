@@ -188,11 +188,11 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 	}
 }
 
-void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback)
+void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback, const bool force_regenerate)
 {
 	// Only update the texture if we know that the frame has changed.
 	// This prevents constant texture generation even when the emulator is paused.
-	if (cache_frame_counter != Frontend::frame_counter)
+	if (force_regenerate || cache_frame_counter != Frontend::frame_counter)
 	{
 		cache_frame_counter = Frontend::frame_counter;
 
@@ -662,7 +662,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 					render_entry_callback(entry_index++, brightness_index, palette_line, entry_pixels, pitch);
 				}
 			}
-		});
+		}, options_changed);
 
 		// Actually display the VRAM now.
 		ImGui::BeginChild("VRAM contents");
