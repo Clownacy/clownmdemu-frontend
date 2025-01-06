@@ -16,6 +16,8 @@
 
 #include "../frontend.h"
 
+using namespace DebugVDP;
+
 struct Sprite
 {
 	VDP_CachedSprite cached;
@@ -58,6 +60,50 @@ static cc_u16f VRAMSizeInTiles(const VDP_State &vdp)
 	return std::size(vdp.vram) / TileSizeInBytes(vdp);
 }
 
+static constexpr cc_u8f maximum_stamp_diameter_in_tiles = 4;
+
+static cc_u8f StampDiameterInTiles(const EmulatorInstance::State &state)
+{
+	return state.clownmdemu.mega_cd.rotation.large_stamp ? maximum_stamp_diameter_in_tiles : 2;
+}
+
+static cc_u8f StampWidthInPixels(const EmulatorInstance::State &state)
+{
+	return StampDiameterInTiles(state) * tile_width;
+}
+
+static cc_u8f StampHeightInPixels(const EmulatorInstance::State &state)
+{
+	return StampDiameterInTiles(state) * tile_height_normal;
+}
+
+static cc_u16f TilesPerStamp(const EmulatorInstance::State &state)
+{
+	return StampDiameterInTiles(state) * StampDiameterInTiles(state);
+}
+
+static cc_u16f TotalStamps(const EmulatorInstance::State &state)
+{
+	return 0x800 * 4 / TilesPerStamp(state);
+}
+
+static constexpr cc_u16f maximum_stamp_map_diameter_in_pixels = 4096;
+
+static cc_u16f StampMapDiameterInPixels(const EmulatorInstance::State &state)
+{
+	return state.clownmdemu.mega_cd.rotation.large_stamp_map ? maximum_stamp_map_diameter_in_pixels : 256;
+}
+
+static cc_u16f StampMapWidthInStamps(const EmulatorInstance::State &state)
+{
+	return StampMapDiameterInPixels(state) / StampWidthInPixels(state);
+}
+
+static cc_u16f StampMapHeightInStamps(const EmulatorInstance::State &state)
+{
+	return StampMapDiameterInPixels(state) / StampHeightInPixels(state);
+}
+
 static constexpr cc_u8f maximum_sprite_diameter_in_tiles = 4;
 static constexpr cc_u8f sprite_texture_width = maximum_sprite_diameter_in_tiles * tile_width;
 static constexpr cc_u8f sprite_texture_height = maximum_sprite_diameter_in_tiles * tile_height_double_resolution;
@@ -73,7 +119,7 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
+static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
 	{
@@ -123,7 +169,7 @@ static void DrawTileFromVRAM(const EmulatorInstance::State &state, const VDP_Til
 	DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
 }
 
-static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const std::function<cc_u16f(cc_u16f word_index)> &read_tile_word, Uint32* const pixels, const int pitch, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
+static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
 {
 	for (cc_u8f ix = 0; ix < width; ++ix)
 	{
@@ -133,10 +179,10 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 		{
 			const cc_u8f y_unswapped = tile_metadata.y_flip ? height - 1 - iy : iy;
 
-			const cc_u8f x = swap_coordinates ? y_unswapped : x_unswapped;
-			const cc_u8f y = swap_coordinates ? x_unswapped : y_unswapped;
+			const cc_u8f tile_x = x * width + (swap_coordinates ? y_unswapped : x_unswapped);
+			const cc_u8f tile_y = y * height + (swap_coordinates ? x_unswapped : y_unswapped);
 
-			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, x, y, transparency, brightness, swap_coordinates);
+			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, tile_x, tile_y, transparency, brightness, swap_coordinates);
 			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
 		}
 	}
@@ -165,16 +211,25 @@ void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::funct
 	}
 }
 
-void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
+template<typename Derived>
+void DebugVDP::MapViewer<Derived>::DisplayMap(
+	const cc_u16f plane_width,
+	const cc_u16f plane_height,
+	const cc_u16f maximum_plane_width_in_pixels,
+	const cc_u16f maximum_plane_height_in_pixels,
+	const cc_u8f tile_width,
+	const cc_u8f tile_height,
+	const cc_u16f maximum_tile_index,
+	const DrawMapPiece &draw_piece,
+	const MapPieceTooltip &tooltip)
 {
-	const auto &state = Frontend::emulator->CurrentState();
-	const VDP_State &vdp = state.clownmdemu.vdp;
+	const auto derived = static_cast<Derived*>(this);
 
-	const cc_u16f plane_texture_width = 128 * tile_width; // 128 is the maximum plane size
-	const cc_u16f plane_texture_height = 64 * tile_height_double_resolution;
+	const cc_u16f plane_texture_width = maximum_plane_width_in_pixels;
+	const cc_u16f plane_texture_height = maximum_plane_height_in_pixels;
 
 	if (textures.empty())
-		textures.emplace_back(SDL::CreateTexture(GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest"));
+		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, plane_texture_width, plane_texture_height, "nearest"));
 
 	if (!textures.empty())
 	{
@@ -187,21 +242,9 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
 			{
 				for (cc_u16f tile_y_in_plane = 0; tile_y_in_plane < plane_height; ++tile_y_in_plane)
-				{
-					cc_u16f plane_index = plane_address + tile_y_in_plane * plane_width * 2;
-
 					for (cc_u16f tile_x_in_plane = 0; tile_x_in_plane < plane_width; ++tile_x_in_plane)
-					{
-						const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
-						const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-						DrawTileFromVRAM(state, tile_metadata, pixels, pitch, tile_x_in_plane, tile_y_in_plane, false, brightness);
-						plane_index += 2;
-					}
-				}
+						draw_piece(pixels, pitch, tile_x_in_plane, tile_y_in_plane);
 			});
-
-			constexpr cc_u16f tile_width = TileWidth();
-			const cc_u16f tile_height = TileHeight(vdp);
 
 			const float plane_width_in_pixels = static_cast<float>(plane_width * tile_width);
 			const float plane_height_in_pixels = static_cast<float>(plane_height * tile_height);
@@ -219,21 +262,111 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 				const cc_u16f tile_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / tile_width);
 				const cc_u16f tile_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / tile_height);
 
-				const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (tile_y * plane_width + tile_x) * 2);
-
-				const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
-
-				const auto dpi_scale = GetWindow().GetDPIScale();
+				const auto dpi_scale = derived->GetWindow().GetDPIScale();
 				ImGui::Image(textures[0], ImVec2(tile_width * SDL_roundf(9.0f * dpi_scale), tile_height * SDL_roundf(9.0f * dpi_scale)), ImVec2(static_cast<float>(tile_x * tile_width) / plane_texture_width, static_cast<float>(tile_y * tile_height) / plane_texture_height), ImVec2(static_cast<float>((tile_x + 1) * tile_width) / plane_texture_width, static_cast<float>((tile_y + 1) * tile_height) / plane_texture_height));
 				ImGui::SameLine();
-				ImGui::TextFormatted("Tile Index: {}/0x{:X}" "\n" "Palette Line: {}" "\n" "X-Flip: {}" "\n" "Y-Flip: {}" "\n" "Priority: {}", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
-
+				tooltip(tile_x, tile_y);
 				ImGui::EndTooltip();
 			}
 		}
 
 		ImGui::EndChild();
 	}
+}
+
+void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const cc_u16l plane_width, const cc_u16l plane_height)
+{
+	const auto &state = Frontend::emulator->CurrentState();
+	const VDP_State &vdp = state.clownmdemu.vdp;
+
+	const cc_u16f maximum_plane_width_in_pixels = 128 * tile_width; // 128 is the maximum plane size
+	const cc_u16f maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
+
+	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp),
+		[&](Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+		{
+			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
+			const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
+			const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
+			DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, false, brightness);
+		},
+		[&](const cc_u16f x, const cc_u16f y)
+		{
+			const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (y * plane_width + x) * 2);
+			const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
+			ImGui::TextFormatted("Tile Index: {}/0x{:X}" "\n" "Palette Line: {}" "\n" "X-Flip: {}" "\n" "Y-Flip: {}" "\n" "Priority: {}", tile_metadata.tile_index, tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
+		}
+	);
+}
+
+struct StampMetadata
+{
+	cc_u16f stamp_index;
+	cc_u8f angle;
+	bool horizontal_flip;
+};
+
+static StampMetadata DecomposeStampMetadata(const cc_u16f data)
+{
+	return StampMetadata{.stamp_index = data & 0x7FF, .angle = data >> 13 & 3, .horizontal_flip = (data & 0x8000) != 0};
+}
+
+void DebugVDP::StampMapViewer::DisplayInternal()
+{
+	const auto &state = Frontend::emulator->CurrentState();
+
+	const auto stamp_map_width_in_stamps = StampMapWidthInStamps(state);
+	const auto stamp_map_height_in_stamps = StampMapHeightInStamps(state);
+
+	DisplayMap(stamp_map_width_in_stamps, stamp_map_height_in_stamps, maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, StampWidthInPixels(state), StampHeightInPixels(state), TotalStamps(state),
+		[&](Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+		{
+			const auto &mega_cd = state.clownmdemu.mega_cd;
+
+			const cc_u16f stamp_map_index = y * stamp_map_width_in_stamps + x;
+			const auto stamp_metadata = DecomposeStampMetadata(mega_cd.word_ram.buffer[mega_cd.rotation.stamp_map_address * 2 + stamp_map_index]);
+			const cc_u16f tile_index = stamp_metadata.stamp_index * 4;
+
+			bool x_flip = false, y_flip = false, swap_coordinates = false;
+			switch (stamp_metadata.angle)
+			{
+				case 0: // 0 degrees
+					break;
+
+				case 1: // 90 degrees
+					x_flip = true;
+					swap_coordinates = true;
+					break;
+
+				case 2: // 180 degrees
+					x_flip = true;
+					y_flip = true;
+					break;
+
+				case 3: // 270 degrees
+					y_flip = true;
+					swap_coordinates = true;
+					break;
+			}
+
+			if (swap_coordinates)
+				y_flip ^= stamp_metadata.horizontal_flip;
+			else
+				x_flip ^= stamp_metadata.horizontal_flip;
+
+			const VDP_TileMetadata tile_metadata = {.tile_index = tile_index, .palette_line = 1, .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
+			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, TotalStamps(state) * TilesPerStamp(state), [&](const cc_u16f word_index){return mega_cd.word_ram.buffer[word_index];}, pixels, pitch, x, y, StampDiameterInTiles(state), StampDiameterInTiles(state), false, 0, swap_coordinates);
+		},
+		[&](const cc_u16f x, const cc_u16f y)
+		{
+			const auto &mega_cd = state.clownmdemu.mega_cd;
+			const cc_u16f stamp_map_index = y * stamp_map_width_in_stamps + x;
+			const auto stamp_metadata = DecomposeStampMetadata(mega_cd.word_ram.buffer[mega_cd.rotation.stamp_map_address * 2 + stamp_map_index]);
+			const cc_u16f stamp_index = (stamp_metadata.stamp_index * 4) / TilesPerStamp(state);
+
+			ImGui::TextFormatted("Stamp Index: {}/0x{:X}" "\n" "Angle: {}" "\n" "Horizontal Flip: {}", stamp_index, stamp_index, stamp_metadata.angle == 0 ? "0 degrees" : stamp_metadata.angle == 1 ? "90 degrees" : stamp_metadata.angle == 2 ? "180 degrees" : stamp_metadata.angle == 3 ? "270 degrees" : "ERROR", stamp_metadata.horizontal_flip ? "True" : "False");
+		}
+	);
 }
 
 void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
@@ -255,7 +388,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 		const Sprite sprite = GetSprite(vdp, texture_index);
 
-		DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, sprite.cached.width, sprite.cached.height, true, 0);
+		DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, sprite.cached.width, sprite.cached.height, true, 0);
 	});
 }
 
@@ -626,12 +759,12 @@ void DebugVDP::StampViewer::DisplayInternal()
 	const auto &state = Frontend::emulator->CurrentState();
 	const auto &rotation = state.clownmdemu.mega_cd.rotation;
 
-	constexpr cc_u8f maximum_entry_diameter_in_tiles = 4;
-	const cc_u8f entry_diameter_in_tiles = rotation.large_stamp ? maximum_entry_diameter_in_tiles : 2;
+	constexpr cc_u8f maximum_entry_diameter_in_tiles = maximum_stamp_diameter_in_tiles;
+	const cc_u8f entry_diameter_in_tiles = StampDiameterInTiles(state);
 	const cc_u16f entry_width_in_pixels = entry_diameter_in_tiles * tile_width;
 	const cc_u16f entry_height_in_pixels = entry_diameter_in_tiles * tile_height_normal;
-	const cc_u16f tiles_per_stamp = entry_diameter_in_tiles * entry_diameter_in_tiles;
-	const std::size_t total_entries = 0x200 / tiles_per_stamp;
+	const cc_u16f tiles_per_stamp = TilesPerStamp(state);
+	const std::size_t total_entries = TotalStamps(state);
 	const std::size_t entry_buffer_size_in_pixels = total_entries * entry_width_in_pixels * entry_height_in_pixels;
 
 	DisplayGrid(entry_width_in_pixels, entry_height_in_pixels, total_entries, maximum_entry_diameter_in_tiles * tile_width, maximum_entry_diameter_in_tiles * tile_height_normal, entry_buffer_size_in_pixels, [&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
@@ -640,7 +773,7 @@ void DebugVDP::StampViewer::DisplayInternal()
 			return;
 
 		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_entries * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, entry_diameter_in_tiles, entry_diameter_in_tiles, false, brightness);
+		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_entries * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, entry_diameter_in_tiles, entry_diameter_in_tiles, false, brightness);
 	}, "Stamp", "Stamps");
 }
 

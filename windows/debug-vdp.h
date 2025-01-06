@@ -14,6 +14,10 @@ namespace DebugVDP
 {
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 
+	using ReadTileWord = std::function<cc_u16f(cc_u16f word_index)>;
+	using DrawMapPiece = std::function<void(Uint32 *pixels, int pitch, cc_u16f x, cc_u16f y)>;
+	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
+
 	struct RegeneratingTextures
 	{
 	private:
@@ -65,21 +69,59 @@ namespace DebugVDP
 		friend Base;
 	};
 
-	class PlaneViewer : public WindowPopup<PlaneViewer>, protected RegeneratingTextures
+	template<typename Derived>
+	class MapViewer : public WindowPopup<Derived>, protected RegeneratingTextures
 	{
 	private:
-		using Base = WindowPopup<PlaneViewer>;
-
 		static constexpr Uint32 window_flags = 0;
 
 		int scale = 0;
 
-		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
+	protected:
+		void DisplayMap(
+			cc_u16f plane_width,
+			cc_u16f plane_height,
+			cc_u16f maximum_plane_width_in_pixels,
+			cc_u16f maximum_plane_height_in_pixels,
+			cc_u8f tile_width,
+			cc_u8f tile_height,
+			cc_u16f maximum_tile_index,
+			const DrawMapPiece &draw_piece,
+			const MapPieceTooltip &tooltip);
 
 	public:
+		using Base = WindowPopup<Derived>;
 		using Base::WindowPopup;
 
 		friend Base;
+	};
+
+	class PlaneViewer : public MapViewer<PlaneViewer>
+	{
+	private:
+		using Base = MapViewer<PlaneViewer>;
+
+		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
+
+	public:
+		using Base::MapViewer;
+
+		friend Base;
+		friend Base::Base;
+	};
+
+	class StampMapViewer : public MapViewer<StampMapViewer>
+	{
+	private:
+		using Base = MapViewer<StampMapViewer>;
+
+		void DisplayInternal();
+
+	public:
+		using Base::MapViewer;
+
+		friend Base;
+		friend Base::Base;
 	};
 
 	template<typename Derived>
