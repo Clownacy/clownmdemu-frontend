@@ -354,27 +354,6 @@ void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileM
 	SDL_RenderCopyEx(renderer, textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_RendererFlip>(flip));
 }
 
-void DebugVDP::RegeneratingTiles::RegenerateIfNeeded(SDL::Renderer &renderer, const cc_u8f brightness_index, const cc_u8f palette_line_index, const bool force_regenerate)
-{
-	const auto &state = Frontend::emulator->CurrentState();
-	const auto &vdp = state.clownmdemu.vdp;
-
-	constexpr auto tile_width = TileWidth();
-	const auto tile_height = TileHeight(vdp);
-
-	RegeneratingPieces::RegenerateIfNeeded(renderer, tile_width, tile_height, tile_width, tile_height_double_resolution, std::size(vdp.vram) * pixels_per_byte, brightness_index, palette_line_index,
-		[&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
-		{
-			if (entry_index >= VRAMSizeInTiles(vdp))
-				return;
-
-			const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
-		},
-		force_regenerate
-	);
-}
-
 template<typename Derived>
 void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const cc_u16f map_width_in_pieces,

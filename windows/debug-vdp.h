@@ -88,13 +88,6 @@ namespace DebugVDP
 		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, cc_u8f piece_width, cc_u8f piece_height, cc_u16f x, cc_u16f y, bool transparency, bool swap_coordinates = false);
 	};
 
-	struct RegeneratingTiles : public RegeneratingPieces
-	{
-		using RegeneratingPieces::RegeneratingPieces;
-
-		void RegenerateIfNeeded(SDL::Renderer &renderer, cc_u8f brightness_index, cc_u8f palette_line_index, bool force_regenerate = false);
-	};
-
 	struct SpriteCommon : protected RegeneratingTextures
 	{
 	protected:
