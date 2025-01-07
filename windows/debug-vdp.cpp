@@ -64,6 +64,8 @@ static cc_u16f VRAMSizeInTiles(const VDP_State &vdp)
 }
 
 static constexpr cc_u8f maximum_stamp_diameter_in_tiles = 4;
+static constexpr cc_u8f maximum_stamp_width_in_pixels = maximum_stamp_diameter_in_tiles * tile_width;
+static constexpr cc_u8f maximum_stamp_height_in_pixels = maximum_stamp_diameter_in_tiles * tile_height_normal;
 
 static cc_u8f StampDiameterInTiles(const EmulatorInstance::State &state)
 {
@@ -191,6 +193,47 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 	}
 }
 
+// TODO: Make this a member method of RegeneratingPieces.
+static void DrawPieceHardwareAccelerated(SDL::Renderer &renderer, RegeneratingPieces &pieces, const VDP_TileMetadata piece_metadata, const cc_u8f piece_width, const cc_u8f piece_height, const cc_u16f x, const cc_u16f y, const bool transparency, const bool swap_coordinates = false)
+{
+	const auto piece_rect = pieces.GetPieceRect(piece_metadata.tile_index, piece_width, piece_height);
+	const auto destination_rect = SDL_Rect(x * piece_width, y * piece_height, piece_width, piece_height);
+
+	int flip = SDL_FLIP_NONE;
+	if (piece_metadata.x_flip)
+		flip ^= SDL_FLIP_HORIZONTAL;
+	if (piece_metadata.y_flip)
+		flip ^= SDL_FLIP_VERTICAL;
+
+	double angle = 0.0;
+	if (swap_coordinates)
+	{
+		angle -= 90.0;
+		flip ^= SDL_FLIP_HORIZONTAL;
+	}
+
+	SDL_RenderCopyEx(renderer, pieces.textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_RendererFlip>(flip));
+}
+
+static void DrawSpriteHardwareAccelerated(SDL::Renderer &renderer, RegeneratingPieces &tiles, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height, const bool transparency, const bool swap_coordinates = false)
+{
+	for (cc_u8f ix = 0; ix < width; ++ix)
+	{
+		const cc_u8f x_unswapped = tile_metadata.x_flip ? width - 1 - ix : ix;
+
+		for (cc_u8f iy = 0; iy < height; ++iy)
+		{
+			const cc_u8f y_unswapped = tile_metadata.y_flip ? height - 1 - iy : iy;
+
+			const cc_u8f tile_x = x * width + (swap_coordinates ? y_unswapped : x_unswapped);
+			const cc_u8f tile_y = y * height + (swap_coordinates ? x_unswapped : y_unswapped);
+
+			DrawPieceHardwareAccelerated(renderer, tiles, tile_metadata, tile_width, tile_height, tile_x, tile_y, transparency, swap_coordinates);
+			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
+		}
+	}
+}
+
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
 {
 	bool options_changed = false;
@@ -257,6 +300,20 @@ void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::funct
 	);
 }
 
+void DebugVDP::RegeneratingTexturesHardwareAccelerated::RegenerateTexturesIfNeeded(SDL::Renderer &renderer, const std::function<void(unsigned int texture_index, SDL::Texture &texture)> &callback, const bool force_regenerate)
+{
+	RegeneratingTexturesBase::RegenerateTexturesIfNeeded(
+		[&](const unsigned int texture_index, SDL::Texture &texture)
+		{
+			const auto previous_render_target = SDL_GetRenderTarget(renderer);
+			SDL_SetRenderTarget(renderer, texture);
+			callback(texture_index, texture);
+			SDL_SetRenderTarget(renderer, previous_render_target);
+		},
+		force_regenerate
+	);
+}
+
 void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	SDL::Renderer &renderer,
 	const cc_u8f piece_width,
@@ -308,13 +365,13 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	}
 }
 
-SDL_Rect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height)
+SDL_Rect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height) const
 {
-	const auto texture_width_in_tiles = texture_width / piece_width;
-	const auto piece_x = (piece_index % texture_width_in_tiles) * piece_width;
-	const auto piece_y = (piece_index / texture_width_in_tiles) * piece_height;
+	const auto texture_width_in_pieces = texture_width / piece_width;
+	const auto piece_x = (piece_index % texture_width_in_pieces) * piece_width;
+	const auto piece_y = (piece_index / texture_width_in_pieces) * piece_height;
 
-	return {static_cast<int>(piece_x), static_cast<int>(piece_y), static_cast<int>(piece_width), static_cast<int>(piece_height)};
+	return SDL_Rect(piece_x, piece_y, piece_width, piece_height);
 }
 
 void DebugVDP::RegeneratingTiles::RegenerateIfNeeded(SDL::Renderer &renderer, const cc_u8f brightness_index, const cc_u8f palette_line_index, const bool force_regenerate)
@@ -322,7 +379,7 @@ void DebugVDP::RegeneratingTiles::RegenerateIfNeeded(SDL::Renderer &renderer, co
 	const auto &state = Frontend::emulator->CurrentState();
 	const auto &vdp = state.clownmdemu.vdp;
 
-	const auto tile_width = TileWidth();
+	constexpr auto tile_width = TileWidth();
 	const auto tile_height = TileHeight(vdp);
 
 	RegeneratingPieces::RegenerateIfNeeded(renderer, tile_width, tile_height, tile_width, tile_height_double_resolution, std::size(vdp.vram) * pixels_per_byte, brightness_index, palette_line_index,
@@ -356,7 +413,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const cc_u16f map_texture_height = maximum_map_height_in_pixels;
 
 	if (textures.empty())
-		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, map_texture_width, map_texture_height, "nearest"));
+		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_TARGET, map_texture_width, map_texture_height, "nearest"));
 
 	if (!textures.empty())
 	{
@@ -366,11 +423,11 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
+			RegenerateTexturesIfNeeded(derived->GetWindow().GetRenderer(), [&]([[maybe_unused]] const unsigned int texture_index, SDL::Texture &texture)
 			{
 				for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
 					for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
-						draw_piece(pixels, pitch, x, y);
+						draw_piece(texture, x, y);
 			}, force_regenerate);
 
 			const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
@@ -410,13 +467,24 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 	const cc_u16f maximum_plane_width_in_pixels = 128 * tile_width; // 128 is the maximum plane size
 	const cc_u16f maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
 
+	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), TileWidth(), TileHeight(vdp), tile_width, tile_height_double_resolution, std::size(vdp.vram) * pixels_per_byte, 0, 0,
+		[&](const cc_u16f tile_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+		{
+			if (tile_index >= VRAMSizeInTiles(vdp))
+				return;
+
+			const VDP_TileMetadata tile_metadata = {.tile_index = tile_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
+		}
+	);
+
 	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, TileWidth(), TileHeight(vdp),
-		[&](Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+		[&](SDL::Texture &texture, const cc_u16f x, const cc_u16f y)
 		{
 			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
 			const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
 			const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-			DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, false, brightness);
+			DrawPieceHardwareAccelerated(GetWindow().GetRenderer(), regenerating_pieces, tile_metadata, TileWidth(), TileHeight(vdp), x, y, false, brightness);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -449,15 +517,29 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 
 	const auto stamp_map_width_in_stamps = StampMapWidthInStamps(state);
 	const auto stamp_map_height_in_stamps = StampMapHeightInStamps(state);
+	const auto total_stamps = TotalStamps(state);
+	const auto tiles_per_stamp = TilesPerStamp(state);
+	const auto stamp_diameter_in_tiles = StampDiameterInTiles(state);
+
+	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), StampWidthInPixels(state), StampHeightInPixels(state), maximum_stamp_width_in_pixels, maximum_stamp_height_in_pixels, total_stamps * StampWidthInPixels(state) * StampHeightInPixels(state), 0, 0,
+		[&](const cc_u16f stamp_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+		{
+			if (stamp_index >= total_stamps)
+				return;
+
+			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles, false, brightness);
+		}
+	);
 
 	DisplayMap(stamp_map_width_in_stamps, stamp_map_height_in_stamps, maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, StampWidthInPixels(state), StampHeightInPixels(state),
-		[&](Uint32* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+		[&](SDL::Texture &texture, const cc_u16f x, const cc_u16f y)
 		{
 			const auto &mega_cd = state.clownmdemu.mega_cd;
 
 			const cc_u16f stamp_map_index = y * stamp_map_width_in_stamps + x;
 			const auto stamp_metadata = DecomposeStampMetadata(mega_cd.word_ram.buffer[mega_cd.rotation.stamp_map_address * 2 + stamp_map_index]);
-			const cc_u16f tile_index = stamp_metadata.stamp_index * 4;
+			const cc_u16f stamp_index = (stamp_metadata.stamp_index * 4) / TilesPerStamp(state);;
 
 			bool x_flip = false, y_flip = false, swap_coordinates = false;
 			switch (stamp_metadata.angle)
@@ -486,8 +568,8 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			else
 				x_flip ^= stamp_metadata.horizontal_flip;
 
-			const VDP_TileMetadata tile_metadata = {.tile_index = tile_index, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
-			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, TotalStamps(state) * TilesPerStamp(state), [&](const cc_u16f word_index){return mega_cd.word_ram.buffer[word_index];}, pixels, pitch, x, y, StampDiameterInTiles(state), StampDiameterInTiles(state), false, brightness_index, swap_coordinates);
+			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
+			DrawPieceHardwareAccelerated(GetWindow().GetRenderer(), regenerating_pieces, tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), x, y, false, swap_coordinates);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -515,14 +597,16 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest"));
 	}
 
-	RegenerateTexturesIfNeeded([&](const unsigned int texture_index, Uint32* const pixels, const int pitch)
-	{
-		std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
+	RegenerateTexturesIfNeeded(
+		[&](const unsigned int texture_index, Uint32* const pixels, const int pitch)
+		{
+			std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
 
-		const Sprite sprite = GetSprite(vdp, texture_index);
+			const Sprite sprite = GetSprite(vdp, texture_index);
 
-		DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, sprite.cached.width, sprite.cached.height, true, 0);
-	});
+			DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, sprite.cached.width, sprite.cached.height, true, 0);
+		}
+	);
 }
 
 void DebugVDP::SpriteViewer::DisplayInternal()

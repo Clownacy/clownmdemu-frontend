@@ -15,7 +15,7 @@ namespace DebugVDP
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 
 	using ReadTileWord = std::function<cc_u16f(cc_u16f word_index)>;
-	using DrawMapPiece = std::function<void(Uint32 *pixels, int pitch, cc_u16f x, cc_u16f y)>;
+	using DrawMapPiece = std::function<void(SDL::Texture &texture, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
 	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)>;
 
@@ -44,6 +44,14 @@ namespace DebugVDP
 
 		void RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback, bool force_regenerate = false);
 	};
+
+	struct RegeneratingTexturesHardwareAccelerated : private RegeneratingTexturesBase
+	{
+		using RegeneratingTexturesBase::textures;
+
+		void RegenerateTexturesIfNeeded(SDL::Renderer &renderer, const std::function<void(unsigned int texture_index, SDL::Texture &texture)> &callback, bool force_regenerate = false);
+	};
+
 
 	struct RegeneratingPieces : public RegeneratingTextures
 	{
@@ -74,7 +82,7 @@ namespace DebugVDP
 			return texture_height;
 		}
 
-		SDL_Rect GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height);
+		SDL_Rect GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height) const;
 	};
 
 	struct RegeneratingTiles : public RegeneratingPieces
@@ -124,7 +132,7 @@ namespace DebugVDP
 	};
 
 	template<typename Derived>
-	class MapViewer : public WindowPopup<Derived>, protected RegeneratingTextures
+	class MapViewer : public WindowPopup<Derived>, protected RegeneratingTexturesHardwareAccelerated
 	{
 	private:
 		static constexpr Uint32 window_flags = 0;
@@ -155,6 +163,8 @@ namespace DebugVDP
 	private:
 		using Base = MapViewer<PlaneViewer>;
 
+		RegeneratingPieces regenerating_pieces;
+
 		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
 
 	public:
@@ -168,6 +178,8 @@ namespace DebugVDP
 	{
 	private:
 		using Base = MapViewer<StampMapViewer>;
+
+		RegeneratingPieces regenerating_pieces;
 
 		void DisplayInternal();
 
