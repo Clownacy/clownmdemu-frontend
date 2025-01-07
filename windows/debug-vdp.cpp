@@ -308,6 +308,15 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	}
 }
 
+SDL_Rect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height)
+{
+	const auto texture_width_in_tiles = texture_width / piece_width;
+	const auto piece_x = (piece_index % texture_width_in_tiles) * piece_width;
+	const auto piece_y = (piece_index / texture_width_in_tiles) * piece_height;
+
+	return {static_cast<int>(piece_x), static_cast<int>(piece_y), static_cast<int>(piece_width), static_cast<int>(piece_height)};
+}
+
 void DebugVDP::RegeneratingTiles::RegenerateIfNeeded(SDL::Renderer &renderer, const cc_u8f brightness_index, const cc_u8f palette_line_index, const bool force_regenerate)
 {
 	const auto &state = Frontend::emulator->CurrentState();
@@ -754,15 +763,17 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 			{
 				const std::size_t piece_index = (y * grid_display_region_width_in_pieces) + x;
 
-				const auto texture_size = ImVec2(regenerating_pieces.GetTextureWidth(), regenerating_pieces.GetTextureHeight());
-				const auto entry_size = ImVec2(piece_width, piece_height);
 				const auto position = ImVec2(x, y);
 
 				// Obtain texture coordinates for the current piece.
-				const std::size_t texture_width_in_tiles = regenerating_pieces.GetTextureWidth() / piece_width;
-				const auto current_piece_src = ImVec2(piece_index % texture_width_in_tiles, piece_index / texture_width_in_tiles) * entry_size;
-				const auto current_piece_uv0 = current_piece_src / texture_size;
-				const auto current_piece_uv1 = (current_piece_src + entry_size) / texture_size;
+				const auto texture_size = ImVec2(static_cast<float>(regenerating_pieces.GetTextureWidth()), static_cast<float>(regenerating_pieces.GetTextureHeight()));
+
+				const auto current_piece_rect = regenerating_pieces.GetPieceRect(piece_index, piece_width, piece_height);
+				const auto current_piece_position = ImVec2{static_cast<float>(current_piece_rect.x), static_cast<float>(current_piece_rect.y)};
+				const auto current_piece_size = ImVec2{static_cast<float>(current_piece_rect.w), static_cast<float>(current_piece_rect.h)};
+
+				const auto current_piece_uv0 = current_piece_position / texture_size;
+				const auto current_piece_uv1 = (current_piece_position + current_piece_size) / texture_size;
 
 				// Figure out where the tile goes in the viewer.
 				const auto current_piece_destination = position * destination_piece_size_and_padding;

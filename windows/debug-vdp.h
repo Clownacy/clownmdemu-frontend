@@ -73,6 +73,8 @@ namespace DebugVDP
 		{
 			return texture_height;
 		}
+
+		SDL_Rect GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height);
 	};
 
 	struct RegeneratingTiles : public RegeneratingPieces
