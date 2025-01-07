@@ -7,6 +7,7 @@
 #include "../sdl-wrapper.h"
 
 #include "../common/core/clowncommon/clowncommon.h"
+#include "../common/core/vdp.h"
 
 #include "common/window-popup.h"
 
@@ -82,7 +83,9 @@ namespace DebugVDP
 			return texture_height;
 		}
 
-		SDL_Rect GetPieceRect(const std::size_t piece_index, const cc_u8f piece_width, const cc_u8f piece_height) const;
+		SDL_Rect GetPieceRect(const std::size_t piece_index, cc_u8f piece_width, cc_u8f piece_height) const;
+
+		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, cc_u8f piece_width, cc_u8f piece_height, cc_u16f x, cc_u16f y, bool transparency, bool swap_coordinates = false);
 	};
 
 	struct RegeneratingTiles : public RegeneratingPieces

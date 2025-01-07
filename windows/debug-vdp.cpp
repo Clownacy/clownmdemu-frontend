@@ -193,47 +193,6 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 	}
 }
 
-// TODO: Make this a member method of RegeneratingPieces.
-static void DrawPieceHardwareAccelerated(SDL::Renderer &renderer, RegeneratingPieces &pieces, const VDP_TileMetadata piece_metadata, const cc_u8f piece_width, const cc_u8f piece_height, const cc_u16f x, const cc_u16f y, const bool transparency, const bool swap_coordinates = false)
-{
-	const auto piece_rect = pieces.GetPieceRect(piece_metadata.tile_index, piece_width, piece_height);
-	const auto destination_rect = SDL_Rect(x * piece_width, y * piece_height, piece_width, piece_height);
-
-	int flip = SDL_FLIP_NONE;
-	if (piece_metadata.x_flip)
-		flip ^= SDL_FLIP_HORIZONTAL;
-	if (piece_metadata.y_flip)
-		flip ^= SDL_FLIP_VERTICAL;
-
-	double angle = 0.0;
-	if (swap_coordinates)
-	{
-		angle -= 90.0;
-		flip ^= SDL_FLIP_HORIZONTAL;
-	}
-
-	SDL_RenderCopyEx(renderer, pieces.textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_RendererFlip>(flip));
-}
-
-static void DrawSpriteHardwareAccelerated(SDL::Renderer &renderer, RegeneratingPieces &tiles, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height, const bool transparency, const bool swap_coordinates = false)
-{
-	for (cc_u8f ix = 0; ix < width; ++ix)
-	{
-		const cc_u8f x_unswapped = tile_metadata.x_flip ? width - 1 - ix : ix;
-
-		for (cc_u8f iy = 0; iy < height; ++iy)
-		{
-			const cc_u8f y_unswapped = tile_metadata.y_flip ? height - 1 - iy : iy;
-
-			const cc_u8f tile_x = x * width + (swap_coordinates ? y_unswapped : x_unswapped);
-			const cc_u8f tile_y = y * height + (swap_coordinates ? x_unswapped : y_unswapped);
-
-			DrawPieceHardwareAccelerated(renderer, tiles, tile_metadata, tile_width, tile_height, tile_x, tile_y, transparency, swap_coordinates);
-			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
-		}
-	}
-}
-
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
 {
 	bool options_changed = false;
@@ -374,6 +333,27 @@ SDL_Rect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_inde
 	return SDL_Rect(piece_x, piece_y, piece_width, piece_height);
 }
 
+void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileMetadata piece_metadata, const cc_u8f piece_width, const cc_u8f piece_height, const cc_u16f x, const cc_u16f y, const bool transparency, const bool swap_coordinates)
+{
+	const auto piece_rect = GetPieceRect(piece_metadata.tile_index, piece_width, piece_height);
+	const auto destination_rect = SDL_Rect(x * piece_width, y * piece_height, piece_width, piece_height);
+
+	int flip = SDL_FLIP_NONE;
+	if (piece_metadata.x_flip)
+		flip ^= SDL_FLIP_HORIZONTAL;
+	if (piece_metadata.y_flip)
+		flip ^= SDL_FLIP_VERTICAL;
+
+	double angle = 0.0;
+	if (swap_coordinates)
+	{
+		angle -= 90.0;
+		flip ^= SDL_FLIP_HORIZONTAL;
+	}
+
+	SDL_RenderCopyEx(renderer, textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_RendererFlip>(flip));
+}
+
 void DebugVDP::RegeneratingTiles::RegenerateIfNeeded(SDL::Renderer &renderer, const cc_u8f brightness_index, const cc_u8f palette_line_index, const bool force_regenerate)
 {
 	const auto &state = Frontend::emulator->CurrentState();
@@ -484,7 +464,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const c
 			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
 			const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
 			const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
-			DrawPieceHardwareAccelerated(GetWindow().GetRenderer(), regenerating_pieces, tile_metadata, TileWidth(), TileHeight(vdp), x, y, false, brightness);
+			regenerating_pieces.Draw(GetWindow().GetRenderer(), tile_metadata, TileWidth(), TileHeight(vdp), x, y, false, brightness);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -569,7 +549,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 				x_flip ^= stamp_metadata.horizontal_flip;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
-			DrawPieceHardwareAccelerated(GetWindow().GetRenderer(), regenerating_pieces, tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), x, y, false, swap_coordinates);
+			regenerating_pieces.Draw(GetWindow().GetRenderer(), tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), x, y, false, swap_coordinates);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
