@@ -310,14 +310,14 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
 		{
 			// Generate VRAM bitmap.
-			cc_u16f entry_index = 0;
+			cc_u16f piece_index = 0;
 
 			for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
 			{
 				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
 				{
 					Uint32* const piece_pixels = pixels + y * piece_height * pitch + x * piece_width;
-					render_piece_callback(entry_index++, brightness_index, palette_line_index, piece_pixels, pitch);
+					render_piece_callback(piece_index++, brightness_index, palette_line_index, piece_pixels, pitch);
 				}
 			}
 		}, force_regenerate);
@@ -856,18 +856,18 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	constexpr cc_u16f entry_width = TileWidth();
-	const cc_u16f entry_height = TileHeight(vdp);
-	const std::size_t total_entries = VRAMSizeInTiles(vdp);
-	const std::size_t entry_buffer_size_in_pixels = std::size(vdp.vram) * 2;
+	constexpr cc_u16f piece_width = TileWidth();
+	const cc_u16f piece_height = TileHeight(vdp);
+	const std::size_t total_pieces = VRAMSizeInTiles(vdp);
+	const std::size_t piece_buffer_size_in_pixels = std::size(vdp.vram) * 2;
 
-	DisplayGrid(entry_width, entry_height, total_entries, tile_width, tile_height_double_resolution, entry_buffer_size_in_pixels,
-		[&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+	DisplayGrid(piece_width, piece_height, total_pieces, tile_width, tile_height_double_resolution, piece_buffer_size_in_pixels,
+		[&](const cc_u16f piece_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
 		{
-			if (entry_index >= VRAMSizeInTiles(vdp))
+			if (piece_index >= VRAMSizeInTiles(vdp))
 				return;
 
-			const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			const VDP_TileMetadata tile_metadata = {.tile_index = piece_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
 			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
 		}
 	, "Tile", "Tiles");
@@ -877,21 +877,21 @@ void DebugVDP::StampViewer::DisplayInternal()
 {
 	const auto &state = Frontend::emulator->CurrentState();
 
-	constexpr cc_u8f maximum_entry_diameter_in_tiles = maximum_stamp_diameter_in_tiles;
-	const cc_u8f entry_diameter_in_tiles = StampDiameterInTiles(state);
-	const cc_u16f entry_width_in_pixels = entry_diameter_in_tiles * tile_width;
-	const cc_u16f entry_height_in_pixels = entry_diameter_in_tiles * tile_height_normal;
+	constexpr cc_u8f maximum_piece_diameter_in_tiles = maximum_stamp_diameter_in_tiles;
+	const cc_u8f piece_diameter_in_tiles = StampDiameterInTiles(state);
+	const cc_u16f piece_width_in_pixels = piece_diameter_in_tiles * tile_width;
+	const cc_u16f piece_height_in_pixels = piece_diameter_in_tiles * tile_height_normal;
 	const cc_u16f tiles_per_stamp = TilesPerStamp(state);
-	const std::size_t total_entries = TotalStamps(state);
-	const std::size_t entry_buffer_size_in_pixels = total_entries * entry_width_in_pixels * entry_height_in_pixels;
+	const std::size_t total_pieces = TotalStamps(state);
+	const std::size_t piece_buffer_size_in_pixels = total_pieces * piece_width_in_pixels * piece_height_in_pixels;
 
-	DisplayGrid(entry_width_in_pixels, entry_height_in_pixels, total_entries, maximum_entry_diameter_in_tiles * tile_width, maximum_entry_diameter_in_tiles * tile_height_normal, entry_buffer_size_in_pixels, [&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+	DisplayGrid(piece_width_in_pixels, piece_height_in_pixels, total_pieces, maximum_piece_diameter_in_tiles * tile_width, maximum_piece_diameter_in_tiles * tile_height_normal, piece_buffer_size_in_pixels, [&](const cc_u16f piece_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
 	{
-		if (entry_index >= total_entries)
+		if (piece_index >= total_pieces)
 			return;
 
-		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_entries * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, entry_diameter_in_tiles, entry_diameter_in_tiles, false, brightness);
+		const VDP_TileMetadata tile_metadata = {.tile_index = piece_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, piece_diameter_in_tiles, piece_diameter_in_tiles, false, brightness);
 	}, "Stamp", "Stamps");
 }
 
