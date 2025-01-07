@@ -1,3 +1,6 @@
+// TODO: Make stamp debuggers ignore stamp 0; it is always blank on real hardware!
+// TODO: Make stamp debuggers properly mask the addresses.
+
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "debug-vdp.h"
@@ -222,7 +225,7 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 	return options_changed;
 }
 
-void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback, const bool force_regenerate)
+void DebugVDP::RegeneratingTexturesBase::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, SDL::Texture &texture)> &callback, const bool force_regenerate)
 {
 	// Only update the texture if we know that the frame has changed.
 	// This prevents constant texture generation even when the emulator is paused.
@@ -231,18 +234,99 @@ void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::funct
 		cache_frame_counter = Frontend::frame_counter;
 
 		for (std::size_t i = 0; i < std::size(textures); ++i)
+			callback(i, textures[i]);
+	}
+}
+
+void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback, const bool force_regenerate)
+{
+	RegeneratingTexturesBase::RegenerateTexturesIfNeeded(
+		[&](const unsigned int texture_index, SDL::Texture &texture)
 		{
 			// Lock texture so that we can write into it.
 			Uint32 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
-			if (SDL_LockTexture(textures[i], nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
 			{
-				callback(i, sprite_texture_pixels, sprite_texture_pitch / sizeof(*sprite_texture_pixels));
-				SDL_UnlockTexture(textures[i]);
+				callback(texture_index, sprite_texture_pixels, sprite_texture_pitch / sizeof(*sprite_texture_pixels));
+				SDL_UnlockTexture(texture);
 			}
-		}
+		},
+		force_regenerate
+	);
+}
+
+void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
+	SDL::Renderer &renderer,
+	const cc_u8f piece_width,
+	const cc_u8f piece_height,
+	const cc_u8f maximum_piece_width,
+	const cc_u8f maximum_piece_height,
+	const std::size_t piece_buffer_size_in_pixels,
+	const cc_u8f brightness_index,
+	const cc_u8f palette_line_index,
+	const RenderPiece &render_piece_callback,
+	const bool force_regenerate)
+{
+	// Create VRAM texture if it does not exist.
+	// TODO: Move this to the constructor.
+	if (textures.empty())
+	{
+		// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
+		const std::size_t texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(piece_buffer_size_in_pixels))));
+		const std::size_t texture_width_rounded_up = (texture_width_in_progress + (maximum_piece_width - 1)) / maximum_piece_width * maximum_piece_width;
+		const std::size_t texture_height_in_progress = (piece_buffer_size_in_pixels + (texture_width_rounded_up - 1)) / texture_width_rounded_up;
+		const std::size_t texture_height_rounded_up = (texture_height_in_progress + (maximum_piece_height - 1)) / maximum_piece_height * maximum_piece_height;
+
+		texture_width = texture_width_rounded_up;
+		texture_height = texture_height_rounded_up;
+
+		textures.emplace_back(SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest"));
 	}
+
+	if (!textures.empty())
+	{
+		// Set up some variables that we're going to need soon.
+		const std::size_t vram_texture_width_in_tiles = texture_width / piece_width;
+		const std::size_t vram_texture_height_in_tiles = texture_height / piece_height;
+
+		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
+		{
+			// Generate VRAM bitmap.
+			cc_u16f entry_index = 0;
+
+			for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
+			{
+				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+				{
+					Uint32* const piece_pixels = pixels + y * piece_height * pitch + x * piece_width;
+					render_piece_callback(entry_index++, brightness_index, palette_line_index, piece_pixels, pitch);
+				}
+			}
+		}, force_regenerate);
+	}
+}
+
+void DebugVDP::RegeneratingTiles::RegenerateIfNeeded(SDL::Renderer &renderer, const cc_u8f brightness_index, const cc_u8f palette_line_index, const bool force_regenerate)
+{
+	const auto &state = Frontend::emulator->CurrentState();
+	const auto &vdp = state.clownmdemu.vdp;
+
+	const auto tile_width = TileWidth();
+	const auto tile_height = TileHeight(vdp);
+
+	RegeneratingPieces::RegenerateIfNeeded(renderer, tile_width, tile_height, tile_width, tile_height_double_resolution, std::size(vdp.vram) * pixels_per_byte, brightness_index, palette_line_index,
+		[&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+		{
+			if (entry_index >= VRAMSizeInTiles(vdp))
+				return;
+
+			const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
+		},
+		force_regenerate
+	);
 }
 
 template<typename Derived>
@@ -637,116 +721,80 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
 #endif
 
-	const auto &state = Frontend::emulator->CurrentState();
+	const bool options_changed = DisplayBrightnessAndPaletteLineSettings();
 
-	// Create VRAM texture if it does not exist.
-	if (textures.empty())
+	ImGui::SeparatorText(label_plural);
+
+	regenerating_pieces.RegenerateIfNeeded(derived->GetWindow().GetRenderer(), piece_width, piece_height, maximum_piece_width, maximum_piece_height, piece_buffer_size_in_pixels, brightness_index, palette_line_index, render_piece_callback, options_changed);
+
+	// Actually display the VRAM now.
+	ImGui::BeginChild("VRAM contents");
+
+	const auto destination_piece_size = ImVec2(piece_width, piece_height) * tile_scale;
+	const auto padding = ImVec2(tile_spacing, tile_spacing);
+	const auto destination_piece_size_and_padding = padding + destination_piece_size + padding;
+
+	// Calculate the size of the grid display region.
+	const std::size_t grid_display_region_width_in_pieces = static_cast<std::size_t>(ImGui::GetContentRegionAvail().x / destination_piece_size_and_padding.x);
+
+	const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
+	const bool window_is_hovered = ImGui::IsWindowHovered();
+
+	// Draw the list of tiles.
+	ImDrawList* const draw_list = ImGui::GetWindowDrawList();
+
+	// Here we use a clipper so that we only render the tiles that we can actually see.
+	ImGuiListClipper clipper;
+	clipper.Begin(CC_DIVIDE_CEILING(total_pieces, grid_display_region_width_in_pieces), destination_piece_size_and_padding.y);
+	while (clipper.Step())
 	{
-		// Create a square-ish texture that's big enough to hold all tiles, in both 8x8 and 8x16 form.
-		const std::size_t texture_width_in_progress = static_cast<std::size_t>(SDL_ceilf(SDL_sqrtf(static_cast<float>(piece_buffer_size_in_pixels))));
-		const std::size_t texture_width_rounded_up = (texture_width_in_progress + (maximum_piece_width - 1)) / maximum_piece_width * maximum_piece_width;
-		const std::size_t texture_height_in_progress = (piece_buffer_size_in_pixels + (texture_width_rounded_up - 1)) / texture_width_rounded_up;
-		const std::size_t texture_height_rounded_up = (texture_height_in_progress + (maximum_piece_height - 1)) / maximum_piece_height * maximum_piece_height;
-
-		texture_width = texture_width_rounded_up;
-		texture_height = texture_height_rounded_up;
-
-		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest"));
-	}
-
-	if (!textures.empty())
-	{
-		const bool options_changed = DisplayBrightnessAndPaletteLineSettings();
-
-		ImGui::SeparatorText(label_plural);
-
-		// Set up some variables that we're going to need soon.
-		const std::size_t vram_texture_width_in_tiles = texture_width / piece_width;
-		const std::size_t vram_texture_height_in_tiles = texture_height / piece_height;
-
-		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, Uint32* const pixels, const int pitch)
+		for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
 		{
-			// Generate VRAM bitmap.
-			cc_u16f entry_index = 0;
-
-			for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
+			for (std::size_t x = 0; x < std::min(grid_display_region_width_in_pieces, total_pieces - (y * grid_display_region_width_in_pieces)); ++x)
 			{
-				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+				const std::size_t piece_index = (y * grid_display_region_width_in_pieces) + x;
+
+				const auto texture_size = ImVec2(regenerating_pieces.GetTextureWidth(), regenerating_pieces.GetTextureHeight());
+				const auto entry_size = ImVec2(piece_width, piece_height);
+				const auto position = ImVec2(x, y);
+
+				// Obtain texture coordinates for the current piece.
+				const std::size_t texture_width_in_tiles = regenerating_pieces.GetTextureWidth() / piece_width;
+				const auto current_piece_src = ImVec2(piece_index % texture_width_in_tiles, piece_index / texture_width_in_tiles) * entry_size;
+				const auto current_piece_uv0 = current_piece_src / texture_size;
+				const auto current_piece_uv1 = (current_piece_src + entry_size) / texture_size;
+
+				// Figure out where the tile goes in the viewer.
+				const auto current_piece_destination = position * destination_piece_size_and_padding;
+				const auto piece_boundary_position_top_left = canvas_position + current_piece_destination;
+				const auto piece_boundary_position_bottom_right = piece_boundary_position_top_left + destination_piece_size_and_padding;
+				const auto piece_position_top_left = piece_boundary_position_top_left + padding;
+				const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
+
+				// Finally, display the tile.
+				draw_list->AddImage(regenerating_pieces.textures[0], piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
+
+				if (window_is_hovered && ImGui::IsMouseHoveringRect(piece_boundary_position_top_left, piece_boundary_position_bottom_right))
 				{
-					Uint32* const piece_pixels = pixels + y * piece_height * pitch + x * piece_width;
-					render_piece_callback(entry_index++, brightness_index, palette_line_index, piece_pixels, pitch);
-				}
-			}
-		}, options_changed);
+					ImGui::BeginTooltip();
 
-		// Actually display the VRAM now.
-		ImGui::BeginChild("VRAM contents");
+					// Display the tile's index.
+					const auto bytes_per_piece = PixelsToBytes(piece_width * piece_height);
+					ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, piece_index, piece_index * bytes_per_piece);
 
-		const auto destination_piece_size = ImVec2(piece_width, piece_height) * tile_scale;
-		const auto padding = ImVec2(tile_spacing, tile_spacing);
-		const auto destination_piece_size_and_padding = padding + destination_piece_size + padding;
-
-		// Calculate the size of the grid display region.
-		const std::size_t grid_display_region_width_in_pieces = static_cast<std::size_t>(ImGui::GetContentRegionAvail().x / destination_piece_size_and_padding.x);
-
-		const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
-		const bool window_is_hovered = ImGui::IsWindowHovered();
-
-		// Draw the list of tiles.
-		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
-
-		// Here we use a clipper so that we only render the tiles that we can actually see.
-		ImGuiListClipper clipper;
-		clipper.Begin(CC_DIVIDE_CEILING(total_pieces, grid_display_region_width_in_pieces), destination_piece_size_and_padding.y);
-		while (clipper.Step())
-		{
-			for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
-			{
-				for (std::size_t x = 0; x < std::min(grid_display_region_width_in_pieces, total_pieces - (y * grid_display_region_width_in_pieces)); ++x)
-				{
-					const std::size_t piece_index = (y * grid_display_region_width_in_pieces) + x;
-
-					const auto texture_size = ImVec2(texture_width, texture_height);
-					const auto entry_size = ImVec2(piece_width, piece_height);
-					const auto position = ImVec2(x, y);
-
-					// Obtain texture coordinates for the current piece.
-					const auto current_piece_src = ImVec2(piece_index % vram_texture_width_in_tiles, piece_index / vram_texture_width_in_tiles) * entry_size;
-					const auto current_piece_uv0 = current_piece_src / texture_size;
-					const auto current_piece_uv1 = (current_piece_src + entry_size) / texture_size;
-
-					// Figure out where the tile goes in the viewer.
-					const auto current_piece_destination = position * destination_piece_size_and_padding;
-					const auto piece_boundary_position_top_left = canvas_position + current_piece_destination;
-					const auto piece_boundary_position_bottom_right = piece_boundary_position_top_left + destination_piece_size_and_padding;
-					const auto piece_position_top_left = piece_boundary_position_top_left + padding;
-					const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
-
-					// Finally, display the tile.
-					draw_list->AddImage(textures[0], piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
-
-					if (window_is_hovered && ImGui::IsMouseHoveringRect(piece_boundary_position_top_left, piece_boundary_position_bottom_right))
+					if (destination_piece_size.x < 16 || destination_piece_size.y < 16)
 					{
-						ImGui::BeginTooltip();
-
-						// Display the tile's index.
-						const auto bytes_per_piece = PixelsToBytes(piece_width * piece_height);
-						ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, piece_index, piece_index * bytes_per_piece);
-
-						if (destination_piece_size.x < 16 || destination_piece_size.y < 16)
-						{
-							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-							ImGui::Image(textures[0], ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
-						}
-
-						ImGui::EndTooltip();
+						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
+						ImGui::Image(regenerating_pieces.textures[0], ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
 					}
+
+					ImGui::EndTooltip();
 				}
 			}
 		}
-
-		ImGui::EndChild();
 	}
+
+	ImGui::EndChild();
 }
 
 void DebugVDP::VRAMViewer::DisplayInternal()
@@ -759,20 +807,21 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	const std::size_t total_entries = VRAMSizeInTiles(vdp);
 	const std::size_t entry_buffer_size_in_pixels = std::size(vdp.vram) * 2;
 
-	DisplayGrid(entry_width, entry_height, total_entries, tile_width, tile_height_double_resolution, entry_buffer_size_in_pixels, [&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
-	{
-		if (entry_index >= VRAMSizeInTiles(vdp))
-			return;
+	DisplayGrid(entry_width, entry_height, total_entries, tile_width, tile_height_double_resolution, entry_buffer_size_in_pixels,
+		[&](const cc_u16f entry_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+		{
+			if (entry_index >= VRAMSizeInTiles(vdp))
+				return;
 
-		const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
-	}, "Tile", "Tiles");
+			const VDP_TileMetadata tile_metadata = {.tile_index = entry_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
+		}
+	, "Tile", "Tiles");
 }
 
 void DebugVDP::StampViewer::DisplayInternal()
 {
 	const auto &state = Frontend::emulator->CurrentState();
-	const auto &rotation = state.clownmdemu.mega_cd.rotation;
 
 	constexpr cc_u8f maximum_entry_diameter_in_tiles = maximum_stamp_diameter_in_tiles;
 	const cc_u8f entry_diameter_in_tiles = StampDiameterInTiles(state);
