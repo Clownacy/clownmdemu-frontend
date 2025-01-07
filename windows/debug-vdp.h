@@ -142,13 +142,13 @@ namespace DebugVDP
 
 	protected:
 		void DisplayGrid(
-			cc_u16f entry_width,
-			cc_u16f entry_height,
-			std::size_t total_entries,
-			cc_u16f maximum_entry_width,
-			cc_u16f maximum_entry_height,
-			std::size_t entry_buffer_size_in_pixels,
-			const std::function<void(cc_u16f entry_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)> &render_entry_callback,
+			cc_u16f piece_width,
+			cc_u16f piece_height,
+			std::size_t total_pieces,
+			cc_u16f maximum_piece_width,
+			cc_u16f maximum_piece_height,
+			std::size_t piece_buffer_size_in_pixels,
+			const std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)> &render_piece_callback,
 			const char *label_singular,
 			const char *label_plural);
 
