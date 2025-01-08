@@ -16,7 +16,7 @@ namespace DebugVDP
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 
 	using ReadTileWord = std::function<cc_u16f(cc_u16f word_index)>;
-	using DrawMapPiece = std::function<void(SDL::Texture &texture, cc_u16f x, cc_u16f y)>;
+	using DrawMapPiece = std::function<void(SDL::Renderer &renderer, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
 	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)>;
 
@@ -50,7 +50,7 @@ namespace DebugVDP
 	{
 		using RegeneratingTexturesBase::textures;
 
-		void RegenerateTexturesIfNeeded(SDL::Renderer &renderer, const std::function<void(unsigned int texture_index, SDL::Texture &texture)> &callback, bool force_regenerate = false);
+		void RegenerateTexturesIfNeeded(SDL::Renderer &renderer, const std::function<void(SDL::Renderer &renderer, unsigned int texture_index)> &callback, bool force_regenerate = false);
 	};
 
 
@@ -64,13 +64,11 @@ namespace DebugVDP
 	public:
 		void RegenerateIfNeeded(
 			SDL::Renderer &renderer,
-			cc_u8f piece_width,
-			cc_u8f piece_height,
-			cc_u8f maximum_piece_width,
-			cc_u8f maximum_piece_height,
+			std::size_t piece_width,
+			std::size_t piece_height,
+			std::size_t maximum_piece_width,
+			std::size_t maximum_piece_height,
 			std::size_t piece_buffer_size_in_pixels,
-			cc_u8f brightness_index,
-			cc_u8f palette_line_index,
 			const RenderPiece &render_piece_callback,
 			bool force_regenerate = false);
 
@@ -84,9 +82,9 @@ namespace DebugVDP
 			return texture_height;
 		}
 
-		SDL_Rect GetPieceRect(const std::size_t piece_index, cc_u8f piece_width, cc_u8f piece_height, cc_u8f palette_line_index) const;
+		SDL_Rect GetPieceRect(const std::size_t piece_index, std::size_t piece_width, std::size_t piece_height, cc_u8f palette_line_index) const;
 
-		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, cc_u8f piece_width, cc_u8f piece_height, cc_u16f x, cc_u16f y, cc_u8f brightness_index, bool transparency, bool swap_coordinates = false);
+		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, std::size_t piece_width, std::size_t piece_height, cc_u16f x, cc_u16f y, cc_u8f brightness_index, bool transparency, bool swap_coordinates = false);
 	};
 
 	struct SpriteCommon : protected RegeneratingTextures
@@ -138,12 +136,12 @@ namespace DebugVDP
 
 	protected:
 		void DisplayMap(
-			cc_u16f map_width_in_pieces,
-			cc_u16f map_height_in_pieces,
-			cc_u16f maximum_map_width_in_pixels,
-			cc_u16f maximum_map_height_in_pixels,
-			cc_u8f piece_width,
-			cc_u8f piece_height,
+			std::size_t map_width_in_pieces,
+			std::size_t map_height_in_pieces,
+			std::size_t maximum_map_width_in_pixels,
+			std::size_t maximum_map_height_in_pixels,
+			std::size_t piece_width,
+			std::size_t piece_height,
 			const DrawMapPiece &draw_piece,
 			const MapPieceTooltip &piece_tooltip,
 			bool force_regenerate = false);
@@ -162,7 +160,7 @@ namespace DebugVDP
 
 		RegeneratingPieces regenerating_pieces;
 
-		void DisplayInternal(cc_u16l plane_address, cc_u16l plane_width, cc_u16l plane_height);
+		void DisplayInternal(cc_u16l plane_address, std::size_t plane_width, std::size_t plane_height);
 
 	public:
 		using Base::MapViewer;
@@ -197,11 +195,11 @@ namespace DebugVDP
 		RegeneratingPieces regenerating_pieces;
 
 		void DisplayGrid(
-			cc_u16f piece_width,
-			cc_u16f piece_height,
+			std::size_t piece_width,
+			std::size_t piece_height,
 			std::size_t total_pieces,
-			cc_u16f maximum_piece_width,
-			cc_u16f maximum_piece_height,
+			std::size_t maximum_piece_width,
+			std::size_t maximum_piece_height,
 			std::size_t piece_buffer_size_in_pixels,
 			const RenderPiece &render_piece_callback,
 			const char *label_singular,
