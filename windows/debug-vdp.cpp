@@ -95,6 +95,7 @@ static std::size_t TotalStamps(const EmulatorInstance::State &state)
 }
 
 static constexpr std::size_t maximum_stamp_map_diameter_in_pixels = 4096;
+static constexpr std::size_t maximum_stamp_map_size_in_pixels = maximum_stamp_map_diameter_in_pixels * maximum_stamp_map_diameter_in_pixels;
 
 static std::size_t StampMapDiameterInPixels(const EmulatorInstance::State &state)
 {
@@ -489,9 +490,8 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 	const auto total_stamps = TotalStamps(state);
 	const auto tiles_per_stamp = TilesPerStamp(state);
 	const auto stamp_diameter_in_tiles = StampDiameterInTiles(state);
-	const auto stamp_buffer_size_in_pixels = total_stamps * StampWidthInPixels(state) * StampHeightInPixels(state);
 
-	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), StampWidthInPixels(state), StampHeightInPixels(state), maximum_stamp_width_in_pixels, maximum_stamp_height_in_pixels, stamp_buffer_size_in_pixels,
+	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), StampWidthInPixels(state), StampHeightInPixels(state), maximum_stamp_width_in_pixels, maximum_stamp_height_in_pixels, maximum_stamp_map_size_in_pixels,
 		[&](const cc_u16f stamp_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
 		{
 			if (stamp_index >= total_stamps)
@@ -539,7 +539,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 				x_flip ^= stamp_metadata.horizontal_flip;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
-			regenerating_pieces.Draw(renderer, tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), stamp_buffer_size_in_pixels, x, y, brightness_index, false, swap_coordinates);
+			regenerating_pieces.Draw(renderer, tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), maximum_stamp_map_size_in_pixels, x, y, brightness_index, false, swap_coordinates);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -894,9 +894,8 @@ void DebugVDP::StampViewer::DisplayInternal()
 	const auto piece_height_in_pixels = piece_diameter_in_tiles * tile_height_normal;
 	const auto tiles_per_stamp = TilesPerStamp(state);
 	const auto total_pieces = TotalStamps(state);
-	const auto piece_buffer_size_in_pixels = total_pieces * piece_width_in_pixels * piece_height_in_pixels;
 
-	DisplayGrid(piece_width_in_pixels, piece_height_in_pixels, total_pieces, maximum_piece_diameter_in_tiles * tile_width, maximum_piece_diameter_in_tiles * tile_height_normal, piece_buffer_size_in_pixels, [&](const cc_u16f piece_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
+	DisplayGrid(piece_width_in_pixels, piece_height_in_pixels, total_pieces, maximum_piece_diameter_in_tiles * tile_width, maximum_piece_diameter_in_tiles * tile_height_normal, maximum_stamp_map_size_in_pixels, [&](const cc_u16f piece_index, const cc_u8f brightness, const cc_u8f palette_line, Uint32* const pixels, const int pitch)
 	{
 		if (piece_index >= total_pieces)
 			return;
