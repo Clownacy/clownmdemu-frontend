@@ -59,7 +59,6 @@ namespace DebugVDP
 	protected:
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
-		std::size_t total_pieces = 0;
 
 	public:
 		void RegenerateIfNeeded(
@@ -82,9 +81,9 @@ namespace DebugVDP
 			return texture_height;
 		}
 
-		SDL_Rect GetPieceRect(const std::size_t piece_index, std::size_t piece_width, std::size_t piece_height, cc_u8f palette_line_index) const;
+		SDL_Rect GetPieceRect(const std::size_t piece_index, std::size_t piece_width, std::size_t piece_height, std::size_t piece_buffer_size_in_pixels, cc_u8f palette_line_index) const;
 
-		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, std::size_t piece_width, std::size_t piece_height, cc_u16f x, cc_u16f y, cc_u8f brightness_index, bool transparency, bool swap_coordinates = false);
+		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, std::size_t piece_width, std::size_t piece_height, std::size_t piece_buffer_size_in_pixels, cc_u16f x, cc_u16f y, cc_u8f brightness_index, bool transparency, bool swap_coordinates = false);
 	};
 
 	struct SpriteCommon : protected RegeneratingTextures
