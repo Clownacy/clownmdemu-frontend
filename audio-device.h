@@ -1,6 +1,8 @@
 #ifndef AUDIO_DEVICE_H
 #define AUDIO_DEVICE_H
 
+#include <cstddef>
+
 #include "SDL.h"
 
 #include "common/core/clowncommon/clowncommon.h"
@@ -9,7 +11,7 @@ class AudioDevice
 {
 private:
 	const cc_u8f channels;
-	const cc_s32f SIZE_OF_FRAME = channels * sizeof(cc_s16l);
+	const std::size_t SIZE_OF_FRAME = channels * sizeof(cc_s16l);
 
 	SDL_AudioDeviceID device;
 
