@@ -325,11 +325,11 @@ private:
 
 	void DisplayInternal()
 	{
+		const auto monospace_font = GetMonospaceFont();
+		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
+
 		if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
 		{
-			const auto monospace_font = GetMonospaceFont();
-			const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
-
 			ImGui::TableSetupColumn("Property");
 			ImGui::TableSetupColumn("Value");
 			ImGui::TableHeadersRow();
@@ -450,6 +450,24 @@ private:
 
 			ImGui::EndTable();
 		}
+
+		Popup_DoTable("Graphics Transformation",
+			[&]()
+			{
+				const auto &graphics = clownmdemu_state.mega_cd.rotation;
+				Popup_DoProperty(nullptr, "Stamp Size", "{} pixels", graphics.large_stamp ? "32x32" : "16x16");
+				Popup_DoProperty(nullptr, "Stamp Map Size", "{} pixels", graphics.large_stamp_map ? "4096x4096" : "256x256");
+				Popup_DoProperty(nullptr, "Repeating Stamp Map", "{}", graphics.repeating_stamp_map ? "Yes" : "No");
+				Popup_DoProperty(nullptr, "Stamp Map Address", "0x{:X}", graphics.stamp_map_address * 4);
+				Popup_DoProperty(nullptr, "Image Buffer Height in Tiles", "{}", graphics.image_buffer_height_in_tiles + 1);
+				Popup_DoProperty(nullptr, "Image Buffer Address", "0x{:X}", graphics.image_buffer_address * 4);
+				Popup_DoProperty(nullptr, "Image Buffer X Offset", "{}", graphics.image_buffer_x_offset);
+				Popup_DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
+				Popup_DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
+				Popup_DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
+				Popup_DoProperty(nullptr, "Trace Table Address", "0x{:X}", graphics.trace_table_address * 4);
+			}
+		);
 	}
 
 public:
