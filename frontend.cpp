@@ -465,7 +465,6 @@ private:
 				Popup_DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
 				Popup_DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
 				Popup_DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
-				Popup_DoProperty(nullptr, "Trace Table Address", "0x{:X}", graphics.trace_table_address * 4);
 			}
 		);
 	}
