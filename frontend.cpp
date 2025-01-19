@@ -675,12 +675,13 @@ private:
 		}
 	#endif
 
+	#ifndef __EMSCRIPTEN__
 		ImGui::SeparatorText("Experimental");
 		bool native_windows = !dear_imgui_windows;
 		if (ImGui::Checkbox("Native Windows", &native_windows))
 			dear_imgui_windows = !dear_imgui_windows;
 		DoToolTip(u8"Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
-
+	#endif
 
 		ImGui::SeparatorText("Keyboard Input");
 
@@ -1346,8 +1347,10 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			integer_screen_scaling = state;
 		else if (name == u8"tall-interlace-mode-2")
 			tall_double_resolution_mode = state;
+	#ifndef __EMSCRIPTEN__
 		else if (name == u8"dear-imgui-windows")
 			dear_imgui_windows = state;
+	#endif
 		else if (name == u8"low-pass-filter")
 			emulator->SetLowPassFilter(state);
 		else if (name == u8"low-volume-distortion")
@@ -1576,7 +1579,9 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
+	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "dear-imgui-windows", dear_imgui_windows);
+	#endif
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
