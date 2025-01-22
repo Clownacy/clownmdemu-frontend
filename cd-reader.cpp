@@ -20,27 +20,33 @@ void* CDReader::FileOpenCallback(const char* const filename, const ClownCD_FileM
 			return nullptr;
 	}
 
-	return SDL_RWFromFile(filename, mode_string);
+	return SDL_IOFromFile(filename, mode_string);
 }
 
 int CDReader::FileCloseCallback(void* const stream)
 {
-	return SDL_RWclose(static_cast<SDL_RWops*>(stream));
+	return SDL_CloseIO(static_cast<SDL_IOStream*>(stream));
 }
 
 std::size_t CDReader::FileReadCallback(void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	return SDL_RWread(static_cast<SDL_RWops*>(stream), buffer, size, count);
+	if (size == 0 || count == 0)
+		return 0;
+
+	return SDL_ReadIO(static_cast<SDL_IOStream*>(stream), buffer, size * count) / size;
 }
 
 std::size_t CDReader::FileWriteCallback(const void* const buffer, const std::size_t size, const std::size_t count, void* const stream)
 {
-	return SDL_RWwrite(static_cast<SDL_RWops*>(stream), buffer, size, count);
+	if (size == 0 || count == 0)
+		return 0;
+
+	return SDL_WriteIO(static_cast<SDL_IOStream*>(stream), buffer, size * count) / size;
 }
 
 long CDReader::FileTellCallback(void* const stream)
 {
-	const auto position = SDL_RWtell(static_cast<SDL_RWops*>(stream));
+	const auto position = SDL_TellIO(static_cast<SDL_IOStream*>(stream));
 
 	if (position < LONG_MIN || position > LONG_MAX)
 		return -1L;
@@ -50,25 +56,25 @@ long CDReader::FileTellCallback(void* const stream)
 
 int CDReader::FileSeekCallback(void* const stream, const long position, const ClownCD_FileOrigin origin)
 {
-	int whence;
+	SDL_IOWhence whence;
 
 	switch (origin)
 	{
 		case CLOWNCD_SEEK_SET:
-			whence = RW_SEEK_SET;
+			whence = SDL_IO_SEEK_SET;
 			break;
 
 		case CLOWNCD_SEEK_CUR:
-			whence = RW_SEEK_CUR;
+			whence = SDL_IO_SEEK_CUR;
 			break;
 
 		case CLOWNCD_SEEK_END:
-			whence = RW_SEEK_END;
+			whence = SDL_IO_SEEK_END;
 			break;
 
 		default:
 			return -1;
 	}
 
-	return SDL_RWseek(static_cast<SDL_RWops*>(stream), position, whence) == -1 ? -1 : 0;
+	return SDL_SeekIO(static_cast<SDL_IOStream*>(stream), position, whence) == -1 ? -1 : 0;
 }

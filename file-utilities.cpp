@@ -1,19 +1,7 @@
 #include "file-utilities.h"
 
-#include <array>
 #include <climits>
 #include <vector>
-
-#ifdef _WIN32
-#include <memory>
-#include <windows.h>
-#include "SDL_syswm.h"
-#elif defined(FILE_PICKER_POSIX)
-#include <cstdio>
-#include <sys/wait.h>
-
-#include <fmt/core.h>
-#endif
 
 #ifdef __EMSCRIPTEN__
 #include "libraries/emscripten-browser-file/emscripten_browser_file.h"
@@ -22,179 +10,46 @@
 
 #include "common/core/clowncommon/clowncommon.h"
 
-#ifdef _WIN32
-// Adapted from SDL2.
-#define StringToUTF8W(S) SDL::Pointer<char>(SDL_iconv_string("UTF-8", "UTF-16LE", reinterpret_cast<const char*>(S), (SDL_wcslen(S) + 1) * sizeof(WCHAR)))
-#define UTF8ToStringW(S) SDL::Pointer<WCHAR>(reinterpret_cast<WCHAR*>(SDL_iconv_string("UTF-16LE", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1)))
-#define StringToUTF8A(S) SDL::Pointer<char>(SDL_iconv_string("UTF-8", "ASCII", reinterpret_cast<const char*>(S), (SDL_strlen(S) + 1)))
-#define UTF8ToStringA(S) SDL::Pointer<char>(SDL_iconv_string("ASCII", "UTF-8", reinterpret_cast<const char*>(S), SDL_strlen(S) + 1))
-#ifdef UNICODE
-#define StringToUTF8 StringToUTF8W
-#define UTF8ToString UTF8ToStringW
-#else
-#define StringToUTF8 StringToUTF8A
-#define UTF8ToString UTF8ToStringA
-#endif
-#endif
-
 void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {
-	bool success = true;
-
-#ifdef _WIN32
-	if (use_native_file_dialogs)
-	{
-		const auto title_utf16 = UTF8ToString(title.c_str());
-
-		SDL_SysWMinfo info;
-		SDL_VERSION(&info.version);
-
-		std::array<TCHAR, MAX_PATH> path_buffer;
-		path_buffer[0] = '\0';
-
-		OPENFILENAME ofn;
-		ZeroMemory(&ofn, sizeof(ofn));
-		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = SDL_GetWindowWMInfo(window.GetSDLWindow(), &info) ? info.info.win.window : nullptr;
-		ofn.lpstrFile = &path_buffer[0];
-		ofn.nMaxFile = path_buffer.size();
-		ofn.lpstrTitle = title_utf16.get(); // It's okay for this to be nullptr.
-		ofn.Flags = save ? OFN_OVERWRITEPROMPT : OFN_FILEMUSTEXIST;
-
-		// Common File Dialog changes the current directory, so back it up here first.
-		std::vector<TCHAR> working_directory(GetCurrentDirectory(0, nullptr));
-		GetCurrentDirectory(working_directory.size(), working_directory.data());
-
-		// Invoke the file dialog.
-		const bool file_selected = save ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
-
-		if (file_selected)
-		{
-			if (!callback(path_buffer.data()))
-				success = false;
-		}
-
-		// Restore the current directory.
-		if (!working_directory.empty())
-			SetCurrentDirectory(working_directory.data());
-	}
-	else
-#elif defined(FILE_PICKER_POSIX)
 	bool done = false;
 
 	if (use_native_file_dialogs)
 	{
-		for (unsigned int i = 0; i < 2; ++i)
+		// TODO: According to documentation, the callback may be ran on a different thread, so find some way to ensure that there are no race conditions!
+		try
 		{
-			if (!done)
+			PopupCallback* const callback_detatched = new PopupCallback(callback);
+
+			const auto call_callback = [](void* const user_data, const char* const* const file_list, [[maybe_unused]] const int filter)
 			{
-				// Construct the command to invoke Zenity/kdialog.
-				const std::string command = (i == 0) != prefer_kdialog ?
-					fmt::format("zenity --file-selection {} --title=\"{}\" --filename=\"{}\"",
-						save ? "--save" : "",
-						title,
-						last_file_dialog_directory.string())
-					:
-					fmt::format("kdialog --get{}filename --title \"{}\" \"{}\"",
-						save ? "save" : "open",
-						title,
-						last_file_dialog_directory.string())
-					;
+				const std::unique_ptr<PopupCallback> callback(static_cast<PopupCallback*>(user_data));
 
-				// Invoke Zenity/kdialog.
-				FILE *path_stream = popen(command.c_str(), "r");
+				if (file_list == nullptr || *file_list == nullptr)
+					return;
 
-				if (path_stream != nullptr)
-				{
-				#define GROW_SIZE 0x100
-					// Read the whole path returned by Zenity/kdialog.
-					// This is very complicated due to handling arbitrarily long paths.
-					char *path_buffer = static_cast<char*>(SDL_malloc(GROW_SIZE + 1)); // '+1' for the null character.
+				(*callback.get())(reinterpret_cast<const char8_t*>(*file_list));
+			};
 
-					if (path_buffer != nullptr)
-					{
-						std::size_t path_buffer_length = 0;
+			if (save)
+				SDL_ShowSaveFileDialog(call_callback, callback_detatched, window.GetSDLWindow(), nullptr, 0, nullptr);
+			else
+				SDL_ShowOpenFileDialog(call_callback, callback_detatched, window.GetSDLWindow(), nullptr, 0, nullptr, false);
 
-						for (;;)
-						{
-							const std::size_t path_length = std::fread(&path_buffer[path_buffer_length], 1, GROW_SIZE, path_stream);
-							path_buffer_length += path_length;
-
-							if (path_length != GROW_SIZE)
-								break;
-
-							char* const new_path_buffer = static_cast<char*>(SDL_realloc(path_buffer, path_buffer_length + GROW_SIZE + 1));
-
-							if (new_path_buffer == nullptr)
-							{
-								SDL_free(path_buffer);
-								path_buffer = nullptr;
-								break;
-							}
-
-							path_buffer = new_path_buffer;
-						}
-					#undef GROW_SIZE
-
-						if (path_buffer != nullptr)
-						{
-							// Handle Zenity's/kdialog's return value.
-							const int exit_status = pclose(path_stream);
-							path_stream = nullptr;
-
-							if (exit_status != -1 && WIFEXITED(exit_status))
-							{
-								switch (WEXITSTATUS(exit_status))
-								{
-									case 0: // Success.
-									{
-										done = true;
-
-										path_buffer[path_buffer_length - (path_buffer[path_buffer_length - 1] == '\n')] = '\0';
-										if (!callback(path_buffer))
-											success = false;
-
-										char* const directory_separator = SDL_strrchr(path_buffer, '/');
-
-										if (directory_separator == nullptr)
-											path_buffer[0] = '\0';
-										else
-											directory_separator[1] = '\0';
-
-										last_file_dialog_directory = path_buffer;
-										SDL_free(path_buffer);
-										path_buffer = nullptr;
-
-										break;
-									}
-
-									case 1: // No file selected.
-										done = true;
-										break;
-								}
-							}
-						}
-
-						SDL_free(path_buffer);
-					}
-
-					if (path_stream != nullptr)
-						pclose(path_stream);
-				}
-			}
+			done = true;
+		}
+		catch (const std::bad_alloc&)
+		{
+			debug_log.Log("FileUtilities::CreateFileDialog: Failed to allocate memory.");
 		}
 	}
 
 	if (!done)
-	#endif
 	{
 		active_file_picker_popup = title;
 		popup_callback = callback;
 		is_save_dialog = save;
 	}
-
-	if (!success)
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", is_save_dialog ? "Could not save file." : "Could not open file.", nullptr);
 }
 
 void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback)
@@ -348,29 +203,29 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 bool FileUtilities::FileExists(const std::filesystem::path &path)
 {
-	return SDL::RWFromFile(path, "rb");
+	return SDL::IOFromFile(path, "rb");
 }
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (!file)
 	{
-		Frontend::debug_log.Log("SDL_RWFromFile failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_IOFromFile failed with the following message - '{}'", SDL_GetError());
 		return false;
 	}
 
 	return LoadFileToBuffer(file_buffer, file);
 }
 
-bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::RWops &file)
+bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::IOStream &file)
 {
-	const Sint64 size_s64 = SDL_RWsize(file);
+	const Sint64 size_s64 = SDL_GetIOSize(file);
 
 	if (size_s64 < 0)
 	{
-		Frontend::debug_log.Log("SDL_RWsize failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_GetIOSize failed with the following message - '{}'", SDL_GetError());
 	}
 	else
 	{
@@ -379,7 +234,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 		try
 		{
 			file_buffer.resize(size);
-			SDL_RWread(file, file_buffer.data(), 1, size);
+			SDL_ReadIO(file, file_buffer.data(), size);
 			return true;
 		}
 		catch (const std::bad_alloc&)
@@ -401,7 +256,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
 			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
-			SDL::RWops file = SDL::RWops(SDL_RWFromConstMem(buffer.data(), buffer.size()));
+			SDL::IOStream file = SDL::IOStream(SDL_IOFromConstMem(buffer.data(), buffer.size()));
 
 			if (file)
 				(*callback.get())(filename, std::move(file));
@@ -416,7 +271,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 #else
 	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
-		SDL::RWops file = SDL::RWFromFile(path, "rb");
+		SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 		if (!file)
 			return false;
@@ -439,12 +294,12 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			SDL::RWops file = SDL::RWFromFile(path, "wb");
+			SDL::IOStream file = SDL::IOFromFile(path, "wb");
 
 			if (!file)
 				return false;
 
-			return SDL_RWwrite(file, data, 1, data_size) == data_size;
+			return SDL_WriteIO(file, data, data_size) == data_size;
 		};
 
 		return callback(save_file);

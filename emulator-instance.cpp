@@ -217,7 +217,7 @@ EmulatorInstance::EmulatorInstance(
 void EmulatorInstance::Update(const cc_bool fast_forward)
 {
 	// Lock the texture so that we can write to its pixels later
-	if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch) < 0)
+	if (!SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
 		framebuffer_texture_pixels = nullptr;
 
 	framebuffer_texture_pitch /= sizeof(Uint32);
@@ -314,7 +314,7 @@ void EmulatorInstance::UnloadCartridgeFile()
 	cartridge.Eject();
 }
 
-bool EmulatorInstance::LoadCDFile(SDL::RWops &&stream, const std::filesystem::path &path)
+bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
 {
 	cd_file.Open(std::move(stream), path);
 	if (!cd_file.IsOpen())
@@ -366,11 +366,11 @@ std::size_t EmulatorInstance::GetSaveStateFileSize()
 	return save_state_magic.size() + sizeof(*state);
 }
 
-bool EmulatorInstance::WriteSaveStateFile(SDL::RWops &file)
+bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
 	bool success = false;
 
-	if (SDL_RWwrite(file, &save_state_magic, sizeof(save_state_magic), 1) == 1 && SDL_RWwrite(file, state, sizeof(*state), 1) == 1)
+	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, state, sizeof(*state)) == sizeof(*state))
 		success = true;
 
 	return success;

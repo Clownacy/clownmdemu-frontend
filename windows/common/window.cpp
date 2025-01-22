@@ -5,62 +5,68 @@
 
 #include "../../common/core/clowncommon/clowncommon.h"
 
+#include "../../frontend.h"
 #include "winapi.h"
+
+static float HandleDPIError(const float dpi_scale)
+{
+	// Prevent any insanity if we somehow get bad values.
+	if (dpi_scale == 0.0f)
+		return 1.0f;
+
+	return dpi_scale;
+}
+
+static float GetDisplayDPIScale()
+{
+	const SDL_DisplayID display_index = SDL_GetPrimaryDisplay();
+
+	if (display_index == 0)
+	{
+		Frontend::debug_log.Log("SDL_GetPrimaryDisplay failed with the following message - '%s'", SDL_GetError());
+		return 1.0f;
+	}
+
+	return HandleDPIError(SDL_GetDisplayContentScale(display_index));
+}
+
+float Window::GetSizeScale()
+{
+	const SDL_DisplayID display_index = SDL_GetDisplayForWindow(GetSDLWindow());
+
+	if (display_index == 0)
+	{
+		Frontend::debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '%s'", SDL_GetError());
+		return 1.0f;
+	}
+
+	return HandleDPIError(SDL_GetDisplayContentScale(display_index));
+}
 
 float Window::GetDPIScale()
 {
-	// TODO: Make the DPI scale two-dimensional.
-	int window_width, renderer_width;
-	SDL_GetWindowSize(GetSDLWindow(), &window_width, nullptr);
-	SDL_GetRendererOutputSize(GetRenderer(), &renderer_width, nullptr);
-
-	const float dpi_scale = static_cast<float>(renderer_width) / std::max(1, window_width); // Prevent a division by 0.
-
-	// Prevent any insanity if we somehow get bad values.
-	return std::max(1.0f, dpi_scale);
+	return HandleDPIError(SDL_GetWindowDisplayScale(GetSDLWindow()));
 }
 
-static SDL_Window* CreateWindow(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
+Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
 {
-	Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_ALLOW_HIGHDPI;
+	const float scale = GetDisplayDPIScale();
+
+	Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
 	if (resizeable)
 		window_flags |= SDL_WINDOW_RESIZABLE;
 
-	SDL_Window* const window = SDL_CreateWindow(window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_width, window_height, window_flags);
+	// SDL3's documentation currently advices using this instead of 'SDL_CreateWindow'
+	// and 'SDL_CreateRenderer' separately to avoid "window flicker".
+	// https://wiki.libsdl.org/SDL3/SDL_CreateWindow
+	SDL_Window *window;
+	SDL_Renderer *renderer;
+	if (!SDL_CreateWindowAndRenderer(window_title, static_cast<int>(window_width * scale), static_cast<int>(window_height * scale), window_flags, &window, &renderer))
+		throw std::runtime_error(std::string("SDL_CreateWindowAndRenderer failed with the following message - '") + SDL_GetError() + "'");
 
-	if (window == nullptr)
-		throw std::runtime_error(std::string("SDL_CreateWindow failed with the following message - '") + SDL_GetError() + "'");
-
-	return window;
-}
-
-static SDL_Renderer* CreateRenderer(SDL_Window* const window)
-{
-	// Use batching even if the user forces a specific rendering backend (wtf SDL).
-	//
-	// Personally, I like to force SDL2 to use D3D11 instead of D3D9 by setting an environment
-	// variable, but it turns out that, if I do that, then SDL2 will disable its render batching
-	// for backwards compatibility reasons. Setting this hint prevents that.
-	//
-	// Normally if a user is setting an environment variable to force a specific rendering
-	// backend, then they're expected to set another environment variable to set this hint too,
-	// but I might as well just do it myself and save everyone else the hassle.
-	SDL_SetHint(SDL_HINT_RENDER_BATCHING, "1");
-
-	SDL_Renderer* const renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE);
-
-	if (renderer == nullptr)
-		throw std::runtime_error(std::string("SDL_CreateRenderer failed with the following message - '") + SDL_GetError() + "'");
-
-	return renderer;
-}
-
-Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
-	: sdl_window(CreateWindow(window_title, window_width, window_height, resizeable))
-	, renderer(CreateRenderer(GetSDLWindow()))
-{
-
+	sdl_window = SDL::Window(window);
+	this->renderer = SDL::Renderer(renderer);
 }
 
 void Window::SetTitleBarColour(const unsigned char red, const unsigned char green, const unsigned char blue)

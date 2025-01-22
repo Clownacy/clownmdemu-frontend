@@ -42,10 +42,10 @@ add_executable(clownmdemu WIN32
 	"libraries/imgui/imgui_widgets.cpp"
 	"libraries/imgui/imstb_rectpack.h"
 	"libraries/imgui/imstb_textedit.h"
-	"libraries/imgui/backends/imgui_impl_sdl2.cpp"
-	"libraries/imgui/backends/imgui_impl_sdl2.h"
-	"libraries/imgui/backends/imgui_impl_sdlrenderer2.cpp"
-	"libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
+	"libraries/imgui/backends/imgui_impl_sdl3.cpp"
+	"libraries/imgui/backends/imgui_impl_sdl3.h"
+	"libraries/imgui/backends/imgui_impl_sdlrenderer3.cpp"
+	"libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
 	"windows/debug-m68k.cpp"
 	"windows/debug-m68k.h"
 	"windows/debug-memory.cpp"
@@ -87,6 +87,10 @@ if(WIN32)
 
 	# Enable Unicode support so that non-ANSI file paths work
 	target_compile_definitions(clownmdemu PRIVATE UNICODE _UNICODE)
+
+	if(MINGW)
+		target_link_options(clownmdemu-frontend PRIVATE -municode)
+	endif()
 endif()
 
 ##############################
@@ -149,7 +153,10 @@ endif()
 target_compile_definitions(clownmdemu PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
 
 # Disable some deprecated junk in Dear ImGui
-target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO ImTextureID=void*)
+target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
+
+# 'ImTextureID' needs to be a pointer, not an integer
+target_compile_definitions(clownmdemu PRIVATE ImTextureID=void*)
 
 # Dear ImGui needs these directories in the include path
 target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui/backends")
@@ -163,13 +170,14 @@ add_subdirectory("common" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu clownmdemu-frontend-common)
 
 # Link SDL
-find_package(SDL2 2.0.18)
-if(SDL2_FOUND)
-	target_link_libraries(clownmdemu SDL2::SDL2main SDL2::SDL2)
+find_package(SDL3 3.1.3 CONFIG COMPONENTS SDL3)
+if(SDL3_FOUND)
+	target_link_libraries(clownmdemu-frontend SDL3::SDL3)
 else()
 	set(SDL_STATIC ON)
+	set(SDL_SHARED OFF)
 	add_subdirectory("libraries/SDL" EXCLUDE_FROM_ALL)
-	target_link_libraries(clownmdemu SDL2::SDL2main SDL2::SDL2-static)
+	target_link_libraries(clownmdemu-frontend SDL3::SDL3-static)
 endif()
 
 if(CLOWNMDEMU_FRONTEND_FREETYPE)

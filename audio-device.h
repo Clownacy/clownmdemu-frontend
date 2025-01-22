@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "common/core/clowncommon/clowncommon.h"
 
@@ -13,7 +13,7 @@ private:
 	const cc_u8f channels;
 	const std::size_t SIZE_OF_FRAME = channels * sizeof(cc_s16l);
 
-	SDL_AudioDeviceID device;
+	SDL_AudioStream *stream;
 
 public:
 	AudioDevice(cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames);

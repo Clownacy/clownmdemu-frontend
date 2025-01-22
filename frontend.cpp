@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <charconv>
 #include <climits> // For INT_MAX.
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <forward_list>
@@ -18,14 +19,14 @@
 #include <vector>
 
 #include <fmt/core.h>
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "common/core/clowncommon/clowncommon.h"
 #include "common/core/clownmdemu.h"
 
 #include "libraries/imgui/imgui.h"
-#include "libraries/imgui/backends/imgui_impl_sdl2.h"
-#include "libraries/imgui/backends/imgui_impl_sdlrenderer2.h"
+#include "libraries/imgui/backends/imgui_impl_sdl3.h"
+#include "libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
 #include "libraries/inih/ini.h"
 
 #include "cd-reader.h"
@@ -616,7 +617,7 @@ private:
 		{
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
-				SDL_RenderSetVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
+				SDL_SetRenderVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
 			DoToolTip(u8"Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
@@ -654,39 +655,16 @@ private:
 			ImGui::EndTable();
 		}
 
-	#ifdef FILE_PICKER_POSIX
-		ImGui::SeparatorText("Preferred File Dialog");
-
-		if (ImGui::BeginTable("Preferred File Dialog", 2))
-		{
-			ImGui::TableNextColumn();
-
-			if (ImGui::RadioButton("Zenity (GTK)", !file_utilities.prefer_kdialog))
-				file_utilities.prefer_kdialog = false;
-			DoToolTip(u8"Best with GNOME, Xfce, LXDE, MATE, Cinnamon, etc.");
-
-			ImGui::TableNextColumn();
-
-			if (ImGui::RadioButton("kdialog (Qt)", file_utilities.prefer_kdialog))
-				file_utilities.prefer_kdialog = true;
-			DoToolTip(u8"Best with KDE, LXQt, Deepin, etc.");
-
-			ImGui::EndTable();
-		}
-	#endif
-
 	#ifndef __EMSCRIPTEN__
 		ImGui::SeparatorText("Experimental");
-		bool native_windows = !dear_imgui_windows;
-		if (ImGui::Checkbox("Native Windows", &native_windows))
-			dear_imgui_windows = !dear_imgui_windows;
+		ImGui::Checkbox("Native Windows", &native_windows);
 		DoToolTip(u8"Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
 	#endif
 
 		ImGui::SeparatorText("Keyboard Input");
 
 		static bool sorted_scancodes_done;
-		static std::array<SDL_Scancode, SDL_NUM_SCANCODES> sorted_scancodes; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+		static std::array<SDL_Scancode, SDL_SCANCODE_COUNT> sorted_scancodes; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 		if (!sorted_scancodes_done)
 		{
@@ -798,16 +776,16 @@ private:
 			ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
 
 			int total_keys;
-			const Uint8* const keys_pressed = SDL_GetKeyboardState(&total_keys);
+			const bool* const keys_pressed = SDL_GetKeyboardState(&total_keys);
 
 			for (int i = 0; i < total_keys; ++i)
 			{
-				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT))
+				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT, nullptr))
 				{
 					ImGui::CloseCurrentPopup();
 
 					// The 'escape' key will exit the menu without binding.
-					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE))
+					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE, nullptr))
 					{
 						next_menu = true;
 						selected_scancode = static_cast<SDL_Scancode>(i);
@@ -884,10 +862,10 @@ bool Frontend::fast_forward_in_progress;
 bool Frontend::dear_imgui_windows;
 
 Input Frontend::keyboard_input;
-std::array<InputBinding, SDL_NUM_SCANCODES> Frontend::keyboard_bindings; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+std::array<InputBinding, SDL_SCANCODE_COUNT > Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
-static std::array<InputBinding, SDL_NUM_SCANCODES> keyboard_bindings_cached; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
-static std::array<bool, SDL_NUM_SCANCODES> key_pressed; // TODO: `SDL_NUM_SCANCODES` is an internal macro, so use something standard!
+static std::array<InputBinding, SDL_SCANCODE_COUNT > keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+static std::array<bool, SDL_SCANCODE_COUNT > key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 static Frontend::FrameRateCallback frame_rate_callback;
 
@@ -904,6 +882,8 @@ static bool emulator_frame_advance;
 
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
+
+static bool native_windows;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -1090,7 +1070,7 @@ static void RecreateUpscaledFramebuffer(const unsigned int display_width, const 
 		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
 		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
 
-		framebuffer_texture_upscaled = SDL::CreateTexture(window->GetRenderer(), SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height, "linear");
+		framebuffer_texture_upscaled = SDL::CreateTexture(window->GetRenderer(), SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height, SDL_SCALEMODE_LINEAR);
 	}
 }
 
@@ -1099,7 +1079,15 @@ bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &hei
 	if (!framebuffer_texture_upscaled)
 		return false;
 
-	SDL_QueryTexture(framebuffer_texture_upscaled, nullptr, nullptr, reinterpret_cast<int*>(&width), reinterpret_cast<int*>(&height));
+	float width_float, height_float;
+	if (!SDL_GetTextureSize(framebuffer_texture_upscaled, &width_float, &height_float))
+	{
+		debug_log.Log("SDL_GetTextureSize failed with the following message - '%s'", SDL_GetError());
+		return false;
+	}
+
+	width = static_cast<unsigned int>(width_float);
+	height = static_cast<unsigned int>(height_float);
 	return true;
 }
 
@@ -1160,7 +1148,7 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<uns
 	SetWindowTitleToSoftwareName();
 }
 
-static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::RWops &file)
+static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1178,7 +1166,7 @@ static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::RWops &fil
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (!file)
 	{
@@ -1190,7 +1178,7 @@ static bool LoadCartridgeFile(const std::filesystem::path &path)
 	return LoadCartridgeFile(path, file);
 }
 
-static bool LoadCDFile(const std::filesystem::path &path, SDL::RWops &&file)
+static bool LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
 {
 #ifdef FILE_PATH_SUPPORT
 	AddToRecentSoftware(path, true, false);
@@ -1208,7 +1196,7 @@ static bool LoadCDFile(const std::filesystem::path &path, SDL::RWops &&file)
 #ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const std::filesystem::path &path)
 {
-	SDL::RWops file = SDL::RWFromFile(path, "rb");
+	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (!file)
 	{
@@ -1243,7 +1231,7 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 	return true;
 }
 
-static bool LoadSaveState(SDL::RWops &file)
+static bool LoadSaveState(SDL::IOStream &file)
 {
 	std::vector<unsigned char> file_buffer;
 
@@ -1262,7 +1250,7 @@ static bool CreateSaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	SDL::RWops file = SDL::RWFromFile(path, "wb");
+	SDL::IOStream file = SDL::IOFromFile(path, "wb");
 
 	if (!file || !emulator->WriteSaveStateFile(file))
 	{
@@ -1304,14 +1292,14 @@ void DoToolTip(const std::u8string &text)
 
 static char* INIReadCallback(char* const buffer, const int length, void* const user)
 {
-	SDL::RWops &file = *static_cast<SDL::RWops*>(user);
+	SDL::IOStream &file = *static_cast<SDL::IOStream*>(user);
 
 	int i = 0;
 
 	while (i < length - 1)
 	{
 		char character;
-		if (SDL_RWread(file, &character, 1, 1) == 0)
+		if (SDL_ReadIO(file, &character, 1) == 0)
 		{
 			if (i == 0)
 				return 0;
@@ -1348,8 +1336,8 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 		else if (name == u8"tall-interlace-mode-2")
 			tall_double_resolution_mode = state;
 	#ifndef __EMSCRIPTEN__
-		else if (name == u8"dear-imgui-windows")
-			dear_imgui_windows = state;
+		else if (name == u8"native-windows")
+			native_windows = state;
 	#endif
 		else if (name == u8"low-pass-filter")
 			emulator->SetLowPassFilter(state);
@@ -1359,19 +1347,13 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 			SetAudioPALMode(state);
 		else if (name == u8"japanese")
 			emulator->SetDomestic(state);
-	#ifdef FILE_PICKER_POSIX
-		else if (name == u8"last-directory")
-			file_utilities.last_file_dialog_directory = value;
-		else if (name == u8"prefer-kdialog")
-			file_utilities.prefer_kdialog = state;
-	#endif
 	}
 	else if (section == u8"Keyboard Bindings")
 	{
 		unsigned int scancode_integer;
 		const auto scancode_integer_result = std::from_chars(reinterpret_cast<const char*>(&name.front()), reinterpret_cast<const char*>(&name.back()) + 1, scancode_integer, 10);
 
-		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == reinterpret_cast<const char*>(&name.back()) + 1 && scancode_integer < SDL_NUM_SCANCODES)
+		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == reinterpret_cast<const char*>(&name.back()) + 1 && scancode_integer < SDL_SCANCODE_COUNT)
 		{
 			const SDL_Scancode scancode = static_cast<SDL_Scancode>(scancode_integer);
 
@@ -1490,16 +1472,25 @@ static void LoadConfiguration()
 	// Set default settings.
 
 	// Default V-sync.
-	const int display_index = SDL_GetWindowDisplayIndex(window->GetSDLWindow());
+	const SDL_DisplayID display_index = SDL_GetDisplayForWindow(window->GetSDLWindow());
 
-	if (display_index >= 0)
+	if (display_index == 0)
 	{
-		SDL_DisplayMode display_mode;
+		debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '%s'", SDL_GetError());
+	}
+	else
+	{
+		const SDL_DisplayMode* const display_mode = SDL_GetCurrentDisplayMode(display_index);
 
-		if (SDL_GetCurrentDisplayMode(display_index, &display_mode) == 0)
+		if (display_mode == nullptr)
+		{
+			debug_log.Log("SDL_GetCurrentDisplayMode failed with the following message - '%s'", SDL_GetError());
+		}
+		else
 		{
 			// Enable V-sync on displays with an FPS of a multiple of 60.
-			use_vsync = display_mode.refresh_rate % 60 == 0;
+			// TODO: ...But what about PAL50?
+			use_vsync = std::lround(display_mode->refresh_rate) % 60 == 0;
 		}
 	}
 
@@ -1507,15 +1498,19 @@ static void LoadConfiguration()
 	emulator->SetLowPassFilter(true);
 	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
-	dear_imgui_windows = true;
+#ifdef __EMSCRIPTEN__
+	native_windows = false;
+#else
+	native_windows = true;
+#endif
 
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
 
-	const SDL::RWops file = SDL::RWFromFile(GetConfigurationFilePath(), "r");
+	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::RWops*>(&file), INIParseCallback, nullptr) != 0)
+	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, nullptr) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (auto &keyboard_binding : keyboard_bindings)
@@ -1533,12 +1528,12 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_Z;
 		keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
 		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = INPUT_BINDING_CONTROLLER_MODE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE)] = INPUT_BINDING_PAUSE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB)] = INPUT_BINDING_RESET;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5)] = INPUT_BINDING_QUICK_SAVE_STATE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9)] = INPUT_BINDING_QUICK_LOAD_STATE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE, nullptr)] = INPUT_BINDING_PAUSE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11, nullptr)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB, nullptr)] = INPUT_BINDING_RESET;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1, nullptr)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = INPUT_BINDING_QUICK_SAVE_STATE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = INPUT_BINDING_QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
@@ -1546,7 +1541,7 @@ static void LoadConfiguration()
 	}
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_RenderSetVSync(window->GetRenderer(), use_vsync);
+	SDL_SetRenderVSync(window->GetRenderer(), use_vsync);
 }
 
 static void SaveConfiguration()
@@ -1557,7 +1552,7 @@ static void SaveConfiguration()
 #define ENDL "\n"
 #endif
 	// Save configuration file:
-	SDL::RWops file = SDL::RWFromFile(GetConfigurationFilePath(), "w");
+	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "w");
 
 	if (!file)
 	{
@@ -1565,7 +1560,7 @@ static void SaveConfiguration()
 	}
 	else
 	{
-	#define PRINT_STRING(FILE, STRING) SDL_RWwrite(FILE, STRING, sizeof(STRING) - 1, 1)
+	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1)
 		// Save keyboard bindings.
 		PRINT_STRING(file, "[Miscellaneous]" ENDL);
 
@@ -1580,23 +1575,12 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 	#ifndef __EMSCRIPTEN__
-		PRINT_BOOLEAN_OPTION(file, "dear-imgui-windows", dear_imgui_windows);
+		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
-
-	#ifdef FILE_PICKER_POSIX
-		if (!file_utilities.last_file_dialog_directory.empty())
-		{
-			PRINT_STRING(file, "last-directory = ");
-			const std::string last_file_dialog_directory = file_utilities.last_file_dialog_directory.string();
-			SDL_RWwrite(file, last_file_dialog_directory.data(), last_file_dialog_directory.size(), 1);
-			PRINT_STRING(file, ENDL);
-		}
-		PRINT_BOOLEAN_OPTION(file, "prefer-kdialog", file_utilities.prefer_kdialog);
-	#endif
 
 		// Save keyboard bindings.
 		PRINT_STRING(file, ENDL "[Keyboard Bindings]" ENDL);
@@ -1704,7 +1688,7 @@ static void SaveConfiguration()
 				}
 
 				const std::string buffer = fmt::format("{} = {}" ENDL, std::distance(std::cbegin(keyboard_bindings), keyboard_binding), binding_string);
-				SDL_RWwrite(file, buffer.data(), buffer.size(), 1);
+				SDL_WriteIO(file, buffer.data(), buffer.size());
 			}
 		}
 
@@ -1722,7 +1706,7 @@ static void SaveConfiguration()
 
 			PRINT_STRING(file, "path = ");
 			const auto path_string = recent_software.path.u8string();
-			SDL_RWwrite(file, reinterpret_cast<const char*>(path_string.c_str()), 1, path_string.length());
+			SDL_WriteIO(file, reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
 			PRINT_STRING(file, ENDL);
 		}
 	#endif
@@ -1751,21 +1735,11 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 {
 	frame_rate_callback = frame_rate_callback_param;
 
-	// Enable high-DPI support on Windows because SDL2 is bad at being a platform abstraction library
-	SDL_SetHint("SDL_WINDOWS_DPI_SCALING", "1");
-
-#if !SDL_VERSION_ATLEAST(2,30,3)
-	// Force the window icon to the proper icon group, as the default icon
-	// size chosen by older versions of SDL does not suit high-DPI display.
-	// https://github.com/libsdl-org/SDL/pull/9429
-	SDL_SetHint("SDL_WINDOWS_INTRESOURCE_ICON", "100");
-#endif
-
-	// Initialise SDL2
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) < 0)
+	// Initialise SDL
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
 	{
 		debug_log.Log("SDL_Init failed with the following message - '{}'", SDL_GetError());
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL2. The program will now close.", nullptr);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
 	}
 	else
 	{
@@ -1778,18 +1752,19 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		LoadConfiguration();
 
-		if (dear_imgui_windows)
+		if (!native_windows)
 			ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
 		int window_width, window_height;
 		SDL_GetWindowSize(window->GetSDLWindow(), &window_width, &window_height);
+		const float scale = window->GetSizeScale();
 
-		if (window_width == INITIAL_WINDOW_WIDTH && window_height == INITIAL_WINDOW_HEIGHT)
+		if (window_width == static_cast<int>(INITIAL_WINDOW_WIDTH * scale) && window_height == static_cast<int>(INITIAL_WINDOW_HEIGHT * scale))
 		{
 			// Resize the window so that there's room for the menu bar.
-			SDL_SetWindowSize(window->GetSDLWindow(), INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize());
+			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
 
 		// If the user passed the path to the software on the command line, then load it here, automatically.
@@ -1823,7 +1798,7 @@ void Frontend::Deinitialise()
 
 	framebuffer_texture_upscaled.release();
 
-	if (dear_imgui_windows)
+	if (!native_windows)
 		ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 	SaveConfiguration();
@@ -1853,15 +1828,12 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 	// Process the event
 	switch (event.type)
 	{
-		case SDL_WINDOWEVENT:
-			if (event.window.event != SDL_WINDOWEVENT_CLOSE)
-				break;
-			[[fallthrough]];
-		case SDL_QUIT:
+		case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+		case SDL_EVENT_QUIT:
 			quit = true;
 			break;
 
-		case SDL_KEYDOWN:
+		case SDL_EVENT_KEY_DOWN:
 			// Ignore repeated key inputs caused by holding the key down
 			if (event.key.repeat)
 				break;
@@ -1869,27 +1841,27 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			anything_pressed_during_alt = true;
 
 			// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
-			if (event.key.keysym.sym == SDLK_TAB && (SDL_GetModState() & KMOD_CTRL) != 0)
+			if (event.key.key == SDLK_TAB && (SDL_GetModState() & SDL_KMOD_CTRL) != 0)
 				break;
 
-			if (event.key.keysym.sym == SDLK_RETURN && (SDL_GetModState() & KMOD_ALT) != 0)
+			if (event.key.key == SDLK_RETURN && (SDL_GetModState() & SDL_KMOD_ALT) != 0)
 			{
 				window->ToggleFullscreen();
 				break;
 			}
 
-			if (event.key.keysym.sym == SDLK_ESCAPE)
+			if (event.key.key == SDLK_ESCAPE)
 			{
 				// Exit fullscreen
 				window->SetFullscreen(false);
 			}
 
 			// Prevent invalid memory accesses due to future API expansions.
-			// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-			if (event.key.keysym.scancode >= keyboard_bindings.size())
+			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
+			if (event.key.scancode >= keyboard_bindings.size())
 				break;
 
-			switch (keyboard_bindings[event.key.keysym.scancode])
+			switch (keyboard_bindings[event.key.scancode])
 			{
 				case INPUT_BINDING_TOGGLE_FULLSCREEN:
 					window->ToggleFullscreen();
@@ -1907,7 +1879,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			// Many inputs should not be acted upon while the emulator is not running.
 			if (emulator_on && emulator_has_focus)
 			{
-				switch (keyboard_bindings[event.key.keysym.scancode])
+				switch (keyboard_bindings[event.key.scancode])
 				{
 					case INPUT_BINDING_PAUSE:
 						emulator_paused = !emulator_paused;
@@ -1940,28 +1912,28 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				}
 			}
 			[[fallthrough]];
-		case SDL_KEYUP:
+		case SDL_EVENT_KEY_UP:
 		{
 			// Prevent invalid memory accesses due to future API expansions.
-			// TODO: Yet another reason to not use `SDL_NUM_SCANCODES`.
-			if (event.key.keysym.scancode >= keyboard_bindings.size())
+			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
+			if (event.key.scancode >= keyboard_bindings.size())
 				break;
 
 			// When a key-down is processed, cache the binding so that the corresponding key-up
 			// affects the same input. This is to prevent phantom inputs when a key is unbinded
 			// whilst it is being held.
-			const InputBinding binding = (event.type == SDL_KEYUP ? keyboard_bindings_cached : keyboard_bindings)[event.key.keysym.scancode];
-			keyboard_bindings_cached[event.key.keysym.scancode] = keyboard_bindings[event.key.keysym.scancode];
+			const InputBinding binding = (event.type == SDL_EVENT_KEY_UP ? keyboard_bindings_cached : keyboard_bindings)[event.key.scancode];
+			keyboard_bindings_cached[event.key.scancode] = keyboard_bindings[event.key.scancode];
 
-			const bool pressed = event.key.state == SDL_PRESSED;
+			const bool pressed = event.key.down;
 
-			if (key_pressed[event.key.keysym.scancode] != pressed)
+			if (key_pressed[event.key.scancode] != pressed)
 			{
-				key_pressed[event.key.keysym.scancode] = pressed;
+				key_pressed[event.key.scancode] = pressed;
 
 				// This chunk of code prevents ALT-ENTER from causing ImGui to enter the menu bar.
 				// TODO: Remove this when Dear ImGui stops being dumb.
-				if (event.key.keysym.scancode == SDL_SCANCODE_LALT)
+				if (event.key.scancode == SDL_SCANCODE_LALT)
 				{
 					if (pressed)
 					{
@@ -2025,63 +1997,48 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 		}
 
-		case SDL_CONTROLLERDEVICEADDED:
+		case SDL_EVENT_GAMEPAD_ADDED:
 		{
 			// Open the controller, and create an entry for it in the controller list.
-			SDL_GameController *controller = SDL_GameControllerOpen(event.cdevice.which);
+			SDL_Gamepad *controller = SDL_OpenGamepad(event.gdevice.which);
 
 			if (controller == nullptr)
 			{
-				debug_log.Log("SDL_GameControllerOpen failed with the following message - '{}'", SDL_GetError());
+				debug_log.Log("SDL_OpenGamepad failed with the following message - '{}'", SDL_GetError());
 			}
 			else
 			{
-				const SDL_JoystickID joystick_instance_id = SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller));
-
-				if (joystick_instance_id < 0)
+				try
 				{
-					debug_log.Log("SDL_JoystickInstanceID failed with the following message - '{}'", SDL_GetError());
+					controller_input_list.emplace_front(event.gdevice.which);
 				}
-				else
+				catch (const std::bad_alloc&)
 				{
-					try
-					{
-						controller_input_list.emplace_front(joystick_instance_id);
-						break;
-					}
-					catch (std::bad_alloc&)
-					{
-						debug_log.Log("Could not allocate memory for the new ControllerInput struct");
-					}
+					debug_log.Log("Could not allocate memory for the new ControllerInput struct");
+					SDL_CloseGamepad(controller);
 				}
-
-				SDL_GameControllerClose(controller);
 			}
 
 			break;
 		}
 
-		case SDL_CONTROLLERDEVICEREMOVED:
+		case SDL_EVENT_GAMEPAD_REMOVED:
 		{
 			// Close the controller, and remove it from the controller list.
-			SDL_GameController *controller = SDL_GameControllerFromInstanceID(event.cdevice.which);
+			SDL_Gamepad *controller = SDL_GetGamepadFromID(event.gdevice.which);
 
 			if (controller == nullptr)
-			{
-				debug_log.Log("SDL_GameControllerFromInstanceID failed with the following message - '{}'", SDL_GetError());
-			}
+				debug_log.Log("SDL_GetGamepadFromID failed with the following message - '{}'", SDL_GetError());
 			else
-			{
-				SDL_GameControllerClose(controller);
-			}
+				SDL_CloseGamepad(controller);
 
-			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.cdevice.which;});
+			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.gdevice.which;});
 
 			break;
 		}
 
-		case SDL_CONTROLLERBUTTONDOWN:
-			if (event.cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSTICK)
+		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle Dear ImGui gamepad controls.
 				io.ConfigFlags ^= ImGuiConfigFlags_NavEnableGamepad;
@@ -2092,60 +2049,60 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				break;
 
 			[[fallthrough]];
-		case SDL_CONTROLLERBUTTONUP:
+		case SDL_EVENT_GAMEPAD_BUTTON_UP:
 		{
-			const bool pressed = event.cbutton.state == SDL_PRESSED;
+			const bool pressed = event.gbutton.down;
 
 			// Look for the controller that this event belongs to.
 			for (auto &controller_input : controller_input_list)
 			{
 				// Check if the current controller is the one that matches this event.
-				if (controller_input.joystick_instance_id == event.cbutton.which)
+				if (controller_input.joystick_instance_id == event.gbutton.which)
 				{
-					switch (event.cbutton.button)
+					switch (event.gbutton.button)
 					{
 						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
 
 						// TODO: This is currently just Genesis Plus GX's libretro button layout,
 						// but I would like something closer to a real 6-button controller's layout.
-						DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_CONTROLLER_BUTTON_X            );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_CONTROLLER_BUTTON_A            );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_CONTROLLER_BUTTON_B            );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_CONTROLLER_BUTTON_LEFTSHOULDER );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_CONTROLLER_BUTTON_Y            );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_CONTROLLER_BUTTON_START        );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_CONTROLLER_BUTTON_BACK         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_WEST         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_SOUTH        );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_GAMEPAD_BUTTON_EAST         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_LEFTSHOULDER );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH        );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHTSHOULDER);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START        );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK         );
 
 						#undef DO_BUTTON
 
-						case SDL_CONTROLLER_BUTTON_DPAD_UP:
-						case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
-						case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
-						case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+						case SDL_GAMEPAD_BUTTON_DPAD_UP:
+						case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+						case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+						case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 						{
 							unsigned int direction;
 							unsigned int button;
 
-							switch (event.cbutton.button)
+							switch (event.gbutton.button)
 							{
 								default:
-								case SDL_CONTROLLER_BUTTON_DPAD_UP:
+								case SDL_GAMEPAD_BUTTON_DPAD_UP:
 									direction = 0;
 									button = CLOWNMDEMU_BUTTON_UP;
 									break;
 
-								case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+								case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
 									direction = 1;
 									button = CLOWNMDEMU_BUTTON_DOWN;
 									break;
 
-								case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+								case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
 									direction = 2;
 									button = CLOWNMDEMU_BUTTON_LEFT;
 									break;
 
-								case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+								case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 									direction = 3;
 									button = CLOWNMDEMU_BUTTON_RIGHT;
 									break;
@@ -2170,22 +2127,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 		}
 
-		case SDL_CONTROLLERAXISMOTION:
+		case SDL_EVENT_GAMEPAD_AXIS_MOTION:
 			// Look for the controller that this event belongs to.
 			for (auto &controller_input : controller_input_list)
 			{
 				// Check if the current controller is the one that matches this event.
-				if (controller_input.joystick_instance_id == event.caxis.which)
+				if (controller_input.joystick_instance_id == event.gaxis.which)
 				{
-					switch (event.caxis.axis)
+					switch (event.gaxis.axis)
 					{
-						case SDL_CONTROLLER_AXIS_LEFTX:
-						case SDL_CONTROLLER_AXIS_LEFTY:
+						case SDL_GAMEPAD_AXIS_LEFTX:
+						case SDL_GAMEPAD_AXIS_LEFTY:
 						{
-							if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-								controller_input.left_stick_x = event.caxis.value;
-							else //if (event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-								controller_input.left_stick_y = event.caxis.value;
+							if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX)
+								controller_input.left_stick_x = event.gaxis.value;
+							else //if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTY)
+								controller_input.left_stick_y = event.gaxis.value;
 
 							// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
 
@@ -2237,16 +2194,16 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						}
 
 					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-						case SDL_CONTROLLER_AXIS_TRIGGERLEFT:
+						case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
 					#endif
-						case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+						case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
 						{
 							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 							{
-								const bool held = event.caxis.value > 0x7FFF / 8;
+								const bool held = event.gaxis.value > 0x7FFF / 8;
 
 							#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-								if (event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
+								if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
 								{
 									if (controller_input.left_trigger != held)
 									{
@@ -2282,9 +2239,8 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			break;
 
-		case SDL_DROPFILE:
+		case SDL_EVENT_DROP_FILE:
 			drag_and_drop_filename = reinterpret_cast<const char8_t*>(event.drop.file);
-			SDL_free(event.drop.file);
 			break;
 
 		default:
@@ -2292,59 +2248,18 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 	}
 
 	if (give_event_to_imgui)
-		ImGui_ImplSDL2_ProcessEvent(&event);
+		ImGui_ImplSDL3_ProcessEvent(&event);
 }
 
 void Frontend::HandleEvent(const SDL_Event &event)
 {
-	const std::optional<Uint32> window_id = [&]() -> std::optional<Uint32>
-	{
-		switch (event.type)
-		{
-			case SDL_WINDOWEVENT:
-				return event.window.windowID;
+	SDL_Window* const event_window = SDL_GetWindowFromEvent(&event);
 
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-				return event.key.windowID;
-
-			case SDL_TEXTEDITING:
-				return event.edit.windowID;
-
-			case SDL_TEXTEDITING_EXT:
-				return event.editExt.windowID;
-
-			case SDL_TEXTINPUT:
-				return event.text.windowID;
-
-			case SDL_MOUSEMOTION:
-				return event.motion.windowID;
-
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
-				return event.button.windowID;
-
-			case SDL_MOUSEWHEEL:
-				return event.wheel.windowID;
-
-			case SDL_USEREVENT:
-				return event.user.windowID;
-
-			case SDL_DROPFILE:
-			case SDL_DROPTEXT:
-			case SDL_DROPBEGIN:
-			case SDL_DROPCOMPLETE:
-				return event.drop.windowID;
-		}
-
-		return std::nullopt;
-	}();
-
-	if (!window_id.has_value())
+	if (event_window == nullptr)
 	{
 		HandleMainWindowEvent(event);
 	}
-	else if (*window_id == SDL_GetWindowID(window->GetSDLWindow()))
+	else if (event_window == window->GetSDLWindow())
 	{
 		HandleMainWindowEvent(event);
 	}
@@ -2352,9 +2267,9 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	{
 		const auto DoWindow = [&]<typename T>(std::optional<T> &popup_window)
 		{
-			if (popup_window.has_value() && popup_window->IsWindowID(*window_id))
+			if (popup_window.has_value() && popup_window->IsWindow(event_window))
 			{
-				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE)
+				if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
 					popup_window.reset();
 				else
 					popup_window->ProcessEvent(event);
@@ -2470,7 +2385,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -2496,7 +2411,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						if (!LoadCDFile(path, std::move(file)))
 							return false;
@@ -2590,7 +2505,7 @@ void Frontend::Update()
 							std::vector<unsigned char> save_state_buffer;
 							save_state_buffer.resize(emulator->GetSaveStateFileSize());
 
-							SDL::RWops file = SDL::RWops(SDL_RWFromMem(save_state_buffer.data(), save_state_buffer.size()));
+							SDL::IOStream file = SDL::IOStream(SDL_IOFromMem(save_state_buffer.data(), save_state_buffer.size()));
 
 							if (file)
 							{
@@ -2610,7 +2525,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, SDL::RWops &&file)
+					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						LoadSaveState(file);
 						return true;
@@ -2626,7 +2541,7 @@ void Frontend::Update()
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, dear_imgui_windows ? &*::window : nullptr);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, native_windows ? nullptr : &*::window);
 				}
 			};
 
@@ -2711,7 +2626,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
 
-				if (dear_imgui_windows)
+				if (!native_windows)
 				{
 					ImGui::MenuItem("Display Window", nullptr, &pop_out);
 					ImGui::Separator();
@@ -2735,11 +2650,7 @@ void Frontend::Update()
 			if (ImGui::BeginMenu("Development"))
 			{
 				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
-
-			#ifdef FILE_PICKER_HAS_NATIVE_FILE_DIALOGS
 				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
-			#endif
-
 				ImGui::EndMenu();
 			}
 		#endif
@@ -2839,13 +2750,13 @@ void Frontend::Update()
 					selected_framebuffer_texture = framebuffer_texture_upscaled;
 
 					// Before we can do that though, we have to actually render the upscaled framebuffer.
-					SDL_Rect framebuffer_rect;
+					SDL_FRect framebuffer_rect;
 					framebuffer_rect.x = 0;
 					framebuffer_rect.y = 0;
 					framebuffer_rect.w = emulator->GetCurrentScreenWidth();
 					framebuffer_rect.h = emulator->GetCurrentScreenHeight();
 
-					SDL_Rect upscaled_framebuffer_rect;
+					SDL_FRect upscaled_framebuffer_rect;
 					upscaled_framebuffer_rect.x = 0;
 					upscaled_framebuffer_rect.y = 0;
 					upscaled_framebuffer_rect.w = destination_width * framebuffer_upscale_factor;
@@ -2855,7 +2766,7 @@ void Frontend::Update()
 					SDL_SetRenderTarget(window->GetRenderer(), framebuffer_texture_upscaled);
 
 					// Render.
-					SDL_RenderCopy(window->GetRenderer(), window->framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
+					SDL_RenderTexture(window->GetRenderer(), window->framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
 
 					// Switch back to actually rendering to the screen.
 					SDL_SetRenderTarget(window->GetRenderer(), nullptr);

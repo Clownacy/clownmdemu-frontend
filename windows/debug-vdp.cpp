@@ -11,7 +11,7 @@
 #include <functional>
 #include <vector>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "../libraries/imgui/imgui.h"
 #include "../common/core/clowncommon/clowncommon.h"
@@ -564,7 +564,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 		textures.reserve(TOTAL_SPRITES);
 
 		for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
-			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, "nearest"));
+			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, SDL_SCALEMODE_NEAREST));
 	}
 
 	RegenerateTexturesIfNeeded(
@@ -590,7 +590,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	constexpr cc_u16f plane_texture_height = 1024;
 
 	if (!texture)
-		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, "nearest");
+		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, SDL_SCALEMODE_NEAREST);
 
 	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
@@ -606,7 +606,12 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		SDL_RenderClear(renderer);
 		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
 		const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-		const SDL_Rect visible_area_rectangle = {0x80, 0x80 * vertical_scale, vdp.h40_enabled ? 320 : 256, (vdp.v30_enabled ? 240 : 224) * vertical_scale};
+		const SDL_FRect visible_area_rectangle = {
+			static_cast<float>(0x80),
+			static_cast<float>(0x80 * vertical_scale),
+			static_cast<float>(vdp.h40_enabled ? 320 : 256),
+			static_cast<float>((vdp.v30_enabled ? 240 : 224) * vertical_scale)
+		};
 		SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
 		std::vector<cc_u8l> sprite_vector;
@@ -628,9 +633,9 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			const cc_u8f sprite_index = *it;
 			const Sprite sprite = GetSprite(vdp, sprite_index);
 
-			const SDL_Rect src_rect = {0, 0, static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-			const SDL_Rect dst_rect = {static_cast<int>(sprite.x), static_cast<int>(sprite.cached.y), static_cast<int>(sprite.cached.width * tile_width), static_cast<int>(sprite.cached.height * tile_height)};
-			SDL_RenderCopy(renderer, textures[sprite_index], &src_rect, &dst_rect);
+			const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+			const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+			SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
 		}
 
 		SDL_SetRenderTarget(renderer, nullptr);

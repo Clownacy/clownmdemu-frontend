@@ -8,7 +8,7 @@
 
 #include <fmt/core.h>
 
-#include "SDL.h"
+#include <SDL3/SDL.h>
 
 #include "libraries/imgui/imgui.h"
 #include "common/core/clowncommon/clowncommon.h"
@@ -24,7 +24,7 @@ public:
 
 	DebugLog()
 	{
-		SDL_LogSetPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
+		SDL_SetLogPriority(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR);
 	}
 
 	void ForceConsoleOutput(const bool forced)
