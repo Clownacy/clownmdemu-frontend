@@ -15,7 +15,7 @@ void DebugFrontend::DisplayInternal()
 		ImGui::TableNextColumn();
 
 		const char* const renderer_name = SDL_GetRendererName(GetWindow().GetRenderer());
-		ImGui::TextUnformatted(renderer_name == nullptr ? "Unknown" : renderer_name);
+		ImGui::TextUnformatted(renderer_name == nullptr ? "unknown" : renderer_name);
 
 		// GPU
 		const char* const gpu_name = [&]() -> const char*
@@ -23,17 +23,17 @@ void DebugFrontend::DisplayInternal()
 			const auto property_id = SDL_GetRendererProperties(GetWindow().GetRenderer());
 
 			if (property_id == 0)
-				return "Unknown";
+				return "unknown";
 
 			const auto device_pointer = static_cast<SDL_GPUDevice*>(SDL_GetPointerProperty(property_id, SDL_PROP_RENDERER_GPU_DEVICE_POINTER, nullptr));
 
 			if (device_pointer == nullptr)
-				return "None";
+				return "none";
 
 			const auto name = SDL_GetGPUDeviceDriver(device_pointer);
 
 			if (name == nullptr)
-				return "Unknown";
+				return "unknown";
 
 			return name;
 		}();
@@ -49,7 +49,7 @@ void DebugFrontend::DisplayInternal()
 
 		ImGui::TableNextColumn();
 		const char* const video_driver_name = SDL_GetCurrentVideoDriver();
-		ImGui::TextUnformatted(video_driver_name != nullptr ? video_driver_name : "None");
+		ImGui::TextUnformatted(video_driver_name != nullptr ? video_driver_name : "none");
 
 		// Audio
 		ImGui::TableNextColumn();
@@ -57,7 +57,7 @@ void DebugFrontend::DisplayInternal()
 
 		ImGui::TableNextColumn();
 		const char* const audio_driver_name = SDL_GetCurrentAudioDriver();
-		ImGui::TextUnformatted(audio_driver_name != nullptr ? audio_driver_name : "None");
+		ImGui::TextUnformatted(audio_driver_name != nullptr ? audio_driver_name : "none");
 
 		ImGui::EndTable();
 	}
