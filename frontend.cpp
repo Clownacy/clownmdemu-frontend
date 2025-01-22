@@ -1080,7 +1080,7 @@ bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &hei
 	float width_float, height_float;
 	if (!SDL_GetTextureSize(framebuffer_texture_upscaled, &width_float, &height_float))
 	{
-		debug_log.Log("SDL_GetTextureSize failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_GetTextureSize failed with the following message - '{}'", SDL_GetError());
 		return false;
 	}
 
@@ -1474,7 +1474,7 @@ static void LoadConfiguration()
 
 	if (display_index == 0)
 	{
-		debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '%s'", SDL_GetError());
+		debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '{}'", SDL_GetError());
 	}
 	else
 	{
@@ -1482,7 +1482,7 @@ static void LoadConfiguration()
 
 		if (display_mode == nullptr)
 		{
-			debug_log.Log("SDL_GetCurrentDisplayMode failed with the following message - '%s'", SDL_GetError());
+			debug_log.Log("SDL_GetCurrentDisplayMode failed with the following message - '{}'", SDL_GetError());
 		}
 		else
 		{

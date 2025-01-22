@@ -23,7 +23,7 @@ static float GetDisplayDPIScale()
 
 	if (display_index == 0)
 	{
-		Frontend::debug_log.Log("SDL_GetPrimaryDisplay failed with the following message - '%s'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_GetPrimaryDisplay failed with the following message - '{}'", SDL_GetError());
 		return 1.0f;
 	}
 
@@ -36,7 +36,7 @@ float Window::GetSizeScale()
 
 	if (display_index == 0)
 	{
-		Frontend::debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '%s'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '{}'", SDL_GetError());
 		return 1.0f;
 	}
 
