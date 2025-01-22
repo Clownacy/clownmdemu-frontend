@@ -20,6 +20,7 @@ void DebugFrontend::DisplayInternal()
 		// GPU
 		const char* const gpu_name = [&]() -> const char*
 		{
+#if SDL_VERSION_ATLEAST(3, 1, 6)
 			const auto property_id = SDL_GetRendererProperties(GetWindow().GetRenderer());
 
 			if (property_id == 0)
@@ -36,6 +37,9 @@ void DebugFrontend::DisplayInternal()
 				return "unknown";
 
 			return name;
+#else
+			return "unknown";
+#endif
 		}();
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("GPU");
