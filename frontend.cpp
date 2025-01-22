@@ -135,9 +135,13 @@ private:
 		ImGui::SeparatorText("ClownMDEmu " VERSION);
 
 		ImGui::TextUnformatted("This is a Sega Mega Drive (AKA Sega Genesis) emulator. Created by Clownacy.");
-		const char* const url = "https://github.com/Clownacy/clownmdemu-frontend";
-		if (ImGui::TextLink(url))
-			SDL_OpenURL(url);
+		constexpr auto DoURL = [](const char* const url)
+		{
+			if (ImGui::TextLink(url))
+				SDL_OpenURL(url);
+		};
+		DoURL("https://github.com/Clownacy/clownmdemu-frontend");
+		DoURL("https://github.com/Clownacy/clownmdemu-core");
 
 		ImGui::SeparatorText("Licences");
 
