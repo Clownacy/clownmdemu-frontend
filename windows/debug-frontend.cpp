@@ -17,6 +17,32 @@ void DebugFrontend::DisplayInternal()
 		const char* const renderer_name = SDL_GetRendererName(GetWindow().GetRenderer());
 		ImGui::TextUnformatted(renderer_name == nullptr ? "Unknown" : renderer_name);
 
+		// GPU
+		const char* const gpu_name = [&]() -> const char*
+		{
+			const auto property_id = SDL_GetRendererProperties(GetWindow().GetRenderer());
+
+			if (property_id == 0)
+				return "Unknown";
+
+			const auto device_pointer = static_cast<SDL_GPUDevice*>(SDL_GetPointerProperty(property_id, SDL_PROP_RENDERER_GPU_DEVICE_POINTER, nullptr));
+
+			if (device_pointer == nullptr)
+				return "None";
+
+			const auto name = SDL_GetGPUDeviceDriver(device_pointer);
+
+			if (name == nullptr)
+				return "Unknown";
+
+			return name;
+		}();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("GPU");
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(gpu_name);
+
 		// Video
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Video");
