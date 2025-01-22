@@ -2669,6 +2669,7 @@ void Frontend::Update()
 		// We do this cursor stuff so that the framebuffer is drawn over the button.
 		const ImVec2 cursor = ImGui::GetCursorPos();
 		ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
+		ImGui::SetItemDefaultFocus();
 
 		emulator_has_focus = ImGui::IsItemFocused();
 
