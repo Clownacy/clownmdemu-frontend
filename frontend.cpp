@@ -2632,7 +2632,7 @@ void Frontend::Update()
 
 			if (ImGui::BeginMenu("Debugging"))
 			{
-				PopupButton("Log", debug_log_window, 400, 300, true);
+				PopupButton("Log", debug_log_window, 800, 600, true);
 
 				PopupButton("Toggles", debugging_toggles_window, 234, 444, false);
 
