@@ -74,7 +74,7 @@ namespace Frontend
 	extern bool integer_screen_scaling;
 	extern bool tall_double_resolution_mode;
 	extern bool fast_forward_in_progress;
-	extern bool dear_imgui_windows;
+	extern bool native_windows;
 
 	std::filesystem::path GetConfigurationDirectoryPath();
 	bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);

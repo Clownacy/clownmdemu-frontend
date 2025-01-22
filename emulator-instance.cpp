@@ -45,9 +45,9 @@ void EmulatorInstance::Cartridge::Eject()
 	// Write save data to disk.
 	if (emulator.state->clownmdemu.external_ram.non_volatile && emulator.state->clownmdemu.external_ram.size != 0)
 	{
-		SDL::RWops file = SDL::RWFromFile(save_data_path, "wb");
+		SDL::IOStream file = SDL::IOFromFile(save_data_path, "wb");
 
-		if (!file || SDL_RWwrite(file, emulator.state->clownmdemu.external_ram.buffer, emulator.state->clownmdemu.external_ram.size, 1) != 1)
+		if (!file || SDL_WriteIO(file, emulator.state->clownmdemu.external_ram.buffer, emulator.state->clownmdemu.external_ram.size) != emulator.state->clownmdemu.external_ram.size)
 			Frontend::debug_log.Log("Could not write save data file");
 	}
 

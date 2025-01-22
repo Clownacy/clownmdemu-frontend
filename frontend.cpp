@@ -859,7 +859,7 @@ bool Frontend::use_vsync;
 bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
 bool Frontend::fast_forward_in_progress;
-bool Frontend::dear_imgui_windows;
+bool Frontend::native_windows;
 
 Input Frontend::keyboard_input;
 std::array<InputBinding, SDL_SCANCODE_COUNT > Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
@@ -882,8 +882,6 @@ static bool emulator_frame_advance;
 
 static bool quick_save_exists;
 static EmulatorInstance::State quick_save_state;
-
-static bool native_windows;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -2065,14 +2063,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 						// TODO: This is currently just Genesis Plus GX's libretro button layout,
 						// but I would like something closer to a real 6-button controller's layout.
-						DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_WEST         );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_SOUTH        );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_GAMEPAD_BUTTON_EAST         );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_LEFTSHOULDER );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH        );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHTSHOULDER);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START        );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_WEST          );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_SOUTH         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_GAMEPAD_BUTTON_EAST          );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START         );
+						DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK          );
 
 						#undef DO_BUTTON
 
@@ -2240,7 +2238,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 
 		case SDL_EVENT_DROP_FILE:
-			drag_and_drop_filename = reinterpret_cast<const char8_t*>(event.drop.file);
+			drag_and_drop_filename = reinterpret_cast<const char8_t*>(event.drop.data);
 			break;
 
 		default:
@@ -2300,7 +2298,7 @@ void Frontend::Update()
 	{
 		if (CDReader::IsMegaCDGame(drag_and_drop_filename))
 		{
-			LoadCDFile(drag_and_drop_filename, SDL::RWFromFile(drag_and_drop_filename, "rb"));
+			LoadCDFile(drag_and_drop_filename, SDL::IOFromFile(drag_and_drop_filename, "rb"));
 			emulator_paused = false;
 		}
 		else

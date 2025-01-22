@@ -39,7 +39,7 @@ namespace SDL
 		else
 		{
 			// Disable blending, since we don't need it
-			if (!SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE))
+			if (!SDL_SetTextureBlendMode(texture, blending ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE))
 				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '{}'", SDL_GetError());
 
 			if (!SDL_SetTextureScaleMode(texture, scale_mode))

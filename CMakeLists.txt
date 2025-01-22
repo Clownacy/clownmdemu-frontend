@@ -89,7 +89,7 @@ if(WIN32)
 	target_compile_definitions(clownmdemu PRIVATE UNICODE _UNICODE)
 
 	if(MINGW)
-		target_link_options(clownmdemu-frontend PRIVATE -municode)
+		target_link_options(clownmdemu PRIVATE -municode)
 	endif()
 endif()
 
@@ -172,12 +172,12 @@ target_link_libraries(clownmdemu clownmdemu-frontend-common)
 # Link SDL
 find_package(SDL3 3.1.3 CONFIG COMPONENTS SDL3)
 if(SDL3_FOUND)
-	target_link_libraries(clownmdemu-frontend SDL3::SDL3)
+	target_link_libraries(clownmdemu SDL3::SDL3)
 else()
 	set(SDL_STATIC ON)
 	set(SDL_SHARED OFF)
 	add_subdirectory("libraries/SDL" EXCLUDE_FROM_ALL)
-	target_link_libraries(clownmdemu-frontend SDL3::SDL3-static)
+	target_link_libraries(clownmdemu SDL3::SDL3-static)
 endif()
 
 if(CLOWNMDEMU_FRONTEND_FREETYPE)

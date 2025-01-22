@@ -40,7 +40,7 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 		}
 		catch (const std::bad_alloc&)
 		{
-			debug_log.Log("FileUtilities::CreateFileDialog: Failed to allocate memory.");
+			Frontend::debug_log.Log("FileUtilities::CreateFileDialog: Failed to allocate memory.");
 		}
 	}
 

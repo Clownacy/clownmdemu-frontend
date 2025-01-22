@@ -252,7 +252,7 @@ void DebugVDP::RegeneratingTextures::RegenerateTexturesIfNeeded(const std::funct
 			Uint32 *sprite_texture_pixels;
 			int sprite_texture_pitch;
 
-			if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch) == 0)
+			if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&sprite_texture_pixels), &sprite_texture_pitch))
 			{
 				callback(texture_index, sprite_texture_pixels, sprite_texture_pitch / sizeof(*sprite_texture_pixels));
 				SDL_UnlockTexture(texture);
@@ -300,7 +300,7 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 		texture_width = texture_width_rounded_up;
 		texture_height = texture_height_rounded_up;
 
-		textures.emplace_back(SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), "nearest"));
+		textures.emplace_back(SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), SDL_SCALEMODE_NEAREST));
 	}
 
 	if (!textures.empty())
@@ -331,7 +331,7 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	}
 }
 
-SDL_Rect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u8f palette_line_index) const
+SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u8f palette_line_index) const
 {
 	const auto total_pieces = piece_buffer_size_in_pixels / piece_width / piece_height;
 	const auto index_1d = palette_line_index * total_pieces + piece_index;
@@ -339,14 +339,14 @@ SDL_Rect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_inde
 	const auto piece_x = (index_1d % texture_width_in_pieces) * piece_width;
 	const auto piece_y = (index_1d / texture_width_in_pieces) * piece_height;
 
-	return SDL_Rect(piece_x, piece_y, piece_width, piece_height);
+	return SDL_FRect(piece_x, piece_y, piece_width, piece_height);
 }
 
 void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileMetadata piece_metadata, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u16f x, const cc_u16f y, const cc_u8f brightness_index, const bool transparency, const bool swap_coordinates)
 {
 	// TODO: Use the brightness and transparency variables.
 	const auto piece_rect = GetPieceRect(piece_metadata.tile_index, piece_width, piece_height, piece_buffer_size_in_pixels, piece_metadata.palette_line);
-	const auto destination_rect = SDL_Rect(x * piece_width, y * piece_height, piece_width, piece_height);
+	const auto destination_rect = SDL_FRect(x * piece_width, y * piece_height, piece_width, piece_height);
 
 	int flip = SDL_FLIP_NONE;
 	if (piece_metadata.x_flip)
@@ -361,7 +361,7 @@ void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileM
 		flip ^= SDL_FLIP_HORIZONTAL;
 	}
 
-	SDL_RenderCopyEx(renderer, textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_RendererFlip>(flip));
+	SDL_RenderTextureRotated(renderer, textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_FlipMode>(flip));
 }
 
 template<typename Derived>
@@ -382,7 +382,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const cc_u16f map_texture_height = maximum_map_height_in_pixels;
 
 	if (textures.empty())
-		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_TARGET, map_texture_width, map_texture_height, "nearest"));
+		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_TARGET, map_texture_width, map_texture_height, SDL_SCALEMODE_NEAREST));
 
 	if (!textures.empty())
 	{
