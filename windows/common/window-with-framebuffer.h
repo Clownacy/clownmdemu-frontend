@@ -8,7 +8,7 @@
 class WindowWithFramebuffer : public WindowWithDearImGui
 {
 private:
-	static SDL_Texture* CreateFramebufferTexture(SDL_Renderer* const renderer, const int framebuffer_width, const int framebuffer_height);
+	static SDL::Texture CreateFramebufferTexture(SDL::Renderer &renderer, const int framebuffer_width, const int framebuffer_height);
 
 public:
 	SDL::Texture framebuffer_texture;
