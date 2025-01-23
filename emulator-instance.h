@@ -26,7 +26,7 @@ public:
 		static constexpr unsigned int total_colours_in_palette_line = 16;
 
 		ClownMDEmu_State clownmdemu;
-		std::array<Uint32, total_colours_in_palette_line * total_palette_lines * total_brightnesses> colours;
+		std::array<SDL::Pixel, total_colours_in_palette_line * total_palette_lines * total_brightnesses> colours;
 		CDReader::State cd;
 
 		auto GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
@@ -76,7 +76,7 @@ private:
 	Cartridge cartridge = {*this};
 	CDReader cd_file;
 
-	Uint32 *framebuffer_texture_pixels = nullptr;
+	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING

@@ -220,7 +220,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 	if (!SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
 		framebuffer_texture_pixels = nullptr;
 
-	framebuffer_texture_pitch /= sizeof(Uint32);
+	framebuffer_texture_pitch /= sizeof(SDL::Pixel);
 
 	// Run the emulator for a frame
 	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1) && !RewindingExhausted(); ++i)

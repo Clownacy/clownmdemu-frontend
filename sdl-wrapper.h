@@ -28,6 +28,8 @@ namespace SDL
 	inline IOStream IOFromFile(const std::string &path, const char* const mode) { return IOFromFile(path.c_str(), mode); }
 	inline IOStream IOFromFile(const std::filesystem::path &path, const char* const mode) { return IOFromFile(reinterpret_cast<const char*>(path.u8string().c_str()), mode); }
 
+	using Pixel = Uint32;
+
 	inline Texture CreateTexture(Renderer &renderer, const SDL_TextureAccess access, const int width, const int height, const SDL_ScaleMode scale_mode, const bool blending = false)
 	{
 		Texture texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, access, width, height));

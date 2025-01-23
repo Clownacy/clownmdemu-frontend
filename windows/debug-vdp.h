@@ -18,7 +18,7 @@ namespace DebugVDP
 	using ReadTileWord = std::function<cc_u16f(cc_u16f word_index)>;
 	using DrawMapPiece = std::function<void(SDL::Renderer &renderer, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
-	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, Uint32 *pixels, int pitch)>;
+	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, SDL::Pixel *pixels, int pitch)>;
 
 	struct BrightnessAndPaletteLineSettings
 	{
@@ -43,7 +43,7 @@ namespace DebugVDP
 	{
 		using RegeneratingTexturesBase::textures;
 
-		void RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, Uint32 *pixels, int pitch)> &callback, bool force_regenerate = false);
+		void RegenerateTexturesIfNeeded(const std::function<void(unsigned int texture_index, SDL::Pixel *pixels, int pitch)> &callback, bool force_regenerate = false);
 	};
 
 	struct RegeneratingTexturesHardwareAccelerated : private RegeneratingTexturesBase
