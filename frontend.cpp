@@ -2557,7 +2557,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, 160, 320, false);
+				PopupButton("Frontend", debug_frontend_window, 164, 324, false);
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
@@ -2584,7 +2584,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("VDP"))
 				{
-					PopupButton("Registers", vdp_registers_window, 360, 920, false, "VDP Registers");
+					PopupButton("Registers", vdp_registers_window, 360, 924, false, "VDP Registers");
 					PopupButton("Sprites", sprite_list_window, 540, 344, true);
 					PopupButton("VRAM", vram_viewer_window, 460, 460, true);
 					PopupButton("CRAM", cram_viewer_window, 384, 192, false);
@@ -2603,7 +2603,7 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
-				PopupButton("FM", fm_status_window, 470, 780, false, "FM Registers");
+				PopupButton("FM", fm_status_window, 470, 784, false, "FM Registers");
 
 				PopupButton("PSG", psg_status_window, 290, 264, false, "PSG Registers");
 
@@ -2614,9 +2614,9 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
-				PopupButton("CDC", cdc_status_window, 200, 360, false);
+				PopupButton("CDC", cdc_status_window, 200, 364, false);
 
-				PopupButton("CDDA", cdda_status_window, 180, 320, false);
+				PopupButton("CDDA", cdda_status_window, 180, 324, false);
 
 				PopupButton("Other", other_status_window, 350, 810, false);
 
