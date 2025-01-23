@@ -2603,7 +2603,7 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
-				PopupButton("FM", fm_status_window, 470, 784, false, "FM Registers");
+				PopupButton("FM", fm_status_window, 470, 804, false, "FM Registers");
 
 				PopupButton("PSG", psg_status_window, 290, 264, false, "PSG Registers");
 
