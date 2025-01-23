@@ -343,7 +343,7 @@ private:
 			ImGui::TextUnformatted("Z80 Bank");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000 - 1);
+			ImGui::TextFormatted("0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
@@ -370,14 +370,14 @@ private:
 			ImGui::TextUnformatted("PRG-RAM Bank");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000 - 1);
+			ImGui::TextFormatted("0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("PRG-RAM Write-Protect");
 			ImGui::TableNextColumn();
 			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200 - 1);
+			ImGui::TextFormatted("0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
