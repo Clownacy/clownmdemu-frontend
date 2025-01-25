@@ -15,9 +15,7 @@ Some standard features of the Mega Drive are currently unemulated (see
 ![Debug](/assets/screenshot-debug.png)
 
 The repository contains ClownMDEmu's standalone frontend; it is written in
-C++20 and leverages the SDL2, Dear ImGui, FreeType, and inih libraries. On
-Unix platforms, there is also an optional dependency on the Zenity and kdialog
-projects.
+C++20 and leverages the SDL3, Dear ImGui, FreeType, and inih libraries.
 
 ## Controls
 
