@@ -1742,6 +1742,14 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 {
 	frame_rate_callback = frame_rate_callback_param;
 
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "ClownMDEmu");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, VERSION);
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "com.clownacy.clownmdemu");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_CREATOR_STRING, "Clownacy");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_COPYRIGHT_STRING, "Copyright (c) 2025 Clownacy");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/Clownacy/clownmdemu-frontend");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
+
 	// Initialise SDL
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
 	{
