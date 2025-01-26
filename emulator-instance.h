@@ -93,19 +93,31 @@ private:
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
 
+	SDL::IOStream save_data_stream;
+
 	static cc_u8f CartridgeReadCallback(void *user_data, cc_u32f address);
 	static void CartridgeWrittenCallback(void *user_data, cc_u32f address, cc_u8f value);
 	static void ColourUpdatedCallback(void *user_data, cc_u16f index, cc_u16f colour);
 	static void ScanlineRenderedCallback(void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f screen_width, cc_u16f screen_height);
 	static cc_bool ReadInputCallback(void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
+
 	static void FMAudioCallback(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void PSGAudioCallback(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
 	static void PCMAudioCallback(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 	static void CDDAAudioCallback(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+
 	static void CDSeekCallback(void *user_data, cc_u32f sector_index);
 	static void CDSectorReadCallback(void *user_data, cc_u16l *buffer);
 	static cc_bool CDSeekTrackCallback(void *user_data, cc_u16f track_index, ClownMDEmu_CDDAMode mode);
 	static std::size_t CDAudioReadCallback(void *user_data, cc_s16l *sample_buffer, std::size_t total_frames);
+
+	static cc_bool SaveFileOpenedForReadingCallback(void *user_data, const char *filename);
+	static cc_s16f SaveFileReadCallback(void *user_data);
+	static cc_bool SaveFileOpenedForWriting(void *user_data, const char *filename);
+	static void SaveFileWritten(void *user_data, cc_u8f byte);
+	static void SaveFileClosed(void *user_data);
+	static cc_bool SaveFileRemoved(void *user_data, const char *filename);
+	static cc_bool SaveFileSizeObtained(void *user_data, const char *filename, std::size_t *size);
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);

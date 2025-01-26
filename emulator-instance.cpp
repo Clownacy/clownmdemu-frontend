@@ -197,6 +197,62 @@ std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l
 	return emulator->cd_file.ReadAudio(sample_buffer, total_frames);
 }
 
+cc_bool EmulatorInstance::SaveFileOpenedForReadingCallback(void* const user_data, const char* const filename)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	emulator->save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "rb");
+	return emulator->save_data_stream != nullptr;
+}
+
+cc_s16f EmulatorInstance::SaveFileReadCallback(void* const user_data)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+	Uint8 byte;
+
+	if (!SDL_ReadU8(emulator->save_data_stream, &byte))
+		return -1;
+
+	return byte;
+}
+
+cc_bool EmulatorInstance::SaveFileOpenedForWriting(void* const user_data, const char* const filename)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	emulator->save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "wb");
+	return emulator->save_data_stream != nullptr;
+}
+
+void EmulatorInstance::SaveFileWritten(void* const user_data, const cc_u8f byte)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	SDL_WriteU8(emulator->save_data_stream, byte);
+}
+
+void EmulatorInstance::SaveFileClosed(void* const user_data)
+{
+	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+
+	emulator->save_data_stream.reset();
+}
+
+cc_bool EmulatorInstance::SaveFileRemoved([[maybe_unused]] void* const user_data, const char* const filename)
+{
+	return SDL::RemovePath(Frontend::GetSaveDataDirectoryPath() / filename);
+}
+
+cc_bool EmulatorInstance::SaveFileSizeObtained([[maybe_unused]] void* const user_data, const char* const filename, std::size_t* const size)
+{
+	SDL_PathInfo info;
+	if (!SDL::GetPathInfo(Frontend::GetSaveDataDirectoryPath() / filename, &info))
+		return cc_false;
+
+	*size = info.size;
+	return cc_true;
+}
+
 EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback
@@ -204,7 +260,28 @@ EmulatorInstance::EmulatorInstance(
 	: audio_output()
 	, texture(texture)
 	, input_callback(input_callback)
-	, callbacks({this, CartridgeReadCallback, CartridgeWrittenCallback, ColourUpdatedCallback, ScanlineRenderedCallback, ReadInputCallback, FMAudioCallback, PSGAudioCallback, PCMAudioCallback, CDDAAudioCallback, CDSeekCallback, CDSectorReadCallback, CDSeekTrackCallback, CDAudioReadCallback})
+	, callbacks({this,
+		CartridgeReadCallback,
+		CartridgeWrittenCallback,
+		ColourUpdatedCallback,
+		ScanlineRenderedCallback,
+		ReadInputCallback,
+		FMAudioCallback,
+		PSGAudioCallback,
+		PCMAudioCallback,
+		CDDAAudioCallback,
+		CDSeekCallback,
+		CDSectorReadCallback,
+		CDSeekTrackCallback,
+		CDAudioReadCallback,
+		SaveFileOpenedForReadingCallback,
+		SaveFileReadCallback,
+		SaveFileOpenedForWriting,
+		SaveFileWritten,
+		SaveFileClosed,
+		SaveFileRemoved,
+		SaveFileSizeObtained
+	})
 {
 	ClownCD_SetErrorCallback([]([[maybe_unused]] void* const user_data, const char* const message) { Frontend::debug_log.Log("ClownCD: {}", message); }, nullptr);
 

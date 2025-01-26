@@ -77,6 +77,7 @@ namespace Frontend
 	extern bool native_windows;
 
 	std::filesystem::path GetConfigurationDirectoryPath();
+	std::filesystem::path GetSaveDataDirectoryPath();
 	bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 	void SetAudioPALMode(bool enabled);
 	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);

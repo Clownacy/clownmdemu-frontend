@@ -1110,6 +1110,11 @@ std::filesystem::path Frontend::GetConfigurationDirectoryPath()
 	return path;
 }
 
+std::filesystem::path Frontend::GetSaveDataDirectoryPath()
+{
+	return GetConfigurationDirectoryPath() / "Save Data";
+}
+
 static std::filesystem::path GetConfigurationFilePath()
 {
 	return GetConfigurationDirectoryPath() / "configuration.ini";
@@ -1122,7 +1127,7 @@ static std::filesystem::path GetDearImGuiSettingsFilePath()
 
 static std::filesystem::path GetSaveDataFilePath(const std::filesystem::path &rom_path)
 {
-	return (GetConfigurationDirectoryPath() / "Save Data" / rom_path.stem()).replace_extension(".srm");
+	return (GetSaveDataDirectoryPath() / rom_path.stem()).replace_extension(".srm");
 }
 
 static void SetWindowTitleToSoftwareName()

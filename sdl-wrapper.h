@@ -24,9 +24,32 @@ namespace SDL
 	MAKE_RAII_POINTER(Texture,  SDL_Texture,  SDL_DestroyTexture );
 	MAKE_RAII_POINTER(IOStream, SDL_IOStream, SDL_CloseIO        );
 
-	inline IOStream IOFromFile(const char* const path, const char* const mode) { return IOStream(SDL_IOFromFile(path, mode)); }
-	inline IOStream IOFromFile(const std::string &path, const char* const mode) { return IOFromFile(path.c_str(), mode); }
-	inline IOStream IOFromFile(const std::filesystem::path &path, const char* const mode) { return IOFromFile(reinterpret_cast<const char*>(path.u8string().c_str()), mode); }
+	template<auto Function, typename... Args>
+	auto PathFunction(const char* const path, Args &&...args)
+	{
+		return Function(path, std::forward<Args>(args)...);
+	};
+
+	template<auto Function, typename... Args>
+	auto PathFunction(const std::string &path, Args &&...args)
+	{
+		return Function(path.c_str(), std::forward<Args>(args)...);
+	};
+
+	template<auto Function, typename... Args>
+	auto PathFunction(const std::filesystem::path &path, Args &&...args)
+	{
+		return Function(reinterpret_cast<const char*>(path.u8string().c_str()), std::forward<Args>(args)...);
+	};
+
+	template<typename T>
+	IOStream IOFromFile(const T &path, const char* const mode) { return IOStream(PathFunction<SDL_IOFromFile>(path, mode)); }
+
+	template<typename T>
+	bool RemovePath(const T &path) { return PathFunction<SDL_RemovePath>(path); }
+
+	template<typename T>
+	bool GetPathInfo(const T &path, SDL_PathInfo* const info) { return PathFunction<SDL_GetPathInfo>(path, info); }
 
 	using Pixel = Uint32;
 

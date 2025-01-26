@@ -9,12 +9,10 @@ struct NAME##Deleter \
 	void operator()(TYPE* const pointer) { DELETER(pointer); } \
 }; \
  \
-class NAME : private std::unique_ptr<TYPE, NAME##Deleter> \
+class NAME : public std::unique_ptr<TYPE, NAME##Deleter> \
 { \
 public: \
 	using std::unique_ptr<TYPE, NAME##Deleter>::unique_ptr; \
-	using std::unique_ptr<TYPE, NAME##Deleter>::release; \
-	using std::unique_ptr<TYPE, NAME##Deleter>::operator bool; \
  \
 	operator TYPE*() { return get(); } \
 	operator const TYPE*() const { return get(); } \
