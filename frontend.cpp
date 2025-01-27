@@ -1784,7 +1784,10 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 
 		// If the user passed the path to the software on the command line, then load it here, automatically.
 		if (argc > 1)
-			LoadCartridgeFile(argv[1]);
+		{
+			const auto path = reinterpret_cast<const char8_t*>(argv[1]);
+			LoadSoftwareFile(CDReader::IsMegaCDGame(path), path);
+		}
 
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
