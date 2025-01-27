@@ -206,20 +206,20 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 	return SDL::GetPathInfo(path, nullptr);
 }
 
-bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
+std::optional<std::vector<unsigned char>> FileUtilities::LoadFileToBuffer(const std::filesystem::path &path)
 {
 	SDL::IOStream file = SDL::IOFromFile(path, "rb");
 
 	if (!file)
 	{
 		Frontend::debug_log.Log("SDL_IOFromFile failed with the following message - '{}'", SDL_GetError());
-		return false;
+		return std::nullopt;
 	}
 
-	return LoadFileToBuffer(file_buffer, file);
+	return LoadFileToBuffer(file);
 }
 
-bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::IOStream &file)
+std::optional<std::vector<unsigned char>> FileUtilities::LoadFileToBuffer(SDL::IOStream &file)
 {
 	const Sint64 size_s64 = SDL_GetIOSize(file);
 
@@ -233,9 +233,9 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 
 		try
 		{
-			file_buffer.resize(size);
+			std::vector<unsigned char> file_buffer(size);
 			SDL_ReadIO(file, file_buffer.data(), size);
-			return true;
+			return file_buffer;
 		}
 		catch (const std::bad_alloc&)
 		{
@@ -243,7 +243,7 @@ bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SD
 		}
 	}
 
-	return false;
+	return std::nullopt;
 }
 
 void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const LoadFileCallback &callback)

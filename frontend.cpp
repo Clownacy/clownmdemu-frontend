@@ -1157,16 +1157,16 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<uns
 
 static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
 {
-	std::vector<unsigned char> file_buffer;
+	auto file_buffer = file_utilities.LoadFileToBuffer(file);
 
-	if (!file_utilities.LoadFileToBuffer(file_buffer, file))
+	if (!file_buffer.has_value())
 	{
 		debug_log.Log("Could not load the cartridge file");
 		window->ShowErrorMessageBox("Failed to load the cartridge file.");
 		return false;
 	}
 
-	LoadCartridgeFile(path, std::move(file_buffer));
+	LoadCartridgeFile(path, std::move(*file_buffer));
 
 	return true;
 }
@@ -1240,16 +1240,16 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 
 static bool LoadSaveState(SDL::IOStream &file)
 {
-	std::vector<unsigned char> file_buffer;
+	const auto file_buffer = file_utilities.LoadFileToBuffer(file);
 
-	if (!file_utilities.LoadFileToBuffer(file_buffer, file))
+	if (!file_buffer.has_value())
 	{
 		debug_log.Log("Could not load save state file");
 		window->ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
-	return LoadSaveState(file_buffer);
+	return LoadSaveState(*file_buffer);
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -2323,18 +2323,18 @@ void Frontend::Update()
 		}
 		else
 		{
-			std::vector<unsigned char> file_buffer;
+			auto file_buffer = file_utilities.LoadFileToBuffer(drag_and_drop_filename);
 
-			if (file_utilities.LoadFileToBuffer(file_buffer, drag_and_drop_filename))
+			if (file_buffer.has_value())
 			{
-				if (emulator->ValidateSaveStateFile(file_buffer))
+				if (emulator->ValidateSaveStateFile(*file_buffer))
 				{
 					if (emulator_on)
-						LoadSaveState(file_buffer);
+						LoadSaveState(*file_buffer);
 				}
 				else
 				{
-					LoadCartridgeFile(drag_and_drop_filename, std::move(file_buffer));
+					LoadCartridgeFile(drag_and_drop_filename, std::move(*file_buffer));
 					emulator_paused = false;
 				}
 			}

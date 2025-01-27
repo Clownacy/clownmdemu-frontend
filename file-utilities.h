@@ -40,8 +40,8 @@ public:
 	bool IsDialogOpen() const { return active_file_picker_popup.has_value(); }
 
 	bool FileExists(const std::filesystem::path &path);
-	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path);
-	bool LoadFileToBuffer(std::vector<unsigned char> &file_buffer, SDL::IOStream &file);
+	std::optional<std::vector<unsigned char>> LoadFileToBuffer(const std::filesystem::path &path);
+	std::optional<std::vector<unsigned char>> LoadFileToBuffer(SDL::IOStream &file);
 
 	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);
