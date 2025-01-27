@@ -23,18 +23,21 @@ void EmulatorInstance::Cartridge::Insert(const std::vector<unsigned char> &in_ro
 	save_data_path = in_save_data_path;
 
 	// Load save data from disk.
-	const auto save_data_buffer = Frontend::file_utilities.LoadFileToBuffer(save_data_path);
-
-	if (save_data_buffer.has_value())
+	if (Frontend::file_utilities.FileExists(save_data_path))
 	{
-		if (std::size(*save_data_buffer) > std::size(emulator.state->clownmdemu.external_ram.buffer))
+		const auto save_data_buffer = Frontend::file_utilities.LoadFileToBuffer(save_data_path);
+
+		if (save_data_buffer.has_value())
 		{
-			Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(*save_data_buffer), std::size(emulator.state->clownmdemu.external_ram.buffer));
-		}
-		else
-		{
-			std::copy(std::begin(*save_data_buffer), std::end(*save_data_buffer), emulator.state->clownmdemu.external_ram.buffer);
-			std::fill(std::begin(emulator.state->clownmdemu.external_ram.buffer) + std::size(*save_data_buffer), std::end(emulator.state->clownmdemu.external_ram.buffer), 0xFF);
+			if (std::size(*save_data_buffer) > std::size(emulator.state->clownmdemu.external_ram.buffer))
+			{
+				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(*save_data_buffer), std::size(emulator.state->clownmdemu.external_ram.buffer));
+			}
+			else
+			{
+				std::copy(std::begin(*save_data_buffer), std::end(*save_data_buffer), emulator.state->clownmdemu.external_ram.buffer);
+				std::fill(std::begin(emulator.state->clownmdemu.external_ram.buffer) + std::size(*save_data_buffer), std::end(emulator.state->clownmdemu.external_ram.buffer), 0xFF);
+			}
 		}
 	}
 }
