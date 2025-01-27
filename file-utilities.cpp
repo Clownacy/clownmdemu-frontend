@@ -203,7 +203,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 bool FileUtilities::FileExists(const std::filesystem::path &path)
 {
-	return SDL::IOFromFile(path, "rb");
+	return SDL::GetPathInfo(path, nullptr);
 }
 
 bool FileUtilities::LoadFileToBuffer(std::vector<unsigned char> &file_buffer, const std::filesystem::path &path)
