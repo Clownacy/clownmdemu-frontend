@@ -31,10 +31,11 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 				(*callback.get())(reinterpret_cast<const char8_t*>(*file_list));
 			};
 
-			if (save)
-				SDL_ShowSaveFileDialog(call_callback, callback_detatched, window.GetSDLWindow(), nullptr, 0, nullptr);
-			else
-				SDL_ShowOpenFileDialog(call_callback, callback_detatched, window.GetSDLWindow(), nullptr, 0, nullptr, false);
+			const auto properties = SDL_CreateProperties();
+			SDL_SetPointerProperty(properties, SDL_PROP_FILE_DIALOG_WINDOW_POINTER, window.GetSDLWindow());
+			SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, title.c_str());
+			SDL_ShowFileDialogWithProperties(save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE, call_callback, callback_detatched, properties);
+			SDL_DestroyProperties(properties);
 
 			done = true;
 		}
