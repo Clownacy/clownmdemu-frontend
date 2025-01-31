@@ -143,7 +143,7 @@ public:
 #ifdef CLOWNMDEMU_FRONTEND_REWINDING
 	bool IsRewinding() const { return rewind_in_progress; }
 	void Rewind(const bool active) { rewind_in_progress = active; }
-	bool RewindingExhausted() const { return IsRewinding() && state_rewind_remaining == 0; }
+	bool RewindingExhausted() const { return IsRewinding() && state_rewind_remaining <= 2; } // We need at least two frames and the frame before it, because rewinding pops one frame and then samples the frame below the head.
 #endif
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
