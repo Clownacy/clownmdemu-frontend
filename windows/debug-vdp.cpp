@@ -215,7 +215,7 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 			"Highlight"
 		};
 
-		options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_index, i);
+		options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_option_index, i);
 	}
 
 	ImGui::SeparatorText("Palette Line");
@@ -224,7 +224,7 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 		if (i != 0)
 			ImGui::SameLine();
 
-		options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line_index, i);
+		options_changed |= ImGui::RadioButton(std::to_string(i).c_str(), &palette_line_option_index, i);
 	}
 
 	return options_changed;
@@ -332,10 +332,10 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	}
 }
 
-SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u8f palette_line_index) const
+SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u8f palette_line_option_index) const
 {
 	const auto total_pieces = piece_buffer_size_in_pixels / piece_width / piece_height;
-	const auto index_1d = palette_line_index * total_pieces + piece_index;
+	const auto index_1d = palette_line_option_index * total_pieces + piece_index;
 	const auto texture_width_in_pieces = texture_width / piece_width;
 	const auto piece_x = (index_1d % texture_width_in_pieces) * piece_width;
 	const auto piece_y = (index_1d / texture_width_in_pieces) * piece_height;
@@ -343,7 +343,7 @@ SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_ind
 	return SDL_FRect(piece_x, piece_y, piece_width, piece_height);
 }
 
-void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileMetadata piece_metadata, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u16f x, const cc_u16f y, const cc_u8f brightness_index, const bool transparency, const bool swap_coordinates)
+void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileMetadata piece_metadata, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u16f x, const cc_u16f y, const cc_u8f brightness_option_index, const bool transparency, const bool swap_coordinates)
 {
 	// TODO: Use the brightness and transparency variables.
 	const auto piece_rect = GetPieceRect(piece_metadata.tile_index, piece_width, piece_height, piece_buffer_size_in_pixels, piece_metadata.palette_line);
@@ -498,8 +498,8 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			if (stamp_index >= total_stamps)
 				return;
 
-			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index * tiles_per_stamp, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles, false, brightness_index);
+			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index * tiles_per_stamp, .palette_line = static_cast<cc_u8f>(palette_line_option_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles, false, brightness_option_index);
 		}
 	);
 
@@ -540,7 +540,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 				x_flip ^= stamp_metadata.horizontal_flip;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index, .palette_line = 0, .x_flip = x_flip, .y_flip = y_flip, .priority = cc_false};
-			regenerating_pieces.Draw(renderer, tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), maximum_stamp_map_size_in_pixels, x, y, brightness_index, false, swap_coordinates);
+			regenerating_pieces.Draw(renderer, tile_metadata, StampWidthInPixels(state), StampHeightInPixels(state), maximum_stamp_map_size_in_pixels, x, y, brightness_option_index, false, swap_coordinates);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -884,8 +884,8 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			if (piece_index >= VRAMSizeInTiles(vdp))
 				return;
 
-			const VDP_TileMetadata tile_metadata = {.tile_index = piece_index, .palette_line = static_cast<cc_u8f>(palette_line_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness_index);
+			const VDP_TileMetadata tile_metadata = {.tile_index = piece_index, .palette_line = static_cast<cc_u8f>(palette_line_option_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness_option_index);
 		}
 	, "Tile", "Tiles");
 }
@@ -928,7 +928,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 	{
 		const auto cram_index = std::distance(std::cbegin(state.clownmdemu.vdp.cram), it);
 		constexpr cc_u16f length_of_palette_line = 16;
-		const cc_u16f palette_line_index = cram_index / length_of_palette_line;
+		const cc_u16f palette_line_option_index = cram_index / length_of_palette_line;
 		const cc_u16f colour_index = cram_index % length_of_palette_line;
 
 		ImGui::PushID(cram_index);
@@ -972,7 +972,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 		{
 			ImGui::BeginTooltip();
 
-			ImGui::TextFormatted("Line {}, Colour {}", palette_line_index, colour_index);
+			ImGui::TextFormatted("Line {}, Colour {}", palette_line_option_index, colour_index);
 			ImGui::Separator();
 			ImGui::PushFont(GetMonospaceFont());
 			ImGui::TextFormatted("Value: {:03X}", value);
