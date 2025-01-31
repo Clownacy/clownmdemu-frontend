@@ -68,6 +68,7 @@ namespace DebugVDP
 			std::size_t maximum_piece_width,
 			std::size_t maximum_piece_height,
 			std::size_t piece_buffer_size_in_pixels,
+			bool multiple_palette_lines,
 			const RenderPiece &render_piece_callback,
 			bool force_regenerate = false);
 
