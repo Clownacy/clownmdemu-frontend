@@ -87,6 +87,28 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TextUnformatted(pannings[channel.pan_left][channel.pan_right]);
 		}
 
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Amplitude Modulation Sensitivity");
+
+		ImGui::PushFont(monospace_font);
+		for (const auto &channel : fm.channels)
+		{
+			ImGui::TableNextColumn();
+			ImGui::TextFormatted("{}", channel.state.ams);
+		}
+		ImGui::PopFont();
+
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted("Phase Modulation Sensitivity");
+
+		ImGui::PushFont(monospace_font);
+		for (const auto &channel : fm.channels)
+		{
+			ImGui::TableNextColumn();
+			ImGui::TextFormatted("{}", channel.state.fms);
+		}
+		ImGui::PopFont();
+
 		const auto DoSSGEG = [&](const char* const label, const std::function<bool(const FM_Operator_State &op)> &function)
 		{
 			ImGui::TableNextColumn();
@@ -251,6 +273,16 @@ void DebugFM::Registers::DisplayInternal()
 					}
 					ImGui::PopFont();
 
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted("Amplitude Modulation");
+
+					for (const auto &op : channel->state.operators)
+					{
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted(op.amon ? "On" : "Off");
+					}
+
 					if (channel_index == 2)
 					{
 						ImGui::TableNextRow();
@@ -400,6 +432,19 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TextUnformatted("FM3 Mode");
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(fm.channel_3_metadata.csm_mode_enabled ? "CSM" : fm.channel_3_metadata.per_operator_frequencies_enabled ? "Multifrequency" : "Normal");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Low Frequency Oscillator");
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(fm.lfo.enabled ? "Enabled" : "Disabled");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("LFO Frequency");
+
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::TextFormatted("{}", fm.lfo.frequency);
+			ImGui::PopFont();
 
 			ImGui::EndTable();
 		}
