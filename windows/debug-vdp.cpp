@@ -332,10 +332,10 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	}
 }
 
-SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u8f palette_line_option_index) const
+SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_index, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u8f palette_line_index) const
 {
 	const auto total_pieces = piece_buffer_size_in_pixels / piece_width / piece_height;
-	const auto index_1d = palette_line_option_index * total_pieces + piece_index;
+	const auto index_1d = palette_line_index * total_pieces + piece_index;
 	const auto texture_width_in_pieces = texture_width / piece_width;
 	const auto piece_x = (index_1d % texture_width_in_pieces) * piece_width;
 	const auto piece_y = (index_1d / texture_width_in_pieces) * piece_height;
@@ -343,7 +343,7 @@ SDL_FRect DebugVDP::RegeneratingPieces::GetPieceRect(const std::size_t piece_ind
 	return SDL_FRect(piece_x, piece_y, piece_width, piece_height);
 }
 
-void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileMetadata piece_metadata, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u16f x, const cc_u16f y, const cc_u8f brightness_option_index, const bool transparency, const bool swap_coordinates)
+void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileMetadata piece_metadata, const std::size_t piece_width, const std::size_t piece_height, const std::size_t piece_buffer_size_in_pixels, const cc_u16f x, const cc_u16f y, const cc_u8f brightness_index, const bool transparency, const bool swap_coordinates)
 {
 	// TODO: Use the brightness and transparency variables.
 	const auto piece_rect = GetPieceRect(piece_metadata.tile_index, piece_width, piece_height, piece_buffer_size_in_pixels, piece_metadata.palette_line);
