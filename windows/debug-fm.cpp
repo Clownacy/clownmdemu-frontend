@@ -88,13 +88,13 @@ void DebugFM::Registers::DisplayInternal()
 		}
 
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Amplitude Modulation Sensitivity");
+		ImGui::TextUnformatted("Amplitude Modulation Right-Shift");
 
 		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", channel.state.ams);
+			ImGui::TextFormatted("{}", channel.state.amplitude_modulation_shift);
 		}
 		ImGui::PopFont();
 
@@ -105,7 +105,7 @@ void DebugFM::Registers::DisplayInternal()
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", channel.state.fms);
+			ImGui::TextFormatted("{}", channel.state.phase_modulation_sensitivity);
 		}
 		ImGui::PopFont();
 
@@ -280,7 +280,7 @@ void DebugFM::Registers::DisplayInternal()
 					for (const auto &op : channel->state.operators)
 					{
 						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(op.amon ? "On" : "Off");
+						ImGui::TextUnformatted(op.amplitude_modulation_on ? "On" : "Off");
 					}
 
 					if (channel_index == 2)
