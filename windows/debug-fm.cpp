@@ -64,6 +64,23 @@ void DebugFM::Registers::DisplayInternal()
 		{
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("{}", channel.state.algorithm);
+			DoToolTip(
+				[&]()
+				{
+					switch (channel.state.algorithm)
+					{
+						case 0: return u8"Four serial connection mode.";
+						case 1: return u8"Three double modulation serial connection mode.";
+						case 2: return u8"Double modulation mode (1).";
+						case 3: return u8"Double modulation mode (2).";
+						case 4: return u8"Two serial connection and two parallel modes.";
+						case 5: return u8"Common modulation 3 parallel mode.";
+						case 6: return u8"Two serial connection + two sine mode.";
+						case 7: return u8"Four parallel sine synthesis mode.";
+						default: return u8"ERROR";
+					}
+				}()
+			);
 		}
 		ImGui::PopFont();
 
