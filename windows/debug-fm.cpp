@@ -29,17 +29,6 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableHeadersRow();
 
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Frequency Cache");
-
-		ImGui::PushFont(monospace_font);
-		for (const auto &channel : fm.channels)
-		{
-			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:02X}", channel.cached_upper_frequency_bits);
-		}
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Frequency");
 
 		ImGui::PushFont(monospace_font);
@@ -444,6 +433,22 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("{}", fm.lfo.frequency);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Frequency Cache");
+
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::TextFormatted("0x{:02X}", fm.cached_upper_frequency_bits);
+			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Multi-Frequency Cache");
+
+			ImGui::PushFont(monospace_font);
+			ImGui::TableNextColumn();
+			ImGui::TextFormatted("0x{:02X}", fm.cached_upper_frequency_bits_fm3_multi_frequency);
 			ImGui::PopFont();
 
 			ImGui::EndTable();
