@@ -1781,14 +1781,14 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 			// Resize the window so that there's room for the menu bar.
 			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
-
+#ifdef FILE_PATH_SUPPORT
 		// If the user passed the path to the software on the command line, then load it here, automatically.
 		if (argc > 1)
 		{
 			const auto path = reinterpret_cast<const char8_t*>(argv[1]);
 			LoadSoftwareFile(CDReader::IsMegaCDGame(path), path);
 		}
-
+#endif
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
 

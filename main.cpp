@@ -84,7 +84,7 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 		FS.syncfs(true, function(err) {
 			Module._StorageLoaded();
 		});
-		}, 0);
+		}, Frontend::GetConfigurationDirectoryPath().u8string().c_str());
 	return EXIT_SUCCESS;
 }
 
