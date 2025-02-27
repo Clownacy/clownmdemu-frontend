@@ -105,6 +105,6 @@ void Disassembler::DisplayInternal()
 	}
 
 	ImGui::PushFont(GetMonospaceFont());
-	ImGui::InputTextMultiline("##code", &assembly[0], assembly.length(), ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
+	ImGui::InputTextMultiline("##code", &assembly[0], assembly.length() + 1, ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly); // '+1' to count the null character.
 	ImGui::PopFont();
 }
