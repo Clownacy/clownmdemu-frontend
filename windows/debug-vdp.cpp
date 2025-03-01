@@ -1100,21 +1100,21 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Horizontal Scrolling Mode");
 		ImGui::TableNextColumn();
-		static const std::array<const char*, 4> horizontal_scrolling_modes = {
+		static const auto horizontal_scrolling_modes = std::to_array<std::string, 4>({
 			"Whole Screen",
 			"1-Pixel Rows (8)",
 			"1-Tile Rows",
 			"1-Pixel Rows (All)"
-		};
+		});
 		ImGui::TextUnformatted(horizontal_scrolling_modes[vdp.hscroll_mode]);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Vertical Scrolling Mode");
 		ImGui::TableNextColumn();
-		static const std::array<const char*, 2> vertical_scrolling_modes = {
+		static const auto vertical_scrolling_modes = std::to_array<std::string, 2>({
 			"Whole Screen",
 			"2-Tile Columns"
-		};
+		});
 		ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
 
 		ImGui::EndTable();
@@ -1179,11 +1179,11 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Mode");
 		ImGui::TableNextColumn();
-		static const std::array<const char*, 3> dma_modes = {
+		static const auto dma_modes = std::to_array<std::string, 3>({
 			"ROM/RAM to VRAM/CRAM/VSRAM",
 			"VRAM Fill",
 			"VRAM to VRAM"
-		};
+		});
 		ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
 
 		ImGui::TableNextColumn();
@@ -1233,13 +1233,13 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Selected RAM");
 		ImGui::TableNextColumn();
-		static const std::array<const char*, 5> rams = {
+		static const auto rams = std::to_array<std::string, 5>({
 			"VRAM",
 			"CRAM",
 			"VSRAM",
 			"VRAM (8-bit)",
 			"Invalid"
-		};
+		});
 		ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
 
 		ImGui::TableNextColumn();
