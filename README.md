@@ -23,47 +23,53 @@ The default control scheme is as follows:
 
 ### Keyboard
 
-- Up        = Up
-- Down      = Down
-- Left      = Left
-- Right     = Right
-- Z         = A
-- X         = B
-- C         = C
-- A         = X
-- S         = Y
-- D         = Z
-- Enter     = Start
-- Backspace = Mode
+| Input     | Action |
+| --------- | ------ |
+| Up        | Up     |
+| Down      | Down   |
+| Left      | Left   |
+| Right     | Right  |
+| Z         | A      |
+| X         | B      |
+| C         | C      |
+| A         | X      |
+| S         | Y      |
+| D         | Z      |
+| Enter     | Start  |
+| Backspace | Mode   |
 
 ### Controller
 
-- Up    = Up
-- Down  = Down
-- Left  = Left
-- Right = Right
-- X     = A
-- A     = B
-- B     = C
-- LB    = X
-- Y     = Y
-- RB    = Z
-- Start = Start
-- Back  = Mode
-- LT    = Rewind
-- RT    = Fast-forward
-- RSB   = Toggle menu controls (see http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
+| Input | Action       |
+| ----- | ------------ |
+| Up    | Up           |
+| Down  | Down         |
+| Left  | Left         |
+| Right | Right        |
+| X     | A            |
+| A     | B            |
+| B     | C            |
+| LB    | X            |
+| Y     | Y            |
+| RB    | Z            |
+| Start | Start        |
+| Back  | Mode         |
+| LT    | Rewind       |
+| RT    | Fast-forward |
+| RSB   | [Toggle menu controls](http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png) |
 
 ### Hotkeys
 
-- Pause = Pause
-- Space = Fast-forward (unpaused), frame-advance (paused)
-- R     = Rewind
-- Tab   = Soft reset
-- F1    = Toggle which Control Pad the keyboard controls
-- F5    = Create save state
-- F9    = Load save state
-- F11   = Toggle fullscreen
+| Input | Action                                          |
+| ----- | ----------------------------------------------- |
+| Pause | Pause                                           |
+| Space | Fast-forward (unpaused), frame-advance (paused) |
+| R     | Rewind                                          |
+| Tab   | Soft reset                                      |
+| F1    | Toggle which Control Pad the keyboard controls  |
+| F5    | Create save state                               |
+| F9    | Load save state                                 |
+| F11   | Toggle fullscreen                               |
 
 # Licence
 
