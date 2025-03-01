@@ -94,13 +94,30 @@ void DebugFM::Registers::DisplayInternal()
 		}
 
 		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Amplitude Modulation Right-Shift");
+		ImGui::TextUnformatted("Amplitude Modulation Sensitivity");
 
 		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", channel.state.amplitude_modulation_shift);
+			switch (channel.state.amplitude_modulation_shift)
+			{
+				case 0:
+					ImGui::TextUnformatted("3");
+					break;
+				case 1:
+					ImGui::TextUnformatted("2");
+					break;
+				case 3:
+					ImGui::TextUnformatted("1");
+					break;
+				case 7:
+					ImGui::TextUnformatted("0");
+					break;
+				default:
+					ImGui::TextUnformatted("ERROR");
+					break;
+			}
 		}
 		ImGui::PopFont();
 
