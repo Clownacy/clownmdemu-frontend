@@ -139,6 +139,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
+	const auto &vdp = state.clownmdemu.vdp;
 	const auto &palette_line = state.GetPaletteLine(brightness, tile_metadata.palette_line);
 
 	cc_u16f word_index = tile_metadata.tile_index * tile_size_in_words;
@@ -164,7 +165,7 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 
 				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
 
-				pixels[destination_x + destination_y * pitch] = transparency && colour_index == 0 ? 0 : palette_line[colour_index];
+				pixels[destination_x + destination_y * pitch] = colour_index != 0 ? palette_line[colour_index] : transparency ? 0 : state.colours[vdp.background_colour];
 			}
 		}
 	}
