@@ -374,7 +374,7 @@ void DebugFM::Registers::DisplayInternal()
 			for (const auto &timer : fm.timers)
 			{
 				ImGui::TableNextColumn();
-				ImGui::TextFormatted("0x{:03X}", CC_DIVIDE_CEILING(timer.value, FM_SAMPLE_RATE_DIVIDER) - 1);
+				ImGui::TextFormatted("0x{:03X}", CC_DIVIDE_CEILING(timer.value, FM_SAMPLE_RATE_DIVIDER));
 			}
 			ImGui::PopFont();
 
@@ -385,7 +385,7 @@ void DebugFM::Registers::DisplayInternal()
 			for (const auto &timer : fm.timers)
 			{
 				ImGui::TableNextColumn();
-				ImGui::TextFormatted("0x{:03X}", CC_DIVIDE_CEILING(timer.counter, FM_SAMPLE_RATE_DIVIDER) - 1);
+				ImGui::TextFormatted("0x{:03X}", CC_DIVIDE_CEILING(timer.counter, FM_SAMPLE_RATE_DIVIDER));
 			}
 			ImGui::PopFont();
 
