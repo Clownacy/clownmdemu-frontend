@@ -991,7 +991,8 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 void DebugVDP::Registers::DisplayInternal()
 {
 	const auto monospace_font = GetMonospaceFont();
-	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
+	const auto &state = Frontend::emulator->CurrentState();
+	const VDP_State &vdp = state.clownmdemu.vdp;
 
 	ImGui::SeparatorText("Miscellaneous");
 
@@ -1046,7 +1047,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Background Colour");
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("Palette Line {}, Entry {}", vdp.background_colour / 16, vdp.background_colour % 16);
+		ImGui::TextFormatted("Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("H-Int Interval");
