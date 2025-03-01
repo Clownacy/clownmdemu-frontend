@@ -115,25 +115,6 @@ void DebugFM::Registers::DisplayInternal()
 		}
 		ImGui::PopFont();
 
-		const auto DoSSGEG = [&](const char* const label, const std::function<bool(const FM_Operator_State &op)> &function)
-		{
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(label);
-
-			ImGui::PushFont(monospace_font);
-			for (const auto &channel : fm.channels)
-			{
-				ImGui::TableNextColumn();
-				ImGui::TextUnformatted(function(channel.state.operators[0]) ? "Yes" : "No");
-			}
-			ImGui::PopFont();
-		};
-
-		DoSSGEG("SSG-EG Enabled", [](const FM_Operator_State &op) { return op.ssgeg.enabled; });
-		DoSSGEG("SSG-EG Attack", [](const FM_Operator_State &op) { return op.ssgeg.attack; });
-		DoSSGEG("SSG-EG Alternate", [](const FM_Operator_State &op) { return op.ssgeg.alternate; });
-		DoSSGEG("SSG-EG Hold", [](const FM_Operator_State &op) { return op.ssgeg.hold; });
-
 		ImGui::EndTable();
 	}
 
@@ -288,6 +269,26 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted(op.amplitude_modulation_on ? "On" : "Off");
 					}
+
+					const auto DoSSGEG = [&](const char* const label, const std::function<bool(const FM_Operator_State &op)> &function)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted(label);
+
+						ImGui::PushFont(monospace_font);
+						for (const auto &op : channel->state.operators)
+						{
+							ImGui::TableNextColumn();
+							ImGui::TextUnformatted(function(op) ? "Yes" : "No");
+						}
+						ImGui::PopFont();
+					};
+
+					DoSSGEG("SSG-EG Enabled", [](const FM_Operator_State &op) { return op.ssgeg.enabled; });
+					DoSSGEG("SSG-EG Attack", [](const FM_Operator_State &op) { return op.ssgeg.attack; });
+					DoSSGEG("SSG-EG Alternate", [](const FM_Operator_State &op) { return op.ssgeg.alternate; });
+					DoSSGEG("SSG-EG Hold", [](const FM_Operator_State &op) { return op.ssgeg.hold; });
 
 					if (channel_index == 2)
 					{
