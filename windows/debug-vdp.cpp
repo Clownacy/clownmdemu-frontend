@@ -211,13 +211,13 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 		if (i != 0)
 			ImGui::SameLine();
 
-		static const std::array brightness_names = {
+		static const auto brightness_names = std::to_array<std::string, state.total_brightnesses>({
 			"Normal",
 			"Shadow",
 			"Highlight"
-		};
+		});
 
-		options_changed |= ImGui::RadioButton(brightness_names[i], &brightness_option_index, i);
+		options_changed |= ImGui::RadioButton(brightness_names[i].c_str(), &brightness_option_index, i);
 	}
 
 	ImGui::SeparatorText("Palette Line");
