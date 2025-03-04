@@ -162,8 +162,8 @@ public:
 
 	bool GetDomestic() const { return clownmdemu_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC; }
 	void SetDomestic(const bool enabled) { clownmdemu_configuration.general.region = enabled ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS; }
-	bool GetLowPassFilter() const { return audio_output.GetLowPassFilter(); }
-	void SetLowPassFilter(const bool enabled) { audio_output.SetLowPassFilter(enabled); }
+	bool GetLowPassFilter() const { return !clownmdemu_configuration.general.low_pass_filter_disabled; }
+	void SetLowPassFilter(const bool enabled) { clownmdemu_configuration.general.low_pass_filter_disabled = !enabled; }
 	VDP_Configuration& GetConfigurationVDP() { return clownmdemu_configuration.vdp; }
 	FM_Configuration& GetConfigurationFM() { return clownmdemu_configuration.fm; }
 	PSG_Configuration& GetConfigurationPSG() { return clownmdemu_configuration.psg; }

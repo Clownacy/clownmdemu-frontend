@@ -30,7 +30,7 @@ AudioOutput::AudioOutput()
 		Mixer_Constant_Initialise(&mixer_constant);
 	}
 
-	Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
+	Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode);
 }
 
 AudioOutput::~AudioOutput()
@@ -45,7 +45,7 @@ void AudioOutput::MixerBegin()
 	{
 		mixer_update_pending = false;
 		Mixer_State_Deinitialise(&mixer_state);
-		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode, low_pass_filter);
+		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode);
 	}
 
 	Mixer_Begin(&mixer);

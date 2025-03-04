@@ -23,7 +23,6 @@ private:
 	cc_u32f sample_rate;
 
 	bool pal_mode = false;
-	bool low_pass_filter = true;
 	bool mixer_update_pending = false;
 	std::array<cc_u32f, 0x10>rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
@@ -52,14 +51,6 @@ public:
 	}
 
 	bool GetPALMode() const { return pal_mode; }
-
-	void SetLowPassFilter(const bool enabled)
-	{
-		low_pass_filter = enabled;
-		mixer_update_pending = true;
-	}
-
-	bool GetLowPassFilter() const { return low_pass_filter; }
 };
 
 #endif /* AUDIO_OUTPUT_H */
