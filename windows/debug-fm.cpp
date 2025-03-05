@@ -354,7 +354,7 @@ void DebugFM::Registers::DisplayInternal()
 
 			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:02X}", (fm.dac_sample / (0x100 / FM_VOLUME_DIVIDER)) + 0x80);
+			ImGui::TextFormatted("0x{:03X}", fm.dac_sample);
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
