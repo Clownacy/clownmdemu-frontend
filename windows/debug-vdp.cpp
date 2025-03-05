@@ -211,7 +211,7 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 		if (i != 0)
 			ImGui::SameLine();
 
-		static const auto brightness_names = std::to_array<std::string, state.total_brightnesses>({
+		static const auto brightness_names = std::to_array<std::string>({
 			"Normal",
 			"Shadow",
 			"Highlight"
