@@ -1193,7 +1193,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TextUnformatted("Source Address");
 		ImGui::PushFont(monospace_font);
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 16) | vdp.dma.source_address_low);
+		ImGui::TextFormatted("0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 17) | static_cast<cc_u32f>(vdp.dma.source_address_low) << 1);
 		ImGui::PopFont();
 
 		ImGui::TableNextColumn();
