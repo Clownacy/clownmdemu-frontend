@@ -84,13 +84,6 @@ set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu)
 
 if(WIN32)
 	target_sources(clownmdemu PRIVATE "assets/clownmdemu.rc")
-
-	# Enable Unicode support so that non-ANSI file paths work
-	target_compile_definitions(clownmdemu PRIVATE UNICODE _UNICODE)
-
-	if(MINGW)
-		target_link_options(clownmdemu PRIVATE -municode)
-	endif()
 endif()
 
 ##############################
