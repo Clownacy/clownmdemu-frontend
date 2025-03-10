@@ -15,9 +15,9 @@ fi
 
 # Download LinuxDeploy if not already downloaded.
 if [ ! -f "build/$LINUXDEPLOY_FILENAME" ]; then
-    wget -O "build/$LINUXDEPLOY_FILENAME" "https://github.com/linuxdeploy/linuxdeploy/releases/download/2.0.0-alpha-1-20241106/$LINUXDEPLOY_FILENAME"
+    wget -O "build/$LINUXDEPLOY_FILENAME" "https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20240109-1/$LINUXDEPLOY_FILENAME"
     if [ $? -ne 0 ]; then
-        curl -L -o "build/$LINUXDEPLOY_FILENAME" "https://github.com/linuxdeploy/linuxdeploy/releases/download/2.0.0-alpha-1-20241106/$LINUXDEPLOY_FILENAME"
+        curl -L -o "build/$LINUXDEPLOY_FILENAME" "https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20240109-1/$LINUXDEPLOY_FILENAME"
     fi
 fi
 
