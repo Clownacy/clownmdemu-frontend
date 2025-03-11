@@ -30,12 +30,12 @@ cmake -B build ../../ \
     -DCMAKE_POLICY_DEFAULT_CMP0069=NEW \
     -DCLOWNMDEMU_FRONTEND_FREETYPE=ON
 
-# Once again specify the Release build, for generators that required it be done this way.
+# Once again specify the Release build, for generators that require it be done this way.
 # Build in parallel to speed-up compilation greatly.
 cmake --build build --config Release --parallel $(nproc)
 
 # Make a temporary directory to install the built files into.
-# Make sure that it is fresh and empty, in case this script was ran before. We don't want old, leftover files.
+# Make sure that it is fresh and empty, in case this script was ran before; we do not want old, leftover files.
 rm -rf build/AppDir
 mkdir -p build/AppDir
 
