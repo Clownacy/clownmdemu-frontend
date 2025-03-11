@@ -808,60 +808,63 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 	// Calculate the size of the grid display region.
 	const std::size_t grid_display_region_width_in_pieces = static_cast<std::size_t>(ImGui::GetContentRegionAvail().x / destination_piece_size_and_padding.x);
 
-	const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
-	const bool window_is_hovered = ImGui::IsWindowHovered();
-
-	// Draw the list of tiles.
-	ImDrawList* const draw_list = ImGui::GetWindowDrawList();
-
-	// Here we use a clipper so that we only render the tiles that we can actually see.
-	ImGuiListClipper clipper;
-	clipper.Begin(CC_DIVIDE_CEILING(total_pieces, grid_display_region_width_in_pieces), destination_piece_size_and_padding.y);
-	while (clipper.Step())
+	if (grid_display_region_width_in_pieces != 0) // Avoid a division by 0.
 	{
-		for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
+		const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
+		const bool window_is_hovered = ImGui::IsWindowHovered();
+
+		// Draw the list of tiles.
+		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
+
+		// Here we use a clipper so that we only render the tiles that we can actually see.
+		ImGuiListClipper clipper;
+		clipper.Begin(CC_DIVIDE_CEILING(total_pieces, grid_display_region_width_in_pieces), destination_piece_size_and_padding.y);
+		while (clipper.Step())
 		{
-			for (std::size_t x = 0; x < std::min(grid_display_region_width_in_pieces, total_pieces - (y * grid_display_region_width_in_pieces)); ++x)
+			for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
 			{
-				const std::size_t piece_index = (y * grid_display_region_width_in_pieces) + x;
-
-				const auto position = ImVec2(x, y);
-
-				// Obtain texture coordinates for the current piece.
-				const auto texture_size = ImVec2(static_cast<float>(regenerating_pieces.GetTextureWidth()), static_cast<float>(regenerating_pieces.GetTextureHeight()));
-
-				const auto current_piece_rect = regenerating_pieces.GetPieceRect(piece_index, piece_width, piece_height, piece_buffer_size_in_pixels, 0);
-				const auto current_piece_position = ImVec2{static_cast<float>(current_piece_rect.x), static_cast<float>(current_piece_rect.y)};
-				const auto current_piece_size = ImVec2{static_cast<float>(current_piece_rect.w), static_cast<float>(current_piece_rect.h)};
-
-				const auto current_piece_uv0 = current_piece_position / texture_size;
-				const auto current_piece_uv1 = (current_piece_position + current_piece_size) / texture_size;
-
-				// Figure out where the tile goes in the viewer.
-				const auto current_piece_destination = position * destination_piece_size_and_padding;
-				const auto piece_boundary_position_top_left = canvas_position + current_piece_destination;
-				const auto piece_boundary_position_bottom_right = piece_boundary_position_top_left + destination_piece_size_and_padding;
-				const auto piece_position_top_left = piece_boundary_position_top_left + padding;
-				const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
-
-				// Finally, display the tile.
-				draw_list->AddImage(regenerating_pieces.textures[0], piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
-
-				if (window_is_hovered && ImGui::IsMouseHoveringRect(piece_boundary_position_top_left, piece_boundary_position_bottom_right))
+				for (std::size_t x = 0; x < std::min(grid_display_region_width_in_pieces, total_pieces - (y * grid_display_region_width_in_pieces)); ++x)
 				{
-					ImGui::BeginTooltip();
+					const std::size_t piece_index = (y * grid_display_region_width_in_pieces) + x;
 
-					// Display the tile's index.
-					const auto bytes_per_piece = PixelsToBytes(piece_width * piece_height);
-					ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, piece_index, piece_index * bytes_per_piece);
+					const auto position = ImVec2(x, y);
 
-					if (destination_piece_size.x < 16 || destination_piece_size.y < 16)
+					// Obtain texture coordinates for the current piece.
+					const auto texture_size = ImVec2(static_cast<float>(regenerating_pieces.GetTextureWidth()), static_cast<float>(regenerating_pieces.GetTextureHeight()));
+
+					const auto current_piece_rect = regenerating_pieces.GetPieceRect(piece_index, piece_width, piece_height, piece_buffer_size_in_pixels, 0);
+					const auto current_piece_position = ImVec2{static_cast<float>(current_piece_rect.x), static_cast<float>(current_piece_rect.y)};
+					const auto current_piece_size = ImVec2{static_cast<float>(current_piece_rect.w), static_cast<float>(current_piece_rect.h)};
+
+					const auto current_piece_uv0 = current_piece_position / texture_size;
+					const auto current_piece_uv1 = (current_piece_position + current_piece_size) / texture_size;
+
+					// Figure out where the tile goes in the viewer.
+					const auto current_piece_destination = position * destination_piece_size_and_padding;
+					const auto piece_boundary_position_top_left = canvas_position + current_piece_destination;
+					const auto piece_boundary_position_bottom_right = piece_boundary_position_top_left + destination_piece_size_and_padding;
+					const auto piece_position_top_left = piece_boundary_position_top_left + padding;
+					const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
+
+					// Finally, display the tile.
+					draw_list->AddImage(regenerating_pieces.textures[0], piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
+
+					if (window_is_hovered && ImGui::IsMouseHoveringRect(piece_boundary_position_top_left, piece_boundary_position_bottom_right))
 					{
-						// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-						ImGui::Image(regenerating_pieces.textures[0], ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
-					}
+						ImGui::BeginTooltip();
 
-					ImGui::EndTooltip();
+						// Display the tile's index.
+						const auto bytes_per_piece = PixelsToBytes(piece_width * piece_height);
+						ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, piece_index, piece_index * bytes_per_piece);
+
+						if (destination_piece_size.x < 16 || destination_piece_size.y < 16)
+						{
+							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
+							ImGui::Image(regenerating_pieces.textures[0], ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
+						}
+
+						ImGui::EndTooltip();
+					}
 				}
 			}
 		}
