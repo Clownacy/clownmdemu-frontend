@@ -31,6 +31,7 @@ void SetWindowTitleBarColour([[maybe_unused]] SDL_Window* const window, [[maybe_
 		DwmSetWindowAttribute_Function(hwnd, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
 
 		// Disable the dumbass window rounding.
+		// TODO: This function should probably be renamed.
 		const int rounding_mode = 1; // DWMWCP_DONOTROUND
 		DwmSetWindowAttribute_Function(hwnd, 33/*DWMWA_WINDOW_CORNER_PREFERENCE*/, &rounding_mode, sizeof(rounding_mode));
 	}
