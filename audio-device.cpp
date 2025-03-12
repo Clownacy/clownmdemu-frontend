@@ -38,7 +38,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 	total_buffer_frames = static_cast<cc_u32f>(device_buffer_size);
 
 	// Create audio stream.
-	stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &specification, nullptr, nullptr);
+	stream = SDL::AudioStream(SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &specification, nullptr, nullptr));
 
 	if (stream == nullptr)
 	{
@@ -49,12 +49,6 @@ AudioDevice::AudioDevice(const cc_u8f channels, cc_u32f &sample_rate, cc_u32f &t
 		// Unpause audio device, so that playback can begin.
 		SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(stream));
 	}
-}
-
-AudioDevice::~AudioDevice()
-{
-	// TODO: std::unique_ptr.
-	SDL_DestroyAudioStream(stream);
 }
 
 void AudioDevice::QueueFrames(const cc_s16l *buffer, cc_u32f total_frames)

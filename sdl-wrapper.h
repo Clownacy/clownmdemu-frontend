@@ -19,10 +19,11 @@ namespace SDL
 	template<typename T>
 	using Pointer = std::unique_ptr<T, FreeFunctor>;
 
-	MAKE_RAII_POINTER(Window,   SDL_Window,   SDL_DestroyWindow  );
-	MAKE_RAII_POINTER(Renderer, SDL_Renderer, SDL_DestroyRenderer);
-	MAKE_RAII_POINTER(Texture,  SDL_Texture,  SDL_DestroyTexture );
-	MAKE_RAII_POINTER(IOStream, SDL_IOStream, SDL_CloseIO        );
+	MAKE_RAII_POINTER(Window,      SDL_Window,      SDL_DestroyWindow     );
+	MAKE_RAII_POINTER(Renderer,    SDL_Renderer,    SDL_DestroyRenderer   );
+	MAKE_RAII_POINTER(Texture,     SDL_Texture,     SDL_DestroyTexture    );
+	MAKE_RAII_POINTER(IOStream,    SDL_IOStream,    SDL_CloseIO           );
+	MAKE_RAII_POINTER(AudioStream, SDL_AudioStream, SDL_DestroyAudioStream);
 
 	template<auto Function, typename... Args>
 	auto PathFunction(const char* const path, Args &&...args)
