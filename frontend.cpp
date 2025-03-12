@@ -1552,7 +1552,7 @@ static void LoadConfiguration()
 
 static void SaveConfiguration()
 {
-#ifdef _WIN32
+#ifdef SDL_PLATFORM_WIN32
 #define ENDL "\r\n"
 #else
 #define ENDL "\n"

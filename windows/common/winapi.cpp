@@ -2,15 +2,14 @@
 
 #include <stddef.h>
 
-#ifdef _WIN32
+#ifdef SDL_PLATFORM_WIN32
  #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
 #endif
 
 void SetWindowTitleBarColour([[maybe_unused]] SDL_Window* const window, [[maybe_unused]] const unsigned char red, [[maybe_unused]] const unsigned char green, [[maybe_unused]] const unsigned char blue)
 {
-// TODO: Replace all '_WIN32' checks with 'SDL_PLATFORM_WIN32'.
-#ifdef _WIN32
+#ifdef SDL_PLATFORM_WIN32
 	const HWND hwnd = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
 
 	if (hwnd == 0)
