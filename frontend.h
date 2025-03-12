@@ -57,7 +57,6 @@ namespace Frontend
 
 	using FrameRateCallback = std::function<void(bool pal_mode)>;
 
-	extern float dpi_scale;
 	extern std::optional<EmulatorInstance> emulator;
 	extern std::optional<WindowWithFramebuffer> window;
 	extern FileUtilities file_utilities;

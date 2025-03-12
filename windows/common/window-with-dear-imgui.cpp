@@ -55,7 +55,7 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.IniFilename = nullptr; // Disable automatic loading/saving so we can do it ourselves.
 
-		// Setup Dear ImGui style
+	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsLight();
 	//ImGui::StyleColorsClassic();
@@ -99,7 +99,7 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 	style_backup = style;
 
 	// Apply DPI scale.
-	style.ScaleAllSizes(GetDPIScale());
+	style.ScaleAllSizes(dpi_scale);
 
 	const auto &menu_bar_bg_colour = colors[ImGuiCol_MenuBarBg];
 	SetTitleBarColour(menu_bar_bg_colour.x * 0xFF, menu_bar_bg_colour.y * 0xFF, menu_bar_bg_colour.z * 0xFF);

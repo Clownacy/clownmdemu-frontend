@@ -849,7 +849,6 @@ public:
 	friend Base;
 };
 
-float Frontend::dpi_scale;
 std::optional<EmulatorInstance> Frontend::emulator;
 std::optional<WindowWithFramebuffer> Frontend::window;
 FileUtilities Frontend::file_utilities;
@@ -1763,8 +1762,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		emulator.emplace(window->framebuffer_texture, ReadInputCallback);
 
-		dpi_scale = window->GetDPIScale();
-
 		LoadConfiguration();
 
 		if (!native_windows)
@@ -2358,7 +2355,8 @@ void Frontend::Update()
 	}
 
 	// Prevent the window from getting too small or we'll get division by zero errors later on.
-	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
+	const auto window_minimum_dimension = 100.0f * window->GetDPIScale();
+	ImGui::SetNextWindowSizeConstraints(ImVec2(window_minimum_dimension, window_minimum_dimension), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
 
 	const auto AnyPopupsOpen = []()
 	{
@@ -2552,14 +2550,14 @@ void Frontend::Update()
 				ImGui::EndMenu();
 			}
 
-			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const int width, const int height, const bool resizeable, const char* const title = nullptr)
+			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const int width, const int height, const bool resizeable, const std::optional<float> forced_scale = std::nullopt, const char* const title = nullptr)
 			{
 				if (ImGui::MenuItem(label, nullptr, window.has_value()))
 				{
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, native_windows ? nullptr : &*::window);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, forced_scale, native_windows ? nullptr : &*::window);
 				}
 			};
 
@@ -2577,7 +2575,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
-					PopupButton("Registers", m68k_status_window, 376, 120, false, "Main-68000 Registers");
+					PopupButton("Registers", m68k_status_window, 376, 120, false, std::nullopt, "Main-68000 Registers");
 					PopupButton("WORK-RAM", m68k_ram_viewer_window, 400, 400, true);
 					PopupButton("External RAM", external_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
@@ -2585,7 +2583,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
-					PopupButton("Registers", mcd_m68k_status_window, 376, 120, false, "Sub-68000 Registers");
+					PopupButton("Registers", mcd_m68k_status_window, 376, 120, false, std::nullopt, "Sub-68000 Registers");
 					PopupButton("PRG-RAM", prg_ram_viewer_window, 410, 410, true);
 					PopupButton("WORD-RAM", word_ram_viewer_window, 410, 410, true);
 					ImGui::EndMenu();
@@ -2593,39 +2591,39 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Z80"))
 				{
-					PopupButton("Registers", z80_status_window, 390, 80, false, "Z80 Registers");
+					PopupButton("Registers", z80_status_window, 390, 80, false, std::nullopt, "Z80 Registers");
 					PopupButton("SOUND-RAM", z80_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("VDP"))
 				{
-					PopupButton("Registers", vdp_registers_window, 360, 924, false, "VDP Registers");
+					PopupButton("Registers", vdp_registers_window, 360, 924, false, std::nullopt, "VDP Registers");
 					PopupButton("Sprites", sprite_list_window, 540, 344, true);
 					PopupButton("VRAM", vram_viewer_window, 460, 460, true);
 					PopupButton("CRAM", cram_viewer_window, 384, 192, false);
 					PopupButton("VSRAM", vsram_viewer_window, 384, 192, false);
 					ImGui::SeparatorText("Visualisers");
 					ImGui::PushID("Visualisers");
-					PopupButton("Sprite Plane", sprite_plane_visualiser_window, 540 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Window Plane", window_plane_visualiser_window, 540 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Plane A", plane_a_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
-					PopupButton("Plane B", plane_b_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Sprite Plane", sprite_plane_visualiser_window, 540, 610, true, 1.0f);
+					PopupButton("Window Plane", window_plane_visualiser_window, 540, 610, true, 1.0f);
+					PopupButton("Plane A", plane_a_visualiser_window, 1050, 610, true, 1.0f);
+					PopupButton("Plane B", plane_b_visualiser_window, 1050, 610, true, 1.0f);
 					PopupButton("Tiles", tile_visualiser_window, 530, 530, true);
 					PopupButton("Colours", colour_visualiser_window, 456, 186, false);
 					PopupButton("Stamps", stamp_visualiser_window, 530, 530, true);
-					PopupButton("Stamp Map", stamp_map_visualiser_window, 1050 / dpi_scale, 610 / dpi_scale, true);
+					PopupButton("Stamp Map", stamp_map_visualiser_window, 1050, 610, true, 1.0f);
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}
 
-				PopupButton("FM", fm_status_window, 540, 920, false, "FM Registers");
+				PopupButton("FM", fm_status_window, 540, 920, false, std::nullopt, "FM Registers");
 
-				PopupButton("PSG", psg_status_window, 290, 264, false, "PSG Registers");
+				PopupButton("PSG", psg_status_window, 290, 264, false, std::nullopt, "PSG Registers");
 
 				if (ImGui::BeginMenu("PCM"))
 				{
-					PopupButton("Registers", pcm_status_window, 630, 200, false, "PCM Registers");
+					PopupButton("Registers", pcm_status_window, 630, 200, false, std::nullopt, "PCM Registers");
 					PopupButton("WAVE-RAM", wave_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
 				}

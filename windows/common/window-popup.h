@@ -55,19 +55,23 @@ private:
 	}
 
 public:
-	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Window &parent_window, WindowWithDearImGui* const host_window = nullptr)
+	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Window &parent_window, const std::optional<float> forced_scale, WindowWithDearImGui* const host_window = nullptr)
 		: title(window_title)
 		, resizeable(resizeable)
 		, host_window(host_window)
 	{
+		const auto dpi_scale = host_window != nullptr ? host_window->GetDPIScale() : parent_window.GetDPIScale();
+		const auto scaled_window_width = window_width * forced_scale.value_or(dpi_scale);
+		const auto scaled_window_height = window_height * forced_scale.value_or(dpi_scale);
+
 		if (host_window != nullptr)
 		{
-			dear_imgui_window_width = window_width * host_window->GetDPIScale();
-			dear_imgui_window_height = window_height * host_window->GetDPIScale();
+			dear_imgui_window_width = scaled_window_width;
+			dear_imgui_window_height = scaled_window_height;
 		}
 		else
 		{
-			window.emplace(window_title, window_width, window_height, resizeable);
+			window.emplace(window_title, scaled_window_width / dpi_scale, scaled_window_height / dpi_scale, resizeable);
 			SDL_SetWindowParent(window->GetSDLWindow(), parent_window.GetSDLWindow());
 			SDL_ShowWindow(window->GetSDLWindow());
 		}
