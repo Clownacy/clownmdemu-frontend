@@ -363,6 +363,12 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(pannings[fm.channels[5].pan_left][fm.channels[5].pan_right]);
 
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Test");
+
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(fm.dac_test ? "On" : "Off");
+
 			ImGui::EndTable();
 		}
 
