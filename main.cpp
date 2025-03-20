@@ -90,19 +90,18 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 
 #else
 static Uint64 time_delta;
-static constexpr Uint64 one_second_in_nanoseconds = 1'000'000'000;
 
 static void FrameRateCallback(const bool pal_mode)
 {
 	if (pal_mode)
 	{
 		// Run at 50FPS
-		time_delta = Frontend::DivideByPALFramerate(one_second_in_nanoseconds);
+		time_delta = Frontend::DivideByPALFramerate(SDL_NS_PER_SECOND);
 	}
 	else
 	{
 		// Run at roughly 59.94FPS (60 divided by 1.001)
-		time_delta = Frontend::DivideByNTSCFramerate(one_second_in_nanoseconds);
+		time_delta = Frontend::DivideByNTSCFramerate(SDL_NS_PER_SECOND);
 	}
 }
 
@@ -121,7 +120,7 @@ SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
 		return SDL_APP_CONTINUE;
 
 	// If massively delayed, resynchronise to avoid fast-forwarding.
-	if (current_time >= next_time + one_second_in_nanoseconds / 10)
+	if (current_time >= next_time + SDL_NS_PER_SECOND / 10)
 		next_time = current_time;
 
 	next_time += time_delta;
