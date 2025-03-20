@@ -358,12 +358,6 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::PopFont();
 
 			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Panning");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(pannings[fm.channels[5].pan_left][fm.channels[5].pan_right]);
-
-			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Test");
 
 			ImGui::TableNextColumn();
