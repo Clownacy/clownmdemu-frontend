@@ -1728,11 +1728,7 @@ static void SaveConfiguration()
 static void PreEventStuff()
 {
 	emulator_on = emulator->IsCartridgeFileLoaded() || emulator->IsCDFileLoaded();
-	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen()
-	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-		&& !emulator->RewindingExhausted()
-	#endif
-		;
+	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen() && !emulator->RewindingExhausted();
 
 	emulator_frame_advance = false;
 }
