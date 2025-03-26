@@ -707,13 +707,11 @@ private:
 			"Pause",
 			"Reset",
 			"Fast-Forward",
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-				"Rewind",
-#endif
-				"Quick Save State",
-				"Quick Load State",
-				"Toggle Fullscreen",
-				"Toggle Control Pad"
+			"Rewind",
+			"Quick Save State",
+			"Quick Load State",
+			"Toggle Fullscreen",
+			"Toggle Control Pad"
 		};
 
 		if (ImGui::BeginTable("Keyboard Input Options", 2))
@@ -1038,7 +1036,6 @@ static void UpdateFastForwardStatus()
 		fast_forward_in_progress |= controller_input.input.fast_forward != 0;
 }
 
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 static void UpdateRewindStatus()
 {
 	bool will_rewind = keyboard_input.rewind;
@@ -1048,7 +1045,6 @@ static void UpdateRewindStatus()
 
 	emulator->Rewind(will_rewind);
 }
-#endif
 
 
 //////////////////////////
@@ -1384,11 +1380,7 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 					INPUT_BINDING_PAUSE,
 					INPUT_BINDING_RESET,
 					INPUT_BINDING_FAST_FORWARD,
-				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 					INPUT_BINDING_REWIND,
-				#else
-					INPUT_BINDING_NONE,
-				#endif
 					INPUT_BINDING_QUICK_SAVE_STATE,
 					INPUT_BINDING_QUICK_LOAD_STATE,
 					INPUT_BINDING_TOGGLE_FULLSCREEN,
@@ -1430,10 +1422,8 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 					input_binding = INPUT_BINDING_RESET;
 				else if (value == u8"INPUT_BINDING_FAST_FORWARD")
 					input_binding = INPUT_BINDING_FAST_FORWARD;
-			#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 				else if (value == u8"INPUT_BINDING_REWIND")
 					input_binding = INPUT_BINDING_REWIND;
-			#endif
 				else if (value == u8"INPUT_BINDING_QUICK_SAVE_STATE")
 					input_binding = INPUT_BINDING_QUICK_SAVE_STATE;
 				else if (value == u8"INPUT_BINDING_QUICK_LOAD_STATE")
@@ -1541,9 +1531,7 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = INPUT_BINDING_QUICK_SAVE_STATE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = INPUT_BINDING_QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
-#endif
 	}
 
 	// Apply the V-sync setting, now that it's been decided.
@@ -1666,11 +1654,9 @@ static void SaveConfiguration()
 						binding_string = "INPUT_BINDING_FAST_FORWARD";
 						break;
 
-				#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 					case INPUT_BINDING_REWIND:
 						binding_string = "INPUT_BINDING_REWIND";
 						break;
-				#endif
 
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						binding_string = "INPUT_BINDING_QUICK_SAVE_STATE";
@@ -1990,7 +1976,6 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 						break;
 
-					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 					case INPUT_BINDING_REWIND:
 						keyboard_input.rewind += delta;
 
@@ -1998,7 +1983,6 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							UpdateRewindStatus();
 
 						break;
-					#endif
 
 					default:
 						break;
@@ -2204,16 +2188,13 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							break;
 						}
 
-					#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 						case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-					#endif
 						case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
 						{
 							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
 							{
 								const bool held = event.gaxis.value > 0x7FFF / 8;
 
-							#ifdef CLOWNMDEMU_FRONTEND_REWINDING
 								if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
 								{
 									if (controller_input.left_trigger != held)
@@ -2225,7 +2206,6 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 									controller_input.left_trigger = held;
 								}
 								else
-							#endif
 								{
 									if (controller_input.right_trigger != held)
 									{

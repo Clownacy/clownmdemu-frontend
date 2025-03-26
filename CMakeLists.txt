@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 
 option(CLOWNMDEMU_FRONTEND_FREETYPE "Use FreeType font rasteriser instead of stb_truetype for Dear ImGui" OFF)
-option(CLOWNMDEMU_FRONTEND_REWINDING "Enable the ability to rewind the emulator (which uses a LOT of RAM)" ON)
 
 project(clownmdemu-frontend LANGUAGES C CXX)
 
@@ -131,11 +130,6 @@ else()
 	target_sources(clownmdemu PRIVATE
 		"libraries/imgui/imstb_truetype.h"
 	)
-endif()
-
-# Handle enabling rewinding
-if(CLOWNMDEMU_FRONTEND_REWINDING)
-	target_compile_definitions(clownmdemu PRIVATE CLOWNMDEMU_FRONTEND_REWINDING)
 endif()
 
 ####################

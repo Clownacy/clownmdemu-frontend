@@ -306,50 +306,51 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 	// Run the emulator for a frame
 	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1) && !RewindingExhausted(); ++i)
 	{
-	#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-		// Handle rewinding.
-
-		// We maintain a ring buffer of emulator states:
-		// when rewinding, we go backwards through this buffer,
-		// and when not rewinding, we go forwards through it.
-		const auto rewind_buffer_size = state_rewind_buffer.size();
-
-		if (IsRewinding())
+		if (rewind.Enabled())
 		{
-			--state_rewind_remaining;
+			// Handle rewinding.
 
-			if (state_rewind_index == 0)
-				state_rewind_index = rewind_buffer_size - 1;
+			// We maintain a ring buffer of emulator states:
+			// when rewinding, we go backwards through this buffer,
+			// and when not rewinding, we go forwards through it.
+			const auto rewind_buffer_size = rewind.buffer.size();
+
+			if (IsRewinding())
+			{
+				--rewind.remaining;
+
+				if (rewind.index == 0)
+					rewind.index = rewind_buffer_size - 1;
+				else
+					--rewind.index;
+			}
 			else
-				--state_rewind_index;
-		}
-		else
-		{
-			if (state_rewind_remaining < rewind_buffer_size - 2) // -2 because we use a slot to hold the current state, so -1 does not suffice.
-				++state_rewind_remaining;
+			{
+				if (rewind.remaining < rewind_buffer_size - 2) // -2 because we use a slot to hold the current state, so -1 does not suffice.
+					++rewind.remaining;
 
-			if (state_rewind_index == rewind_buffer_size - 1)
-				state_rewind_index = 0;
+				if (rewind.index == rewind_buffer_size - 1)
+					rewind.index = 0;
+				else
+					++rewind.index;
+			}
+
+			auto &previous_state = rewind.buffer[rewind.index];
+			auto &next_state = rewind.buffer[(rewind.index + 1) % rewind_buffer_size];
+
+			if (IsRewinding())
+			{
+				state = &next_state;
+				LoadState(&previous_state);
+			}
 			else
-				++state_rewind_index;
-		}
+			{
+				SaveState(&next_state);
+				state = &next_state;
+			}
 
-		auto &previous_state = state_rewind_buffer[state_rewind_index];
-		auto &next_state = state_rewind_buffer[(state_rewind_index + 1) % rewind_buffer_size];
-
-		if (IsRewinding())
-		{
-			state = &next_state;
-			LoadState(&previous_state);
+			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
 		}
-		else
-		{
-			SaveState(&next_state);
-			state = &next_state;
-		}
-
-		ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
-	#endif
 
 		// Reset the audio buffers so that they can be mixed into.
 		audio_output.MixerBegin();
@@ -374,9 +375,7 @@ void EmulatorInstance::SoftResetConsole()
 
 void EmulatorInstance::HardResetConsole()
 {
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	state_rewind_remaining = 0;
-#endif
+	rewind.remaining = 0;
 
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);

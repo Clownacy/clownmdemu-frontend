@@ -51,10 +51,6 @@ private:
 		Cartridge(EmulatorInstance &emulator)
 			: emulator(emulator)
 		{}
-		~Cartridge()
-		{
-			Eject();
-		}
 
 		cc_u8f Read(cc_u32f address);
 		const std::vector<unsigned char>& GetROMBuffer() const { return rom_file_buffer; }
@@ -79,16 +75,47 @@ private:
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	std::array<State, 60 * 10> state_rewind_buffer; // Roughly 10 seconds of rewinding at 60FPS
-	std::size_t state_rewind_index = 0;
-	std::size_t state_rewind_remaining = 0;
-	bool rewind_in_progress = false;
-#else
-	std::array<State, 1> state_rewind_buffer;
-#endif
+	class Rewind
+	{
+	private:
+		bool in_progress = false;
 
-	State *state = &state_rewind_buffer[0];
+	public:
+		std::vector<State> buffer = std::vector<State>(1);
+		std::size_t index = 0;
+		std::size_t remaining = 0;
+
+		bool Enabled() const
+		{
+			return buffer.size() != 1;
+		}
+		bool Enable(const bool enabled)
+		{
+			if (enabled == Enabled())
+				return false;
+
+			std::vector<State> new_buffer(enabled ? 60 * 10 : 1); // Roughly 10 seconds of rewinding at 60FPS
+			// Transfer the old state to the new buffer.
+			new_buffer[0] = buffer[index];
+
+			// Reinitialise
+			std::swap(buffer, new_buffer);
+			in_progress = false;
+			index = 0;
+			remaining = 0;
+
+			return true;
+		}
+
+		bool InProgress() const { return Enabled() ? in_progress : false; }
+		void InProgress(const bool active) { in_progress = Enabled() ? active : false; }
+		// We need at least two frames and the frame before it, because rewinding pops one frame and then samples the frame below the head.
+		bool Exhausted() const { return Enabled() ? in_progress && remaining <= 2 : false; }
+	};
+
+	Rewind rewind;
+
+	State *state = &rewind.buffer[0];
 
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
@@ -121,6 +148,11 @@ private:
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);
+	~EmulatorInstance()
+	{
+		cartridge.Eject();
+	}
+
 	void Update(cc_bool fast_forward);
 	void SoftResetConsole();
 	void HardResetConsole();
@@ -140,13 +172,15 @@ public:
 	bool IsCartridgeFileLoaded() const { return cartridge.IsInserted(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
 
-#ifdef CLOWNMDEMU_FRONTEND_REWINDING
-	bool IsRewinding() const { return rewind_in_progress; }
-	void Rewind(const bool active) { rewind_in_progress = active; }
-	bool RewindingExhausted() const { return IsRewinding() && state_rewind_remaining <= 2; } // We need at least two frames and the frame before it, because rewinding pops one frame and then samples the frame below the head.
-#else
-	bool RewindingExhausted() const { return false; }
-#endif
+	bool RewindingEnabled() const { rewind.Enabled(); }
+	void RewindingEnabled(const bool enabled)
+	{
+		if (rewind.Enable(enabled))
+			state = &rewind.buffer[0];
+	}
+	bool IsRewinding() const { return rewind.InProgress(); }
+	void Rewind(const bool active) { rewind.InProgress(active); }
+	bool RewindingExhausted() const { return rewind.Exhausted(); }
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
