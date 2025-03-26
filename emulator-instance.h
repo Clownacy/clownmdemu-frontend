@@ -172,11 +172,14 @@ public:
 	bool IsCartridgeFileLoaded() const { return cartridge.IsInserted(); }
 	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
 
-	bool RewindingEnabled() const { rewind.Enabled(); }
-	void RewindingEnabled(const bool enabled)
+	bool RewindingEnabled() const { return rewind.Enabled(); }
+	void EnableRewinding(const bool enabled)
 	{
 		if (rewind.Enable(enabled))
+		{
 			state = &rewind.buffer[0];
+			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+		}
 	}
 	bool IsRewinding() const { return rewind.InProgress(); }
 	void Rewind(const bool active) { rewind.InProgress(active); }

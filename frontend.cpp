@@ -659,11 +659,28 @@ private:
 			ImGui::EndTable();
 		}
 
+		ImGui::SeparatorText("Miscellaneous");
+
+		if (ImGui::BeginTable("Miscellaneous Options", 2))
+		{
 	#ifndef __EMSCRIPTEN__
-		ImGui::SeparatorText("Experimental");
-		ImGui::Checkbox("Native Windows", &native_windows);
-		DoToolTip(u8"Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Native Windows", &native_windows);
+			DoToolTip(u8"Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
 	#endif
+
+			ImGui::TableNextColumn();
+			bool rewinding_enabled = Frontend::emulator->RewindingEnabled();
+			if (ImGui::Checkbox("Rewinding", &rewinding_enabled))
+				Frontend::emulator->EnableRewinding(rewinding_enabled);
+			DoToolTip(
+				u8"Allows the emulated console to be played in"
+				"\nreverse for up to 10 seconds. This uses a lot"
+				"\nof RAM and increases CPU usage, so disable"
+				"\nthis if there is lag.");
+
+			ImGui::EndTable();
+		}
 
 		ImGui::SeparatorText("Keyboard Input");
 
@@ -1341,6 +1358,8 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 		else if (name == u8"native-windows")
 			native_windows = state;
 	#endif
+		else if (name == u8"rewinding")
+			emulator->EnableRewinding(state);
 		else if (name == u8"low-pass-filter")
 			emulator->SetLowPassFilter(state);
 		else if (name == u8"low-volume-distortion")
@@ -1499,6 +1518,7 @@ static void LoadConfiguration()
 #else
 	native_windows = true;
 #endif
+	emulator->EnableRewinding(true);
 
 	emulator->SetDomestic(false);
 	SetAudioPALMode(false);
@@ -1571,6 +1591,7 @@ static void SaveConfiguration()
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
+		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->RewindingEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
