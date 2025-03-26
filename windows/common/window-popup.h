@@ -71,7 +71,7 @@ public:
 		}
 		else
 		{
-			window.emplace(window_title, scaled_window_width / dpi_scale, scaled_window_height / dpi_scale, resizeable);
+			window.emplace(window_title, static_cast<int>(scaled_window_width / dpi_scale), static_cast<int>(scaled_window_height / dpi_scale), resizeable);
 			SDL_SetWindowParent(window->GetSDLWindow(), parent_window.GetSDLWindow());
 			SDL_ShowWindow(window->GetSDLWindow());
 		}
