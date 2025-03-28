@@ -1106,13 +1106,21 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Horizontal Scrolling Mode");
 		ImGui::TableNextColumn();
-		static const auto horizontal_scrolling_modes = std::to_array<std::string, 4>({
-			"Whole Screen",
-			"1-Pixel Rows (8)",
-			"1-Tile Rows",
-			"1-Pixel Rows (All)"
-		});
-		ImGui::TextUnformatted(horizontal_scrolling_modes[vdp.hscroll_mode]);
+		switch (vdp.hscroll_mask)
+		{
+			case 0x00:
+				ImGui::TextUnformatted("Whole Screen");
+				break;
+			case 0x07:
+				ImGui::TextUnformatted("1-Pixel Rows (8)");
+				break;
+			case 0xF8:
+				ImGui::TextUnformatted("1-Tile Rows");
+				break;
+			case 0xFF:
+				ImGui::TextUnformatted("1-Pixel Rows (All)");
+				break;
+		}
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Vertical Scrolling Mode");

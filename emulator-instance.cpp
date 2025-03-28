@@ -100,7 +100,7 @@ void EmulatorInstance::ColourUpdatedCallback(void* const user_data, const cc_u16
 	emulator->state->colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
-void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f screen_width, const cc_u16f screen_height)
+void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
 {
 	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 
@@ -110,10 +110,10 @@ void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_
 	if (emulator->framebuffer_texture_pixels == nullptr)
 		return;
 
-	auto input_pointer = pixels;
-	auto output_pointer = &emulator->framebuffer_texture_pixels[scanline * emulator->framebuffer_texture_pitch];
+	auto input_pointer = pixels + left_boundary;
+	auto output_pointer = &emulator->framebuffer_texture_pixels[scanline * emulator->framebuffer_texture_pitch + left_boundary];
 
-	for (cc_u16f i = 0; i < screen_width; ++i)
+	for (cc_u16f i = left_boundary; i < right_boundary; ++i)
 		*output_pointer++ = emulator->state->colours[*input_pointer++];
 }
 
