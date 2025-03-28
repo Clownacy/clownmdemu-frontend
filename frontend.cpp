@@ -620,8 +620,9 @@ private:
 		if (ImGui::BeginTable("Video Options", 2))
 		{
 			ImGui::TableNextColumn();
-			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
-				Frontend::window->SetVSync(Frontend::use_vsync);
+			auto vsync = Frontend::window->GetVSync();
+			if (ImGui::Checkbox("V-Sync", &vsync))
+				Frontend::window->SetVSync(vsync);
 			DoToolTip(u8"Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
@@ -873,7 +874,6 @@ SDL::Texture Frontend::framebuffer_texture_upscaled;
 unsigned int Frontend::output_width, Frontend::output_height;
 unsigned int Frontend::upscale_width, Frontend::upscale_height;
 
-bool Frontend::use_vsync;
 bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
 bool Frontend::fast_forward_in_progress;
@@ -1600,7 +1600,7 @@ static void SaveConfiguration()
 		else \
 			PRINT_STRING(FILE, "off" ENDL);
 
-		PRINT_BOOLEAN_OPTION(file, "vsync", use_vsync);
+		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 	#ifndef __EMSCRIPTEN__

@@ -67,7 +67,6 @@ namespace Frontend
 	extern unsigned int output_width, output_height;
 	extern unsigned int upscale_width, upscale_height;
 
-	extern bool use_vsync;
 	extern bool integer_screen_scaling;
 	extern bool tall_double_resolution_mode;
 	extern bool fast_forward_in_progress;
