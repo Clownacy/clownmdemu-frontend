@@ -1338,8 +1338,27 @@ static char* INIReadCallback(char* const buffer, const int length, void* const u
 	return buffer;
 }
 
-static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* const section_cstr, const char* const name_cstr, const char* const value_cstr)
+struct TemporarySettings
 {
+	bool vsync = false;
+	bool low_pass_filter = true;
+	bool ladder_effect = true;
+	bool integer_screen_scaling = false;
+	bool tall_double_resolution_mode = false;
+#ifdef __EMSCRIPTEN__
+	bool native_windows = false;
+#else
+	bool native_windows = true;
+#endif
+	bool rewinding = true;
+	bool domestic = false;
+	bool pal_mode = false;
+};
+
+static int INIParseCallback(void* const user, const char* const section_cstr, const char* const name_cstr, const char* const value_cstr)
+{
+	TemporarySettings &settings = *static_cast<TemporarySettings*>(user);
+
 	const std::u8string_view section(reinterpret_cast<const char8_t*>(section_cstr));
 	const std::u8string_view name(reinterpret_cast<const char8_t*>(name_cstr));
 	const std::u8string_view value(reinterpret_cast<const char8_t*>(value_cstr));
@@ -1349,25 +1368,25 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 		const bool state = value == u8"on";
 
 		if (name == u8"vsync")
-			use_vsync = state;
+			settings.vsync = state;
 		else if (name == u8"integer-screen-scaling")
-			integer_screen_scaling = state;
+			settings.integer_screen_scaling = state;
 		else if (name == u8"tall-interlace-mode-2")
-			tall_double_resolution_mode = state;
+			settings.tall_double_resolution_mode = state;
 	#ifndef __EMSCRIPTEN__
 		else if (name == u8"native-windows")
-			native_windows = state;
+			settings.native_windows = state;
 	#endif
 		else if (name == u8"rewinding")
-			emulator->EnableRewinding(state);
+			settings.rewinding = state;
 		else if (name == u8"low-pass-filter")
-			emulator->SetLowPassFilter(state);
+			settings.low_pass_filter = state;
 		else if (name == u8"low-volume-distortion")
-			emulator->GetConfigurationFM().ladder_effect_disabled = !state;
+			settings.ladder_effect = state;
 		else if (name == u8"pal")
-			SetAudioPALMode(state);
+			settings.pal_mode = state;
 		else if (name == u8"japanese")
-			emulator->SetDomestic(state);
+			settings.domestic = state;
 	}
 	else if (section == u8"Keyboard Bindings")
 	{
@@ -1485,6 +1504,7 @@ static int INIParseCallback([[maybe_unused]] void* const user_cstr, const char* 
 static void LoadConfiguration()
 {
 	// Set default settings.
+	TemporarySettings settings;
 
 	// Default V-sync.
 	const SDL_DisplayID display_index = SDL_GetDisplayForWindow(window->GetSDLWindow());
@@ -1505,28 +1525,14 @@ static void LoadConfiguration()
 		{
 			// Enable V-sync on displays with an FPS of a multiple of 60.
 			// TODO: ...But what about PAL50?
-			use_vsync = std::lround(display_mode->refresh_rate) % 60 == 0;
+			settings.vsync = std::lround(display_mode->refresh_rate) % 60 == 0;
 		}
 	}
-
-	// Default other settings.
-	emulator->SetLowPassFilter(true);
-	integer_screen_scaling = false;
-	tall_double_resolution_mode = false;
-#ifdef __EMSCRIPTEN__
-	native_windows = false;
-#else
-	native_windows = true;
-#endif
-	emulator->EnableRewinding(true);
-
-	emulator->SetDomestic(false);
-	SetAudioPALMode(false);
 
 	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, nullptr) != 0)
+	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, &settings) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		for (auto &keyboard_binding : keyboard_bindings)
@@ -1554,8 +1560,17 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 	}
 
-	// Apply the V-sync setting, now that it's been decided.
-	window->SetVSync(use_vsync);
+	// Apply settings now that they have been decided.
+	window->SetVSync(settings.vsync);
+	emulator->SetLowPassFilter(settings.low_pass_filter);
+	emulator->GetConfigurationFM().ladder_effect_disabled = !settings.ladder_effect;
+	integer_screen_scaling = settings.integer_screen_scaling;
+	tall_double_resolution_mode = settings.tall_double_resolution_mode;
+	native_windows = settings.native_windows;
+	emulator->EnableRewinding(settings.rewinding);
+
+	emulator->SetDomestic(settings.domestic);
+	SetAudioPALMode(settings.pal_mode);
 }
 
 static void SaveConfiguration()
