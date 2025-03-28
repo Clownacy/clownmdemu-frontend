@@ -46,13 +46,7 @@ void DebugFM::Registers::DisplayInternal()
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
-
-			cc_u16f bit_index = 0;
-
-			for (cc_u16f temp = channel.state.feedback_divisor; temp > 1; temp >>= 1)
-				++bit_index;
-
-			ImGui::TextFormatted("{}", 9 - bit_index);
+			ImGui::TextFormatted("{}", 9 - channel.state.feedback_divisor);
 		}
 		ImGui::PopFont();
 
