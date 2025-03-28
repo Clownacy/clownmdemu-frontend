@@ -621,7 +621,7 @@ private:
 		{
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("V-Sync", &Frontend::use_vsync))
-				SDL_SetRenderVSync(Frontend::window->GetRenderer(), Frontend::use_vsync);
+				Frontend::window->SetVSync(Frontend::use_vsync);
 			DoToolTip(u8"Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
@@ -1555,7 +1555,7 @@ static void LoadConfiguration()
 	}
 
 	// Apply the V-sync setting, now that it's been decided.
-	SDL_SetRenderVSync(window->GetRenderer(), use_vsync);
+	window->SetVSync(use_vsync);
 }
 
 static void SaveConfiguration()
