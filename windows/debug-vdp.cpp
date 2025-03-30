@@ -1096,7 +1096,7 @@ void DebugVDP::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane Width");
 		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_width_bitmask + 1);
+		ImGui::TextFormatted("{} Tiles", 1 << vdp.plane_width_shift);
 
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Plane Height");

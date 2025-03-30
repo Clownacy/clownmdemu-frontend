@@ -2857,7 +2857,7 @@ void Frontend::Update()
 		DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, window_plane_width, window_plane_height);
 	}
 	{
-		const auto scrolling_plane_width = clownmdemu.vdp.plane_width_bitmask + 1;
+		const auto scrolling_plane_width = 1 << clownmdemu.vdp.plane_width_shift;
 		const auto scrolling_plane_height = clownmdemu.vdp.plane_height_bitmask + 1;
 		DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, scrolling_plane_width, scrolling_plane_height);
 		DisplayWindow(plane_b_visualiser_window, clownmdemu.vdp.plane_b_address, scrolling_plane_width, scrolling_plane_height);
