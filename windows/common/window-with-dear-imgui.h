@@ -22,6 +22,13 @@ namespace ImGui
 		ImGui::TextUnformatted(&string.front(), &string.back() + 1);
 	}
 
+	template <>
+	inline void TextUnformatted(const std::filesystem::path &path)
+	{
+		const auto &string = path.u8string();
+		ImGui::TextUnformatted(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1);
+	}
+
 	template <typename... T>
 	void TextFormatted(fmt::format_string<T...> format, T&&... args)
 	{

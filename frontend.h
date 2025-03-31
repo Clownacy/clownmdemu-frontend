@@ -15,7 +15,16 @@
 #include "file-utilities.h"
 #include "windows/common/window-with-framebuffer.h"
 
-void DoToolTip(const std::u8string &text);
+template<typename T>
+inline void DoToolTip(const T& text)
+{
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::TextUnformatted(text);
+		ImGui::EndTooltip();
+	}
+}
 
 namespace Frontend
 {

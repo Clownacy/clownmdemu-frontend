@@ -588,29 +588,29 @@ private:
 		{
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("TV Standard:");
-			DoToolTip(u8"Some games only work with a certain TV standard.");
+			DoToolTip("Some games only work with a certain TV standard.");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
 				if (Frontend::emulator->GetPALMode())
 					Frontend::SetAudioPALMode(false);
-			DoToolTip(u8"60 FPS");
+			DoToolTip("60 FPS");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
 				if (!Frontend::emulator->GetPALMode())
 					Frontend::SetAudioPALMode(true);
-			DoToolTip(u8"50 FPS");
+			DoToolTip("50 FPS");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Region:");
-			DoToolTip(u8"Some games only work with a certain region.");
+			DoToolTip("Some games only work with a certain region.");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Japan", Frontend::emulator->GetDomestic()))
 				Frontend::emulator->SetDomestic(true);
-			DoToolTip(u8"Games may show Japanese text.");
+			DoToolTip("Games may show Japanese text.");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Elsewhere", !Frontend::emulator->GetDomestic()))
 				Frontend::emulator->SetDomestic(false);
-			DoToolTip(u8"Games may show English text.");
+			DoToolTip("Games may show English text.");
 
 			ImGui::EndTable();
 		}
@@ -623,7 +623,7 @@ private:
 			auto vsync = Frontend::window->GetVSync();
 			if (ImGui::Checkbox("V-Sync", &vsync))
 				Frontend::window->SetVSync(vsync);
-			DoToolTip(u8"Prevents screen tearing.");
+			DoToolTip("Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
 			if (ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling) && Frontend::integer_screen_scaling)
@@ -632,11 +632,11 @@ private:
 				SDL_DestroyTexture(Frontend::framebuffer_texture_upscaled);
 				Frontend::framebuffer_texture_upscaled = nullptr;
 			}
-			DoToolTip(u8"Preserves pixel aspect ratio,\navoiding non-square pixels.");
+			DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
-			DoToolTip(u8"Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
+			DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
 
 			ImGui::EndTable();
 		}
@@ -649,13 +649,13 @@ private:
 			bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
 			if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
 				Frontend::emulator->SetLowPassFilter(low_pass_filter);
-			DoToolTip(u8"Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+			DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
 
 			ImGui::TableNextColumn();
 			bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
 			if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
 				Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
-			DoToolTip(u8"Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
+			DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
 
 			ImGui::EndTable();
 		}
@@ -667,7 +667,7 @@ private:
 	#ifndef __EMSCRIPTEN__
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Native Windows", &native_windows);
-			DoToolTip(u8"Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
+			DoToolTip("Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
 	#endif
 
 			ImGui::TableNextColumn();
@@ -675,7 +675,7 @@ private:
 			if (ImGui::Checkbox("Rewinding", &rewinding_enabled))
 				Frontend::emulator->EnableRewinding(rewinding_enabled);
 			DoToolTip(
-				u8"Allows the emulated console to be played in"
+				"Allows the emulated console to be played in"
 				"\nreverse for up to 10 seconds. This uses a lot"
 				"\nof RAM and increases CPU usage, so disable"
 				"\nthis if there is lag.");
@@ -737,13 +737,13 @@ private:
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Control Pad #1", Frontend::keyboard_input.bound_joypad == 0))
 				Frontend::keyboard_input.bound_joypad = 0;
-			DoToolTip(u8"Binds the keyboard to Control Pad #1.");
+			DoToolTip("Binds the keyboard to Control Pad #1.");
 
 
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("Control Pad #2", Frontend::keyboard_input.bound_joypad == 1))
 				Frontend::keyboard_input.bound_joypad = 1;
-			DoToolTip(u8"Binds the keyboard to Control Pad #2.");
+			DoToolTip("Binds the keyboard to Control Pad #2.");
 
 			ImGui::EndTable();
 		}
@@ -1289,22 +1289,6 @@ void Frontend::SetAudioPALMode(const bool enabled)
 }
 
 
-/////////////
-// Tooltip //
-/////////////
-
-void DoToolTip(const std::u8string &text)
-{
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::BeginTooltip();
-		const char* const characters = reinterpret_cast<const char*>(text.c_str());
-		ImGui::TextUnformatted(characters, characters + text.size());
-		ImGui::EndTooltip();
-	}
-}
-
-
 /////////
 // INI //
 /////////
@@ -1359,36 +1343,36 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 {
 	TemporarySettings &settings = *static_cast<TemporarySettings*>(user);
 
-	const std::u8string_view section(reinterpret_cast<const char8_t*>(section_cstr));
-	const std::u8string_view name(reinterpret_cast<const char8_t*>(name_cstr));
-	const std::u8string_view value(reinterpret_cast<const char8_t*>(value_cstr));
+	const std::string_view section(section_cstr);
+	const std::string_view name(name_cstr);
+	const std::string_view value(value_cstr);
 
-	if (section == u8"Miscellaneous")
+	if (section == "Miscellaneous")
 	{
-		const bool state = value == u8"on";
+		const bool state = value == "on";
 
-		if (name == u8"vsync")
+		if (name == "vsync")
 			settings.vsync = state;
-		else if (name == u8"integer-screen-scaling")
+		else if (name == "integer-screen-scaling")
 			settings.integer_screen_scaling = state;
-		else if (name == u8"tall-interlace-mode-2")
+		else if (name == "tall-interlace-mode-2")
 			settings.tall_double_resolution_mode = state;
 	#ifndef __EMSCRIPTEN__
-		else if (name == u8"native-windows")
+		else if (name == "native-windows")
 			settings.native_windows = state;
 	#endif
-		else if (name == u8"rewinding")
+		else if (name == "rewinding")
 			settings.rewinding = state;
-		else if (name == u8"low-pass-filter")
+		else if (name == "low-pass-filter")
 			settings.low_pass_filter = state;
-		else if (name == u8"low-volume-distortion")
+		else if (name == "low-volume-distortion")
 			settings.ladder_effect = state;
-		else if (name == u8"pal")
+		else if (name == "pal")
 			settings.pal_mode = state;
-		else if (name == u8"japanese")
+		else if (name == "japanese")
 			settings.domestic = state;
 	}
-	else if (section == u8"Keyboard Bindings")
+	else if (section == "Keyboard Bindings")
 	{
 		unsigned int scancode_integer;
 		const auto scancode_integer_result = std::from_chars(reinterpret_cast<const char*>(&name.front()), reinterpret_cast<const char*>(&name.back()) + 1, scancode_integer, 10);
@@ -1430,45 +1414,45 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 			}
 			else
 			{
-				if (value == u8"INPUT_BINDING_CONTROLLER_UP")
+				if (value == "INPUT_BINDING_CONTROLLER_UP")
 					input_binding = INPUT_BINDING_CONTROLLER_UP;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_DOWN")
+				else if (value == "INPUT_BINDING_CONTROLLER_DOWN")
 					input_binding = INPUT_BINDING_CONTROLLER_DOWN;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_LEFT")
+				else if (value == "INPUT_BINDING_CONTROLLER_LEFT")
 					input_binding = INPUT_BINDING_CONTROLLER_LEFT;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_RIGHT")
+				else if (value == "INPUT_BINDING_CONTROLLER_RIGHT")
 					input_binding = INPUT_BINDING_CONTROLLER_RIGHT;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_A")
+				else if (value == "INPUT_BINDING_CONTROLLER_A")
 					input_binding = INPUT_BINDING_CONTROLLER_A;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_B")
+				else if (value == "INPUT_BINDING_CONTROLLER_B")
 					input_binding = INPUT_BINDING_CONTROLLER_B;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_C")
+				else if (value == "INPUT_BINDING_CONTROLLER_C")
 					input_binding = INPUT_BINDING_CONTROLLER_C;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_X")
+				else if (value == "INPUT_BINDING_CONTROLLER_X")
 					input_binding = INPUT_BINDING_CONTROLLER_X;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_Y")
+				else if (value == "INPUT_BINDING_CONTROLLER_Y")
 					input_binding = INPUT_BINDING_CONTROLLER_Y;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_Z")
+				else if (value == "INPUT_BINDING_CONTROLLER_Z")
 					input_binding = INPUT_BINDING_CONTROLLER_Z;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_START")
+				else if (value == "INPUT_BINDING_CONTROLLER_START")
 					input_binding = INPUT_BINDING_CONTROLLER_START;
-				else if (value == u8"INPUT_BINDING_CONTROLLER_MODE")
+				else if (value == "INPUT_BINDING_CONTROLLER_MODE")
 					input_binding = INPUT_BINDING_CONTROLLER_MODE;
-				else if (value == u8"INPUT_BINDING_PAUSE")
+				else if (value == "INPUT_BINDING_PAUSE")
 					input_binding = INPUT_BINDING_PAUSE;
-				else if (value == u8"INPUT_BINDING_RESET")
+				else if (value == "INPUT_BINDING_RESET")
 					input_binding = INPUT_BINDING_RESET;
-				else if (value == u8"INPUT_BINDING_FAST_FORWARD")
+				else if (value == "INPUT_BINDING_FAST_FORWARD")
 					input_binding = INPUT_BINDING_FAST_FORWARD;
-				else if (value == u8"INPUT_BINDING_REWIND")
+				else if (value == "INPUT_BINDING_REWIND")
 					input_binding = INPUT_BINDING_REWIND;
-				else if (value == u8"INPUT_BINDING_QUICK_SAVE_STATE")
+				else if (value == "INPUT_BINDING_QUICK_SAVE_STATE")
 					input_binding = INPUT_BINDING_QUICK_SAVE_STATE;
-				else if (value == u8"INPUT_BINDING_QUICK_LOAD_STATE")
+				else if (value == "INPUT_BINDING_QUICK_LOAD_STATE")
 					input_binding = INPUT_BINDING_QUICK_LOAD_STATE;
-				else if (value == u8"INPUT_BINDING_TOGGLE_FULLSCREEN")
+				else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
 					input_binding = INPUT_BINDING_TOGGLE_FULLSCREEN;
-				else if (value == u8"INPUT_BINDING_TOGGLE_CONTROL_PAD")
+				else if (value == "INPUT_BINDING_TOGGLE_CONTROL_PAD")
 					input_binding = INPUT_BINDING_TOGGLE_CONTROL_PAD;
 			}
 
@@ -1477,18 +1461,18 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 
 	}
 #ifdef FILE_PATH_SUPPORT
-	else if (section == u8"Recent Software")
+	else if (section == "Recent Software")
 	{
 		static bool is_cd_file = false;
 
-		if (name == u8"cd")
+		if (name == "cd")
 		{
-			is_cd_file = value == u8"true";
+			is_cd_file = value == "true";
 		}
-		else if (name == u8"path")
+		else if (name == "path")
 		{
 			if (!value.empty())
-				AddToRecentSoftware(value, is_cd_file, true);
+				AddToRecentSoftware(std::u8string_view(reinterpret_cast<const char8_t*>(value.data()), value.size()), is_cd_file, true);
 		}
 	}
 #endif
@@ -2492,7 +2476,7 @@ void Frontend::Update()
 						ImGui::PopID();
 
 						// Show the full path as a tooltip.
-						DoToolTip(recent_software.path.u8string());
+						DoToolTip(recent_software.path);
 					}
 
 					if (selected_software != nullptr && LoadSoftwareFile(selected_software->is_cd_file, selected_software->path))
