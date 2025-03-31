@@ -1389,7 +1389,7 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == reinterpret_cast<const char*>(&value.back()) + 1)
 			{
 				// Legacy numerical input bindings.
-				static const std::array input_bindings = {
+				static constexpr auto input_bindings = std::to_array({
 					INPUT_BINDING_NONE,
 					INPUT_BINDING_CONTROLLER_UP,
 					INPUT_BINDING_CONTROLLER_DOWN,
@@ -1407,9 +1407,9 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 					INPUT_BINDING_QUICK_LOAD_STATE,
 					INPUT_BINDING_TOGGLE_FULLSCREEN,
 					INPUT_BINDING_TOGGLE_CONTROL_PAD
-				};
+				});
 
-				if (binding_index < input_bindings.size())
+				if (binding_index < std::size(input_bindings))
 					input_binding = input_bindings[binding_index];
 			}
 			else
