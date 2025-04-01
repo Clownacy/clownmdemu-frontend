@@ -1347,30 +1347,30 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 	const std::string_view name(name_cstr);
 	const std::string_view value(value_cstr);
 
+	const bool value_boolean = value == "on" || value == "true" || value == "yes";
+
 	if (section == "Miscellaneous")
 	{
-		const bool state = value == "on";
-
 		if (name == "vsync")
-			settings.vsync = state;
+			settings.vsync = value_boolean;
 		else if (name == "integer-screen-scaling")
-			settings.integer_screen_scaling = state;
+			settings.integer_screen_scaling = value_boolean;
 		else if (name == "tall-interlace-mode-2")
-			settings.tall_double_resolution_mode = state;
+			settings.tall_double_resolution_mode = value_boolean;
 	#ifndef __EMSCRIPTEN__
 		else if (name == "native-windows")
-			settings.native_windows = state;
+			settings.native_windows = value_boolean;
 	#endif
 		else if (name == "rewinding")
-			settings.rewinding = state;
+			settings.rewinding = value_boolean;
 		else if (name == "low-pass-filter")
-			settings.low_pass_filter = state;
+			settings.low_pass_filter = value_boolean;
 		else if (name == "low-volume-distortion")
-			settings.ladder_effect = state;
+			settings.ladder_effect = value_boolean;
 		else if (name == "pal")
-			settings.pal_mode = state;
+			settings.pal_mode = value_boolean;
 		else if (name == "japanese")
-			settings.domestic = state;
+			settings.domestic = value_boolean;
 	}
 	else if (section == "Keyboard Bindings")
 	{
@@ -1467,7 +1467,7 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 
 		if (name == "cd")
 		{
-			is_cd_file = value == "true";
+			is_cd_file = value_boolean;
 		}
 		else if (name == "path")
 		{
@@ -1513,14 +1513,13 @@ static void LoadConfiguration()
 		}
 	}
 
-	const SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
+	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
 	// Load the configuration file, overwriting the above settings.
-	if (!file || ini_parse_stream(INIReadCallback, const_cast<SDL::IOStream*>(&file), INIParseCallback, &settings) != 0)
+	if (!file || ini_parse_stream(INIReadCallback, &file, INIParseCallback, &settings) != 0)
 	{
 		// Failed to read configuration file: set defaults key bindings.
-		for (auto &keyboard_binding : keyboard_bindings)
-			keyboard_binding = INPUT_BINDING_NONE;
+		keyboard_bindings.fill(INPUT_BINDING_NONE);
 
 		keyboard_bindings[SDL_SCANCODE_UP] = INPUT_BINDING_CONTROLLER_UP;
 		keyboard_bindings[SDL_SCANCODE_DOWN] = INPUT_BINDING_CONTROLLER_DOWN;
@@ -1574,15 +1573,23 @@ static void SaveConfiguration()
 	else
 	{
 	#define PRINT_STRING(FILE, STRING) SDL_WriteIO(FILE, STRING, sizeof(STRING) - 1)
-		// Save keyboard bindings.
-		PRINT_STRING(file, "[Miscellaneous]" ENDL);
-
+	#define PRINT_LINE(FILE, STRING) PRINT_STRING(FILE, STRING ENDL)
+	#define PRINT_NEWLINE(FILE) PRINT_LINE(FILE, "")
+	#define PRINT_HEADER(FILE, STRING) PRINT_LINE(FILE, "[" STRING "]")
+	#define PRINT_KEY(FILE, KEY) PRINT_STRING(FILE, KEY " = ")
+		static constexpr auto PRINT_BOOLEAN_VALUE = [](SDL::IOStream &file, const bool variable)
+		{
+			if (variable)
+				PRINT_LINE(file, "true");
+			else
+				PRINT_LINE(file, "false");
+		};
 	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
-		PRINT_STRING(FILE, NAME " = "); \
-		if (VARIABLE) \
-			PRINT_STRING(FILE, "on" ENDL); \
-		else \
-			PRINT_STRING(FILE, "off" ENDL);
+		PRINT_KEY(FILE, NAME); \
+		PRINT_BOOLEAN_VALUE(FILE, VARIABLE)
+
+		// Save settings.
+		PRINT_HEADER(file, "Miscellaneous");
 
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
@@ -1595,109 +1602,89 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
+		PRINT_NEWLINE(file);
 
 		// Save keyboard bindings.
-		PRINT_STRING(file, ENDL "[Keyboard Bindings]" ENDL);
+		PRINT_HEADER(file, "Keyboard Bindings");
 
 		for (auto keyboard_binding = std::cbegin(keyboard_bindings); keyboard_binding != std::cend(keyboard_bindings); ++keyboard_binding)
 		{
 			if (*keyboard_binding != INPUT_BINDING_NONE)
 			{
-				const char *binding_string;
-
-				// Default, to shut up potential warnings.
-				binding_string = "INPUT_BINDING_NONE";
-
-				switch (*keyboard_binding)
+				const auto &binding_string = [&]()
 				{
-					case INPUT_BINDING_NONE:
-						binding_string = "INPUT_BINDING_NONE";
-						break;
+					switch (*keyboard_binding)
+					{
+						case INPUT_BINDING_NONE:
+							return "INPUT_BINDING_NONE";
 
-					case INPUT_BINDING_CONTROLLER_UP:
-						binding_string = "INPUT_BINDING_CONTROLLER_UP";
-						break;
+						case INPUT_BINDING_CONTROLLER_UP:
+							return "INPUT_BINDING_CONTROLLER_UP";
 
-					case INPUT_BINDING_CONTROLLER_DOWN:
-						binding_string = "INPUT_BINDING_CONTROLLER_DOWN";
-						break;
+						case INPUT_BINDING_CONTROLLER_DOWN:
+							return "INPUT_BINDING_CONTROLLER_DOWN";
 
-					case INPUT_BINDING_CONTROLLER_LEFT:
-						binding_string = "INPUT_BINDING_CONTROLLER_LEFT";
-						break;
+						case INPUT_BINDING_CONTROLLER_LEFT:
+							return "INPUT_BINDING_CONTROLLER_LEFT";
 
-					case INPUT_BINDING_CONTROLLER_RIGHT:
-						binding_string = "INPUT_BINDING_CONTROLLER_RIGHT";
-						break;
+						case INPUT_BINDING_CONTROLLER_RIGHT:
+							return "INPUT_BINDING_CONTROLLER_RIGHT";
 
-					case INPUT_BINDING_CONTROLLER_A:
-						binding_string = "INPUT_BINDING_CONTROLLER_A";
-						break;
+						case INPUT_BINDING_CONTROLLER_A:
+							return "INPUT_BINDING_CONTROLLER_A";
 
-					case INPUT_BINDING_CONTROLLER_B:
-						binding_string = "INPUT_BINDING_CONTROLLER_B";
-						break;
+						case INPUT_BINDING_CONTROLLER_B:
+							return "INPUT_BINDING_CONTROLLER_B";
 
-					case INPUT_BINDING_CONTROLLER_C:
-						binding_string = "INPUT_BINDING_CONTROLLER_C";
-						break;
+						case INPUT_BINDING_CONTROLLER_C:
+							return "INPUT_BINDING_CONTROLLER_C";
 
-					case INPUT_BINDING_CONTROLLER_X:
-						binding_string = "INPUT_BINDING_CONTROLLER_X";
-						break;
+						case INPUT_BINDING_CONTROLLER_X:
+							return "INPUT_BINDING_CONTROLLER_X";
 
-					case INPUT_BINDING_CONTROLLER_Y:
-						binding_string = "INPUT_BINDING_CONTROLLER_Y";
-						break;
+						case INPUT_BINDING_CONTROLLER_Y:
+							return "INPUT_BINDING_CONTROLLER_Y";
 
-					case INPUT_BINDING_CONTROLLER_Z:
-						binding_string = "INPUT_BINDING_CONTROLLER_Z";
-						break;
+						case INPUT_BINDING_CONTROLLER_Z:
+							return "INPUT_BINDING_CONTROLLER_Z";
 
-					case INPUT_BINDING_CONTROLLER_START:
-						binding_string = "INPUT_BINDING_CONTROLLER_START";
-						break;
+						case INPUT_BINDING_CONTROLLER_START:
+							return "INPUT_BINDING_CONTROLLER_START";
 
-					case INPUT_BINDING_CONTROLLER_MODE:
-						binding_string = "INPUT_BINDING_CONTROLLER_MODE";
-						break;
+						case INPUT_BINDING_CONTROLLER_MODE:
+							return "INPUT_BINDING_CONTROLLER_MODE";
 
-					case INPUT_BINDING_PAUSE:
-						binding_string = "INPUT_BINDING_PAUSE";
-						break;
+						case INPUT_BINDING_PAUSE:
+							return "INPUT_BINDING_PAUSE";
 
-					case INPUT_BINDING_RESET:
-						binding_string = "INPUT_BINDING_RESET";
-						break;
+						case INPUT_BINDING_RESET:
+							return "INPUT_BINDING_RESET";
 
-					case INPUT_BINDING_FAST_FORWARD:
-						binding_string = "INPUT_BINDING_FAST_FORWARD";
-						break;
+						case INPUT_BINDING_FAST_FORWARD:
+							return "INPUT_BINDING_FAST_FORWARD";
 
-					case INPUT_BINDING_REWIND:
-						binding_string = "INPUT_BINDING_REWIND";
-						break;
+						case INPUT_BINDING_REWIND:
+							return "INPUT_BINDING_REWIND";
 
-					case INPUT_BINDING_QUICK_SAVE_STATE:
-						binding_string = "INPUT_BINDING_QUICK_SAVE_STATE";
-						break;
+						case INPUT_BINDING_QUICK_SAVE_STATE:
+							return "INPUT_BINDING_QUICK_SAVE_STATE";
 
-					case INPUT_BINDING_QUICK_LOAD_STATE:
-						binding_string = "INPUT_BINDING_QUICK_LOAD_STATE";
-						break;
+						case INPUT_BINDING_QUICK_LOAD_STATE:
+							return "INPUT_BINDING_QUICK_LOAD_STATE";
 
-					case INPUT_BINDING_TOGGLE_FULLSCREEN:
-						binding_string = "INPUT_BINDING_TOGGLE_FULLSCREEN";
-						break;
+						case INPUT_BINDING_TOGGLE_FULLSCREEN:
+							return "INPUT_BINDING_TOGGLE_FULLSCREEN";
 
-					case INPUT_BINDING_TOGGLE_CONTROL_PAD:
-						binding_string = "INPUT_BINDING_TOGGLE_CONTROL_PAD";
-						break;
+						case INPUT_BINDING_TOGGLE_CONTROL_PAD:
+							return "INPUT_BINDING_TOGGLE_CONTROL_PAD";
 
-					case INPUT_BINDING__TOTAL:
-						SDL_assert(false);
-						break;
-				}
+						case INPUT_BINDING__TOTAL:
+							SDL_assert(false);
+							break;
+					}
+
+					return "INPUT_BINDING_NONE";
+				}();
 
 				const std::string buffer = fmt::format("{} = {}" ENDL, std::distance(std::cbegin(keyboard_bindings), keyboard_binding), binding_string);
 				SDL_WriteIO(file, buffer.data(), buffer.size());
@@ -1705,21 +1692,19 @@ static void SaveConfiguration()
 		}
 
 	#ifdef FILE_PATH_SUPPORT
+		PRINT_NEWLINE(file);
+
 		// Save recent software paths.
-		PRINT_STRING(file, ENDL "[Recent Software]" ENDL);
+		PRINT_HEADER(file, "Recent Software");
 
 		for (const auto &recent_software : recent_software_list)
 		{
-			PRINT_STRING(file, "cd = ");
-			if (recent_software.is_cd_file)
-				PRINT_STRING(file, "true" ENDL);
-			else
-				PRINT_STRING(file, "false" ENDL);
+			PRINT_BOOLEAN_OPTION(file, "cd", recent_software.is_cd_file);
 
-			PRINT_STRING(file, "path = ");
+			PRINT_KEY(file, "path");
 			const auto path_string = recent_software.path.u8string();
 			SDL_WriteIO(file, reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
-			PRINT_STRING(file, ENDL);
+			PRINT_NEWLINE(file);
 		}
 	#endif
 	}
