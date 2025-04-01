@@ -27,7 +27,6 @@
 #include "libraries/imgui/imgui.h"
 #include "libraries/imgui/backends/imgui_impl_sdl3.h"
 #include "libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
-#include "libraries/inih/ini.h"
 
 #include "cd-reader.h"
 #include "debug-log.h"
@@ -120,9 +119,6 @@ private:
 			#include "licences/freetype-ft-hb.h"
 		});
 	#endif
-		static const auto licence_inih = std::to_array<const char>({
-			#include "licences/inih.h"
-		});
 		static const auto licence_noto_sans = std::to_array<const char>({
 			#include "licences/noto-sans.h"
 		});
@@ -197,9 +193,6 @@ private:
 			}
 		}
 	#endif
-
-		if (ImGui::CollapsingHeader("inih"))
-			DoLicence(licence_inih);
 
 		if (ImGui::CollapsingHeader("Noto Sans"))
 			DoLicence(licence_noto_sans);
@@ -1293,191 +1286,56 @@ void Frontend::SetAudioPALMode(const bool enabled)
 // INI //
 /////////
 
-static char* INIReadCallback(char* const buffer, const int length, void* const user)
+namespace INI
 {
-	SDL::IOStream &file = *static_cast<SDL::IOStream*>(user);
+	using Callback = std::function<void(const std::string_view &section, const std::string_view &key, const std::string_view &value)>;
 
-	int i = 0;
-
-	while (i < length - 1)
+	void ProcessFile(SDL::IOStream &stream, const Callback &callback)
 	{
-		char character;
-		if (SDL_ReadIO(file, &character, 1) == 0)
+		if (!stream)
+			return;
+
+		std::string line, section;
+
+		static const auto &ProcessLine = [&]()
 		{
-			if (i == 0)
-				return 0;
+			if (line.empty())
+				return;
 
-			break;
-		}
-
-		buffer[i] = character;
-
-		++i;
-
-		if (character == '\n')
-			break;
-	}
-
-	buffer[i] = '\0';
-	return buffer;
-}
-
-struct TemporarySettings
-{
-	bool vsync = false;
-	bool low_pass_filter = true;
-	bool ladder_effect = true;
-	bool integer_screen_scaling = false;
-	bool tall_double_resolution_mode = false;
-#ifdef __EMSCRIPTEN__
-	bool native_windows = false;
-#else
-	bool native_windows = true;
-#endif
-	bool rewinding = true;
-	bool domestic = false;
-	bool pal_mode = false;
-};
-
-static int INIParseCallback(void* const user, const char* const section_cstr, const char* const name_cstr, const char* const value_cstr)
-{
-	TemporarySettings &settings = *static_cast<TemporarySettings*>(user);
-
-	const std::string_view section(section_cstr);
-	const std::string_view name(name_cstr);
-	const std::string_view value(value_cstr);
-
-	const bool value_boolean = value == "on" || value == "true" || value == "yes";
-
-	if (section == "Miscellaneous")
-	{
-		if (name == "vsync")
-			settings.vsync = value_boolean;
-		else if (name == "integer-screen-scaling")
-			settings.integer_screen_scaling = value_boolean;
-		else if (name == "tall-interlace-mode-2")
-			settings.tall_double_resolution_mode = value_boolean;
-	#ifndef __EMSCRIPTEN__
-		else if (name == "native-windows")
-			settings.native_windows = value_boolean;
-	#endif
-		else if (name == "rewinding")
-			settings.rewinding = value_boolean;
-		else if (name == "low-pass-filter")
-			settings.low_pass_filter = value_boolean;
-		else if (name == "low-volume-distortion")
-			settings.ladder_effect = value_boolean;
-		else if (name == "pal")
-			settings.pal_mode = value_boolean;
-		else if (name == "japanese")
-			settings.domestic = value_boolean;
-	}
-	else if (section == "Keyboard Bindings")
-	{
-		unsigned int scancode_integer;
-		const auto scancode_integer_result = std::from_chars(reinterpret_cast<const char*>(&name.front()), reinterpret_cast<const char*>(&name.back()) + 1, scancode_integer, 10);
-
-		if (scancode_integer_result.ec == std::errc{} && scancode_integer_result.ptr == reinterpret_cast<const char*>(&name.back()) + 1 && scancode_integer < SDL_SCANCODE_COUNT)
-		{
-			const SDL_Scancode scancode = static_cast<SDL_Scancode>(scancode_integer);
-
-			unsigned int binding_index;
-			const auto binding_index_result = std::from_chars(reinterpret_cast<const char*>(&value.front()), reinterpret_cast<const char*>(&value.back()) + 1, binding_index, 10);
-
-			InputBinding input_binding = INPUT_BINDING_NONE;
-
-			if (binding_index_result.ec == std::errc() && binding_index_result.ptr == reinterpret_cast<const char*>(&value.back()) + 1)
+			if (line.front() == '[' && line.back() == ']')
 			{
-				// Legacy numerical input bindings.
-				static constexpr auto input_bindings = std::to_array({
-					INPUT_BINDING_NONE,
-					INPUT_BINDING_CONTROLLER_UP,
-					INPUT_BINDING_CONTROLLER_DOWN,
-					INPUT_BINDING_CONTROLLER_LEFT,
-					INPUT_BINDING_CONTROLLER_RIGHT,
-					INPUT_BINDING_CONTROLLER_A,
-					INPUT_BINDING_CONTROLLER_B,
-					INPUT_BINDING_CONTROLLER_C,
-					INPUT_BINDING_CONTROLLER_START,
-					INPUT_BINDING_PAUSE,
-					INPUT_BINDING_RESET,
-					INPUT_BINDING_FAST_FORWARD,
-					INPUT_BINDING_REWIND,
-					INPUT_BINDING_QUICK_SAVE_STATE,
-					INPUT_BINDING_QUICK_LOAD_STATE,
-					INPUT_BINDING_TOGGLE_FULLSCREEN,
-					INPUT_BINDING_TOGGLE_CONTROL_PAD
-				});
-
-				if (binding_index < std::size(input_bindings))
-					input_binding = input_bindings[binding_index];
+				// Section.
+				section = line.substr(1, line.length() - 2);
 			}
 			else
 			{
-				if (value == "INPUT_BINDING_CONTROLLER_UP")
-					input_binding = INPUT_BINDING_CONTROLLER_UP;
-				else if (value == "INPUT_BINDING_CONTROLLER_DOWN")
-					input_binding = INPUT_BINDING_CONTROLLER_DOWN;
-				else if (value == "INPUT_BINDING_CONTROLLER_LEFT")
-					input_binding = INPUT_BINDING_CONTROLLER_LEFT;
-				else if (value == "INPUT_BINDING_CONTROLLER_RIGHT")
-					input_binding = INPUT_BINDING_CONTROLLER_RIGHT;
-				else if (value == "INPUT_BINDING_CONTROLLER_A")
-					input_binding = INPUT_BINDING_CONTROLLER_A;
-				else if (value == "INPUT_BINDING_CONTROLLER_B")
-					input_binding = INPUT_BINDING_CONTROLLER_B;
-				else if (value == "INPUT_BINDING_CONTROLLER_C")
-					input_binding = INPUT_BINDING_CONTROLLER_C;
-				else if (value == "INPUT_BINDING_CONTROLLER_X")
-					input_binding = INPUT_BINDING_CONTROLLER_X;
-				else if (value == "INPUT_BINDING_CONTROLLER_Y")
-					input_binding = INPUT_BINDING_CONTROLLER_Y;
-				else if (value == "INPUT_BINDING_CONTROLLER_Z")
-					input_binding = INPUT_BINDING_CONTROLLER_Z;
-				else if (value == "INPUT_BINDING_CONTROLLER_START")
-					input_binding = INPUT_BINDING_CONTROLLER_START;
-				else if (value == "INPUT_BINDING_CONTROLLER_MODE")
-					input_binding = INPUT_BINDING_CONTROLLER_MODE;
-				else if (value == "INPUT_BINDING_PAUSE")
-					input_binding = INPUT_BINDING_PAUSE;
-				else if (value == "INPUT_BINDING_RESET")
-					input_binding = INPUT_BINDING_RESET;
-				else if (value == "INPUT_BINDING_FAST_FORWARD")
-					input_binding = INPUT_BINDING_FAST_FORWARD;
-				else if (value == "INPUT_BINDING_REWIND")
-					input_binding = INPUT_BINDING_REWIND;
-				else if (value == "INPUT_BINDING_QUICK_SAVE_STATE")
-					input_binding = INPUT_BINDING_QUICK_SAVE_STATE;
-				else if (value == "INPUT_BINDING_QUICK_LOAD_STATE")
-					input_binding = INPUT_BINDING_QUICK_LOAD_STATE;
-				else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
-					input_binding = INPUT_BINDING_TOGGLE_FULLSCREEN;
-				else if (value == "INPUT_BINDING_TOGGLE_CONTROL_PAD")
-					input_binding = INPUT_BINDING_TOGGLE_CONTROL_PAD;
+				// Key/value pair.
+				const std::string_view line_view(line);
+				const std::string_view separator = " = ";
+				const auto separator_position = line_view.find(separator);
+				const auto key = line_view.substr(0, separator_position);
+				const auto value = line_view.substr(separator_position + separator.length());
+				callback(section, key, value);
 			}
 
-			keyboard_bindings[scancode] = input_binding;
-		}
+			line.clear();
+		};
 
-	}
-#ifdef FILE_PATH_SUPPORT
-	else if (section == "Recent Software")
-	{
-		static bool is_cd_file = false;
-
-		if (name == "cd")
+		for (;;)
 		{
-			is_cd_file = value_boolean;
-		}
-		else if (name == "path")
-		{
-			if (!value.empty())
-				AddToRecentSoftware(std::u8string_view(reinterpret_cast<const char8_t*>(value.data()), value.size()), is_cd_file, true);
+			char character;
+			if (SDL_ReadIO(stream, &character, 1) == 0)
+			{
+				ProcessLine();
+				return;
+			}
+
+			if (character == '\r' || character == '\n')
+				ProcessLine();
+			else
+				line += character;
 		}
 	}
-#endif
-
-	return 1;
 }
 
 
@@ -1487,8 +1345,19 @@ static int INIParseCallback(void* const user, const char* const section_cstr, co
 
 static void LoadConfiguration()
 {
-	// Set default settings.
-	TemporarySettings settings;
+	bool vsync = false;
+	bool integer_screen_scaling = false;
+	tall_double_resolution_mode = false;
+#ifdef __EMSCRIPTEN__
+	native_windows = false;
+#else
+	native_windows = true;
+#endif
+	bool rewinding = true;
+	bool low_pass_filter = true;
+	bool ladder_effect = true;
+	bool pal_mode = false;
+	bool domestic = false;
 
 	// Default V-sync.
 	const SDL_DisplayID display_index = SDL_GetDisplayForWindow(window->GetSDLWindow());
@@ -1509,14 +1378,13 @@ static void LoadConfiguration()
 		{
 			// Enable V-sync on displays with an FPS of a multiple of 60.
 			// TODO: ...But what about PAL50?
-			settings.vsync = std::lround(display_mode->refresh_rate) % 60 == 0;
+			vsync = std::lround(display_mode->refresh_rate) % 60 == 0;
 		}
 	}
 
 	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
-	// Load the configuration file, overwriting the above settings.
-	if (!file || ini_parse_stream(INIReadCallback, &file, INIParseCallback, &settings) != 0)
+	if (!file)
 	{
 		// Failed to read configuration file: set defaults key bindings.
 		keyboard_bindings.fill(INPUT_BINDING_NONE);
@@ -1542,18 +1410,161 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 	}
+	else
+	{
+		static const auto Callback = [&](const std::string_view &section, const std::string_view &name, const std::string_view &value)
+		{
+			const bool value_boolean = value == "on" || value == "true";
 
-	// Apply settings now that they have been decided.
-	window->SetVSync(settings.vsync);
-	emulator->SetLowPassFilter(settings.low_pass_filter);
-	emulator->GetConfigurationFM().ladder_effect_disabled = !settings.ladder_effect;
-	integer_screen_scaling = settings.integer_screen_scaling;
-	tall_double_resolution_mode = settings.tall_double_resolution_mode;
-	native_windows = settings.native_windows;
-	emulator->EnableRewinding(settings.rewinding);
+			if (section == "Miscellaneous")
+			{
+				if (name == "vsync")
+					vsync = value_boolean;
+				else if (name == "integer-screen-scaling")
+					integer_screen_scaling = value_boolean;
+				else if (name == "tall-interlace-mode-2")
+					tall_double_resolution_mode = value_boolean;
+			#ifndef __EMSCRIPTEN__
+				else if (name == "native-windows")
+					native_windows = value_boolean;
+			#endif
+				else if (name == "rewinding")
+					rewinding = value_boolean;
+				else if (name == "low-pass-filter")
+					low_pass_filter = value_boolean;
+				else if (name == "low-volume-distortion")
+					ladder_effect = value_boolean;
+				else if (name == "pal")
+					pal_mode = value_boolean;
+				else if (name == "japanese")
+					domestic = value_boolean;
+			}
+			else if (section == "Keyboard Bindings")
+			{
+				static constexpr auto StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
+				{
+					unsigned int integer;
+					const auto result = std::from_chars(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1, integer, 10);
 
-	emulator->SetDomestic(settings.domestic);
-	SetAudioPALMode(settings.pal_mode);
+					if (result.ec != std::errc{} || result.ptr != reinterpret_cast<const char*>(&string.back()) + 1)
+						return std::nullopt;
+
+					return integer;
+				};
+
+				const auto scancode_integer = StringToInteger(name);
+
+				if (scancode_integer.has_value() && *scancode_integer < SDL_SCANCODE_COUNT)
+				{
+					const SDL_Scancode scancode = static_cast<SDL_Scancode>(*scancode_integer);
+
+					const auto binding_index = StringToInteger(value);
+
+					keyboard_bindings[scancode] = [&]()
+					{
+						if (binding_index.has_value())
+						{
+							// Legacy numerical input bindings.
+							static constexpr auto input_bindings = std::to_array({
+								INPUT_BINDING_NONE,
+								INPUT_BINDING_CONTROLLER_UP,
+								INPUT_BINDING_CONTROLLER_DOWN,
+								INPUT_BINDING_CONTROLLER_LEFT,
+								INPUT_BINDING_CONTROLLER_RIGHT,
+								INPUT_BINDING_CONTROLLER_A,
+								INPUT_BINDING_CONTROLLER_B,
+								INPUT_BINDING_CONTROLLER_C,
+								INPUT_BINDING_CONTROLLER_START,
+								INPUT_BINDING_PAUSE,
+								INPUT_BINDING_RESET,
+								INPUT_BINDING_FAST_FORWARD,
+								INPUT_BINDING_REWIND,
+								INPUT_BINDING_QUICK_SAVE_STATE,
+								INPUT_BINDING_QUICK_LOAD_STATE,
+								INPUT_BINDING_TOGGLE_FULLSCREEN,
+								INPUT_BINDING_TOGGLE_CONTROL_PAD
+							});
+
+							if (*binding_index < std::size(input_bindings))
+								return input_bindings[*binding_index];
+						}
+						else
+						{
+							if (value == "INPUT_BINDING_CONTROLLER_UP")
+								return INPUT_BINDING_CONTROLLER_UP;
+							else if (value == "INPUT_BINDING_CONTROLLER_DOWN")
+								return INPUT_BINDING_CONTROLLER_DOWN;
+							else if (value == "INPUT_BINDING_CONTROLLER_LEFT")
+								return INPUT_BINDING_CONTROLLER_LEFT;
+							else if (value == "INPUT_BINDING_CONTROLLER_RIGHT")
+								return INPUT_BINDING_CONTROLLER_RIGHT;
+							else if (value == "INPUT_BINDING_CONTROLLER_A")
+								return INPUT_BINDING_CONTROLLER_A;
+							else if (value == "INPUT_BINDING_CONTROLLER_B")
+								return INPUT_BINDING_CONTROLLER_B;
+							else if (value == "INPUT_BINDING_CONTROLLER_C")
+								return INPUT_BINDING_CONTROLLER_C;
+							else if (value == "INPUT_BINDING_CONTROLLER_X")
+								return INPUT_BINDING_CONTROLLER_X;
+							else if (value == "INPUT_BINDING_CONTROLLER_Y")
+								return INPUT_BINDING_CONTROLLER_Y;
+							else if (value == "INPUT_BINDING_CONTROLLER_Z")
+								return INPUT_BINDING_CONTROLLER_Z;
+							else if (value == "INPUT_BINDING_CONTROLLER_START")
+								return INPUT_BINDING_CONTROLLER_START;
+							else if (value == "INPUT_BINDING_CONTROLLER_MODE")
+								return INPUT_BINDING_CONTROLLER_MODE;
+							else if (value == "INPUT_BINDING_PAUSE")
+								return INPUT_BINDING_PAUSE;
+							else if (value == "INPUT_BINDING_RESET")
+								return INPUT_BINDING_RESET;
+							else if (value == "INPUT_BINDING_FAST_FORWARD")
+								return INPUT_BINDING_FAST_FORWARD;
+							else if (value == "INPUT_BINDING_REWIND")
+								return INPUT_BINDING_REWIND;
+							else if (value == "INPUT_BINDING_QUICK_SAVE_STATE")
+								return INPUT_BINDING_QUICK_SAVE_STATE;
+							else if (value == "INPUT_BINDING_QUICK_LOAD_STATE")
+								return INPUT_BINDING_QUICK_LOAD_STATE;
+							else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
+								return INPUT_BINDING_TOGGLE_FULLSCREEN;
+							else if (value == "INPUT_BINDING_TOGGLE_CONTROL_PAD")
+								return INPUT_BINDING_TOGGLE_CONTROL_PAD;
+						}
+
+						return INPUT_BINDING_NONE;
+					}();
+				}
+			}
+		#ifdef FILE_PATH_SUPPORT
+			else if (section == "Recent Software")
+			{
+				static bool is_cd_file = false;
+
+				if (name == "cd")
+				{
+					is_cd_file = value_boolean;
+				}
+				else if (name == "path")
+				{
+					if (!value.empty())
+						AddToRecentSoftware(std::u8string_view(reinterpret_cast<const char8_t*>(value.data()), value.size()), is_cd_file, true);
+				}
+			}
+		#endif
+		};
+
+		INI::ProcessFile(file, Callback);
+	}
+
+	// Load miscellaneous settings.
+	window->SetVSync(vsync);
+	emulator->EnableRewinding(rewinding);
+	emulator->SetLowPassFilter(low_pass_filter);
+	emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
+
+	SetAudioPALMode(pal_mode);
+	emulator->SetDomestic(domestic);
 }
 
 static void SaveConfiguration()

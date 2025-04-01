@@ -11,9 +11,6 @@
 [submodule "clownmdemu-frontend-common"]
 	path = common
 	url = https://github.com/Clownacy/clownmdemu-frontend-common
-[submodule "libraries/inih"]
-	path = libraries/inih
-	url = https://github.com/benhoyt/inih
 [submodule "libraries/emscripten-browser-file"]
 	path = libraries/emscripten-browser-file
 	url = https://github.com/Armchair-Software/emscripten-browser-file
