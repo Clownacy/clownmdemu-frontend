@@ -207,46 +207,6 @@ public:
 	friend Base;
 };
 
-static void Popup_DoTable(const char* const name, const std::function<void()> &callback)
-{
-	if (name[0] != '\0')
-		ImGui::SeparatorText(name);
-
-	if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
-	{
-		ImGui::TableSetupColumn("Property");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableHeadersRow();
-
-		callback();
-
-		ImGui::EndTable();
-	}
-};
-
-static void Popup_DoProperty(ImFont* const font, const char* const label, const std::function<void()> &callback)
-{
-	ImGui::TableNextColumn();
-	ImGui::TextUnformatted(label);
-	ImGui::TableNextColumn();
-	if (font != nullptr)
-		ImGui::PushFont(font);
-	callback();
-	if (font != nullptr)
-		ImGui::PopFont();
-};
-
-template<typename... T>
-static void Popup_DoProperty(ImFont* const font, const char* const label, fmt::format_string<T...> format, T &&...args)
-{
-	Popup_DoProperty(font, label,
-		[&]()
-		{
-			ImGui::TextFormatted(format, std::forward<T>(args)...);
-		}
-	);
-};
-
 class DebugCDC : public WindowPopup<DebugCDC>
 {
 private:
@@ -258,26 +218,26 @@ private:
 	{
 		const auto &cdc = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdc;
 
-		Popup_DoTable("Sector Buffer", [&]()
+		DoTable("Sector Buffer", [&]()
 			{
-				Popup_DoProperty(nullptr, "Total Buffered Sectors", "{}", cdc.buffered_sectors_total);
-				Popup_DoProperty(nullptr, "Read Index", "{}", cdc.buffered_sectors_read_index);
-				Popup_DoProperty(nullptr, "Write Index", "{}", cdc.buffered_sectors_write_index);
+				DoProperty(nullptr, "Total Buffered Sectors", "{}", cdc.buffered_sectors_total);
+				DoProperty(nullptr, "Read Index", "{}", cdc.buffered_sectors_read_index);
+				DoProperty(nullptr, "Write Index", "{}", cdc.buffered_sectors_write_index);
 			});
 
-		Popup_DoTable("Host Data", [&]()
+		DoTable("Host Data", [&]()
 			{
-				Popup_DoProperty(nullptr, "Bound", "{}", cdc.host_data_bound ? "Yes" : "No");
-				Popup_DoProperty(nullptr, "Target SUB-CPU", "{}", cdc.host_data_target_sub_cpu ? "Yes" : "No");
-				Popup_DoProperty(nullptr, "Buffered Sector Index", "{}", cdc.host_data_buffered_sector_index);
-				Popup_DoProperty(nullptr, "Word Index", "{}", cdc.host_data_word_index);
+				DoProperty(nullptr, "Bound", "{}", cdc.host_data_bound ? "Yes" : "No");
+				DoProperty(nullptr, "Target SUB-CPU", "{}", cdc.host_data_target_sub_cpu ? "Yes" : "No");
+				DoProperty(nullptr, "Buffered Sector Index", "{}", cdc.host_data_buffered_sector_index);
+				DoProperty(nullptr, "Word Index", "{}", cdc.host_data_word_index);
 			});
 
-		Popup_DoTable("Other", [&]()
+		DoTable("Other", [&]()
 			{
-				Popup_DoProperty(nullptr, "Current Sector", "{}", cdc.current_sector);
-				Popup_DoProperty(nullptr, "Sectors Remaining", "{}", cdc.sectors_remaining);
-				Popup_DoProperty(nullptr, "Device Destination", "{}", cdc.device_destination);
+				DoProperty(nullptr, "Current Sector", "{}", cdc.current_sector);
+				DoProperty(nullptr, "Sectors Remaining", "{}", cdc.sectors_remaining);
+				DoProperty(nullptr, "Device Destination", "{}", cdc.device_destination);
 			});
 	}
 
@@ -298,24 +258,24 @@ private:
 	{
 		const auto &cdda = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdda;
 
-		Popup_DoTable("Volume", [&]()
+		DoTable("Volume", [&]()
 			{
-				Popup_DoProperty(nullptr, "Volume", "0x{:03X}", cdda.volume);
-				Popup_DoProperty(nullptr, "Master Volume", "0x{:03X}", cdda.master_volume);
+				DoProperty(nullptr, "Volume", "0x{:03X}", cdda.volume);
+				DoProperty(nullptr, "Master Volume", "0x{:03X}", cdda.master_volume);
 			});
 
-		Popup_DoTable("Fade", [&]()
+		DoTable("Fade", [&]()
 			{
-				Popup_DoProperty(nullptr, "Target Volume", "0x{:03X}", cdda.target_volume);
-				Popup_DoProperty(nullptr, "Fade Step", "0x{:03X}", cdda.fade_step);
-				Popup_DoProperty(nullptr, "Fade Remaining", "0x{:03X}", cdda.fade_remaining);
-				Popup_DoProperty(nullptr, "Fade Direction", "{}", cdda.subtract_fade_step ? "Negative" : "Positive");
+				DoProperty(nullptr, "Target Volume", "0x{:03X}", cdda.target_volume);
+				DoProperty(nullptr, "Fade Step", "0x{:03X}", cdda.fade_step);
+				DoProperty(nullptr, "Fade Remaining", "0x{:03X}", cdda.fade_remaining);
+				DoProperty(nullptr, "Fade Direction", "{}", cdda.subtract_fade_step ? "Negative" : "Positive");
 			});
 
-		Popup_DoTable("Other", [&]()
+		DoTable("Other", [&]()
 			{
-				Popup_DoProperty(nullptr, "Playing", "{}", cdda.playing ? "True" : "False");
-				Popup_DoProperty(nullptr, "Paused", "{}", cdda.paused ? "True" : "False");
+				DoProperty(nullptr, "Playing", "{}", cdda.playing ? "True" : "False");
+				DoProperty(nullptr, "Paused", "{}", cdda.paused ? "True" : "False");
 			});
 	}
 
@@ -337,22 +297,22 @@ private:
 		const auto monospace_font = GetMonospaceFont();
 		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
 
-		Popup_DoTable("", [&]()
+		DoTable("", [&]()
 			{
-				Popup_DoProperty(monospace_font, "Z80 Bank", "0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
-				Popup_DoProperty(nullptr, "Main 68000 Has Z80 Bus", "{}", clownmdemu_state.z80.bus_requested ? "Yes" : "No");
-				Popup_DoProperty(nullptr, "Z80 Reset Held", "{}", clownmdemu_state.z80.reset_held ? "Yes" : "No");
-				Popup_DoProperty(nullptr, "Main 68000 Has Sub 68000 Bus", "{}", clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
-				Popup_DoProperty(nullptr, "Sub 68000 Reset", "{}", clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
-				Popup_DoProperty(monospace_font, "PRG-RAM Bank", "0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000);
-				Popup_DoProperty(monospace_font, "PRG-RAM Write-Protect", "0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200);
-				Popup_DoProperty(nullptr, "WORD-RAM Mode", "{}", clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
-				Popup_DoProperty(nullptr, "DMNA Bit", "{}", clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
-				Popup_DoProperty(nullptr, "RET Bit", "{}", clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
-				Popup_DoProperty(nullptr, "Boot Mode", "{}", clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
-				Popup_DoProperty(monospace_font, "68000 Communication Flag", "0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
+				DoProperty(monospace_font, "Z80 Bank", "0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
+				DoProperty(nullptr, "Main 68000 Has Z80 Bus", "{}", clownmdemu_state.z80.bus_requested ? "Yes" : "No");
+				DoProperty(nullptr, "Z80 Reset Held", "{}", clownmdemu_state.z80.reset_held ? "Yes" : "No");
+				DoProperty(nullptr, "Main 68000 Has Sub 68000 Bus", "{}", clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
+				DoProperty(nullptr, "Sub 68000 Reset", "{}", clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
+				DoProperty(monospace_font, "PRG-RAM Bank", "0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000);
+				DoProperty(monospace_font, "PRG-RAM Write-Protect", "0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200);
+				DoProperty(nullptr, "WORD-RAM Mode", "{}", clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
+				DoProperty(nullptr, "DMNA Bit", "{}", clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
+				DoProperty(nullptr, "RET Bit", "{}", clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
+				DoProperty(nullptr, "Boot Mode", "{}", clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
+				DoProperty(monospace_font, "68000 Communication Flag", "0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
 
-				Popup_DoProperty(monospace_font, "68000 Communication Command",
+				DoProperty(monospace_font, "68000 Communication Command",
 					[&]()
 					{
 						for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
@@ -360,7 +320,7 @@ private:
 					}
 				);
 
-				Popup_DoProperty(monospace_font, "68000 Communication Status",
+				DoProperty(monospace_font, "68000 Communication Status",
 					[&]()
 					{
 						for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
@@ -368,29 +328,29 @@ private:
 					}
 				);
 
-				Popup_DoProperty(nullptr, "SUB-CPU Graphics Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
-				Popup_DoProperty(nullptr, "SUB-CPU Mega Drive Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
-				Popup_DoProperty(nullptr, "SUB-CPU Timer Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
-				Popup_DoProperty(nullptr, "SUB-CPU CDD Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
-				Popup_DoProperty(nullptr, "SUB-CPU CDC Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
-				Popup_DoProperty(nullptr, "SUB-CPU Sub-code Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
+				DoProperty(nullptr, "SUB-CPU Graphics Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
+				DoProperty(nullptr, "SUB-CPU Mega Drive Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
+				DoProperty(nullptr, "SUB-CPU Timer Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
+				DoProperty(nullptr, "SUB-CPU CDD Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
+				DoProperty(nullptr, "SUB-CPU CDC Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
+				DoProperty(nullptr, "SUB-CPU Sub-code Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
 			}
 		);
 
-		Popup_DoTable("Graphics Transformation",
+		DoTable("Graphics Transformation",
 			[&]()
 			{
 				const auto &graphics = clownmdemu_state.mega_cd.rotation;
-				Popup_DoProperty(nullptr, "Stamp Size", "{} pixels", graphics.large_stamp ? "32x32" : "16x16");
-				Popup_DoProperty(nullptr, "Stamp Map Size", "{} pixels", graphics.large_stamp_map ? "4096x4096" : "256x256");
-				Popup_DoProperty(nullptr, "Repeating Stamp Map", "{}", graphics.repeating_stamp_map ? "Yes" : "No");
-				Popup_DoProperty(nullptr, "Stamp Map Address", "0x{:X}", graphics.stamp_map_address * 4);
-				Popup_DoProperty(nullptr, "Image Buffer Height in Tiles", "{}", graphics.image_buffer_height_in_tiles + 1);
-				Popup_DoProperty(nullptr, "Image Buffer Address", "0x{:X}", graphics.image_buffer_address * 4);
-				Popup_DoProperty(nullptr, "Image Buffer X Offset", "{}", graphics.image_buffer_x_offset);
-				Popup_DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
-				Popup_DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
-				Popup_DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
+				DoProperty(nullptr, "Stamp Size", "{} pixels", graphics.large_stamp ? "32x32" : "16x16");
+				DoProperty(nullptr, "Stamp Map Size", "{} pixels", graphics.large_stamp_map ? "4096x4096" : "256x256");
+				DoProperty(nullptr, "Repeating Stamp Map", "{}", graphics.repeating_stamp_map ? "Yes" : "No");
+				DoProperty(nullptr, "Stamp Map Address", "0x{:X}", graphics.stamp_map_address * 4);
+				DoProperty(nullptr, "Image Buffer Height in Tiles", "{}", graphics.image_buffer_height_in_tiles + 1);
+				DoProperty(nullptr, "Image Buffer Address", "0x{:X}", graphics.image_buffer_address * 4);
+				DoProperty(nullptr, "Image Buffer X Offset", "{}", graphics.image_buffer_x_offset);
+				DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
+				DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
+				DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
 			}
 		);
 	}

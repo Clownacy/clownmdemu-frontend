@@ -993,275 +993,116 @@ void DebugVDP::Registers::DisplayInternal()
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	ImGui::SeparatorText("Miscellaneous");
-
-	if (ImGui::BeginTable("VDP Registers", 2, ImGuiTableFlags_Borders))
-	{
-		ImGui::TableSetupColumn("Property");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableHeadersRow();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Sprite Table Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.sprite_table_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Display Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.display_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("V-Int Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.v_int_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("H-Int Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.h_int_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("H40 Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.h40_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("V30 Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.v30_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Shadow/Highlight Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.shadow_highlight_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Double-Resolution Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.double_resolution_enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Background Colour");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("H-Int Interval");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{}", vdp.h_int_interval);
-		ImGui::PopFont();
-
-		ImGui::EndTable();
-	}
-
-	ImGui::SeparatorText("Scroll Planes");
-
-	if (ImGui::BeginTable("Scroll Planes", 2, ImGuiTableFlags_Borders))
-	{
-		ImGui::TableSetupColumn("Property");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableHeadersRow();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane A Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.plane_a_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane B Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.plane_b_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Horizontal Scroll Table Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.hscroll_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane Width");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", 1 << vdp.plane_width_shift);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Plane Height");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.plane_height_bitmask + 1);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Horizontal Scrolling Mode");
-		ImGui::TableNextColumn();
-		switch (vdp.hscroll_mask)
+	DoTable("Miscellaneous",
+		[&]()
 		{
-			case 0x00:
-				ImGui::TextUnformatted("Whole Screen");
-				break;
-			case 0x07:
-				ImGui::TextUnformatted("1-Pixel Rows (8)");
-				break;
-			case 0xF8:
-				ImGui::TextUnformatted("1-Tile Rows");
-				break;
-			case 0xFF:
-				ImGui::TextUnformatted("1-Pixel Rows (All)");
-				break;
+			DoProperty(monospace_font, "Sprite Table Address", "0x{:04X}", vdp.sprite_table_address);
+			DoProperty(nullptr, "Display Enabled", "{}", vdp.display_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "V-Int Enabled", "{}", vdp.v_int_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "H-Int Enabled", "{}", vdp.h_int_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "H40 Enabled", "{}", vdp.h40_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "V30 Enabled", "{}", vdp.v30_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "Shadow/Highlight Enabled", "{}", vdp.shadow_highlight_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "Double-Resolution Enabled", "{}", vdp.double_resolution_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "Background Colour", "Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
+			DoProperty(monospace_font, "H-Int Interval", "{}", vdp.h_int_interval);
 		}
+	);
 
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Vertical Scrolling Mode");
-		ImGui::TableNextColumn();
-		static const auto vertical_scrolling_modes = std::to_array<std::string, 2>({
-			"Whole Screen",
-			"2-Tile Columns"
-		});
-		ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
+	DoTable("Scroll Planes",
+		[&]()
+		{
+			DoProperty(monospace_font, "Plane A Address", "0x{:04X}", vdp.plane_a_address);
+			DoProperty(monospace_font, "Plane B Address", "0x{:04X}", vdp.plane_b_address);
+			DoProperty(monospace_font, "Horizontal Scroll Table Address", "0x{:04X}", vdp.hscroll_address);
+			DoProperty(nullptr, "Plane Width", "{} Tiles", 1 << vdp.plane_width_shift);
+			DoProperty(nullptr, "Plane Height", "{} Tiles", vdp.plane_height_bitmask + 1);
+			DoProperty(nullptr, "Horizontal Scrolling Mode",
+				[&]()
+				{
+					switch (vdp.hscroll_mask)
+					{
+						case 0x00:
+							ImGui::TextUnformatted("Whole Screen");
+							break;
+						case 0x07:
+							ImGui::TextUnformatted("1-Pixel Rows (8)");
+							break;
+						case 0xF8:
+							ImGui::TextUnformatted("1-Tile Rows");
+							break;
+						case 0xFF:
+							ImGui::TextUnformatted("1-Pixel Rows (All)");
+							break;
+					}
+				}
+			);
+			DoProperty(nullptr, "Vertical Scrolling Mode",
+				[&]()
+				{
+					static const auto vertical_scrolling_modes = std::to_array<std::string, 2>({
+						"Whole Screen",
+						"2-Tile Columns"
+					});
+					ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
+				}
+			);
+		}
+	);
 
-		ImGui::EndTable();
-	}
+	DoTable("Window Plane",
+		[&]()
+		{
+			DoProperty(monospace_font, "Address", "0x{:04X}", vdp.window_address);
+			DoProperty(nullptr, "Horizontal Alignment", "{}", vdp.window.aligned_right ? "Right" : "Left");
+			DoProperty(nullptr, "Horizontal Boundary", "{} Tiles", vdp.window.horizontal_boundary * 2);
+			DoProperty(nullptr, "Vertical Alignment", "{}", vdp.window.aligned_bottom ? "Bottom" : "Top");
+			DoProperty(nullptr, "Vertical Boundary", "{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
+		}
+	);
 
-	ImGui::SeparatorText("Window Plane");
+	DoTable("DMA",
+		[&]()
+		{
+			DoProperty(nullptr, "Enabled", "{}", vdp.dma.enabled ? "Yes" : "No");
+			DoProperty(nullptr, "Pending", "{}", (vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
+			DoProperty(nullptr, "Mode",
+				[&]()
+				{
+					static const auto dma_modes = std::to_array<std::string, 3>({
+						"ROM/RAM to VRAM/CRAM/VSRAM",
+						"VRAM Fill",
+						"VRAM to VRAM"
+					});
+					ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
+				}
+			);
+			DoProperty(monospace_font, "Source Address", "0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 17) | static_cast<cc_u32f>(vdp.dma.source_address_low) << 1);
+			DoProperty(monospace_font, "Length", "0x{:04X}", vdp.dma.length);
+		}
+	);
 
-	if (ImGui::BeginTable("Window Plane", 2, ImGuiTableFlags_Borders))
-	{
-		ImGui::TableSetupColumn("Property");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableHeadersRow();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.window_address);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Horizontal Alignment");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.window.aligned_right ? "Right" : "Left");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Horizontal Boundary");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.window.horizontal_boundary * 2);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Vertical Alignment");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.window.aligned_bottom ? "Bottom" : "Top");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Vertical Boundary");
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
-
-		ImGui::EndTable();
-	}
-
-	ImGui::SeparatorText("DMA");
-
-	if (ImGui::BeginTable("DMA", 2, ImGuiTableFlags_Borders))
-	{
-		ImGui::TableSetupColumn("Property");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableHeadersRow();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Enabled");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.dma.enabled ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Pending");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted((vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Mode");
-		ImGui::TableNextColumn();
-		static const auto dma_modes = std::to_array<std::string, 3>({
-			"ROM/RAM to VRAM/CRAM/VSRAM",
-			"VRAM Fill",
-			"VRAM to VRAM"
-		});
-		ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Source Address");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 17) | static_cast<cc_u32f>(vdp.dma.source_address_low) << 1);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Length");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.dma.length);
-		ImGui::PopFont();
-
-		ImGui::EndTable();
-	}
-
-	ImGui::SeparatorText("Access");
-
-	if (ImGui::BeginTable("Access", 2, ImGuiTableFlags_Borders))
-	{
-		ImGui::TableSetupColumn("Property");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableHeadersRow();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Write Pending");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(vdp.access.write_pending ? "Yes" : "No");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Address Register");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.access.address_register);
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Command Register");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.access.code_register); // TODO: Enums or something.
-		ImGui::PopFont();
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Selected RAM");
-		ImGui::TableNextColumn();
-		static const auto rams = std::to_array<std::string, 5>({
-			"VRAM",
-			"CRAM",
-			"VSRAM",
-			"VRAM (8-bit)",
-			"Invalid"
-		});
-		ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Mode");
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted((vdp.access.code_register & 1) != 0 ? "Write" : "Read");
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Increment");
-		ImGui::PushFont(monospace_font);
-		ImGui::TableNextColumn();
-		ImGui::TextFormatted("0x{:04X}", vdp.access.increment);
-		ImGui::PopFont();
-
-		ImGui::EndTable();
-	}
+	DoTable("Access",
+		[&]()
+		{
+			DoProperty(nullptr, "Write Pending", "{}", vdp.access.write_pending ? "Yes" : "No");
+			DoProperty(monospace_font, "Address Register", "0x{:04X}", vdp.access.address_register);
+			DoProperty(monospace_font, "Command Register", "0x{:04X}", vdp.access.code_register); // TODO: Enums or something.
+			DoProperty(nullptr, "Selected RAM",
+				[&]()
+				{
+					static const auto rams = std::to_array<std::string, 5>({
+						"VRAM",
+						"CRAM",
+						"VSRAM",
+						"VRAM (8-bit)",
+						"Invalid"
+					});
+					ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
+				}
+			);
+			DoProperty(nullptr, "Mode", "{}", (vdp.access.code_register & 1) != 0 ? "Write" : "Read");
+			DoProperty(monospace_font, "Increment", "0x{:04X}", vdp.access.increment);
+		}
+	);
 }

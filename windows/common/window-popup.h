@@ -54,6 +54,47 @@ private:
 			window->FinishDearImGuiFrame();
 	}
 
+protected:
+	void DoTable(const char* const name, const std::function<void()> &callback)
+	{
+		if (name[0] != '\0')
+			ImGui::SeparatorText(name);
+
+		if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
+		{
+			ImGui::TableSetupColumn("Property");
+			ImGui::TableSetupColumn("Value");
+			ImGui::TableHeadersRow();
+
+			callback();
+
+			ImGui::EndTable();
+		}
+	};
+
+	void DoProperty(ImFont* const font, const char* const label, const std::function<void()> &callback)
+	{
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+		ImGui::TableNextColumn();
+		if (font != nullptr)
+			ImGui::PushFont(font);
+		callback();
+		if (font != nullptr)
+			ImGui::PopFont();
+	};
+
+	template<typename... T>
+	void DoProperty(ImFont* const font, const char* const label, fmt::format_string<T...> format, T &&...args)
+	{
+		DoProperty(font, label,
+			[&]()
+			{
+				ImGui::TextFormatted(format, std::forward<T>(args)...);
+			}
+		);
+	};
+
 public:
 	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Window &parent_window, const std::optional<float> forced_scale, WindowWithDearImGui* const host_window = nullptr)
 		: title(window_title)
