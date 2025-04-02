@@ -673,13 +673,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 	DisplaySpriteCommon(GetWindow());
 
 	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
-#if 0
-			for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
-			{
-				ImGui::TextUnformatted("my ass");
-				ImGui::SameLine();
-			}
-#endif
+
 	if (ImGui::BeginTable("Sprite Table", 1 + TOTAL_SPRITES, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX))
 	{
 		ImGui::TableSetupScrollFreeze(1, 0);
