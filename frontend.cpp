@@ -141,7 +141,7 @@ private:
 
 		ImGui::SeparatorText("Licences");
 
-		const auto DoLicence = [&monospace_font]<size_t S>(const std::array<char, S> &text)
+		const auto DoLicence = [&monospace_font]<std::size_t S>(const std::array<char, S> &text)
 		{
 			ImGui::PushFont(monospace_font);
 			ImGui::TextUnformatted(&text.front(), &text.back());
@@ -209,7 +209,8 @@ public:
 
 static void Popup_DoTable(const char* const name, const std::function<void()> &callback)
 {
-	ImGui::SeparatorText(name);
+	if (name[0] != '\0')
+		ImGui::SeparatorText(name);
 
 	if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
 	{
@@ -223,17 +224,27 @@ static void Popup_DoTable(const char* const name, const std::function<void()> &c
 	}
 };
 
-template<typename... T>
-static void Popup_DoProperty(ImFont* const font, const char* const label, fmt::format_string<T...> format, T &&...args)
+static void Popup_DoProperty(ImFont* const font, const char* const label, const std::function<void()> &callback)
 {
 	ImGui::TableNextColumn();
 	ImGui::TextUnformatted(label);
 	ImGui::TableNextColumn();
 	if (font != nullptr)
 		ImGui::PushFont(font);
-	ImGui::TextFormatted(format, std::forward<T>(args)...);
+	callback();
 	if (font != nullptr)
 		ImGui::PopFont();
+};
+
+template<typename... T>
+static void Popup_DoProperty(ImFont* const font, const char* const label, fmt::format_string<T...> format, T &&...args)
+{
+	Popup_DoProperty(font, label,
+		[&]()
+		{
+			ImGui::TextFormatted(format, std::forward<T>(args)...);
+		}
+	);
 };
 
 class DebugCDC : public WindowPopup<DebugCDC>
@@ -326,128 +337,45 @@ private:
 		const auto monospace_font = GetMonospaceFont();
 		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
 
-		if (ImGui::BeginTable("Other", 2, ImGuiTableFlags_Borders))
-		{
-			ImGui::TableSetupColumn("Property");
-			ImGui::TableSetupColumn("Value");
-			ImGui::TableHeadersRow();
+		Popup_DoTable("", [&]()
+			{
+				Popup_DoProperty(monospace_font, "Z80 Bank", "0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
+				Popup_DoProperty(nullptr, "Main 68000 Has Z80 Bus", "{}", clownmdemu_state.z80.bus_requested ? "Yes" : "No");
+				Popup_DoProperty(nullptr, "Z80 Reset Held", "{}", clownmdemu_state.z80.reset_held ? "Yes" : "No");
+				Popup_DoProperty(nullptr, "Main 68000 Has Sub 68000 Bus", "{}", clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
+				Popup_DoProperty(nullptr, "Sub 68000 Reset", "{}", clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
+				Popup_DoProperty(monospace_font, "PRG-RAM Bank", "0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000);
+				Popup_DoProperty(monospace_font, "PRG-RAM Write-Protect", "0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200);
+				Popup_DoProperty(nullptr, "WORD-RAM Mode", "{}", clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
+				Popup_DoProperty(nullptr, "DMNA Bit", "{}", clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
+				Popup_DoProperty(nullptr, "RET Bit", "{}", clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
+				Popup_DoProperty(nullptr, "Boot Mode", "{}", clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
+				Popup_DoProperty(monospace_font, "68000 Communication Flag", "0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Z80 Bank");
-			ImGui::TableNextColumn();
-			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
-			ImGui::PopFont();
+				Popup_DoProperty(monospace_font, "68000 Communication Command",
+					[&]()
+					{
+						for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
+							ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
+					}
+				);
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Main 68000 Has Z80 Bus");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.z80.bus_requested ? "Yes" : "No");
+				Popup_DoProperty(monospace_font, "68000 Communication Status",
+					[&]()
+					{
+						for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
+							ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
+					}
+				);
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Z80 Reset Held");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.z80.reset_held ? "Yes" : "No");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Main 68000 Has Sub 68000 Bus");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Sub 68000 Reset");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("PRG-RAM Bank");
-			ImGui::TableNextColumn();
-			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000);
-			ImGui::PopFont();
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("PRG-RAM Write-Protect");
-			ImGui::TableNextColumn();
-			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200);
-			ImGui::PopFont();
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("WORD-RAM Mode");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("DMNA Bit");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("RET Bit");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Boot Mode");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("68000 Communication Flag");
-			ImGui::TableNextColumn();
-			ImGui::PushFont(monospace_font);
-			ImGui::TextFormatted("0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
-			ImGui::PopFont();
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("68000 Communication Command");
-			ImGui::TableNextColumn();
-			ImGui::PushFont(monospace_font);
-			for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
-				ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
-			ImGui::PopFont();
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("68000 Communication Status");
-			ImGui::TableNextColumn();
-			ImGui::PushFont(monospace_font);
-			for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
-				ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
-			ImGui::PopFont();
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("SUB-CPU Graphics Interrupt");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("SUB-CPU Mega Drive Interrupt");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("SUB-CPU Timer Interrupt");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("SUB-CPU CDD Interrupt");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("SUB-CPU CDC Interrupt");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("SUB-CPU Sub-code Interrupt");
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
-
-			ImGui::EndTable();
-		}
+				Popup_DoProperty(nullptr, "SUB-CPU Graphics Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
+				Popup_DoProperty(nullptr, "SUB-CPU Mega Drive Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
+				Popup_DoProperty(nullptr, "SUB-CPU Timer Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
+				Popup_DoProperty(nullptr, "SUB-CPU CDD Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
+				Popup_DoProperty(nullptr, "SUB-CPU CDC Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
+				Popup_DoProperty(nullptr, "SUB-CPU Sub-code Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
+			}
+		);
 
 		Popup_DoTable("Graphics Transformation",
 			[&]()
