@@ -43,21 +43,23 @@ void DebugPSG::Registers::DisplayInternal()
 		ImGui::TableSetupColumn("Attentuation");
 		ImGui::TableHeadersRow();
 
-		for (auto tone = std::cbegin(psg.tones); tone != std::cend(psg.tones); ++tone)
+		for (std::size_t i = 0; i != std::size(psg.tones); ++i)
 		{
+			const auto &tone = psg.tones[i];
+
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("Tone {}", std::distance(std::cbegin(psg.tones), tone) + 1);
+			ImGui::TextFormatted("Tone {}", i + 1);
 
 			ImGui::PushFont(monospace_font);
 
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("0x{:03X} ({:6}Hz)", tone->countdown_master, tone->countdown_master == 0 ? 0 : psg_clock / tone->countdown_master / 2);
+			ImGui::TextFormatted("0x{:03X} ({:6}Hz)", tone.countdown_master, tone.countdown_master == 0 ? 0 : psg_clock / tone.countdown_master / 2);
 
 			ImGui::TableNextColumn();
-			if (tone->attenuation == 15)
+			if (tone.attenuation == 15)
 				ImGui::TextUnformatted("0xF (Mute)");
 			else
-				ImGui::TextFormatted("0x{:X} ({:2}db)", tone->attenuation, tone->attenuation * 2);
+				ImGui::TextFormatted("0x{:X} ({:2}db)", tone.attenuation, tone.attenuation * 2);
 
 			ImGui::PopFont();
 		}

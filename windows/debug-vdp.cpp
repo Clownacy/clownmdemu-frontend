@@ -923,16 +923,15 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 
 	ImGui::SeparatorText("Colours");
 
-	for (auto it = std::cbegin(state.clownmdemu.vdp.cram); it != std::cend(state.clownmdemu.vdp.cram); ++it)
+	for (std::size_t cram_index = 0; cram_index != std::size(state.clownmdemu.vdp.cram); ++cram_index)
 	{
-		const auto cram_index = std::distance(std::cbegin(state.clownmdemu.vdp.cram), it);
 		constexpr cc_u16f length_of_palette_line = 16;
 		const cc_u16f palette_line_option_index = cram_index / length_of_palette_line;
 		const cc_u16f colour_index = cram_index % length_of_palette_line;
 
 		ImGui::PushID(cram_index);
 
-		const cc_u16f value = *it;
+		const cc_u16f value = state.clownmdemu.vdp.cram[cram_index];
 		const cc_u16f blue = (value >> 9) & 7;
 		const cc_u16f green = (value >> 5) & 7;
 		const cc_u16f red = (value >> 1) & 7;

@@ -135,9 +135,9 @@ void DebugFM::Registers::DisplayInternal()
 	{
 		char window_name_buffer[] = "FM1";
 
-		for (auto channel = std::cbegin(fm.channels); channel != std::cend(fm.channels); ++channel)
+		for (std::size_t channel_index = 0; channel_index != std::size(fm.channels); ++channel_index)
 		{
-			const auto channel_index = std::distance(std::cbegin(fm.channels), channel);
+			const auto &channel = fm.channels[channel_index];
 
 			window_name_buffer[2] = '1' + channel_index;
 
@@ -155,7 +155,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Key On");
 
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted(op.key_on ? "On" : "Off");
@@ -166,7 +166,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Detune");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("{}", op.phase.detune);
@@ -178,7 +178,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Multiplier");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("{}", op.phase.multiplier / 2);
@@ -190,7 +190,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Total Level");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("0x{:02X}", op.total_level >> 3);
@@ -202,7 +202,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Key Scale");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						static const std::array<cc_u8l, 8> decode = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
 
@@ -216,7 +216,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Attack Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("0x{:02X}", op.rates[FM_OPERATOR_ENVELOPE_MODE_ATTACK]);
@@ -228,7 +228,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Decay Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("0x{:02X}", op.rates[FM_OPERATOR_ENVELOPE_MODE_DECAY]);
@@ -240,7 +240,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Sustain Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("0x{:02X}", op.rates[FM_OPERATOR_ENVELOPE_MODE_SUSTAIN]);
@@ -252,7 +252,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Release Rate");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("0x{:X}", op.rates[FM_OPERATOR_ENVELOPE_MODE_RELEASE] >> 1);
@@ -264,7 +264,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TextUnformatted("Sustain Level");
 
 					ImGui::PushFont(monospace_font);
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextFormatted("0x{:X}", (op.sustain_level / 0x20) & 0xF);
@@ -275,7 +275,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Amplitude Modulation");
 
-					for (const auto &op : channel->state.operators)
+					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted(op.amplitude_modulation_on ? "On" : "Off");
@@ -288,7 +288,7 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::TextUnformatted(label);
 
 						ImGui::PushFont(monospace_font);
-						for (const auto &op : channel->state.operators)
+						for (const auto &op : channel.state.operators)
 						{
 							ImGui::TableNextColumn();
 							ImGui::TextUnformatted(function(op) ? "Yes" : "No");

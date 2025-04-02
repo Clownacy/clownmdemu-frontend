@@ -400,10 +400,10 @@ private:
 
 			char buffer[] = "FM1";
 
-			for (auto disabled = std::begin(fm.fm_channels_disabled); disabled != std::end(fm.fm_channels_disabled); ++disabled)
+			for (std::size_t i = 0; i != std::size(fm.fm_channels_disabled); ++i)
 			{
-				buffer[2] = '1' + std::distance(std::begin(fm.fm_channels_disabled), disabled);
-				DoButton(*disabled, buffer);
+				buffer[2] = '1' + i;
+				DoButton(fm.fm_channels_disabled[i], buffer);
 			}
 
 			DoButton(fm.dac_channel_disabled, "DAC");
@@ -419,10 +419,10 @@ private:
 
 			char buffer[] = "PSG1";
 
-			for (auto disabled = std::begin(psg.tone_disabled); disabled != std::end(psg.tone_disabled); ++disabled)
+			for (std::size_t i = 0; i != std::size(psg.tone_disabled); ++i)
 			{
-				buffer[3] = '1' + std::distance(std::begin(psg.tone_disabled), disabled);
-				DoButton(*disabled, buffer);
+				buffer[3] = '1' + i;
+				DoButton(psg.tone_disabled[i], buffer);
 			}
 
 			DoButton(psg.noise_disabled, "PSG Noise");
@@ -438,10 +438,10 @@ private:
 
 			char buffer[] = "PCM1";
 
-			for (auto disabled = std::begin(pcm.channels_disabled); disabled != std::end(pcm.channels_disabled); ++disabled)
+			for (std::size_t i = 0; i != std::size(pcm.channels_disabled); ++i)
 			{
-				buffer[3] = '1' + std::distance(std::begin(pcm.channels_disabled), disabled);
-				DoButton(*disabled, buffer);
+				buffer[3] = '1' + i;
+				DoButton(pcm.channels_disabled[i], buffer);
 			}
 
 			ImGui::EndTable();
@@ -573,8 +573,8 @@ private:
 		{
 			sorted_scancodes_done = true;
 
-			for (auto scancode = std::begin(sorted_scancodes); scancode != std::end(sorted_scancodes); ++scancode)
-				*scancode = static_cast<SDL_Scancode>(std::distance(std::begin(sorted_scancodes), scancode));
+			for (std::size_t i = 0; i != std::size(sorted_scancodes); ++i)
+				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
 
 			SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
 				[](const void* const a, const void* const b)
@@ -1506,13 +1506,15 @@ static void SaveConfiguration()
 		// Save keyboard bindings.
 		PRINT_HEADER(file, "Keyboard Bindings");
 
-		for (auto keyboard_binding = std::cbegin(keyboard_bindings); keyboard_binding != std::cend(keyboard_bindings); ++keyboard_binding)
+		for (std::size_t i = 0; i != std::size(keyboard_bindings); ++i)
 		{
-			if (*keyboard_binding != INPUT_BINDING_NONE)
+			const auto &keyboard_binding = keyboard_bindings[i];
+
+			if (keyboard_binding != INPUT_BINDING_NONE)
 			{
 				const auto &binding_string = [&]()
 				{
-					switch (*keyboard_binding)
+					switch (keyboard_binding)
 					{
 						case INPUT_BINDING_NONE:
 							return "INPUT_BINDING_NONE";
@@ -1585,7 +1587,7 @@ static void SaveConfiguration()
 					return "INPUT_BINDING_NONE";
 				}();
 
-				const std::string buffer = fmt::format("{} = {}" ENDL, std::distance(std::cbegin(keyboard_bindings), keyboard_binding), binding_string);
+				const std::string buffer = fmt::format("{} = {}" ENDL, i, binding_string);
 				SDL_WriteIO(file, buffer.data(), buffer.size());
 			}
 		}
