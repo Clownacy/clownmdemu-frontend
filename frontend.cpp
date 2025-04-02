@@ -1233,6 +1233,7 @@ namespace INI
 
 static void LoadConfiguration()
 {
+	// Set default settings.
 	bool vsync = false;
 	bool integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
@@ -1270,6 +1271,7 @@ static void LoadConfiguration()
 		}
 	}
 
+	// Load the configuration file, overwriting the above settings.
 	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
 
 	if (!file)
@@ -1445,7 +1447,7 @@ static void LoadConfiguration()
 		INI::ProcessFile(file, Callback);
 	}
 
-	// Load miscellaneous settings.
+	// Apply settings now that they have been decided.
 	window->SetVSync(vsync);
 	emulator->EnableRewinding(rewinding);
 	emulator->SetLowPassFilter(low_pass_filter);
