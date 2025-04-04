@@ -16,12 +16,16 @@ private:
 	SDL::AudioStream stream;
 
 public:
-	AudioDevice(cc_u8f channels, cc_u32f &sample_rate, cc_u32f &total_buffer_frames);
+	AudioDevice(cc_u8f channels, cc_u32f sample_rate);
 	AudioDevice(const AudioDevice&) = delete;
 	AudioDevice& operator=(const AudioDevice&) = delete;
 
 	void QueueFrames(const cc_s16l *buffer, cc_u32f total_frames);
 	cc_u32f GetTotalQueuedFrames();
+	void SetPlaybackSpeed(const cc_u32f numerator, const cc_u32f denominator)
+	{
+		SDL_SetAudioStreamFrequencyRatio(stream, static_cast<float>(numerator) / denominator);
+	}
 };
 
 #endif /* AUDIO_DEVICE_H */

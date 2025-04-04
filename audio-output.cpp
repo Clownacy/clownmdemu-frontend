@@ -4,11 +4,6 @@
 
 #include <SDL3/SDL.h>
 
-#define CLOWNRESAMPLER_ASSERT SDL_assert
-#define CLOWNRESAMPLER_FABS SDL_fabs
-#define CLOWNRESAMPLER_SIN SDL_sin
-#define CLOWNRESAMPLER_ZERO(buffer, size) SDL_memset(buffer, 0, size)
-#define CLOWNRESAMPLER_MEMMOVE SDL_memmove
 #define MIXER_IMPLEMENTATION
 #define MIXER_ASSERT SDL_assert
 #define MIXER_FREE SDL_free
@@ -17,10 +12,21 @@
 #define MIXER_MEMSET SDL_memset
 #include "common/mixer.h"
 
-AudioOutput::AudioOutput()
-	: device(MIXER_CHANNEL_COUNT, sample_rate, total_buffer_frames)
+static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 {
-	Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode);
+	// We want a 10ms buffer (this value must be a power of two).
+	// TODO: Is there a C++ library function that could do this instead?
+	cc_u32f samples = 1;
+	while (samples < sample_rate / (1000 / 10))
+		samples *= 2;
+	return samples;
+}
+
+AudioOutput::AudioOutput()
+	: device(MIXER_CHANNEL_COUNT, MIXER_OUTPUT_SAMPLE_RATE)
+	, total_buffer_frames(BufferSizeFromSampleRate(MIXER_OUTPUT_SAMPLE_RATE))
+{
+	Mixer_State_Initialise(&mixer_state, pal_mode);
 }
 
 AudioOutput::~AudioOutput()
@@ -35,7 +41,7 @@ void AudioOutput::MixerBegin()
 	{
 		mixer_update_pending = false;
 		Mixer_State_Deinitialise(&mixer_state);
-		Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode);
+		Mixer_State_Initialise(&mixer_state, pal_mode);
 	}
 
 	Mixer_Begin(&mixer);
@@ -59,10 +65,12 @@ void AudioOutput::MixerEnd()
 			audio_output->device.QueueFrames(audio_samples, total_frames);
 		};
 
+		Mixer_End(&mixer, callback, this);
+
 		// Hans-Kristian Arntzen's Dynamic Rate Control formula.
 		// https://github.com/libretro/docs/blob/master/archive/ratecontrol.pdf
 		const cc_u32f divisor = target_frames * 0x100; // The number here is the inverse of the formula's 'd' value.
-		Mixer_End(&mixer, queued_frames - target_frames + divisor, divisor, callback, this);
+		device.SetPlaybackSpeed(queued_frames - target_frames + divisor, divisor);
 	}
 }
 
