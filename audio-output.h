@@ -7,7 +7,6 @@
 
 #include "common/core/clowncommon/clowncommon.h"
 
-#define MIXER_FORMAT cc_s16l
 #include "common/mixer.h"
 
 #include "audio-device.h"
