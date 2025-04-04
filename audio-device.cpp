@@ -9,7 +9,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 	: channels(channels)
 {
 	SDL_AudioSpec specification;
-	specification.freq = MIXER_OUTPUT_SAMPLE_RATE;
+	specification.freq = sample_rate;
 	specification.format = SDL_AUDIO_S16;
 	specification.channels = channels;
 
