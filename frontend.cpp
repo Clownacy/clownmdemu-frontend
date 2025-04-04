@@ -571,14 +571,11 @@ private:
 			for (std::size_t i = 0; i != std::size(sorted_scancodes); ++i)
 				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
 
-			SDL_qsort(&sorted_scancodes, sorted_scancodes.size(), sizeof(sorted_scancodes[0]),
-				[](const void* const a, const void* const b)
-			{
-				const SDL_Scancode* const binding_1 = static_cast<const SDL_Scancode*>(a);
-				const SDL_Scancode* const binding_2 = static_cast<const SDL_Scancode*>(b);
-
-				return Frontend::keyboard_bindings[*binding_1] - Frontend::keyboard_bindings[*binding_2];
-			}
+			std::sort(sorted_scancodes.begin(), sorted_scancodes.end(),
+				[](const auto &binding_1, const auto &binding_2)
+				{
+					return Frontend::keyboard_bindings[binding_1] < Frontend::keyboard_bindings[binding_2];
+				}
 			);
 		}
 
