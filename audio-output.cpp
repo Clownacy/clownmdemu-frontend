@@ -26,12 +26,12 @@ AudioOutput::AudioOutput()
 	: device(MIXER_CHANNEL_COUNT, MIXER_OUTPUT_SAMPLE_RATE)
 	, total_buffer_frames(BufferSizeFromSampleRate(MIXER_OUTPUT_SAMPLE_RATE))
 {
-	Mixer_State_Initialise(&mixer_state, pal_mode);
+	Mixer_Initialise(&mixer, pal_mode);
 }
 
 AudioOutput::~AudioOutput()
 {
-	Mixer_State_Deinitialise(&mixer_state);
+	Mixer_Deinitialise(&mixer);
 }
 
 void AudioOutput::MixerBegin()
@@ -40,8 +40,8 @@ void AudioOutput::MixerBegin()
 	if (mixer_update_pending)
 	{
 		mixer_update_pending = false;
-		Mixer_State_Deinitialise(&mixer_state);
-		Mixer_State_Initialise(&mixer_state, pal_mode);
+		Mixer_Deinitialise(&mixer);
+		Mixer_Initialise(&mixer, pal_mode);
 	}
 
 	Mixer_Begin(&mixer);
