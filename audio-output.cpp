@@ -36,13 +36,6 @@ AudioOutput::~AudioOutput()
 
 void AudioOutput::MixerBegin()
 {
-	if (mixer_update_pending)
-	{
-		mixer_update_pending = false;
-		Mixer_Deinitialise(&mixer);
-		Mixer_Initialise(&mixer, pal_mode);
-	}
-
 	Mixer_Begin(&mixer);
 }
 
@@ -96,4 +89,11 @@ cc_s16l* AudioOutput::MixerAllocateCDDASamples(const std::size_t total_frames)
 cc_u32f AudioOutput::GetAverageFrames() const
 {
 	return std::accumulate(rolling_average_buffer.cbegin(), rolling_average_buffer.cend(), cc_u32f(0)) / rolling_average_buffer.size();
+}
+
+void AudioOutput::SetPALMode(const bool enabled)
+{
+	pal_mode = enabled;
+	Mixer_Deinitialise(&mixer);
+	Mixer_Initialise(&mixer, pal_mode);
 }

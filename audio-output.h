@@ -19,7 +19,6 @@ private:
 	cc_u32f total_buffer_frames;
 
 	bool pal_mode = false;
-	bool mixer_update_pending = false;
 	std::array<cc_u32f, 0x10> rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
@@ -39,12 +38,7 @@ public:
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
 	cc_u32f GetSampleRate() const { return MIXER_OUTPUT_SAMPLE_RATE; }
 
-	void SetPALMode(const bool enabled)
-	{
-		pal_mode = enabled;
-		mixer_update_pending = true;
-	}
-
+	void SetPALMode(bool enabled);
 	bool GetPALMode() const { return pal_mode; }
 };
 
