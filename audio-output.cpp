@@ -17,19 +17,9 @@
 #define MIXER_MEMSET SDL_memset
 #include "common/mixer.h"
 
-Mixer_Constant AudioOutput::mixer_constant;
-bool AudioOutput::mixer_constant_initialised;
-
 AudioOutput::AudioOutput()
 	: device(MIXER_CHANNEL_COUNT, sample_rate, total_buffer_frames)
 {
-	// Initialise the mixer.
-	if (!mixer_constant_initialised)
-	{
-		mixer_constant_initialised = true;
-		Mixer_Constant_Initialise(&mixer_constant);
-	}
-
 	Mixer_State_Initialise(&mixer_state, sample_rate, pal_mode);
 }
 

@@ -15,20 +15,17 @@
 class AudioOutput
 {
 private:
-	static Mixer_Constant mixer_constant;
-	static bool mixer_constant_initialised;
-
 	AudioDevice device;
 	cc_u32f total_buffer_frames;
 	cc_u32f sample_rate;
 
 	bool pal_mode = false;
 	bool mixer_update_pending = false;
-	std::array<cc_u32f, 0x10>rolling_average_buffer = {0};
+	std::array<cc_u32f, 0x10> rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
 	Mixer_State mixer_state;
-	const Mixer mixer = {&mixer_constant, &mixer_state};
+	const Mixer mixer = {&mixer_state};
 
 public:
 	AudioOutput();
