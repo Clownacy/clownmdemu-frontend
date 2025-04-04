@@ -15,7 +15,7 @@
 static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 {
 	// We want a 10ms buffer (this value must be a power of two).
-	// TODO: Is there a C++ library function that could do this instead?
+	// TODO: Use `std::bit_ceil` for this instead.
 	cc_u32f samples = 1;
 	while (samples < sample_rate / (1000 / 10))
 		samples *= 2;
