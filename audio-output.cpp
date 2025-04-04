@@ -21,7 +21,7 @@ Mixer_Constant AudioOutput::mixer_constant;
 bool AudioOutput::mixer_constant_initialised;
 
 AudioOutput::AudioOutput()
-	: device(MIXER_FM_CHANNEL_COUNT, sample_rate, total_buffer_frames)
+	: device(MIXER_CHANNEL_COUNT, sample_rate, total_buffer_frames)
 {
 	// Initialise the mixer.
 	if (!mixer_constant_initialised)
