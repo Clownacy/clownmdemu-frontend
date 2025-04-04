@@ -66,56 +66,6 @@ void DebugFrontend::DisplayInternal()
 		ImGui::EndTable();
 	}
 
-	ImGui::SeparatorText("Video");
-
-	if (ImGui::BeginTable("Video", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
-	{
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Output");
-		DoToolTip("The size that the frame is drawn at.");
-		ImGui::TableNextColumn();
-
-		if (Frontend::output_width != 0 || Frontend::output_height != 0)
-		{
-			ImGui::TextFormatted("{}x{}", Frontend::output_width, Frontend::output_height);
-
-			Frontend::output_width = Frontend::output_height = 0;
-		}
-		else
-		{
-			ImGui::TextUnformatted("N/A");
-		}
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Upscale");
-		DoToolTip("The size that the frame is upscaled to for fractional scaling.");
-		ImGui::TableNextColumn();
-
-		if (Frontend::upscale_width != 0 || Frontend::upscale_height != 0)
-		{
-			ImGui::TextFormatted("{}x{}", Frontend::upscale_width, Frontend::upscale_height);
-
-			Frontend::upscale_width = Frontend::upscale_height = 0;
-		}
-		else
-		{
-			ImGui::TextUnformatted("N/A");
-		}
-
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted("Texture");
-		DoToolTip("The size of the texture that is used for fractional upscaling.");
-		ImGui::TableNextColumn();
-
-		unsigned int texture_width, texture_height;
-		if (Frontend::GetUpscaledFramebufferSize(texture_width, texture_height))
-			ImGui::TextFormatted("{}x{}", texture_width, texture_height);
-		else
-			ImGui::TextUnformatted("N/A");
-
-		ImGui::EndTable();
-	}
-
 	ImGui::SeparatorText("Audio");
 
 	if (ImGui::BeginTable("Audio", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))

@@ -68,13 +68,9 @@ namespace Frontend
 	extern std::optional<WindowWithFramebuffer> window;
 	extern FileUtilities file_utilities;
 	extern unsigned int frame_counter;
-	extern SDL::Texture framebuffer_texture_upscaled;
 
 	extern Input keyboard_input;
 	extern std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
-
-	extern unsigned int output_width, output_height;
-	extern unsigned int upscale_width, upscale_height;
 
 	extern bool integer_screen_scaling;
 	extern bool tall_double_resolution_mode;
@@ -83,7 +79,6 @@ namespace Frontend
 
 	std::filesystem::path GetConfigurationDirectoryPath();
 	std::filesystem::path GetSaveDataDirectoryPath();
-	bool GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height);
 	void SetAudioPALMode(bool enabled);
 	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
 	void HandleEvent(const SDL_Event &event);

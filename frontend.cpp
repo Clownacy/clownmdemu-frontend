@@ -507,12 +507,7 @@ private:
 			DoToolTip("Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
-			if (ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling) && Frontend::integer_screen_scaling)
-			{
-				// Reclaim memory used by the upscaled framebuffer, since we won't be needing it anymore.
-				SDL_DestroyTexture(Frontend::framebuffer_texture_upscaled);
-				Frontend::framebuffer_texture_upscaled = nullptr;
-			}
+			ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling);
 			DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
 
 			ImGui::TableNextColumn();
@@ -750,10 +745,6 @@ std::optional<EmulatorInstance> Frontend::emulator;
 std::optional<WindowWithFramebuffer> Frontend::window;
 FileUtilities Frontend::file_utilities;
 unsigned int Frontend::frame_counter;
-SDL::Texture Frontend::framebuffer_texture_upscaled;
-
-unsigned int Frontend::output_width, Frontend::output_height;
-unsigned int Frontend::upscale_width, Frontend::upscale_height;
 
 bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
@@ -942,48 +933,6 @@ static void UpdateRewindStatus()
 		will_rewind |= controller_input.input.rewind != 0;
 
 	emulator->Rewind(will_rewind);
-}
-
-
-//////////////////////////
-// Upscaled Framebuffer //
-//////////////////////////
-
-static unsigned int framebuffer_texture_upscaled_width;
-static unsigned int framebuffer_texture_upscaled_height;
-
-static void RecreateUpscaledFramebuffer(const unsigned int display_width, const unsigned int display_height)
-{
-	static unsigned int previous_framebuffer_size_factor = 0;
-
-	const unsigned int framebuffer_size_factor = std::max(1u, std::min(CC_DIVIDE_CEILING(display_width, 640), CC_DIVIDE_CEILING(display_height, 480)));
-
-	if (!framebuffer_texture_upscaled || framebuffer_size_factor != previous_framebuffer_size_factor)
-	{
-		previous_framebuffer_size_factor = framebuffer_size_factor;
-
-		framebuffer_texture_upscaled_width = 640 * framebuffer_size_factor;
-		framebuffer_texture_upscaled_height = 480 * framebuffer_size_factor;
-
-		framebuffer_texture_upscaled = SDL::CreateTexture(window->GetRenderer(), SDL_TEXTUREACCESS_TARGET, framebuffer_texture_upscaled_width, framebuffer_texture_upscaled_height, SDL_SCALEMODE_LINEAR);
-	}
-}
-
-bool Frontend::GetUpscaledFramebufferSize(unsigned int &width, unsigned int &height)
-{
-	if (!framebuffer_texture_upscaled)
-		return false;
-
-	float width_float, height_float;
-	if (!SDL_GetTextureSize(framebuffer_texture_upscaled, &width_float, &height_float))
-	{
-		debug_log.Log("SDL_GetTextureSize failed with the following message - '{}'", SDL_GetError());
-		return false;
-	}
-
-	width = static_cast<unsigned int>(width_float);
-	height = static_cast<unsigned int>(height_float);
-	return true;
 }
 
 
@@ -1700,8 +1649,6 @@ void Frontend::Deinitialise()
 			(windows->reset(), ...);
 		}, popup_windows
 	);
-
-	framebuffer_texture_upscaled.release();
 
 	if (!native_windows)
 		ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
@@ -2575,8 +2522,6 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			SDL_Texture *selected_framebuffer_texture = window->framebuffer_texture;
-
 			const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
 			const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
 
@@ -2624,11 +2569,6 @@ void Frontend::Update()
 			}
 			else
 			{
-				// Round to the nearest multiple of 'destination_width' and 'destination_height'.
-				const unsigned int framebuffer_upscale_factor = std::max(1u, std::min(CC_DIVIDE_ROUND(work_width, destination_width), CC_DIVIDE_ROUND(work_height, destination_height)));
-
-				RecreateUpscaledFramebuffer(work_width, work_height);
-
 				// Correct the aspect ratio of the rendered frame.
 				// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
 				if (work_width > work_height * destination_width / destination_height)
@@ -2641,44 +2581,6 @@ void Frontend::Update()
 					destination_width_scaled = work_width;
 					destination_height_scaled = work_width * destination_height / destination_width;
 				}
-
-				// Avoid blurring if...
-				// 1. The upscale texture failed to be created.
-				// 2. Blurring is unnecessary because the texture will be upscaled by an integer multiple.
-				if (framebuffer_texture_upscaled && (destination_width_scaled % destination_width != 0 || destination_height_scaled % destination_height != 0))
-				{
-					// Render the upscaled framebuffer to the screen.
-					selected_framebuffer_texture = framebuffer_texture_upscaled;
-
-					// Before we can do that though, we have to actually render the upscaled framebuffer.
-					SDL_FRect framebuffer_rect;
-					framebuffer_rect.x = 0;
-					framebuffer_rect.y = 0;
-					framebuffer_rect.w = emulator->GetCurrentScreenWidth();
-					framebuffer_rect.h = emulator->GetCurrentScreenHeight();
-
-					SDL_FRect upscaled_framebuffer_rect;
-					upscaled_framebuffer_rect.x = 0;
-					upscaled_framebuffer_rect.y = 0;
-					upscaled_framebuffer_rect.w = destination_width * framebuffer_upscale_factor;
-					upscaled_framebuffer_rect.h = destination_height * framebuffer_upscale_factor;
-
-					// Render to the upscaled framebuffer.
-					SDL_SetRenderTarget(window->GetRenderer(), framebuffer_texture_upscaled);
-
-					// Render.
-					SDL_RenderTexture(window->GetRenderer(), window->framebuffer_texture, &framebuffer_rect, &upscaled_framebuffer_rect);
-
-					// Switch back to actually rendering to the screen.
-					SDL_SetRenderTarget(window->GetRenderer(), nullptr);
-
-					// Update the texture UV to suit the upscaled framebuffer.
-					uv1.x = static_cast<float>(upscaled_framebuffer_rect.w) / static_cast<float>(framebuffer_texture_upscaled_width);
-					uv1.y = static_cast<float>(upscaled_framebuffer_rect.h) / static_cast<float>(framebuffer_texture_upscaled_height);
-
-					upscale_width = upscaled_framebuffer_rect.w;
-					upscale_height = upscaled_framebuffer_rect.h;
-				}
 			}
 
 			// Center the framebuffer in the available region.
@@ -2686,10 +2588,7 @@ void Frontend::Update()
 			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
 			// Draw the upscaled framebuffer in the window.
-			ImGui::Image(selected_framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
-
-			output_width = destination_width_scaled;
-			output_height = destination_height_scaled;
+			ImGui::Image(window->framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 		}
 	}
 
