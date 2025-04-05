@@ -665,8 +665,7 @@ private:
 		{
 			bool next_menu = false;
 
-			ImGui::TextUnformatted("Press the key that you want to bind, or press the Esc key to cancel...");
-			ImGui::TextUnformatted("(The left Alt key cannot be bound, as it is used to access the menu bar).");
+			ImGui::TextUnformatted("Press the key that you want to bind...");
 
 			int total_keys;
 			const bool* const keys_pressed = SDL_GetKeyboardState(&total_keys);
