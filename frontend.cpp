@@ -748,10 +748,10 @@ bool Frontend::fast_forward_in_progress;
 bool Frontend::native_windows;
 
 Input Frontend::keyboard_input;
-std::array<InputBinding, SDL_SCANCODE_COUNT > Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+std::array<InputBinding, SDL_SCANCODE_COUNT> Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
-static std::array<InputBinding, SDL_SCANCODE_COUNT > keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
-static std::array<bool, SDL_SCANCODE_COUNT > key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+static std::array<bool, SDL_SCANCODE_COUNT> key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 static Frontend::FrameRateCallback frame_rate_callback;
 
