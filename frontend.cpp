@@ -2399,7 +2399,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, 164, 324, false);
+				PopupButton("Frontend", debug_frontend_window, 164, 234, false);
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
