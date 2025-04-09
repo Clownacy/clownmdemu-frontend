@@ -16,7 +16,12 @@ public:
 
 	float GetSizeScale();
 	float GetDPIScale();
-	void SetFullscreen(bool enabled) { SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN : 0); }
+	void SetFullscreen(const bool enabled)
+	{
+		SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN : 0);
+		if (!enabled)
+			DisableRounding();
+	}
 	bool GetFullscreen() { return (SDL_GetWindowFlags(GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL::Window& GetSDLWindow() { return sdl_window; }
@@ -46,6 +51,7 @@ public:
 		}
 	}
 	void SetTitleBarColour(unsigned char red, unsigned char green, unsigned char blue);
+	void DisableRounding();
 	void ShowWarningMessageBox(const char *message);
 	void ShowErrorMessageBox(const char *message);
 	void ShowFatalMessageBox(const char *message);

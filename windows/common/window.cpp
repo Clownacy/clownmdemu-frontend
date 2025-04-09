@@ -67,11 +67,18 @@ Window::Window(const char* const window_title, const int window_width, const int
 
 	sdl_window = SDL::Window(window);
 	this->renderer = SDL::Renderer(renderer);
+
+	DisableRounding();
 }
 
 void Window::SetTitleBarColour(const unsigned char red, const unsigned char green, const unsigned char blue)
 {
 	SetWindowTitleBarColour(sdl_window, red, green, blue);
+}
+
+void Window::DisableRounding()
+{
+	DisableWindowRounding(sdl_window);
 }
 
 void Window::ShowWarningMessageBox(const char* const message)
