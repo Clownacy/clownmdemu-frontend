@@ -48,7 +48,7 @@
 #define FILE_PATH_SUPPORT
 #endif
 
-#define VERSION "v1.2.2"
+#define VERSION "v1.3"
 
 using namespace Frontend;
 
