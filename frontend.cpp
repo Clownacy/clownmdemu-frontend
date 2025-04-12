@@ -525,13 +525,23 @@ private:
 			bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
 			if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
 				Frontend::emulator->SetLowPassFilter(low_pass_filter);
-			DoToolTip("Makes the audio sound 'softer',\njust like on a real Mega Drive.");
+			DoToolTip(
+				"Lowers the volume of high frequencies to make\n"
+				"the audio 'softer', as a real Mega Drive does.\n"
+				"\n"
+				"Without this, treble will become louder due to\n"
+				"differences in volume balancing.");
 
 			ImGui::TableNextColumn();
 			bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
 			if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
 				Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
-			DoToolTip("Approximates the so-called 'ladder effect' that\nis present in early Mega Drives. Without this,\ncertain sounds in some games will be too quiet.");
+			DoToolTip(
+				"Enables the so-called 'ladder effect' that\n"
+				"is present in early Mega Drives.\n"
+				"\n"
+				"Without this, certain quiet sounds will\n"
+				"become inaudible.");
 
 			ImGui::EndTable();
 		}
