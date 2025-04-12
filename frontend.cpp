@@ -508,11 +508,15 @@ private:
 
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling);
-			DoToolTip("Preserves pixel aspect ratio,\navoiding non-square pixels.");
+			DoToolTip(
+				"Preserves pixel aspect ratio,\n"
+				"avoiding non-square pixels.");
 
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
-			DoToolTip("Makes games that use Interlace Mode 2\nfor split-screen not appear squashed.");
+			DoToolTip(
+				"Makes games that use Interlace Mode 2\n"
+				"for split-screen not appear squashed.");
 
 			ImGui::EndTable();
 		}
@@ -527,7 +531,7 @@ private:
 				Frontend::emulator->SetLowPassFilter(low_pass_filter);
 			DoToolTip(
 				"Lowers the volume of high frequencies to make\n"
-				"the audio 'softer', as a real Mega Drive does.\n"
+				"the audio 'softer', like a real Mega Drive does.\n"
 				"\n"
 				"Without this, treble will become louder due to\n"
 				"differences in volume balancing.");
@@ -540,7 +544,7 @@ private:
 				"Enables the so-called 'ladder effect' that\n"
 				"is present in early Mega Drives.\n"
 				"\n"
-				"Without this, certain quiet sounds will\n"
+				"Without this, some quiet sounds will\n"
 				"become inaudible.");
 
 			ImGui::EndTable();
@@ -553,7 +557,9 @@ private:
 	#ifndef __EMSCRIPTEN__
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Native Windows", &native_windows);
-			DoToolTip("Use real windows instead of 'fake' windows\nthat are stuck inside the main window.");
+			DoToolTip(
+				"Use real windows instead of 'fake' windows\n"
+				"that are stuck inside the main window.");
 	#endif
 
 			ImGui::TableNextColumn();
@@ -561,10 +567,10 @@ private:
 			if (ImGui::Checkbox("Rewinding", &rewinding_enabled))
 				Frontend::emulator->EnableRewinding(rewinding_enabled);
 			DoToolTip(
-				"Allows the emulated console to be played in"
-				"\nreverse for up to 10 seconds. This uses a lot"
-				"\nof RAM and increases CPU usage, so disable"
-				"\nthis if there is lag.");
+				"Allows the emulated console to be played in\n"
+				"reverse for up to 10 seconds. This uses a lot\n"
+				"of RAM and increases CPU usage, so disable\n"
+				"this if there is lag.");
 
 			ImGui::EndTable();
 		}
