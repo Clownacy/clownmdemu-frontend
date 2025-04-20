@@ -40,22 +40,22 @@ The default control scheme is as follows:
 
 ### Controller
 
-| Input | Action       |
-| ----- | ------------ |
-| Up    | Up           |
-| Down  | Down         |
-| Left  | Left         |
-| Right | Right        |
-| X     | A            |
-| A     | B            |
-| B     | C            |
-| LB    | X            |
-| Y     | Y            |
-| RB    | Z            |
-| Start | Start        |
-| Back  | Mode         |
-| LT    | Rewind       |
-| RT    | Fast-forward |
+| Input | Action                     |
+| ----- | -------------------------- |
+| Up    | Up                         |
+| Down  | Down                       |
+| Left  | Left                       |
+| Right | Right                      |
+| X     | A                          |
+| A     | B                          |
+| B     | C                          |
+| LB    | X                          |
+| Y     | Y                          |
+| RB    | Z                          |
+| Start | Start                      |
+| Back  | Mode                       |
+| LT    | Rewind                     |
+| RT    | Fast-forward/frame advance |
 | RSB   | [Toggle menu controls](http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png) |
 
 ### Hotkeys
