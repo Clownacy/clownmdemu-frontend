@@ -613,7 +613,7 @@ private:
 			"Control Pad Mode",
 			"Pause",
 			"Reset",
-			"Fast-Forward",
+			"Fast-Forward/Frame Advance",
 			"Rewind",
 			"Quick Save State",
 			"Quick Load State",
