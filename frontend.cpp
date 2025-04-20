@@ -1442,9 +1442,9 @@ static void SaveConfiguration()
 		static constexpr auto PRINT_BOOLEAN_VALUE = [](SDL::IOStream &file, const bool variable)
 		{
 			if (variable)
-				PRINT_LINE(file, "true");
+				PRINT_LINE(file, "on");
 			else
-				PRINT_LINE(file, "false");
+				PRINT_LINE(file, "off");
 		};
 	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
 		PRINT_KEY(FILE, NAME); \
@@ -1563,7 +1563,11 @@ static void SaveConfiguration()
 
 		for (const auto &recent_software : recent_software_list)
 		{
-			PRINT_BOOLEAN_OPTION(file, "cd", recent_software.is_cd_file);
+			PRINT_KEY(file, "cd");
+			if (recent_software.is_cd_file)
+				PRINT_LINE(file, "true");
+			else
+				PRINT_LINE(file, "false");
 
 			PRINT_KEY(file, "path");
 			const auto path_string = recent_software.path.u8string();
