@@ -43,6 +43,6 @@ mkdir -p build/AppDir
 DESTDIR=AppDir cmake --build build --target install
 
 # Produce the AppImage, and bundle it with update metadata.
-LINUXDEPLOY_OUTPUT_VERSION=v1.3 \
+LINUXDEPLOY_OUTPUT_VERSION=v1.3.0.1 \
 LDAI_UPDATE_INFORMATION="gh-releases-zsync|Clownacy|clownmdemu-frontend|latest|ClownMDEmu-*${ARCH}.AppImage.zsync" \
 "build/$LINUXDEPLOY_FILENAME" --appdir build/AppDir --output appimage
