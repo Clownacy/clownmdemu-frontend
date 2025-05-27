@@ -995,7 +995,7 @@ void DebugVDP::Registers::DisplayInternal()
 	DoTable("Miscellaneous",
 		[&]()
 		{
-			DoProperty(monospace_font, "Sprite Table Address", "0x{:04X}", vdp.sprite_table_address);
+			DoProperty(monospace_font, "Sprite Table Address", "0x{:05X}", vdp.sprite_table_address);
 			DoProperty(nullptr, "Display Enabled", "{}", vdp.display_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "V-Int Enabled", "{}", vdp.v_int_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "H-Int Enabled", "{}", vdp.h_int_enabled ? "Yes" : "No");
@@ -1011,9 +1011,9 @@ void DebugVDP::Registers::DisplayInternal()
 	DoTable("Scroll Planes",
 		[&]()
 		{
-			DoProperty(monospace_font, "Plane A Address", "0x{:04X}", vdp.plane_a_address);
-			DoProperty(monospace_font, "Plane B Address", "0x{:04X}", vdp.plane_b_address);
-			DoProperty(monospace_font, "Horizontal Scroll Table Address", "0x{:04X}", vdp.hscroll_address);
+			DoProperty(monospace_font, "Plane A Address", "0x{:05X}", vdp.plane_a_address);
+			DoProperty(monospace_font, "Plane B Address", "0x{:05X}", vdp.plane_b_address);
+			DoProperty(monospace_font, "Horizontal Scroll Table Address", "0x{:05X}", vdp.hscroll_address);
 			DoProperty(nullptr, "Plane Width", "{} Tiles", 1 << vdp.plane_width_shift);
 			DoProperty(nullptr, "Plane Height", "{} Tiles", vdp.plane_height_bitmask + 1);
 			DoProperty(nullptr, "Horizontal Scrolling Mode",
@@ -1052,7 +1052,7 @@ void DebugVDP::Registers::DisplayInternal()
 	DoTable("Window Plane",
 		[&]()
 		{
-			DoProperty(monospace_font, "Address", "0x{:04X}", vdp.window_address);
+			DoProperty(monospace_font, "Address", "0x{:05X}", vdp.window_address);
 			DoProperty(nullptr, "Horizontal Alignment", "{}", vdp.window.aligned_right ? "Right" : "Left");
 			DoProperty(nullptr, "Horizontal Boundary", "{} Tiles", vdp.window.horizontal_boundary * 2);
 			DoProperty(nullptr, "Vertical Alignment", "{}", vdp.window.aligned_bottom ? "Bottom" : "Top");
@@ -1085,7 +1085,7 @@ void DebugVDP::Registers::DisplayInternal()
 		[&]()
 		{
 			DoProperty(nullptr, "Write Pending", "{}", vdp.access.write_pending ? "Yes" : "No");
-			DoProperty(monospace_font, "Address Register", "0x{:04X}", vdp.access.address_register);
+			DoProperty(monospace_font, "Address Register", "0x{:05X}", vdp.access.address_register);
 			DoProperty(monospace_font, "Command Register", "0x{:04X}", vdp.access.code_register); // TODO: Enums or something.
 			DoProperty(nullptr, "Selected RAM",
 				[&]()
@@ -1101,7 +1101,7 @@ void DebugVDP::Registers::DisplayInternal()
 				}
 			);
 			DoProperty(nullptr, "Mode", "{}", (vdp.access.code_register & 1) != 0 ? "Write" : "Read");
-			DoProperty(monospace_font, "Increment", "0x{:04X}", vdp.access.increment);
+			DoProperty(monospace_font, "Increment", "0x{:02X}", vdp.access.increment);
 		}
 	);
 }
