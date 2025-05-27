@@ -3,7 +3,7 @@ mkdir -p build
 # Detect architecture.
 ARCH=$(uname -m)
 
-# Set linuxdeploy filename based on architecture.
+# Set LinuxDeploy filename based on architecture.
 LINUXDEPLOY_FILENAME=linuxdeploy-${ARCH}.AppImage
 
 # Download LinuxDeploy if not already downloaded.
