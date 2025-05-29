@@ -996,11 +996,14 @@ void DebugVDP::Registers::DisplayInternal()
 		[&]()
 		{
 			DoProperty(monospace_font, "Sprite Table Address", "0x{:05X}", vdp.sprite_table_address);
+			DoProperty(nullptr, "Sprite Tile Location", "{}", vdp.sprite_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
+			DoProperty(nullptr, "Extended VRAM Enabled", "{}", vdp.extended_vram_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "Display Enabled", "{}", vdp.display_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "V-Int Enabled", "{}", vdp.v_int_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "H-Int Enabled", "{}", vdp.h_int_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "H40 Enabled", "{}", vdp.h40_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "V30 Enabled", "{}", vdp.v30_enabled ? "Yes" : "No");
+			DoProperty(nullptr, "Mega Drive Mode Enabled", "{}", vdp.mega_drive_mode_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "Shadow/Highlight Enabled", "{}", vdp.shadow_highlight_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "Double-Resolution Enabled", "{}", vdp.double_resolution_enabled ? "Yes" : "No");
 			DoProperty(nullptr, "Background Colour", "Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
@@ -1014,6 +1017,8 @@ void DebugVDP::Registers::DisplayInternal()
 			DoProperty(monospace_font, "Plane A Address", "0x{:05X}", vdp.plane_a_address);
 			DoProperty(monospace_font, "Plane B Address", "0x{:05X}", vdp.plane_b_address);
 			DoProperty(monospace_font, "Horizontal Scroll Table Address", "0x{:05X}", vdp.hscroll_address);
+			DoProperty(nullptr, "Plane A Tile Location", "{}", vdp.plane_a_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
+			DoProperty(nullptr, "Plane B Tile Location", "{}", vdp.plane_b_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
 			DoProperty(nullptr, "Plane Width", "{} Tiles", 1 << vdp.plane_width_shift);
 			DoProperty(nullptr, "Plane Height", "{} Tiles", vdp.plane_height_bitmask + 1);
 			DoProperty(nullptr, "Horizontal Scrolling Mode",
@@ -1102,6 +1107,26 @@ void DebugVDP::Registers::DisplayInternal()
 			);
 			DoProperty(nullptr, "Mode", "{}", (vdp.access.code_register & 1) != 0 ? "Write" : "Read");
 			DoProperty(monospace_font, "Increment", "0x{:02X}", vdp.access.increment);
+		}
+	);
+
+	DoTable("Debug",
+		[&]()
+		{
+			DoProperty(nullptr, "Selected Register", "{}", vdp.debug.selected_register);
+			DoProperty(nullptr, "Layers", "{}", vdp.debug.hide_layers ? "Hidden" : "Shown");
+			DoProperty(nullptr, "Forced Layer",
+				[&]()
+				{
+					static const auto layers = std::to_array<std::string, 4>({
+						"None",
+						"Sprite",
+						"Plane A",
+						"Plane B"
+					});
+					ImGui::TextUnformatted(layers[vdp.debug.forced_layer]);
+				}
+			);
 		}
 	);
 }
