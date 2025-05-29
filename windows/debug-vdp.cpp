@@ -502,7 +502,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index * tiles_per_stamp, .palette_line = static_cast<cc_u8f>(palette_line_option_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
 			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles, false, brightness_option_index);
-		}
+		}, options_changed
 	);
 
 	DisplayMap(stamp_map_width_in_stamps, stamp_map_height_in_stamps, maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, StampWidthInPixels(state), StampHeightInPixels(state),
