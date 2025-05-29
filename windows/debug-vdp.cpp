@@ -1034,7 +1034,7 @@ void DebugVDP::Registers::DisplayInternal()
 	switch (selected_tab)
 	{
 		case 0:
-			DoTable("",
+			DoTable("##Miscellaneous",
 				[&]()
 				{
 					DoProperty(monospace_font, "Sprite Table Address", "0x{:05X}", vdp.sprite_table_address);
@@ -1055,7 +1055,7 @@ void DebugVDP::Registers::DisplayInternal()
 			break;
 
 		case 1:
-			DoTable("",
+			DoTable("##Scroll Planes",
 				[&]()
 				{
 					DoProperty(monospace_font, "Plane A Address", "0x{:05X}", vdp.plane_a_address);
@@ -1100,7 +1100,7 @@ void DebugVDP::Registers::DisplayInternal()
 			break;
 
 		case 2:
-			DoTable("",
+			DoTable("##Window Plane",
 				[&]()
 				{
 					DoProperty(monospace_font, "Address", "0x{:05X}", vdp.window_address);
@@ -1113,7 +1113,7 @@ void DebugVDP::Registers::DisplayInternal()
 			break;
 
 		case 3:
-			DoTable("",
+			DoTable("##DMA",
 				[&]()
 				{
 					DoProperty(nullptr, "Enabled", "{}", vdp.dma.enabled ? "Yes" : "No");
@@ -1136,7 +1136,7 @@ void DebugVDP::Registers::DisplayInternal()
 			break;
 
 		case 4:
-			DoTable("",
+			DoTable("##Access",
 				[&]()
 				{
 					DoProperty(nullptr, "Write Pending", "{}", vdp.access.write_pending ? "Yes" : "No");
@@ -1162,7 +1162,7 @@ void DebugVDP::Registers::DisplayInternal()
 			break;
 
 		case 5:
-			DoTable("",
+			DoTable("##Debug",
 				[&]()
 				{
 					DoProperty(nullptr, "Selected Register", "{}", vdp.debug.selected_register);

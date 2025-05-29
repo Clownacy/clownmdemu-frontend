@@ -297,7 +297,7 @@ private:
 		const auto monospace_font = GetMonospaceFont();
 		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
 
-		DoTable("", [&]()
+		DoTable("##Settings", [&]()
 			{
 				DoProperty(monospace_font, "Z80 Bank", "0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
 				DoProperty(nullptr, "Main 68000 Has Z80 Bus", "{}", clownmdemu_state.z80.bus_requested ? "Yes" : "No");

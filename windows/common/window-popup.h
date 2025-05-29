@@ -57,7 +57,8 @@ private:
 protected:
 	void DoTable(const char* const name, const std::function<void()> &callback)
 	{
-		if (name[0] != '\0')
+		// Don't bother with IDs that have no visible part.
+		if (name[0] != '#' || name[1] != '#')
 			ImGui::SeparatorText(name);
 
 		if (ImGui::BeginTable(name, 2, ImGuiTableFlags_Borders))
