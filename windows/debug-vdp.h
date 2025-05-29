@@ -264,6 +264,8 @@ namespace DebugVDP
 
 		static constexpr Uint32 window_flags = 0;
 
+		std::size_t selected_tab = 0;
+
 		void DisplayInternal();
 
 	public:

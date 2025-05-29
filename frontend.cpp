@@ -2445,7 +2445,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("VDP"))
 				{
-					PopupButton("Registers", vdp_registers_window, 360, 500, false, std::nullopt, "VDP Registers");
+					PopupButton("Registers", vdp_registers_window, 400, 320, false, std::nullopt, "VDP Registers");
 					PopupButton("Sprites", sprite_list_window, 540, 344, true);
 					PopupButton("VRAM", vram_viewer_window, 460, 460, true);
 					PopupButton("CRAM", cram_viewer_window, 384, 192, false);

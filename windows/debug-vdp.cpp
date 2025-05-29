@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <numeric>
 #include <vector>
 
 #include <SDL3/SDL.h>
@@ -994,141 +995,192 @@ void DebugVDP::Registers::DisplayInternal()
 	const auto &state = Frontend::emulator->CurrentState();
 	const VDP_State &vdp = state.clownmdemu.vdp;
 
-	DoTable("Miscellaneous",
-		[&]()
+	static const auto tab_names = std::to_array<std::string>({
+		"Miscellaneous",
+		"Scroll Planes",
+		"Window Plane",
+		"DMA",
+		"Access",
+		"Debug"
+	});
+
+	const auto greatest_tab_name_width = std::accumulate(std::begin(tab_names), std::end(tab_names), 0.0f,
+		[](const auto greatest_width, const auto& string)
 		{
-			DoProperty(monospace_font, "Sprite Table Address", "0x{:05X}", vdp.sprite_table_address);
-			DoProperty(nullptr, "Sprite Tile Location", "{}", vdp.sprite_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
-			DoProperty(nullptr, "Extended VRAM Enabled", "{}", vdp.extended_vram_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "Display Enabled", "{}", vdp.display_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "V-Int Enabled", "{}", vdp.v_int_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "H-Int Enabled", "{}", vdp.h_int_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "H40 Enabled", "{}", vdp.h40_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "V30 Enabled", "{}", vdp.v30_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "Mega Drive Mode Enabled", "{}", vdp.mega_drive_mode_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "Shadow/Highlight Enabled", "{}", vdp.shadow_highlight_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "Double-Resolution Enabled", "{}", vdp.double_resolution_enabled ? "Yes" : "No");
-			DoProperty(nullptr, "Background Colour", "Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
-			DoProperty(monospace_font, "H-Int Interval", "{}", vdp.h_int_interval);
+			return std::max(greatest_width, ImGui::CalcTextSize(string.c_str()).x);
 		}
 	);
 
-	DoTable("Scroll Planes",
-		[&]()
-		{
-			DoProperty(monospace_font, "Plane A Address", "0x{:05X}", vdp.plane_a_address);
-			DoProperty(monospace_font, "Plane B Address", "0x{:05X}", vdp.plane_b_address);
-			DoProperty(monospace_font, "Horizontal Scroll Table Address", "0x{:05X}", vdp.hscroll_address);
-			DoProperty(nullptr, "Plane A Tile Location", "{}", vdp.plane_a_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
-			DoProperty(nullptr, "Plane B Tile Location", "{}", vdp.plane_b_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
-			DoProperty(nullptr, "Plane Width", "{} Tiles", 1 << vdp.plane_width_shift);
-			DoProperty(nullptr, "Plane Height", "{} Tiles", vdp.plane_height_bitmask + 1);
-			DoProperty(nullptr, "Horizontal Scrolling Mode",
-				[&]()
-				{
-					switch (vdp.hscroll_mask)
-					{
-						case 0x00:
-							ImGui::TextUnformatted("Whole Screen");
-							break;
-						case 0x07:
-							ImGui::TextUnformatted("1-Pixel Rows (8)");
-							break;
-						case 0xF8:
-							ImGui::TextUnformatted("1-Tile Rows");
-							break;
-						case 0xFF:
-							ImGui::TextUnformatted("1-Pixel Rows (All)");
-							break;
-					}
-				}
-			);
-			DoProperty(nullptr, "Vertical Scrolling Mode",
-				[&]()
-				{
-					static const auto vertical_scrolling_modes = std::to_array<std::string, 2>({
-						"Whole Screen",
-						"2-Tile Columns"
-					});
-					ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
-				}
-			);
-		}
-	);
+	const auto list_box_width = greatest_tab_name_width + ImGui::GetStyle().ItemInnerSpacing.x * 2;
 
-	DoTable("Window Plane",
-		[&]()
-		{
-			DoProperty(monospace_font, "Address", "0x{:05X}", vdp.window_address);
-			DoProperty(nullptr, "Horizontal Alignment", "{}", vdp.window.aligned_right ? "Right" : "Left");
-			DoProperty(nullptr, "Horizontal Boundary", "{} Tiles", vdp.window.horizontal_boundary * 2);
-			DoProperty(nullptr, "Vertical Alignment", "{}", vdp.window.aligned_bottom ? "Bottom" : "Top");
-			DoProperty(nullptr, "Vertical Boundary", "{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
-		}
-	);
+    if (ImGui::BeginListBox("##Register Groups", ImVec2(list_box_width, -FLT_MIN)))
+    {
+        for (std::size_t i = 0; i < std::size(tab_names); ++i)
+        {
+            const bool is_selected = i == selected_tab;
 
-	DoTable("DMA",
-		[&]()
-		{
-			DoProperty(nullptr, "Enabled", "{}", vdp.dma.enabled ? "Yes" : "No");
-			DoProperty(nullptr, "Pending", "{}", (vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
-			DoProperty(nullptr, "Mode",
+			if (ImGui::Selectable(tab_names[i].c_str(), is_selected))
+                selected_tab = i;
+
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+
+		ImGui::EndListBox();
+    }
+
+	ImGui::SameLine();
+
+	switch (selected_tab)
+	{
+		case 0:
+			DoTable("",
 				[&]()
 				{
-					static const auto dma_modes = std::to_array<std::string, 3>({
-						"ROM/RAM to VRAM/CRAM/VSRAM",
-						"VRAM Fill",
-						"VRAM to VRAM"
-					});
-					ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
+					DoProperty(monospace_font, "Sprite Table Address", "0x{:05X}", vdp.sprite_table_address);
+					DoProperty(nullptr, "Sprite Tile Location", "{}", vdp.sprite_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
+					DoProperty(nullptr, "Extended VRAM Enabled", "{}", vdp.extended_vram_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "Display Enabled", "{}", vdp.display_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "V-Int Enabled", "{}", vdp.v_int_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "H-Int Enabled", "{}", vdp.h_int_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "H40 Enabled", "{}", vdp.h40_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "V30 Enabled", "{}", vdp.v30_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "Mega Drive Mode Enabled", "{}", vdp.mega_drive_mode_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "Shadow/Highlight Enabled", "{}", vdp.shadow_highlight_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "Double-Resolution Enabled", "{}", vdp.double_resolution_enabled ? "Yes" : "No");
+					DoProperty(nullptr, "Background Colour", "Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
+					DoProperty(monospace_font, "H-Int Interval", "{}", vdp.h_int_interval);
 				}
 			);
-			DoProperty(monospace_font, "Source Address", "0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 17) | static_cast<cc_u32f>(vdp.dma.source_address_low) << 1);
-			DoProperty(monospace_font, "Length", "0x{:04X}", vdp.dma.length);
-		}
-	);
+			break;
 
-	DoTable("Access",
-		[&]()
-		{
-			DoProperty(nullptr, "Write Pending", "{}", vdp.access.write_pending ? "Yes" : "No");
-			DoProperty(monospace_font, "Address Register", "0x{:05X}", vdp.access.address_register);
-			DoProperty(monospace_font, "Command Register", "0x{:04X}", vdp.access.code_register); // TODO: Enums or something.
-			DoProperty(nullptr, "Selected RAM",
+		case 1:
+			DoTable("",
 				[&]()
 				{
-					static const auto rams = std::to_array<std::string, 5>({
-						"VRAM",
-						"CRAM",
-						"VSRAM",
-						"VRAM (8-bit)",
-						"Invalid"
-					});
-					ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
+					DoProperty(monospace_font, "Plane A Address", "0x{:05X}", vdp.plane_a_address);
+					DoProperty(monospace_font, "Plane B Address", "0x{:05X}", vdp.plane_b_address);
+					DoProperty(monospace_font, "Horizontal Scroll Table Address", "0x{:05X}", vdp.hscroll_address);
+					DoProperty(nullptr, "Plane A Tile Location", "{}", vdp.plane_a_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
+					DoProperty(nullptr, "Plane B Tile Location", "{}", vdp.plane_b_tile_index_rebase ? "Upper 64KiB" : "Lower 64KiB");
+					DoProperty(nullptr, "Plane Width", "{} Tiles", 1 << vdp.plane_width_shift);
+					DoProperty(nullptr, "Plane Height", "{} Tiles", vdp.plane_height_bitmask + 1);
+					DoProperty(nullptr, "Horizontal Scrolling Mode",
+						[&]()
+						{
+							switch (vdp.hscroll_mask)
+							{
+								case 0x00:
+									ImGui::TextUnformatted("Whole Screen");
+									break;
+								case 0x07:
+									ImGui::TextUnformatted("1-Pixel Rows (8)");
+									break;
+								case 0xF8:
+									ImGui::TextUnformatted("1-Tile Rows");
+									break;
+								case 0xFF:
+									ImGui::TextUnformatted("1-Pixel Rows (All)");
+									break;
+							}
+						}
+					);
+					DoProperty(nullptr, "Vertical Scrolling Mode",
+						[&]()
+						{
+							static const auto vertical_scrolling_modes = std::to_array<std::string, 2>({
+								"Whole Screen",
+								"2-Tile Columns"
+							});
+							ImGui::TextUnformatted(vertical_scrolling_modes[vdp.vscroll_mode]);
+						}
+					);
 				}
 			);
-			DoProperty(nullptr, "Mode", "{}", (vdp.access.code_register & 1) != 0 ? "Write" : "Read");
-			DoProperty(monospace_font, "Increment", "0x{:02X}", vdp.access.increment);
-		}
-	);
+			break;
 
-	DoTable("Debug",
-		[&]()
-		{
-			DoProperty(nullptr, "Selected Register", "{}", vdp.debug.selected_register);
-			DoProperty(nullptr, "Layers", "{}", vdp.debug.hide_layers ? "Hidden" : "Shown");
-			DoProperty(nullptr, "Forced Layer",
+		case 2:
+			DoTable("",
 				[&]()
 				{
-					static const auto layers = std::to_array<std::string, 4>({
-						"None",
-						"Sprite",
-						"Plane A",
-						"Plane B"
-					});
-					ImGui::TextUnformatted(layers[vdp.debug.forced_layer]);
+					DoProperty(monospace_font, "Address", "0x{:05X}", vdp.window_address);
+					DoProperty(nullptr, "Horizontal Alignment", "{}", vdp.window.aligned_right ? "Right" : "Left");
+					DoProperty(nullptr, "Horizontal Boundary", "{} Tiles", vdp.window.horizontal_boundary * 2);
+					DoProperty(nullptr, "Vertical Alignment", "{}", vdp.window.aligned_bottom ? "Bottom" : "Top");
+					DoProperty(nullptr, "Vertical Boundary", "{} Tiles", vdp.window.vertical_boundary / TileHeight(vdp));
 				}
 			);
-		}
-	);
+			break;
+
+		case 3:
+			DoTable("",
+				[&]()
+				{
+					DoProperty(nullptr, "Enabled", "{}", vdp.dma.enabled ? "Yes" : "No");
+					DoProperty(nullptr, "Pending", "{}", (vdp.access.code_register & 0x20) != 0 ? "Yes" : "No");
+					DoProperty(nullptr, "Mode",
+						[&]()
+						{
+							static const auto dma_modes = std::to_array<std::string, 3>({
+								"ROM/RAM to VRAM/CRAM/VSRAM",
+								"VRAM Fill",
+								"VRAM to VRAM"
+							});
+							ImGui::TextUnformatted(dma_modes[vdp.dma.mode]);
+						}
+					);
+					DoProperty(monospace_font, "Source Address", "0x{:06X}", (static_cast<cc_u32f>(vdp.dma.source_address_high) << 17) | static_cast<cc_u32f>(vdp.dma.source_address_low) << 1);
+					DoProperty(monospace_font, "Length", "0x{:04X}", vdp.dma.length);
+				}
+			);
+			break;
+
+		case 4:
+			DoTable("",
+				[&]()
+				{
+					DoProperty(nullptr, "Write Pending", "{}", vdp.access.write_pending ? "Yes" : "No");
+					DoProperty(monospace_font, "Address Register", "0x{:05X}", vdp.access.address_register);
+					DoProperty(monospace_font, "Command Register", "0x{:04X}", vdp.access.code_register); // TODO: Enums or something.
+					DoProperty(nullptr, "Selected RAM",
+						[&]()
+						{
+							static const auto rams = std::to_array<std::string, 5>({
+								"VRAM",
+								"CRAM",
+								"VSRAM",
+								"VRAM (8-bit)",
+								"Invalid"
+							});
+							ImGui::TextUnformatted(rams[vdp.access.selected_buffer]);
+						}
+					);
+					DoProperty(nullptr, "Mode", "{}", (vdp.access.code_register & 1) != 0 ? "Write" : "Read");
+					DoProperty(monospace_font, "Increment", "0x{:02X}", vdp.access.increment);
+				}
+			);
+			break;
+
+		case 5:
+			DoTable("",
+				[&]()
+				{
+					DoProperty(nullptr, "Selected Register", "{}", vdp.debug.selected_register);
+					DoProperty(nullptr, "Layers", "{}", vdp.debug.hide_layers ? "Hidden" : "Shown");
+					DoProperty(nullptr, "Forced Layer",
+						[&]()
+						{
+							static const auto layers = std::to_array<std::string, 4>({
+								"None",
+								"Sprite",
+								"Plane A",
+								"Plane B"
+							});
+							ImGui::TextUnformatted(layers[vdp.debug.forced_layer]);
+						}
+					);
+				}
+			);
+			break;
+	}
 }
