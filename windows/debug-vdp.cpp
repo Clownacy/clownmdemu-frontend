@@ -900,14 +900,16 @@ void DebugVDP::StampViewer::DisplayInternal()
 	const auto tiles_per_stamp = TilesPerStamp(state);
 	const auto total_pieces = TotalStamps(state);
 
-	DisplayGrid(piece_width_in_pixels, piece_height_in_pixels, total_pieces, maximum_piece_diameter_in_tiles * tile_width, maximum_piece_diameter_in_tiles * tile_height_normal, maximum_stamp_map_size_in_pixels, [&](const cc_u16f piece_index, const cc_u8f brightness, const cc_u8f palette_line, SDL::Pixel* const pixels, const int pitch)
-	{
-		if (piece_index >= total_pieces)
-			return;
+	DisplayGrid(piece_width_in_pixels, piece_height_in_pixels, total_pieces, maximum_piece_diameter_in_tiles * tile_width, maximum_piece_diameter_in_tiles * tile_height_normal, maximum_stamp_map_size_in_pixels,
+		[&](const cc_u16f piece_index, const cc_u8f brightness, const cc_u8f palette_line, SDL::Pixel* const pixels, const int pitch)
+		{
+			if (piece_index >= total_pieces)
+				return;
 
-		const VDP_TileMetadata tile_metadata = {.tile_index = piece_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-		DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, piece_diameter_in_tiles, piece_diameter_in_tiles, false, brightness);
-	}, "Stamp", "Stamps");
+			const VDP_TileMetadata tile_metadata = {.tile_index = piece_index * tiles_per_stamp, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
+			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, piece_diameter_in_tiles, piece_diameter_in_tiles, false, brightness);
+		}
+	, "Stamp", "Stamps");
 }
 
 void DebugVDP::CRAMViewer::DisplayInternal()
