@@ -1,2 +1,4 @@
 # CMake build directory
 /build
+# clangd cache directory
+/.cache
