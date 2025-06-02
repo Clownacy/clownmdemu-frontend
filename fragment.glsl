@@ -5,9 +5,9 @@ precision mediump float;
 
 varying vec2 fragment_texture_coordinate;
 
-uniform sampler2D palette_texture, screen_texture;
+uniform sampler2D texture;
 
 void main()
 {
-    gl_FragColor = texture2D(palette_texture, vec2(texture2D(screen_texture, fragment_texture_coordinate).x / 0.75, 0.0));
+    gl_FragColor = texture2D(texture, fragment_texture_coordinate);
 }
