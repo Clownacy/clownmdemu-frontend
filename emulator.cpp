@@ -54,14 +54,14 @@ void Emulator::initializeGL()
 
 #undef SetAttributeBuffer
 
-    if (!screen_texture.create())
+    if (!texture.create())
         DisplayError("create screen texture");
 
-    screen_texture.setFormat(QOpenGLTexture::RGBFormat);
-    screen_texture.setMinificationFilter(QOpenGLTexture::Nearest);
-    screen_texture.setMagnificationFilter(QOpenGLTexture::Nearest);
-    screen_texture.setSize(std::size(screen_texture_buffer[0]), std::size(screen_texture_buffer));
-    screen_texture.allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5);
+    texture.setFormat(QOpenGLTexture::RGBFormat);
+    texture.setMinificationFilter(QOpenGLTexture::Nearest);
+    texture.setMagnificationFilter(QOpenGLTexture::Nearest);
+    texture.setSize(std::size(texture_buffer[0]), std::size(texture_buffer));
+    texture.allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5);
 
 #undef DisplayError
 }
@@ -72,7 +72,7 @@ void Emulator::paintGL()
 
     shader_program->bind();
     vertex_buffer_object.bind();
-    screen_texture.bind();
+    texture.bind();
 
     shader_program->enableAttributeArray(attribute_name_vertex_position);
     shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
@@ -91,7 +91,7 @@ Emulator::~Emulator()
 {
     makeCurrent();
 
-    screen_texture.destroy();
+    texture.destroy();
     vertex_buffer_object.destroy();
     shader_program.reset();
 
@@ -134,7 +134,7 @@ void Emulator::Callback_ColourUpdated(void* const user_data, const cc_u16f index
     const auto blue  = Extract4BitChannelTo6Bit(2) >> 1;
 
     // Pack into RGB565.
-    emulator.palette_texture_buffer[index]
+    emulator.palette[index]
             = (red   << (0 + 6 + 5))
             | (green << (0 + 0 + 5))
             | (blue  << (0 + 0 + 0));
@@ -145,7 +145,7 @@ void Emulator::Callback_ScanlineRendered(void* const user_data, const cc_u16f sc
     Emulator &emulator = *static_cast<Emulator*>(user_data);
 
     for (cc_u16f i = 0; i < right_boundary - left_boundary; ++i)
-        emulator.screen_texture_buffer[scanline][left_boundary + i] = emulator.palette_texture_buffer[pixels[i]];
+        emulator.texture_buffer[scanline][left_boundary + i] = emulator.palette[pixels[i]];
 }
 
 cc_bool Emulator::Callback_InputRequested(void* const user_data, const cc_u8f player_id, const ClownMDEmu_Button button_id)
@@ -233,8 +233,8 @@ void Emulator::timerEvent(QTimerEvent* const e)
     ClownMDEmu_Iterate(&clownmdemu);
 
     makeCurrent();
-    screen_texture.bind();
-    screen_texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(screen_texture_buffer));
+    texture.bind();
+    texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(texture_buffer));
     doneCurrent();
 
     update();

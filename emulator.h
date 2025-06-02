@@ -25,9 +25,10 @@ private:
     std::optional<QOpenGLShaderProgram> shader_program;
 //    QOpenGLVertexArrayObject vertex_array_object;
     QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    std::array<GLushort, VDP_TOTAL_COLOURS> palette_texture_buffer;
-    QOpenGLTexture screen_texture = QOpenGLTexture(QOpenGLTexture::Target2D);
-    std::array<std::array<GLushort, 320>, 480> screen_texture_buffer;
+    QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
+    std::array<std::array<GLushort, 320>, 480> texture_buffer;
+
+    std::array<GLushort, VDP_TOTAL_COLOURS> palette;
 
     ClownMDEmu_Configuration clownmdemu_configuration = {};
     ClownMDEmu_Constant clownmdemu_constant;
