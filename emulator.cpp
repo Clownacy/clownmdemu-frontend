@@ -57,11 +57,11 @@ void Emulator::initializeGL()
     if (!palette_texture.create())
         DisplayError("create palette texture");
 
-    palette_texture.setFormat(QOpenGLTexture::RGBAFormat);
+    palette_texture.setFormat(QOpenGLTexture::RGBFormat);
     palette_texture.setMinificationFilter(QOpenGLTexture::Nearest);
     palette_texture.setMagnificationFilter(QOpenGLTexture::Nearest);
     palette_texture.setSize(std::size(palette_texture_buffer[0]), std::size(palette_texture_buffer));
-    palette_texture.allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
+    palette_texture.allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5);
 
     if (!screen_texture.create())
         DisplayError("create screen texture");
@@ -136,13 +136,22 @@ void Emulator::Callback_ColourUpdated(void* const user_data, const cc_u16f index
 {
     Emulator &emulator = *static_cast<Emulator*>(user_data);
 
-    for (unsigned int channel_index = 0; channel_index < 3; ++channel_index)
+    const auto Extract4BitChannelTo6Bit = [&](const unsigned int channel_index)
     {
-        const cc_u8f channel = (colour >> ((channel_index * 4) + 1)) & 7;
-        emulator.palette_texture_buffer[0][index][channel_index] = channel << 5 | channel << 2 | channel >> 1;
-    }
+        const cc_u8f channel = (colour >> (channel_index * 4)) & 0xF;
+        return channel << 2 | channel >> 2;
+    };
 
-    emulator.palette_texture_buffer[0][index][3] = 0xFF;
+    // Unpack from XBGR4444.
+    const auto red   = Extract4BitChannelTo6Bit(0) >> 1;
+    const auto green = Extract4BitChannelTo6Bit(1);
+    const auto blue  = Extract4BitChannelTo6Bit(2) >> 1;
+
+    // Pack into RGB565.
+    emulator.palette_texture_buffer[0][index]
+            = (red   << (0 + 6 + 5))
+            | (green << (0 + 0 + 5))
+            | (blue  << (0 + 0 + 0));
 }
 
 void Emulator::Callback_ScanlineRendered(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
@@ -238,7 +247,7 @@ void Emulator::timerEvent(QTimerEvent* const e)
 
     makeCurrent();
     palette_texture.bind();
-    palette_texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, std::data(palette_texture_buffer));
+    palette_texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(palette_texture_buffer));
     screen_texture.bind();
     screen_texture.setData(QOpenGLTexture::Luminance, QOpenGLTexture::UInt8, std::data(screen_texture_buffer));
     doneCurrent();
