@@ -60,13 +60,13 @@ void Emulator::initializeGL()
     texture.setFormat(QOpenGLTexture::RGBAFormat);
     texture.setMinificationFilter(QOpenGLTexture::Nearest);
     texture.setMagnificationFilter(QOpenGLTexture::Nearest);
-    texture.setSize(2, 2);
+    texture.setSize(16, 4);
     texture.allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
-    static const unsigned char pixels[] = {
-        0xFF, 0x00, 0x00, 0xFF,
-        0x00, 0xFF, 0x00, 0xFF,
-        0x00, 0x00, 0xFF, 0xFF,
-        0xFF, 0xFF, 0xFF, 0xFF,
+    static const unsigned char pixels[64][4] = {
+        {0xFF, 0x00, 0x00, 0xFF},
+        {0x00, 0xFF, 0x00, 0xFF},
+        {0x00, 0x00, 0xFF, 0xFF},
+        {0xFF, 0xFF, 0xFF, 0xFF},
     };
     texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, pixels);
 
@@ -88,6 +88,12 @@ void Emulator::paintGL()
     glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));
 }
 
+Emulator::Emulator(QWidget* const parent, const Qt::WindowFlags f)
+    : QOpenGLWidget(parent, f)
+{
+    ClownMDEmu_Constant_Initialise(&clownmdemu_constant);
+}
+
 Emulator::~Emulator()
 {
     makeCurrent();
@@ -97,4 +103,157 @@ Emulator::~Emulator()
     shader_program.reset();
 
     doneCurrent();
+}
+
+cc_u8f Emulator::Callback_CartridgeRead(void* const user_data, const cc_u32f address)
+{
+    Emulator &emulator = *static_cast<Emulator*>(user_data);
+
+    if (address >= emulator.cartridge_rom_buffer.size())
+        return 0;
+
+    return emulator.AccessCartridgeBuffer(address);
+}
+
+void Emulator::Callback_CartridgeWritten(void* const user_data, const cc_u32f address, const cc_u8f value)
+{
+    Emulator &emulator = *static_cast<Emulator*>(user_data);
+
+    if (address >= emulator.cartridge_rom_buffer.size())
+        return;
+
+    emulator.AccessCartridgeBuffer(address) = value;
+}
+
+void Emulator::Callback_ColourUpdated(void* const user_data, const cc_u16f index, const cc_u16f colour)
+{
+
+}
+
+void Emulator::Callback_ScanlineRendered(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
+{
+
+}
+
+cc_bool Emulator::Callback_InputRequested(void* const user_data, const cc_u8f player_id, const ClownMDEmu_Button button_id)
+{
+    return cc_false;
+}
+
+void Emulator::Callback_FMAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+{
+
+}
+
+void Emulator::Callback_PSGAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+{
+
+}
+
+void Emulator::Callback_PCMAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+{
+
+}
+
+void Emulator::Callback_CDDAAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+{
+
+}
+
+void Emulator::Callback_CDSeeked(void* const user_data, const cc_u32f sector_index)
+{
+
+}
+
+void Emulator::Callback_CDSectorRead(void* const user_data, cc_u16l* const buffer)
+{
+
+}
+
+cc_bool Emulator::Callback_CDTrackSeeked(void* const user_data, const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
+{
+    return cc_false;
+}
+
+std::size_t Emulator::Callback_CDAudioRead(void* const user_data, cc_s16l* const sample_buffer, const std::size_t total_frames)
+{
+    return 0;
+}
+
+cc_bool Emulator::Callback_SaveFileOpenedForReading(void* const user_data, const char* const filename)
+{
+    return cc_false;
+}
+
+cc_s16f Emulator::Callback_SaveFileRead(void* const user_data)
+{
+    return 0;
+}
+
+cc_bool Emulator::Callback_SaveFileOpenedForWriting(void* const user_data, const char* const filename)
+{
+    return cc_false;
+}
+
+void Emulator::Callback_SaveFileWritten(void* const user_data, const cc_u8f byte)
+{
+
+}
+
+void Emulator::Callback_SaveFileClosed(void* const user_data)
+{
+
+}
+
+cc_bool Emulator::Callback_SaveFileRemoved(void* const user_data, const char* const filename)
+{
+    return cc_false;
+}
+
+cc_bool Emulator::Callback_SaveFileSizeObtained(void* const user_data, const char* const filename, std::size_t* const size)
+{
+    return cc_false;
+}
+
+void Emulator::timerEvent(QTimerEvent* const e)
+{
+    ClownMDEmu_Iterate(&clownmdemu);
+
+    unsigned char pixels[64][4] = {
+        {0xFF, 0x00, 0x00, 0xFF},
+        {0x00, 0xFF, 0x00, 0xFF},
+        {0x00, 0x00, 0xFF, 0xFF},
+        {0xFF, 0xFF, 0xFF, 0xFF},
+    };
+
+    const auto DoColour = [&](const unsigned int index)
+    {
+        const auto colour = clownmdemu_state.vdp.cram[index];
+
+        pixels[index][0] = ((colour >> (0 + 1)) & 7) << (8 - 3);
+        pixels[index][1] = ((colour >> (4 + 1)) & 7) << (8 - 3);
+        pixels[index][2] = ((colour >> (8 + 1)) & 7) << (8 - 3);
+        pixels[index][3] = 0xFF;
+    };
+
+    for (unsigned int i = 0; i < 64; ++i)
+        DoColour(i);
+
+    makeCurrent();
+    texture.bind();
+    texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, pixels);
+    doneCurrent();
+
+    update();
+}
+
+void Emulator::LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffer)
+{
+    timer.stop();
+
+    this->cartridge_rom_buffer = cartridge_rom_buffer;
+    ClownMDEmu_State_Initialise(&clownmdemu_state);
+    ClownMDEmu_Reset(&clownmdemu, cc_false, cartridge_rom_buffer.size());
+
+    timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
