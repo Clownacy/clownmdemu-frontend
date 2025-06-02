@@ -54,21 +54,15 @@ void Emulator::initializeGL()
 
 #undef SetAttributeBuffer
 
-    if (!texture.create())
-        DisplayError("create texture");
+    if (!palette_texture.create())
+        DisplayError("create palette texture");
 
-    texture.setFormat(QOpenGLTexture::RGBAFormat);
-    texture.setMinificationFilter(QOpenGLTexture::Nearest);
-    texture.setMagnificationFilter(QOpenGLTexture::Nearest);
-    texture.setSize(16, 4);
-    texture.allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
-    static const unsigned char pixels[64][4] = {
-        {0xFF, 0x00, 0x00, 0xFF},
-        {0x00, 0xFF, 0x00, 0xFF},
-        {0x00, 0x00, 0xFF, 0xFF},
-        {0xFF, 0xFF, 0xFF, 0xFF},
-    };
-    texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, pixels);
+    palette_texture.setFormat(QOpenGLTexture::RGBAFormat);
+    palette_texture.setMinificationFilter(QOpenGLTexture::Nearest);
+    palette_texture.setMagnificationFilter(QOpenGLTexture::Nearest);
+    palette_texture.setSize(VDP_TOTAL_COLOURS, 1);
+    palette_texture.allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
+    palette_texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, std::data(palette_texture_buffer));
 
 #undef DisplayError
 }
@@ -79,7 +73,7 @@ void Emulator::paintGL()
 
     shader_program->bind();
     vertex_buffer_object.bind();
-    texture.bind();
+    palette_texture.bind();
 
     shader_program->enableAttributeArray(attribute_name_vertex_position);
     shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
@@ -98,7 +92,7 @@ Emulator::~Emulator()
 {
     makeCurrent();
 
-    texture.destroy();
+    palette_texture.destroy();
     vertex_buffer_object.destroy();
     shader_program.reset();
 
@@ -127,7 +121,15 @@ void Emulator::Callback_CartridgeWritten(void* const user_data, const cc_u32f ad
 
 void Emulator::Callback_ColourUpdated(void* const user_data, const cc_u16f index, const cc_u16f colour)
 {
+    Emulator &emulator = *static_cast<Emulator*>(user_data);
 
+    for (unsigned int channel_index = 0; channel_index < 3; ++channel_index)
+    {
+        const cc_u8f channel = (colour >> ((channel_index * 4) + 1)) & 7;
+        emulator.palette_texture_buffer[index][channel_index] = channel << 5 | channel << 2 | channel >> 1;
+    }
+
+    emulator.palette_texture_buffer[index][3] = 0xFF;
 }
 
 void Emulator::Callback_ScanlineRendered(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
@@ -219,29 +221,9 @@ void Emulator::timerEvent(QTimerEvent* const e)
 {
     ClownMDEmu_Iterate(&clownmdemu);
 
-    unsigned char pixels[64][4] = {
-        {0xFF, 0x00, 0x00, 0xFF},
-        {0x00, 0xFF, 0x00, 0xFF},
-        {0x00, 0x00, 0xFF, 0xFF},
-        {0xFF, 0xFF, 0xFF, 0xFF},
-    };
-
-    const auto DoColour = [&](const unsigned int index)
-    {
-        const auto colour = clownmdemu_state.vdp.cram[index];
-
-        pixels[index][0] = ((colour >> (0 + 1)) & 7) << (8 - 3);
-        pixels[index][1] = ((colour >> (4 + 1)) & 7) << (8 - 3);
-        pixels[index][2] = ((colour >> (8 + 1)) & 7) << (8 - 3);
-        pixels[index][3] = 0xFF;
-    };
-
-    for (unsigned int i = 0; i < 64; ++i)
-        DoColour(i);
-
     makeCurrent();
-    texture.bind();
-    texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, pixels);
+    palette_texture.bind();
+    palette_texture.setData(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8, std::data(palette_texture_buffer));
     doneCurrent();
 
     update();

@@ -1,6 +1,7 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <array>
 #include <optional>
 
 #include <QBasicTimer>
@@ -24,7 +25,8 @@ private:
     std::optional<QOpenGLShaderProgram> shader_program;
 //    QOpenGLVertexArrayObject vertex_array_object;
     QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
+    QOpenGLTexture palette_texture = QOpenGLTexture(QOpenGLTexture::Target2D);
+    std::array<std::array<unsigned char, 4>, VDP_TOTAL_COLOURS> palette_texture_buffer;
 
     ClownMDEmu_Configuration clownmdemu_configuration = {};
     ClownMDEmu_Constant clownmdemu_constant;
