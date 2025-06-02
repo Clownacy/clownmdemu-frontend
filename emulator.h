@@ -20,6 +20,9 @@ class Emulator : public QOpenGLWidget, protected QOpenGLFunctions
     Q_OBJECT
 
 private:
+    static constexpr unsigned int screen_texture_width = 320;
+    static constexpr unsigned int screen_texture_height = 480;
+
     QBasicTimer timer;
 
     std::optional<QOpenGLShaderProgram> shader_program;
@@ -27,6 +30,8 @@ private:
     QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     QOpenGLTexture palette_texture = QOpenGLTexture(QOpenGLTexture::Target2D);
     std::array<std::array<unsigned char, 4>, VDP_TOTAL_COLOURS> palette_texture_buffer;
+    QOpenGLTexture screen_texture = QOpenGLTexture(QOpenGLTexture::Target2D);
+    std::array<std::array<unsigned char, screen_texture_width>, screen_texture_height> screen_texture_buffer;
 
     ClownMDEmu_Configuration clownmdemu_configuration = {};
     ClownMDEmu_Constant clownmdemu_constant;
