@@ -60,7 +60,7 @@ void Emulator::initializeGL()
     palette_texture.setFormat(QOpenGLTexture::RGBAFormat);
     palette_texture.setMinificationFilter(QOpenGLTexture::Nearest);
     palette_texture.setMagnificationFilter(QOpenGLTexture::Nearest);
-    palette_texture.setSize(VDP_TOTAL_COLOURS, 1);
+    palette_texture.setSize(std::size(palette_texture_buffer[0]), std::size(palette_texture_buffer));
     palette_texture.allocateStorage(QOpenGLTexture::RGBA, QOpenGLTexture::UInt8);
 
     if (!screen_texture.create())
@@ -69,7 +69,7 @@ void Emulator::initializeGL()
     screen_texture.setFormat(QOpenGLTexture::LuminanceFormat);
     screen_texture.setMinificationFilter(QOpenGLTexture::Nearest);
     screen_texture.setMagnificationFilter(QOpenGLTexture::Nearest);
-    screen_texture.setSize(screen_texture_width, screen_texture_height);
+    screen_texture.setSize(std::size(screen_texture_buffer[0]), std::size(screen_texture_buffer));
     screen_texture.allocateStorage(QOpenGLTexture::Luminance, QOpenGLTexture::UInt8);
 
 #undef DisplayError
@@ -139,10 +139,10 @@ void Emulator::Callback_ColourUpdated(void* const user_data, const cc_u16f index
     for (unsigned int channel_index = 0; channel_index < 3; ++channel_index)
     {
         const cc_u8f channel = (colour >> ((channel_index * 4) + 1)) & 7;
-        emulator.palette_texture_buffer[index][channel_index] = channel << 5 | channel << 2 | channel >> 1;
+        emulator.palette_texture_buffer[0][index][channel_index] = channel << 5 | channel << 2 | channel >> 1;
     }
 
-    emulator.palette_texture_buffer[index][3] = 0xFF;
+    emulator.palette_texture_buffer[0][index][3] = 0xFF;
 }
 
 void Emulator::Callback_ScanlineRendered(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
