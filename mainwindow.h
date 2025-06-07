@@ -5,10 +5,7 @@
 
 #include "debug-cpu.h"
 #include "emulator-widget.h"
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+#include "ui_mainwindow.h"
 
 class MainWindow : public QMainWindow
 {
@@ -16,10 +13,9 @@ class MainWindow : public QMainWindow
 
 public:
 	MainWindow(QWidget *parent = nullptr);
-	~MainWindow();
 
 private:
-	Ui::MainWindow *ui;
+	Ui::MainWindow ui;
 	DebugCPU debug_cpu = DebugCPU(this);
 	EmulatorWidget emulator = EmulatorWidget(this);
 };

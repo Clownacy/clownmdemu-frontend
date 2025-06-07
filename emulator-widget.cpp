@@ -11,6 +11,9 @@ struct Vertex
 	std::array<GLubyte, 2> texture_coordinate;
 };
 
+EmulatorWidget::Configuration EmulatorWidget::configuration;
+EmulatorWidget::Constant EmulatorWidget::constant;
+
 static constexpr auto vertices = std::to_array<Vertex>({
 	{{-0x80, -0x80}, {0x00, 0xFF}},
 	{{ 0x7F, -0x80}, {0xFF, 0xFF}},
@@ -145,18 +148,8 @@ EmulatorWidget::EmulatorWidget(QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
 	, Emulator(configuration, constant, state)
 {
+	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
-}
-
-EmulatorWidget::~EmulatorWidget()
-{
-	makeCurrent();
-
-	texture.destroy();
-	vertex_buffer_object.destroy();
-	shader_program.reset();
-
-	doneCurrent();
 }
 
 cc_u8f EmulatorWidget::CartridgeRead(const cc_u32f address)

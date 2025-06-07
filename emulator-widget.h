@@ -33,14 +33,14 @@ protected:
 	QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
 	std::array<std::array<GLushort, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
-	Configuration configuration;
-	Constant constant;
+	static Configuration configuration;
+	static Constant constant;
 	State state;
 
 	QByteArray cartridge_rom_buffer;
 	std::array<GLushort, VDP_TOTAL_COLOURS> palette;
 	cc_u16f screen_width, screen_height;
-	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons;
+	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 
 	// Emulator stuff
 	unsigned char& AccessCartridgeBuffer(const std::size_t index)
@@ -85,7 +85,10 @@ protected:
 
 public:
 	EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
-	~EmulatorWidget();
+	~EmulatorWidget()
+	{
+		makeCurrent();
+	}
 
 	void LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffer);
 

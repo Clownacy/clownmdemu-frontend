@@ -1,19 +1,17 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
 
 #include <QFileDialog>
 #include <QLayout>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
-	, ui(new Ui::MainWindow)
 	, emulator(this)
 {
-	ui->setupUi(this);
+	ui.setupUi(this);
 
 	setCentralWidget(&emulator);
 
-	connect(ui->actionLoad_Cartridge_Software, &QAction::triggered, this,
+	connect(ui.actionLoad_Cartridge_Software, &QAction::triggered, this,
 		[&]()
 		{
 			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
@@ -25,10 +23,5 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	);
 
-	connect(ui->actionCPUs, &QAction::triggered, this, [&](){debug_cpu.show();});
-}
-
-MainWindow::~MainWindow()
-{
-	delete ui;
+	connect(ui.actionCPUs, &QAction::triggered, this, [&](){debug_cpu.show();});
 }

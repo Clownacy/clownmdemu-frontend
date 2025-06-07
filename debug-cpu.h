@@ -3,9 +3,7 @@
 
 #include <QDialog>
 
-namespace Ui {
-class DebugCPU;
-}
+#include "ui_debug-cpu.h"
 
 class DebugCPU : public QDialog
 {
@@ -13,10 +11,9 @@ class DebugCPU : public QDialog
 
 public:
 	explicit DebugCPU(QWidget *parent = nullptr);
-	~DebugCPU();
 
 private:
-	Ui::DebugCPU *ui;
+	Ui::DebugCPU ui;
 };
 
 #endif // DEBUG_CPU_H
