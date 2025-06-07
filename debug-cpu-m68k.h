@@ -54,7 +54,7 @@ namespace Debug
 			LabelGrid<4, 1> misc_registers = LabelGrid<4, 1>("Misc. Registers");
 
 		public:
-			explicit M68k(const Clown68000_State &state, QWidget *parent = nullptr);
+			M68k(const Clown68000_State &state);
 
 			void StateChanged(const Clown68000_State &state);
 		};

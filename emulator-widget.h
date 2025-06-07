@@ -83,7 +83,7 @@ protected:
 	bool DoButton(QKeyEvent *event, bool pressed);
 
 public:
-	EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	explicit EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 	~EmulatorWidget()
 	{

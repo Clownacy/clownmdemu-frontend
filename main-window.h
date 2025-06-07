@@ -17,6 +17,6 @@ public:
 private:
 	Ui::MainWindow ui;
 	EmulatorWidget emulator = EmulatorWidget(this);
-	Debug::CPU::Dialog debug_cpu = Debug::CPU::Dialog(emulator, this);
+	Debug::CPU::Dialog debug_cpu = Debug::CPU::Dialog(emulator);
 };
 #endif // MAINWINDOW_H

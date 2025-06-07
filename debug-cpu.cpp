@@ -1,10 +1,9 @@
 #include "debug-cpu.h"
 
-Debug::CPU::Dialog::Dialog(const Emulator &emulator, QWidget *parent)
-	: QDialog(parent)
-	, emulator(emulator)
-	, main_cpu(emulator.GetState().m68k.state, this)
-	, sub_cpu(emulator.GetState().mega_cd.m68k.state, this)
+Debug::CPU::Dialog::Dialog(const Emulator &emulator)
+	: emulator(emulator)
+	, main_cpu(emulator.GetState().m68k.state)
+	, sub_cpu(emulator.GetState().mega_cd.m68k.state)
 {
 	ui.setupUi(this);
 

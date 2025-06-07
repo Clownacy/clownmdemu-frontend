@@ -1,7 +1,6 @@
 #include "debug-cpu-m68k.h"
 
-Debug::CPU::M68k::M68k(const Clown68000_State &state, QWidget *parent)
-	: QWidget{parent}
+Debug::CPU::M68k::M68k(const Clown68000_State &state)
 {
 	setLayout(&layout);
 

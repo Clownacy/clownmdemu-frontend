@@ -22,7 +22,7 @@ namespace Debug
 			M68k main_cpu, sub_cpu;
 
 		public:
-			explicit Dialog(const Emulator &emulator, QWidget *parent = nullptr);
+			Dialog(const Emulator &emulator);
 
 		public slots:
 			void StateChanged();
