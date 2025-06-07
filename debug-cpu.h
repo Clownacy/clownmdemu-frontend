@@ -9,14 +9,14 @@ class DebugCPU;
 
 class DebugCPU : public QDialog
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    explicit DebugCPU(QWidget *parent = nullptr);
-    ~DebugCPU();
+	explicit DebugCPU(QWidget *parent = nullptr);
+	~DebugCPU();
 
 private:
-    Ui::DebugCPU *ui;
+	Ui::DebugCPU *ui;
 };
 
 #endif // DEBUG_CPU_H

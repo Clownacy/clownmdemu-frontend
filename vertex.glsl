@@ -12,6 +12,6 @@ uniform vec2 texture_coordinate_scale;
 
 void main()
 {
-    gl_Position = vertex_position;
-    fragment_texture_coordinate = vertex_texture_coordinate * texture_coordinate_scale;
+	gl_Position = vertex_position;
+	fragment_texture_coordinate = vertex_texture_coordinate * texture_coordinate_scale;
 }

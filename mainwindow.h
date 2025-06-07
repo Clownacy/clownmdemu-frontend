@@ -12,15 +12,15 @@ QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+	MainWindow(QWidget *parent = nullptr);
+	~MainWindow();
 
 private:
-    Ui::MainWindow *ui;
-    DebugCPU debug_cpu = DebugCPU(this);
-    EmulatorWidget emulator = EmulatorWidget(this);
+	Ui::MainWindow *ui;
+	DebugCPU debug_cpu = DebugCPU(this);
+	EmulatorWidget emulator = EmulatorWidget(this);
 };
 #endif // MAINWINDOW_H

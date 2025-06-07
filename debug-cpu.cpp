@@ -2,13 +2,13 @@
 #include "ui_debug-cpu.h"
 
 DebugCPU::DebugCPU(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::DebugCPU)
+	QDialog(parent),
+	ui(new Ui::DebugCPU)
 {
-    ui->setupUi(this);
+	ui->setupUi(this);
 }
 
 DebugCPU::~DebugCPU()
 {
-    delete ui;
+	delete ui;
 }
