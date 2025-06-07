@@ -24,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
             );
         }
     );
+
+    connect(ui->actionCPUs, &QAction::triggered, this, [&](){debug_cpu.show();});
 }
 
 MainWindow::~MainWindow()

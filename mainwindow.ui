@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ClownMDEmu</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">
@@ -42,6 +42,7 @@
      <string>Debugging</string>
     </property>
     <addaction name="actionToggles"/>
+    <addaction name="actionCPUs"/>
    </widget>
    <addaction name="menuSoftware"/>
    <addaction name="menuDebugging"/>
@@ -54,6 +55,11 @@
   <action name="actionToggles">
    <property name="text">
     <string>Toggles</string>
+   </property>
+  </action>
+  <action name="actionCPUs">
+   <property name="text">
+    <string>CPUs</string>
    </property>
   </action>
  </widget>

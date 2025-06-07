@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>DebugCPU</class>
+ <widget class="QDialog" name="DebugCPU">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Debug - CPUs</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="main_cpu">
+      <attribute name="title">
+       <string>MAIN-CPU</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="sub_cpu">
+      <attribute name="title">
+       <string>SUB-CPU</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="sound_cpu">
+      <attribute name="title">
+       <string>SOUND-CPU</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

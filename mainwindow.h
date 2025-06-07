@@ -3,7 +3,8 @@
 
 #include <QMainWindow>
 
-#include "emulator.h"
+#include "debug-cpu.h"
+#include "emulator-widget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -19,6 +20,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    Emulator emulator;
+    DebugCPU debug_cpu = DebugCPU(this);
+    EmulatorWidget emulator = EmulatorWidget(this);
 };
 #endif // MAINWINDOW_H
