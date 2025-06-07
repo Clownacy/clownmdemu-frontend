@@ -47,6 +47,30 @@ public:
 	using LogCallback = std::function<void(const char *format, std::va_list arg)>;
 
 protected:
+	const ClownMDEmu_Callbacks callbacks = {
+		this,
+		Callback_CartridgeRead,
+		Callback_CartridgeWritten,
+		Callback_ColourUpdated,
+		Callback_ScanlineRendered,
+		Callback_InputRequested,
+		Callback_FMAudioToBeGenerated,
+		Callback_PSGAudioToBeGenerated,
+		Callback_PCMAudioToBeGenerated,
+		Callback_CDDAAudioToBeGenerated,
+		Callback_CDSeeked,
+		Callback_CDSectorRead,
+		Callback_CDTrackSeeked,
+		Callback_CDAudioRead,
+		Callback_SaveFileOpenedForReading,
+		Callback_SaveFileRead,
+		Callback_SaveFileOpenedForWriting,
+		Callback_SaveFileWritten,
+		Callback_SaveFileClosed,
+		Callback_SaveFileRemoved,
+		Callback_SaveFileSizeObtained
+	};
+
 	static cc_u8f Callback_CartridgeRead(void *user_data, cc_u32f address);
 	static void Callback_CartridgeWritten(void *user_data, cc_u32f address, cc_u8f value);
 	static void Callback_ColourUpdated(void *user_data, cc_u16f index, cc_u16f colour);
@@ -99,30 +123,6 @@ protected:
 	{
 		(*static_cast<const LogCallback*>(user_data))(format, arg);
 	}
-
-	const ClownMDEmu_Callbacks callbacks = {
-		this,
-		Callback_CartridgeRead,
-		Callback_CartridgeWritten,
-		Callback_ColourUpdated,
-		Callback_ScanlineRendered,
-		Callback_InputRequested,
-		Callback_FMAudioToBeGenerated,
-		Callback_PSGAudioToBeGenerated,
-		Callback_PCMAudioToBeGenerated,
-		Callback_CDDAAudioToBeGenerated,
-		Callback_CDSeeked,
-		Callback_CDSectorRead,
-		Callback_CDTrackSeeked,
-		Callback_CDAudioRead,
-		Callback_SaveFileOpenedForReading,
-		Callback_SaveFileRead,
-		Callback_SaveFileOpenedForWriting,
-		Callback_SaveFileWritten,
-		Callback_SaveFileClosed,
-		Callback_SaveFileRemoved,
-		Callback_SaveFileSizeObtained
-	};
 
 public:
 	Emulator(const Configuration &configuration, const Constant &constant, State &state)

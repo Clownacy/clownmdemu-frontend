@@ -38,7 +38,7 @@ protected:
 	State state;
 
 	QByteArray cartridge_rom_buffer;
-	std::array<GLushort, VDP_TOTAL_COLOURS> palette;
+	std::array<GLushort, VDP_TOTAL_COLOURS> palette = {};
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 
@@ -85,6 +85,7 @@ protected:
 
 public:
 	EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+
 	~EmulatorWidget()
 	{
 		makeCurrent();
