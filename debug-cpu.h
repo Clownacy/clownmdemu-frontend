@@ -16,13 +16,14 @@ namespace Debug
 			Q_OBJECT
 
 		protected:
+			using Base = QDialog;
 
 			Ui::DebugCPU ui;
 			const Emulator &emulator;
 			M68k main_cpu, sub_cpu;
 
 		public:
-			Dialog(const Emulator &emulator);
+			explicit Dialog(const Emulator &emulator, QWidget *parent = nullptr);
 
 		public slots:
 			void StateChanged();

@@ -4,9 +4,21 @@ Debug::CPU::M68k::M68k(const Clown68000_State &state)
 {
 	setLayout(&layout);
 
-	layout.addWidget(&data_registers.group_box);
-	layout.addWidget(&address_registers.group_box);
+	const auto DefaultSetup = [&](auto &label_grid)
+	{
+		layout.addWidget(&label_grid.group_box);
+		for (std::size_t y = 0; y < label_grid.height; ++y)
+			for (std::size_t x = 0; x < label_grid.width; ++x)
+				label_grid.layout.addWidget(&label_grid.labels[y][x], y, x);
+	};
+
+	DefaultSetup(data_registers);
+	DefaultSetup(address_registers);
+
 	layout.addWidget(&misc_registers.group_box);
+	misc_registers.layout.addWidget(&misc_registers.labels[0][0], 0, 0);
+	misc_registers.layout.addWidget(&misc_registers.labels[0][1], 0, 1);
+	misc_registers.layout.addWidget(&misc_registers.labels[0][2], 0, 2, 1, 2, Qt::AlignRight);
 
 	StateChanged(state);
 }
@@ -28,25 +40,25 @@ void Debug::CPU::M68k::StateChanged(const Clown68000_State &state)
 		return RegisterToString(8, label, value);
 	};
 
-	const auto DoRegisters = [&](LabelGrid<4, 2> &label_grid, const QChar prefix, const cc_u32l (&registers)[8])
+	const auto DoRegisters = [&](auto &label_grid, const QChar prefix, const cc_u32l (&registers)[8])
 	{
 		for (std::size_t i = 0; i < std::size(registers); ++i)
 		{
-			const auto x = i % 4;
-			const auto y = i / 4;
-			label_grid.labels[y][x].setText(LongRegisterToString(QStringLiteral(" %1%2").arg(prefix).arg(i), registers[i]));
+			const auto x = i % label_grid.width;
+			const auto y = i / label_grid.width;
+			label_grid.labels[y][x].setText(LongRegisterToString(QStringLiteral("%1%2").arg(prefix).arg(i), registers[i]));
 		}
 	};
 
 	DoRegisters(data_registers, 'D', state.data_registers);
 	DoRegisters(address_registers, 'A', state.address_registers);
 
-	misc_registers.labels[0][0].setText(LongRegisterToString(" PC", state.program_counter));
-	misc_registers.labels[0][1].setText(WordRegisterToString(" SR", state.status_register));
+	misc_registers.labels[0][0].setText(LongRegisterToString("PC", state.program_counter));
+	misc_registers.labels[0][1].setText(WordRegisterToString("SR", state.status_register));
 
 	// Show the register that is not currently address register 7.
 	if ((state.status_register & 0x2000) != 0)
-		misc_registers.labels[0][3].setText(LongRegisterToString("USP", state.user_stack_pointer));
+		misc_registers.labels[0][2].setText(LongRegisterToString("USP", state.user_stack_pointer));
 	else
-		misc_registers.labels[0][3].setText(LongRegisterToString("SSP", state.supervisor_stack_pointer));
+		misc_registers.labels[0][2].setText(LongRegisterToString("SSP", state.supervisor_stack_pointer));
 }

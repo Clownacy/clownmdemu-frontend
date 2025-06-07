@@ -20,10 +20,13 @@ namespace Debug
 			Q_OBJECT
 
 		protected:
-			template<std::size_t width, std::size_t height>
+			template<std::size_t Width, std::size_t Height>
 			class LabelGrid
 			{
 			public:
+				static constexpr std::size_t width = Width;
+				static constexpr std::size_t height = Height;
+
 				QGroupBox group_box;
 				QGridLayout layout;
 				std::array<std::array<QLabel, width>, height> labels;
@@ -42,7 +45,6 @@ namespace Debug
 						{
 							auto &label = labels[y][x];
 							label.setFont(font);
-							layout.addWidget(&label, y, x);
 						}
 					}
 				}
@@ -51,7 +53,7 @@ namespace Debug
 			QVBoxLayout layout;
 			LabelGrid<4, 2> data_registers = LabelGrid<4, 2>("Data Registers");
 			LabelGrid<4, 2> address_registers = LabelGrid<4, 2>("Address Registers");
-			LabelGrid<4, 1> misc_registers = LabelGrid<4, 1>("Misc. Registers");
+			LabelGrid<3, 1> misc_registers = LabelGrid<3, 1>("Misc. Registers");
 
 		public:
 			M68k(const Clown68000_State &state);
