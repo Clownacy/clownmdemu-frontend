@@ -28,7 +28,6 @@ protected:
 	QBasicTimer timer;
 
 	std::optional<QOpenGLShaderProgram> shader_program;
-//	QOpenGLVertexArrayObject vertex_array_object;
 	QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
 	QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
 	std::array<std::array<GLushort, texture_buffer_width>, texture_buffer_height> texture_buffer;
@@ -42,7 +41,7 @@ protected:
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 
-	// Emulator stuff
+	// Emulator stuff.
 	unsigned char& AccessCartridgeBuffer(const std::size_t index)
 	{
 		// 'QByteArray' is signed, so we have to do some magic to treat it as unsigned.
@@ -94,7 +93,7 @@ public:
 	void LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffer);
 
 signals:
-
+	void NewFrame();
 };
 
 #endif // EMULATOR_WIDGET_H

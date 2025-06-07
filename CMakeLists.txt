@@ -15,6 +15,8 @@ qt_add_executable(clownmdemu-frontend-qt
 	debug-cpu.h debug-cpu.cpp debug-cpu.ui
 	emulator-widget.cpp
 	emulator-widget.h
+	debug-cpu-m68k.h debug-cpu-m68k.cpp
+
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES

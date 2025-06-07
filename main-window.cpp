@@ -5,7 +5,6 @@
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
-	, emulator(this)
 {
 	ui.setupUi(this);
 
@@ -24,4 +23,6 @@ MainWindow::MainWindow(QWidget *parent)
 	);
 
 	connect(ui.actionCPUs, &QAction::triggered, this, [&](){debug_cpu.show();});
+
+	connect(&emulator, &EmulatorWidget::NewFrame, &debug_cpu, &Debug::CPU::Dialog::StateChanged);
 }

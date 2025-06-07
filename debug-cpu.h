@@ -3,17 +3,31 @@
 
 #include <QDialog>
 
+#include "debug-cpu-m68k.h"
+#include "emulator.h"
 #include "ui_debug-cpu.h"
 
-class DebugCPU : public QDialog
+namespace Debug
 {
-	Q_OBJECT
+	namespace CPU
+	{
+		class Dialog : public QDialog
+		{
+			Q_OBJECT
 
-public:
-	explicit DebugCPU(QWidget *parent = nullptr);
+		protected:
 
-private:
-	Ui::DebugCPU ui;
-};
+			Ui::DebugCPU ui;
+			const Emulator &emulator;
+			M68k main_cpu, sub_cpu;
+
+		public:
+			explicit Dialog(const Emulator &emulator, QWidget *parent = nullptr);
+
+		public slots:
+			void StateChanged();
+		};
+	}
+}
 
 #endif // DEBUG_CPU_H

@@ -144,6 +144,11 @@ public:
 	{
 		ClownMDEmu_SetLogCallback(&LogCallbackWrapper, &callback);
 	}
+
+	const auto& GetState() const
+	{
+		return *state;
+	}
 };
 
 #endif // EMULATOR_H

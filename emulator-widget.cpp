@@ -96,6 +96,8 @@ void EmulatorWidget::timerEvent(QTimerEvent* const event)
 	doneCurrent();
 
 	update();
+
+	emit NewFrame();
 }
 
 void EmulatorWidget::keyPressEvent(QKeyEvent* const event)

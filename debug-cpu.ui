@@ -4,10 +4,10 @@
  <widget class="QDialog" name="DebugCPU">
   <property name="geometry">
    <rect>
-	<x>0</x>
-	<y>0</y>
-	<width>400</width>
-	<height>300</height>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,26 +15,29 @@
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-	<widget class="QTabWidget" name="tabWidget">
-	 <property name="currentIndex">
-	  <number>0</number>
-	 </property>
-	 <widget class="QWidget" name="main_cpu">
-	  <attribute name="title">
-	   <string>MAIN-CPU</string>
-	  </attribute>
-	 </widget>
-	 <widget class="QWidget" name="sub_cpu">
-	  <attribute name="title">
-	   <string>SUB-CPU</string>
-	  </attribute>
-	 </widget>
-	 <widget class="QWidget" name="sound_cpu">
-	  <attribute name="title">
-	   <string>SOUND-CPU</string>
-	  </attribute>
-	 </widget>
-	</widget>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="main_cpu">
+      <attribute name="title">
+       <string>MAIN-CPU</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout"/>
+     </widget>
+     <widget class="QWidget" name="sub_cpu">
+      <attribute name="title">
+       <string>SUB-CPU</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2"/>
+     </widget>
+     <widget class="QWidget" name="sound_cpu">
+      <attribute name="title">
+       <string>SOUND-CPU</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3"/>
+     </widget>
+    </widget>
    </item>
   </layout>
  </widget>
