@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include <QKeyEvent>
 #include <QMessageBox>
 
 struct Vertex
@@ -82,10 +83,70 @@ void EmulatorWidget::paintGL()
     glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));
 }
 
+void EmulatorWidget::timerEvent(QTimerEvent* const event)
+{
+    Iterate();
+
+    makeCurrent();
+    texture.bind();
+    texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(texture_buffer));
+    doneCurrent();
+
+    update();
+}
+
+void EmulatorWidget::keyPressEvent(QKeyEvent* const event)
+{
+    if (!DoButton(event, true))
+        Base::keyPressEvent(event);
+}
+
+void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
+{
+    if (!DoButton(event, false))
+        Base::keyReleaseEvent(event);
+}
+
+bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)
+{
+    if (event->isAutoRepeat())
+        return false;
+
+    switch (event->key())
+    {
+#define DO_KEY(KEY, BUTTON) \
+        case KEY: \
+            buttons[BUTTON] = pressed; \
+            break
+
+        DO_KEY(Qt::Key_W, CLOWNMDEMU_BUTTON_UP);
+        DO_KEY(Qt::Key_A, CLOWNMDEMU_BUTTON_LEFT);
+        DO_KEY(Qt::Key_S, CLOWNMDEMU_BUTTON_DOWN);
+        DO_KEY(Qt::Key_D, CLOWNMDEMU_BUTTON_RIGHT);
+        DO_KEY(Qt::Key_O, CLOWNMDEMU_BUTTON_A);
+        DO_KEY(Qt::Key_P, CLOWNMDEMU_BUTTON_B);
+        DO_KEY(Qt::Key_BracketLeft, CLOWNMDEMU_BUTTON_C);
+        DO_KEY(Qt::Key_9, CLOWNMDEMU_BUTTON_X);
+        DO_KEY(Qt::Key_0, CLOWNMDEMU_BUTTON_Y);
+        DO_KEY(Qt::Key_Minus, CLOWNMDEMU_BUTTON_Z);
+        DO_KEY(Qt::Key_Return, CLOWNMDEMU_BUTTON_START);
+        DO_KEY(Qt::Key_Backspace, CLOWNMDEMU_BUTTON_MODE);
+
+#undef DO_KEY
+
+        default:
+            return false;
+    }
+
+    return true;
+}
+
 EmulatorWidget::EmulatorWidget(QWidget* const parent, const Qt::WindowFlags f)
-    : QOpenGLWidget(parent, f)
+    : Base(parent, f)
     , Emulator(configuration, constant, state)
-{}
+{
+    setFocusPolicy(Qt::StrongFocus);
+}
 
 EmulatorWidget::~EmulatorWidget()
 {
@@ -145,7 +206,11 @@ void EmulatorWidget::ScanlineRendered(const cc_u16f scanline, const cc_u8l* cons
 
 cc_bool EmulatorWidget::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
-    return cc_false;
+    // TODO: Player 2.
+    if (player_id != 0)
+        return cc_false;
+
+    return buttons[button_id];
 }
 
 void EmulatorWidget::FMAudioToBeGenerated(const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
@@ -221,18 +286,6 @@ cc_bool EmulatorWidget::SaveFileRemoved(const char* const filename)
 cc_bool EmulatorWidget::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
 {
     return cc_false;
-}
-
-void EmulatorWidget::timerEvent(QTimerEvent* const e)
-{
-    Iterate();
-
-    makeCurrent();
-    texture.bind();
-    texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(texture_buffer));
-    doneCurrent();
-
-    update();
 }
 
 void EmulatorWidget::LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffer)

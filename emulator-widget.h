@@ -19,7 +19,9 @@ class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public 
 {
     Q_OBJECT
 
-private:
+protected:
+    using Base = QOpenGLWidget;
+
     static constexpr auto texture_buffer_width = 320;
     static constexpr auto texture_buffer_height = 480;
 
@@ -38,7 +40,9 @@ private:
     QByteArray cartridge_rom_buffer;
     std::array<GLushort, VDP_TOTAL_COLOURS> palette;
     cc_u16f screen_width, screen_height;
+    std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons;
 
+    // Emulator stuff
     unsigned char& AccessCartridgeBuffer(const std::size_t index)
     {
         // 'QByteArray' is signed, so we have to do some magic to treat it as unsigned.
@@ -69,11 +73,15 @@ private:
     cc_bool SaveFileRemoved(const char *filename) override;
     cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override;
 
-protected:
-    void timerEvent(QTimerEvent *e) override;
-
+    // Qt stuff.
     void initializeGL() override;
     void paintGL() override;
+    void timerEvent(QTimerEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+
+    // Miscellaneous.
+    bool DoButton(QKeyEvent *event, bool pressed);
 
 public:
     EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
