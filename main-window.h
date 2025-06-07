@@ -5,7 +5,7 @@
 
 #include "debug-cpu.h"
 #include "emulator-widget.h"
-#include "ui_mainwindow.h"
+#include "ui_main-window.h"
 
 class MainWindow : public QMainWindow
 {

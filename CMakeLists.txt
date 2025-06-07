@@ -8,9 +8,9 @@ qt_standard_project_setup()
 qt_add_executable(clownmdemu-frontend-qt
 	WIN32 MACOSX_BUNDLE
 	main.cpp
-	mainwindow.cpp
-	mainwindow.h
-	mainwindow.ui
+	main-window.cpp
+	main-window.h
+	main-window.ui
 	emulator.h emulator.cpp
 	debug-cpu.h debug-cpu.cpp debug-cpu.ui
 	emulator-widget.cpp
