@@ -2,9 +2,9 @@
 
 Debug::CPU::Z80::Z80(const Z80_State &state)
 {
-	DefaultSetup(regular_registers);
-	DefaultSetup(shadow_registers);
-	DefaultSetup(misc_registers);
+	layout.addWidget(&regular_registers.group_box);
+	layout.addWidget(&shadow_registers.group_box);
+	layout.addWidget(&misc_registers.group_box);
 
 	StateChanged(state);
 }
@@ -31,6 +31,8 @@ void Debug::CPU::Z80::StateChanged(const Z80_State &state)
 
 	misc_registers.labels[0][0].setText(WordRegisterToString("IX", static_cast<cc_u16f>(state.ixh) << 8 | state.ixl));
 	misc_registers.labels[0][1].setText(WordRegisterToString("IY", static_cast<cc_u16f>(state.iyh) << 8 | state.iyl));
-	misc_registers.labels[0][2].setText(WordRegisterToString("PC", state.program_counter));
-	misc_registers.labels[0][3].setText(WordRegisterToString("SP", state.stack_pointer));
+	misc_registers.labels[0][2].setText(ByteRegisterToString("I", state.i));
+	misc_registers.labels[0][3].setText(ByteRegisterToString("R", state.r));
+	misc_registers.labels[0][4].setText(WordRegisterToString("PC", state.program_counter));
+	misc_registers.labels[0][5].setText(WordRegisterToString("SP", state.stack_pointer));
 }

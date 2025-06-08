@@ -14,7 +14,7 @@ namespace Debug
 		protected:
 			LabelGrid<8, 1> regular_registers = LabelGrid<8, 1>("Regular Registers");
 			LabelGrid<8, 1> shadow_registers = LabelGrid<8, 1>("Shadow Registers");
-			LabelGrid<4, 1> misc_registers = LabelGrid<4, 1>("Misc. Registers");
+			LabelGrid<6, 1> misc_registers = LabelGrid<6, 1>("Misc. Registers");
 
 		public:
 			Z80(const Z80_State &state);

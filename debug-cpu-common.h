@@ -43,6 +43,7 @@ namespace Debug
 						{
 							auto &label = labels[y][x];
 							label.setFont(font);
+							layout.addWidget(&labels[y][x], y, x, Qt::AlignCenter);
 						}
 					}
 				}
@@ -50,31 +51,22 @@ namespace Debug
 
 			QVBoxLayout layout;
 
-			template<std::size_t width, std::size_t height>
-			void DefaultSetup(LabelGrid<width, height> &label_grid)
-			{
-				layout.addWidget(&label_grid.group_box);
-				for (std::size_t y = 0; y < height; ++y)
-					for (std::size_t x = 0; x < width; ++x)
-						label_grid.layout.addWidget(&label_grid.labels[y][x], y, x, Qt::AlignCenter);
-			};
-
-			QString RegisterToString(const int digits, const QString &label, const unsigned long value)
+			static QString RegisterToString(const int digits, const QString &label, const unsigned long value)
 			{
 				return QStringLiteral("%1:%2").arg(label).arg(value, digits, 0x10, '0').toUpper();
 			};
 
-			QString ByteRegisterToString(const QString &label, const unsigned long value)
+			static QString ByteRegisterToString(const QString &label, const unsigned long value)
 			{
 				return RegisterToString(2, label, value);
 			};
 
-			QString WordRegisterToString(const QString &label, const unsigned long value)
+			static QString WordRegisterToString(const QString &label, const unsigned long value)
 			{
 				return RegisterToString(4, label, value);
 			};
 
-			QString LongRegisterToString(const QString &label, const unsigned long value)
+			static QString LongRegisterToString(const QString &label, const unsigned long value)
 			{
 				return RegisterToString(8, label, value);
 			};

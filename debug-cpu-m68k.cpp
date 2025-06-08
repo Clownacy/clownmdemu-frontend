@@ -2,16 +2,16 @@
 
 Debug::CPU::M68k::M68k(const Clown68000_State &state)
 {
-	DefaultSetup(data_registers);
-	DefaultSetup(address_registers);
-	DefaultSetup(misc_registers);
+	layout.addWidget(&data_registers.group_box);
+	layout.addWidget(&address_registers.group_box);
+	layout.addWidget(&misc_registers.group_box);
 
 	StateChanged(state);
 }
 
 void Debug::CPU::M68k::StateChanged(const Clown68000_State &state)
 {
-	const auto DoRegisters = [&](auto &label_grid, const QChar prefix, const cc_u32l (&registers)[8])
+	const auto DoRegisters = [](auto &label_grid, const QChar prefix, const cc_u32l (&registers)[8])
 	{
 		for (std::size_t i = 0; i < std::size(registers); ++i)
 		{
