@@ -16,6 +16,10 @@ qt_add_executable(clownmdemu-frontend-qt
 	emulator-widget.cpp
 	emulator-widget.h
 	debug-cpu-m68k.h debug-cpu-m68k.cpp
+	debug-cpu-common.cpp
+	debug-cpu-common.h
+	debug-cpu-z80.cpp
+	debug-cpu-z80.h
 
 )
 
