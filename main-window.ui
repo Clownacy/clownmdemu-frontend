@@ -4,10 +4,10 @@
  <widget class="QMainWindow" name="MainWindow">
   <property name="geometry">
    <rect>
-	<x>0</x>
-	<y>0</y>
-	<width>640</width>
-	<height>480</height>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,51 +15,63 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">
-	<size>
-	 <width>640</width>
-	 <height>434</height>
-	</size>
+    <size>
+     <width>640</width>
+     <height>434</height>
+    </size>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout"/>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
-	<rect>
-	 <x>0</x>
-	 <y>0</y>
-	 <width>640</width>
-	 <height>23</height>
-	</rect>
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>640</width>
+     <height>23</height>
+    </rect>
    </property>
    <widget class="QMenu" name="menuSoftware">
-	<property name="title">
-	 <string>Software</string>
-	</property>
-	<addaction name="actionLoad_Cartridge_Software"/>
+    <property name="title">
+     <string>Software</string>
+    </property>
+    <addaction name="actionLoad_Cartridge_Software"/>
    </widget>
    <widget class="QMenu" name="menuDebugging">
-	<property name="title">
-	 <string>Debugging</string>
-	</property>
-	<addaction name="actionToggles"/>
-	<addaction name="actionCPUs"/>
+    <property name="title">
+     <string>Debugging</string>
+    </property>
+    <addaction name="actionToggles"/>
+    <addaction name="actionCPUs"/>
+   </widget>
+   <widget class="QMenu" name="menuMisc">
+    <property name="title">
+     <string>Misc.</string>
+    </property>
+    <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuSoftware"/>
    <addaction name="menuDebugging"/>
+   <addaction name="menuMisc"/>
   </widget>
   <action name="actionLoad_Cartridge_Software">
    <property name="text">
-	<string>Load Cartridge File</string>
+    <string>Load Cartridge File</string>
    </property>
   </action>
   <action name="actionToggles">
    <property name="text">
-	<string>Toggles</string>
+    <string>Toggles</string>
    </property>
   </action>
   <action name="actionCPUs">
    <property name="text">
-	<string>CPUs</string>
+    <string>CPUs</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>

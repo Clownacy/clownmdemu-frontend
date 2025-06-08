@@ -20,6 +20,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	debug-cpu-common.h
 	debug-cpu-z80.cpp
 	debug-cpu-z80.h
+	about.h about.cpp about.ui
 
 )
 
