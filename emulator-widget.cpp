@@ -91,29 +91,7 @@ void EmulatorWidget::timerEvent(QTimerEvent* const event)
 	if (paused)
 		return;
 
-	if (rewinding)
-	{
-		if (state_buffer.Exhausted())
-			return;
-
-		SetParameters(configuration, constant, state_buffer.GetBackward());
-	}
-	else
-	{
-		SetParameters(configuration, constant, state_buffer.GetForward());
-	}
-
-	for (unsigned int i = 0; i < (fastforwarding ? 3 : 1); ++i)
-		Iterate();
-
-	makeCurrent();
-	texture.bind();
-	texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(texture_buffer));
-	doneCurrent();
-
-	update();
-
-	emit NewFrame();
+	Advance();
 }
 
 void EmulatorWidget::keyPressEvent(QKeyEvent* const event)
@@ -157,14 +135,22 @@ bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)
 
 #undef DO_KEY_BUTTON
 
-		DO_KEY(Qt::Key_Space, fastforwarding);
 		DO_KEY(Qt::Key_R, rewinding);
 
 #undef DO_KEY
 
+		case Qt::Key_Space:
+			fastforwarding = pressed;
+
+			if (pressed && paused)
+				Advance();
+
+			break;
+
 		case Qt::Key_Pause:
 			if (pressed)
 				paused = !paused;
+
 			break;
 
 		default:
@@ -321,4 +307,31 @@ void EmulatorWidget::LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffe
 	Reset(cc_false, cartridge_rom_buffer.size());
 
 	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
+}
+
+void EmulatorWidget::Advance()
+{
+	if (rewinding)
+	{
+		if (state_buffer.Exhausted())
+			return;
+
+		SetParameters(configuration, constant, state_buffer.GetBackward());
+	}
+	else
+	{
+		SetParameters(configuration, constant, state_buffer.GetForward());
+	}
+
+	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
+		Iterate();
+
+	makeCurrent();
+	texture.bind();
+	texture.setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5, std::data(texture_buffer));
+	doneCurrent();
+
+	update();
+
+	emit NewFrame();
 }

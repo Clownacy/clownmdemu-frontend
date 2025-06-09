@@ -30,6 +30,26 @@ protected:
 		qsizetype state_buffer_index;
 		qsizetype state_buffer_remaining;
 
+		qsizetype NextIndex(qsizetype index) const
+		{
+			++index;
+
+			if (index == std::size(state_buffer))
+				index = 0;
+
+			return index;
+		}
+
+		qsizetype PreviousIndex(qsizetype index) const
+		{
+			if (index == 0)
+				index = std::size(state_buffer);
+
+			--index;
+
+			return index;
+		}
+
 	public:
 		StateRingBuffer(const qsizetype size)
 			: state_buffer(size)
@@ -53,12 +73,10 @@ protected:
 
 		[[nodiscard]] State& GetForward()
 		{
-			state_buffer_remaining = qMin(state_buffer_remaining + 1, std::size(state_buffer) - 1);
+			state_buffer_remaining = qMin(state_buffer_remaining + 1, std::size(state_buffer) - 2);
 
 			const auto old_index = state_buffer_index;
-			++state_buffer_index;
-			if (state_buffer_index == std::size(state_buffer))
-				state_buffer_index = 0;
+			state_buffer_index = NextIndex(state_buffer_index);
 			return state_buffer[state_buffer_index] = state_buffer[old_index];
 		}
 
@@ -67,11 +85,9 @@ protected:
 			assert(!Exhausted());
 			--state_buffer_remaining;
 
-			const auto old_index = state_buffer_index;
-			if (state_buffer_index == 0)
-				state_buffer_index = std::size(state_buffer);
-			--state_buffer_index;
-			return state_buffer[old_index] = state_buffer[state_buffer_index];
+			state_buffer_index = PreviousIndex(state_buffer_index);
+			const auto old_index = PreviousIndex(state_buffer_index);
+			return state_buffer[state_buffer_index] = state_buffer[old_index];
 		}
 	};
 
@@ -135,6 +151,7 @@ protected:
 
 	// Miscellaneous.
 	bool DoButton(QKeyEvent *event, bool pressed);
+	void Advance();
 
 public:
 	explicit EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
