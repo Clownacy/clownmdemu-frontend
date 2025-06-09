@@ -106,13 +106,17 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
-EmulatorWidget::EmulatorWidget(QWidget* const parent, const Qt::WindowFlags f)
+EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
+	, cartridge_rom_buffer(cartridge_rom_buffer)
 {
-	SetParameters(configuration, constant, state_buffer.GetForward());
-
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
+
+	SetParameters(configuration, constant, state_buffer.Clear());
+	Reset(cc_false, cartridge_rom_buffer.size());
+
+	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
 cc_u8f EmulatorWidget::CartridgeRead(const cc_u32f address)
@@ -242,17 +246,6 @@ cc_bool EmulatorWidget::SaveFileRemoved(const char* const filename)
 cc_bool EmulatorWidget::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
 {
 	return cc_false;
-}
-
-void EmulatorWidget::LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffer)
-{
-	timer.stop();
-
-	this->cartridge_rom_buffer = cartridge_rom_buffer;
-	SetParameters(configuration, constant, state_buffer.Clear());
-	Reset(cc_false, cartridge_rom_buffer.size());
-
-	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
 bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)

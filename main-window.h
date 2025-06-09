@@ -23,8 +23,9 @@ private:
 		EmulatorWidget emulator;
 		Debug::CPU::Dialog debug_cpu;
 
-		EmulatorStuff(QWidget* const parent)
-			: emulator(parent)
+		template<typename... Args>
+		EmulatorStuff(QWidget* const parent, Args... args)
+			: emulator(std::forward<Args>(args)..., parent)
 			, debug_cpu(emulator, parent)
 		{}
 	};

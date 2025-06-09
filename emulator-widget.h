@@ -154,14 +154,12 @@ protected:
 	void Advance();
 
 public:
-	explicit EmulatorWidget(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	explicit EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 	~EmulatorWidget()
 	{
 		makeCurrent();
 	}
-
-	void LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffer);
 
 signals:
 	void NewFrame();

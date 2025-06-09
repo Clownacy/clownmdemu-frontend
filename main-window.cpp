@@ -25,10 +25,9 @@ MainWindow::MainWindow(QWidget *parent)
 			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
 				[this, DoActionEnablement]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
 				{
-					emulator_stuff.emplace(this);
+					emulator_stuff.emplace(this, file_contents);
 
 					setCentralWidget(&emulator_stuff->emulator);
-					emulator_stuff->emulator.LoadCartridgeSoftware(file_contents);
 
 					connect(ui.actionCPUs, &QAction::triggered, &emulator_stuff->debug_cpu, &Debug::CPU::Dialog::show);
 					connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &emulator_stuff->debug_cpu, &Debug::CPU::Dialog::StateChanged);
