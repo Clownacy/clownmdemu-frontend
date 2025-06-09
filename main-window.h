@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <optional>
+
 #include <QMainWindow>
 
 #include "about.h"
@@ -16,9 +18,20 @@ public:
 	MainWindow(QWidget *parent = nullptr);
 
 private:
+	struct EmulatorStuff
+	{
+		EmulatorWidget emulator;
+		Debug::CPU::Dialog debug_cpu;
+
+		EmulatorStuff(QWidget* const parent)
+			: emulator(parent)
+			, debug_cpu(emulator, parent)
+		{}
+	};
+
 	Ui::MainWindow ui;
-	EmulatorWidget emulator = EmulatorWidget(this);
+	std::optional<EmulatorStuff> emulator_stuff;
 	About about = About(this);
-	Debug::CPU::Dialog debug_cpu = Debug::CPU::Dialog(emulator, this);
 };
+
 #endif // MAINWINDOW_H
