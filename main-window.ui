@@ -56,7 +56,7 @@
   </widget>
   <action name="actionLoad_Cartridge_Software">
    <property name="text">
-    <string>Load Cartridge File</string>
+    <string>Load Cartridge File...</string>
    </property>
   </action>
   <action name="actionToggles">

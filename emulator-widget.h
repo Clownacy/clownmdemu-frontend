@@ -12,6 +12,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>
 #include <QOpenGLWidget>
+#include <QVector>
 
 #include "emulator.h"
 
@@ -21,6 +22,58 @@ class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public 
 
 protected:
 	using Base = QOpenGLWidget;
+
+	class StateRingBuffer
+	{
+	protected:
+		QVector<State> state_buffer;
+		qsizetype state_buffer_index;
+		qsizetype state_buffer_remaining;
+
+	public:
+		StateRingBuffer(const qsizetype size)
+			: state_buffer(size)
+		{
+			assert(size > 0);
+
+			static_cast<void>(Clear());
+		}
+
+		[[nodiscard]] State& Clear()
+		{
+			state_buffer_index = 0;
+			state_buffer_remaining = 0;
+			return state_buffer[state_buffer_index] = {};
+		}
+
+		[[nodiscard]] bool Exhausted() const
+		{
+			return state_buffer_remaining == 0;
+		}
+
+		[[nodiscard]] State& GetForward()
+		{
+			state_buffer_remaining = qMin(state_buffer_remaining + 1, std::size(state_buffer) - 1);
+
+			const auto old_index = state_buffer_index;
+			++state_buffer_index;
+			if (state_buffer_index == std::size(state_buffer))
+				state_buffer_index = 0;
+			return state_buffer[state_buffer_index] = state_buffer[old_index];
+		}
+
+		[[nodiscard]] State& GetBackward()
+		{
+			assert(!Exhausted());
+			--state_buffer_remaining;
+
+			const auto old_index = state_buffer_index;
+			if (state_buffer_index == 0)
+				state_buffer_index = std::size(state_buffer);
+			--state_buffer_index;
+			return state_buffer[old_index] = state_buffer[state_buffer_index];
+		}
+	};
 
 	static constexpr auto texture_buffer_width = 320;
 	static constexpr auto texture_buffer_height = 480;
@@ -34,12 +87,13 @@ protected:
 
 	static Configuration configuration;
 	static Constant constant;
-	State state;
+	StateRingBuffer state_buffer = StateRingBuffer(60);
 
 	QByteArray cartridge_rom_buffer;
 	std::array<GLushort, VDP_TOTAL_COLOURS> palette = {};
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
+	bool rewinding = false, fastforwarding = false, paused = false;
 
 	// Emulator stuff.
 	unsigned char& AccessCartridgeBuffer(const std::size_t index)

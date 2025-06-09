@@ -1,13 +1,14 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <cassert>
 #include <cstdarg>
 #include <cstddef>
 #include <functional>
 
 #include "common/core/clownmdemu.h"
 
-class Emulator : protected ClownMDEmu
+class Emulator
 {
 public:
 	class Configuration : public ClownMDEmu_Configuration
@@ -47,6 +48,37 @@ public:
 	using LogCallback = std::function<void(const char *format, std::va_list arg)>;
 
 protected:
+	class Parameters
+	{
+	protected:
+		ClownMDEmu clownmdemu = {};
+
+	public:
+		Parameters()
+		{}
+
+		Parameters(const ClownMDEmu_Configuration &configuration, const ClownMDEmu_Constant &constant, ClownMDEmu_State &state, const ClownMDEmu_Callbacks &callbacks)
+			: clownmdemu(CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &constant, &state, &callbacks))
+		{}
+
+		bool has_value() const
+		{
+			return clownmdemu.state != nullptr;
+		}
+
+		const ClownMDEmu& operator*() const
+		{
+			assert(has_value());
+
+			return clownmdemu;
+		}
+
+		const ClownMDEmu* operator->() const
+		{
+			return &**this;
+		}
+	};
+
 	const ClownMDEmu_Callbacks callbacks = {
 		this,
 		Callback_CartridgeRead,
@@ -70,6 +102,8 @@ protected:
 		Callback_SaveFileRemoved,
 		Callback_SaveFileSizeObtained
 	};
+
+	Parameters parameters;
 
 	static cc_u8f Callback_CartridgeRead(void *user_data, cc_u32f address);
 	static void Callback_CartridgeWritten(void *user_data, cc_u32f address, cc_u8f value);
@@ -125,19 +159,21 @@ protected:
 	}
 
 public:
+	Emulator()
+	{}
+
 	Emulator(const Configuration &configuration, const Constant &constant, State &state)
-	{
-		*static_cast<ClownMDEmu*>(this) = CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &constant, &state, &callbacks);
-	}
+		: parameters(configuration, constant, state, callbacks)
+	{}
 
 	void Reset(const cc_bool cd_boot, const cc_u32f cartridge_size)
 	{
-		ClownMDEmu_Reset(this, cd_boot, cartridge_size);
+		ClownMDEmu_Reset(&*parameters, cd_boot, cartridge_size);
 	}
 
 	void Iterate()
 	{
-		ClownMDEmu_Iterate(this);
+		ClownMDEmu_Iterate(&*parameters);
 	}
 
 	void SetLogCallback(const LogCallback &callback)
@@ -147,7 +183,12 @@ public:
 
 	const auto& GetState() const
 	{
-		return *state;
+		return *parameters->state;
+	}
+
+	void SetParameters(const Configuration &configuration, const Constant &constant, State &state)
+	{
+		parameters = {configuration, constant, state, callbacks};
 	}
 };
 
