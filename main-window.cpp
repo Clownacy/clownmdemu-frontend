@@ -57,5 +57,8 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 	);
 
+	// TODO: Full-screen the OpenGL widget only!
+	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
+
 	connect(ui.actionAbout, &QAction::triggered, &about, &About::show);
 }

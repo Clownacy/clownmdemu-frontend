@@ -65,6 +65,7 @@
     <property name="title">
      <string>Misc.</string>
     </property>
+    <addaction name="actionFullscreen"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuSoftware"/>
@@ -120,6 +121,20 @@
    </property>
    <property name="shortcut">
     <string>Tab</string>
+   </property>
+  </action>
+  <action name="actionFullscreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fullscreen</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
    </property>
   </action>
  </widget>
