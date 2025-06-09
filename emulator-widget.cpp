@@ -106,60 +106,6 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
-bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)
-{
-	if (event->isAutoRepeat())
-		return false;
-
-	switch (event->key())
-	{
-#define DO_KEY(KEY, VARIABLE) \
-		case KEY: \
-			VARIABLE = pressed; \
-			break
-
-#define DO_KEY_BUTTON(KEY, BUTTON) DO_KEY(KEY, buttons[BUTTON])
-
-		DO_KEY_BUTTON(Qt::Key_W, CLOWNMDEMU_BUTTON_UP);
-		DO_KEY_BUTTON(Qt::Key_A, CLOWNMDEMU_BUTTON_LEFT);
-		DO_KEY_BUTTON(Qt::Key_S, CLOWNMDEMU_BUTTON_DOWN);
-		DO_KEY_BUTTON(Qt::Key_D, CLOWNMDEMU_BUTTON_RIGHT);
-		DO_KEY_BUTTON(Qt::Key_O, CLOWNMDEMU_BUTTON_A);
-		DO_KEY_BUTTON(Qt::Key_P, CLOWNMDEMU_BUTTON_B);
-		DO_KEY_BUTTON(Qt::Key_BracketLeft, CLOWNMDEMU_BUTTON_C);
-		DO_KEY_BUTTON(Qt::Key_9, CLOWNMDEMU_BUTTON_X);
-		DO_KEY_BUTTON(Qt::Key_0, CLOWNMDEMU_BUTTON_Y);
-		DO_KEY_BUTTON(Qt::Key_Minus, CLOWNMDEMU_BUTTON_Z);
-		DO_KEY_BUTTON(Qt::Key_Return, CLOWNMDEMU_BUTTON_START);
-		DO_KEY_BUTTON(Qt::Key_Backspace, CLOWNMDEMU_BUTTON_MODE);
-
-#undef DO_KEY_BUTTON
-
-		DO_KEY(Qt::Key_R, rewinding);
-
-#undef DO_KEY
-
-		case Qt::Key_Space:
-			fastforwarding = pressed;
-
-			if (pressed && paused)
-				Advance();
-
-			break;
-
-		case Qt::Key_Pause:
-			if (pressed)
-				paused = !paused;
-
-			break;
-
-		default:
-			return false;
-	}
-
-	return true;
-}
-
 EmulatorWidget::EmulatorWidget(QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
 {
@@ -307,6 +253,60 @@ void EmulatorWidget::LoadCartridgeSoftware(const QByteArray &cartridge_rom_buffe
 	Reset(cc_false, cartridge_rom_buffer.size());
 
 	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
+}
+
+bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)
+{
+	if (event->isAutoRepeat())
+		return false;
+
+	switch (event->key())
+	{
+#define DO_KEY(KEY, VARIABLE) \
+		case KEY: \
+			VARIABLE = pressed; \
+			break
+
+#define DO_KEY_BUTTON(KEY, BUTTON) DO_KEY(KEY, buttons[BUTTON])
+
+		DO_KEY_BUTTON(Qt::Key_W, CLOWNMDEMU_BUTTON_UP);
+		DO_KEY_BUTTON(Qt::Key_A, CLOWNMDEMU_BUTTON_LEFT);
+		DO_KEY_BUTTON(Qt::Key_S, CLOWNMDEMU_BUTTON_DOWN);
+		DO_KEY_BUTTON(Qt::Key_D, CLOWNMDEMU_BUTTON_RIGHT);
+		DO_KEY_BUTTON(Qt::Key_O, CLOWNMDEMU_BUTTON_A);
+		DO_KEY_BUTTON(Qt::Key_P, CLOWNMDEMU_BUTTON_B);
+		DO_KEY_BUTTON(Qt::Key_BracketLeft, CLOWNMDEMU_BUTTON_C);
+		DO_KEY_BUTTON(Qt::Key_9, CLOWNMDEMU_BUTTON_X);
+		DO_KEY_BUTTON(Qt::Key_0, CLOWNMDEMU_BUTTON_Y);
+		DO_KEY_BUTTON(Qt::Key_Minus, CLOWNMDEMU_BUTTON_Z);
+		DO_KEY_BUTTON(Qt::Key_Return, CLOWNMDEMU_BUTTON_START);
+		DO_KEY_BUTTON(Qt::Key_Backspace, CLOWNMDEMU_BUTTON_MODE);
+
+#undef DO_KEY_BUTTON
+
+		DO_KEY(Qt::Key_R, rewinding);
+
+#undef DO_KEY
+
+		case Qt::Key_Space:
+			fastforwarding = pressed;
+
+			if (pressed && paused)
+				Advance();
+
+			break;
+
+		case Qt::Key_Pause:
+			if (pressed)
+				paused = !paused;
+
+			break;
+
+		default:
+			return false;
+	}
+
+	return true;
 }
 
 void EmulatorWidget::Advance()
