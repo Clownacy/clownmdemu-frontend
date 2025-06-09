@@ -163,6 +163,17 @@ public:
 
 signals:
 	void NewFrame();
+
+public slots:
+	void Pause(const bool paused)
+	{
+		this->paused = paused;
+	}
+
+	void Reset()
+	{
+		Emulator::Reset(cc_false, std::size(cartridge_rom_buffer));
+	}
 };
 
 #endif // EMULATOR_WIDGET_H

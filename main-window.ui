@@ -20,7 +20,21 @@
      <height>434</height>
     </size>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout"/>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Load software using the menu above.</string>
+      </property>
+      <property name="scaledContents">
+       <bool>false</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -37,6 +51,9 @@
     </property>
     <addaction name="actionLoad_Cartridge_Software"/>
     <addaction name="actionUnload_Cartridge_File"/>
+    <addaction name="separator"/>
+    <addaction name="actionPause"/>
+    <addaction name="actionReset"/>
    </widget>
    <widget class="QMenu" name="menuDebugging">
     <property name="title">
@@ -78,6 +95,31 @@
    </property>
    <property name="text">
     <string>Unload Cartridge File</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionReset">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Reset</string>
+   </property>
+   <property name="shortcut">
+    <string>Tab</string>
    </property>
   </action>
  </widget>

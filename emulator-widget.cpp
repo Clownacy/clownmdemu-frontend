@@ -114,7 +114,7 @@ EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* 
 	setFocusPolicy(Qt::StrongFocus);
 
 	SetParameters(configuration, constant, state_buffer.Clear());
-	Reset(cc_false, cartridge_rom_buffer.size());
+	Reset();
 
 	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
@@ -286,12 +286,6 @@ bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)
 
 			if (pressed && paused)
 				Advance();
-
-			break;
-
-		case Qt::Key_Pause:
-			if (pressed)
-				paused = !paused;
 
 			break;
 

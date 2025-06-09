@@ -33,6 +33,7 @@ private:
 	Ui::MainWindow ui;
 	std::optional<EmulatorStuff> emulator_stuff;
 	About about = About(this);
+	QWidget *central_widget = nullptr;
 };
 
 #endif // MAINWINDOW_H
