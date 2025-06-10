@@ -25,24 +25,24 @@ cc_bool Emulator::Callback_InputRequested(void* const user_data, const cc_u8f pl
 	return static_cast<Emulator*>(user_data)->InputRequested(player_id, button_id);
 }
 
-void Emulator::Callback_FMAudioToBeGenerated(void* const user_data, [[maybe_unused]] const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Emulator::Callback_FMAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	static_cast<Emulator*>(user_data)->FMAudioToBeGenerated(total_frames, generate_fm_audio);
+	static_cast<Emulator*>(user_data)->FMAudioToBeGenerated(clownmdemu, total_frames, generate_fm_audio);
 }
 
-void Emulator::Callback_PSGAudioToBeGenerated(void* const user_data, [[maybe_unused]] const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Emulator::Callback_PSGAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	static_cast<Emulator*>(user_data)->PSGAudioToBeGenerated(total_frames, generate_psg_audio);
+	static_cast<Emulator*>(user_data)->PSGAudioToBeGenerated(clownmdemu, total_frames, generate_psg_audio);
 }
 
-void Emulator::Callback_PCMAudioToBeGenerated(void* const user_data, [[maybe_unused]] const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Emulator::Callback_PCMAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	static_cast<Emulator*>(user_data)->PCMAudioToBeGenerated(total_frames, generate_pcm_audio);
+	static_cast<Emulator*>(user_data)->PCMAudioToBeGenerated(clownmdemu, total_frames, generate_pcm_audio);
 }
 
-void Emulator::Callback_CDDAAudioToBeGenerated(void* const user_data, [[maybe_unused]] const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Emulator::Callback_CDDAAudioToBeGenerated(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	static_cast<Emulator*>(user_data)->CDDAAudioToBeGenerated(total_frames, generate_cdda_audio);
+	static_cast<Emulator*>(user_data)->CDDAAudioToBeGenerated(clownmdemu, total_frames, generate_cdda_audio);
 }
 
 void Emulator::Callback_CDSeeked(void* const user_data, const cc_u32f sector_index)

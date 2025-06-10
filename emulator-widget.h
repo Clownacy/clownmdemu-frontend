@@ -4,6 +4,7 @@
 #include <array>
 #include <optional>
 
+#include <QAudioSink>
 #include <QBasicTimer>
 #include <QByteArray>
 #include <QOpenGLBuffer>
@@ -14,6 +15,7 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
+#include "common/mixer.h"
 #include "emulator.h"
 
 class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator
@@ -110,6 +112,18 @@ protected:
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 	bool rewinding = false, fastforwarding = false, paused = false;
+	Mixer mixer;
+	QAudioSink audio_output = QAudioSink(
+		[]()
+		{
+			QAudioFormat format;
+			format.setSampleFormat(QAudioFormat::SampleFormat::Int16);
+			format.setSampleRate(MIXER_OUTPUT_SAMPLE_RATE);
+			format.setChannelCount(MIXER_CHANNEL_COUNT);
+			return format;
+		}()
+	);
+	QIODevice* const audio_output_device = audio_output.start();
 
 	// Emulator stuff.
 	unsigned char& AccessCartridgeBuffer(const std::size_t index)
@@ -124,10 +138,10 @@ protected:
 	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
 
-	void FMAudioToBeGenerated(std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	void PSGAudioToBeGenerated(std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	void PCMAudioToBeGenerated(std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	void CDDAAudioToBeGenerated(std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
+	void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
+	void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
+	void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
+	void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 
 	void CDSeeked(cc_u32f sector_index) override;
 	void CDSectorRead(cc_u16l *buffer) override;

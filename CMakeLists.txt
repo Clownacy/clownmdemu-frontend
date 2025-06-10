@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(clownmdemu-frontend-qt LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core OpenGL OpenGLWidgets Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Multimedia OpenGL OpenGLWidgets Widgets)
 
 qt_standard_project_setup()
 
@@ -31,6 +31,7 @@ set_target_properties(clownmdemu-frontend-qt PROPERTIES
 target_link_libraries(clownmdemu-frontend-qt
 	PRIVATE
 		Qt::Core
+		Qt::Multimedia
 		Qt::OpenGL
 		Qt::OpenGLWidgets
 		Qt::Widgets
