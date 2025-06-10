@@ -67,6 +67,8 @@
     </property>
     <addaction name="actionFullscreen"/>
     <addaction name="actionAbout"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
    </widget>
    <addaction name="menuSoftware"/>
    <addaction name="menuDebugging"/>
@@ -135,6 +137,11 @@
    </property>
    <property name="shortcut">
     <string>F11</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
    </property>
   </action>
  </widget>

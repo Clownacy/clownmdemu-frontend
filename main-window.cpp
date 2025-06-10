@@ -61,4 +61,5 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
 
 	connect(ui.actionAbout, &QAction::triggered, &about, &About::show);
+	connect(ui.actionExit, &QAction::triggered, this, &MainWindow::close);
 }
