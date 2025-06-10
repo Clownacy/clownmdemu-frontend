@@ -3,7 +3,7 @@
 
 #include "debug-cpu-common.h"
 
-#include "common/core/z80.h"
+#include "../common/core/z80.h"
 
 namespace Debug
 {

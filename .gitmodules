@@ -17,6 +17,3 @@
 [submodule "libraries/fmt"]
 	path = libraries/fmt
 	url = https://github.com/fmtlib/fmt
-[submodule "clownmdemu-frontend-common"]
-	path = qt/common
-	url = https://github.com/Clownacy/clownmdemu-frontend-common

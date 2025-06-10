@@ -37,7 +37,7 @@ target_link_libraries(clownmdemu-frontend-qt
 		Qt::Widgets
 )
 
-add_subdirectory("common" EXCLUDE_FROM_ALL)
+add_subdirectory("../common" EXCLUDE_FROM_ALL "common")
 target_link_libraries(clownmdemu-frontend-qt PRIVATE clownmdemu-frontend-common)
 
 qt_add_resources(clownmdemu-frontend-qt "shaders"

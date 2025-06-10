@@ -6,7 +6,7 @@
 #include <QMessageBox>
 
 #define MIXER_IMPLEMENTATION
-#include "common/mixer.h"
+#include "../common/mixer.h"
 
 struct Vertex
 {

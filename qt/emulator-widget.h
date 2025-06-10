@@ -15,7 +15,7 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
-#include "common/mixer.h"
+#include "../common/mixer.h"
 #include "emulator.h"
 
 class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator

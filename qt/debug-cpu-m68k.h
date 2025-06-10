@@ -3,7 +3,7 @@
 
 #include "debug-cpu-common.h"
 
-#include "common/core/clown68000/interpreter/clown68000.h"
+#include "../common/core/clown68000/interpreter/clown68000.h"
 
 namespace Debug
 {

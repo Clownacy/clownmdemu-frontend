@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <functional>
 
-#include "common/core/clownmdemu.h"
+#include "../common/core/clownmdemu.h"
 
 class Emulator
 {
