@@ -21,11 +21,10 @@ private:
 	std::array<cc_u32f, 0x10> rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
-	Mixer_State mixer;
+	Mixer mixer = Mixer(pal_mode);
 
 public:
 	AudioOutput();
-	~AudioOutput();
 	void MixerBegin();
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);

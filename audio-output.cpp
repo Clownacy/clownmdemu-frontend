@@ -25,18 +25,11 @@ static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 AudioOutput::AudioOutput()
 	: device(MIXER_CHANNEL_COUNT, MIXER_OUTPUT_SAMPLE_RATE)
 	, total_buffer_frames(BufferSizeFromSampleRate(MIXER_OUTPUT_SAMPLE_RATE))
-{
-	Mixer_Initialise(&mixer, pal_mode);
-}
-
-AudioOutput::~AudioOutput()
-{
-	Mixer_Deinitialise(&mixer);
-}
+{}
 
 void AudioOutput::MixerBegin()
 {
-	Mixer_Begin(&mixer);
+	mixer.Begin();
 }
 
 void AudioOutput::MixerEnd()
@@ -50,14 +43,13 @@ void AudioOutput::MixerEnd()
 	// If there is too much audio, just drop it because the dynamic rate control will be unable to handle it.
 	if (queued_frames < target_frames * 2)
 	{
-		const auto callback = [](void* const user_data, const cc_s16l* const audio_samples, const std::size_t total_frames)
-		{
-			AudioOutput *audio_output = static_cast<AudioOutput*>(user_data);
+		mixer.End(
+			[&](const cc_s16l* const audio_samples, const std::size_t total_frames)
+			{
+				device.QueueFrames(audio_samples, total_frames);
+			}
+		);
 
-			audio_output->device.QueueFrames(audio_samples, total_frames);
-		};
-
-		Mixer_End(&mixer, callback, this);
 
 		// Hans-Kristian Arntzen's Dynamic Rate Control formula.
 		// https://github.com/libretro/docs/blob/master/archive/ratecontrol.pdf
@@ -68,22 +60,22 @@ void AudioOutput::MixerEnd()
 
 cc_s16l* AudioOutput::MixerAllocateFMSamples(const std::size_t total_frames)
 {
-	return Mixer_AllocateFMSamples(&mixer, total_frames);
+	return mixer.AllocateFMSamples(total_frames);
 }
 
 cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_frames)
 {
-	return Mixer_AllocatePSGSamples(&mixer, total_frames);
+	return mixer.AllocatePSGSamples(total_frames);
 }
 
 cc_s16l* AudioOutput::MixerAllocatePCMSamples(const std::size_t total_frames)
 {
-	return Mixer_AllocatePCMSamples(&mixer, total_frames);
+	return mixer.AllocatePCMSamples(total_frames);
 }
 
 cc_s16l* AudioOutput::MixerAllocateCDDASamples(const std::size_t total_frames)
 {
-	return Mixer_AllocateCDDASamples(&mixer, total_frames);
+	return mixer.AllocateCDDASamples(total_frames);
 }
 
 cc_u32f AudioOutput::GetAverageFrames() const
@@ -94,6 +86,5 @@ cc_u32f AudioOutput::GetAverageFrames() const
 void AudioOutput::SetPALMode(const bool enabled)
 {
 	pal_mode = enabled;
-	Mixer_Deinitialise(&mixer);
-	Mixer_Initialise(&mixer, pal_mode);
+	mixer.SetPALMode(pal_mode);
 }
