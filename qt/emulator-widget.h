@@ -4,7 +4,6 @@
 #include <array>
 #include <optional>
 
-#include <QAudioSink>
 #include <QBasicTimer>
 #include <QByteArray>
 #include <QOpenGLBuffer>
@@ -15,7 +14,7 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
-#include "../common/mixer.h"
+#include "../audio-output.h"
 #include "emulator.h"
 
 class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator
@@ -112,18 +111,7 @@ protected:
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 	bool rewinding = false, fastforwarding = false, paused = false;
-	Mixer mixer;
-	QAudioSink audio_output = QAudioSink(
-		[]()
-		{
-			QAudioFormat format;
-			format.setSampleFormat(QAudioFormat::SampleFormat::Int16);
-			format.setSampleRate(MIXER_OUTPUT_SAMPLE_RATE);
-			format.setChannelCount(MIXER_CHANNEL_COUNT);
-			return format;
-		}()
-	);
-	QIODevice* const audio_output_device = audio_output.start();
+	AudioOutput audio_output;
 
 	// Emulator stuff.
 	unsigned char& AccessCartridgeBuffer(const std::size_t index)

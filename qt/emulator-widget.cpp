@@ -5,9 +5,6 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 
-#define MIXER_IMPLEMENTATION
-#include "../common/mixer.h"
-
 struct Vertex
 {
 	std::array<GLbyte, 2> position;
@@ -112,7 +109,6 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
 	, cartridge_rom_buffer(cartridge_rom_buffer)
-	, mixer(false)
 {
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
@@ -179,22 +175,22 @@ cc_bool EmulatorWidget::InputRequested(const cc_u8f player_id, const ClownMDEmu_
 
 void EmulatorWidget::FMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	generate_fm_audio(clownmdemu, mixer.AllocateFMSamples(total_frames), total_frames);
+	generate_fm_audio(clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
 }
 
 void EmulatorWidget::PSGAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	generate_psg_audio(clownmdemu, mixer.AllocatePSGSamples(total_frames), total_frames);
+	generate_psg_audio(clownmdemu, audio_output.MixerAllocatePSGSamples(total_frames), total_frames);
 }
 
 void EmulatorWidget::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	generate_pcm_audio(clownmdemu, mixer.AllocatePCMSamples(total_frames), total_frames);
+	generate_pcm_audio(clownmdemu, audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
 }
 
 void EmulatorWidget::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	generate_cdda_audio(clownmdemu, mixer.AllocateCDDASamples(total_frames), total_frames);
+	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
 }
 
 void EmulatorWidget::CDSeeked(const cc_u32f sector_index)
@@ -316,20 +312,9 @@ void EmulatorWidget::Advance()
 
 	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
 	{
-		mixer.Begin();
+		audio_output.MixerBegin();
 		Iterate();
-		mixer.End(
-			[this](const cc_s16l* const audio_samples, const std::size_t total_frames)
-			{
-				constexpr qsizetype size_of_frame = MIXER_CHANNEL_COUNT * sizeof(*audio_samples);
-
-				// TODO: This threshold is a placeholder.
-				if (audio_output_device->bytesAvailable() >= MIXER_OUTPUT_SAMPLE_RATE / 60 * size_of_frame)
-					return;
-
-				audio_output_device->write(reinterpret_cast<const char*>(audio_samples), total_frames * size_of_frame);
-			}
-		);
+		audio_output.MixerEnd();
 	}
 
 	makeCurrent();

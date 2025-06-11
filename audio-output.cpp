@@ -50,7 +50,6 @@ void AudioOutput::MixerEnd()
 			}
 		);
 
-
 		// Hans-Kristian Arntzen's Dynamic Rate Control formula.
 		// https://github.com/libretro/docs/blob/master/archive/ratecontrol.pdf
 		const cc_u32f divisor = target_frames * 0x100; // The number here is the inverse of the formula's 'd' value.

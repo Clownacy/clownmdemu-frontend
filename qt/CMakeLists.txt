@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(clownmdemu-frontend-qt LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Multimedia OpenGL OpenGLWidgets Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core OpenGL OpenGLWidgets Widgets)
 
 qt_standard_project_setup()
 
@@ -21,7 +21,9 @@ qt_add_executable(clownmdemu-frontend-qt
 	debug-cpu-z80.cpp
 	debug-cpu-z80.h
 	about.h about.cpp about.ui
-
+	../audio-device.cpp ../audio-device.h
+	../audio-output.cpp ../audio-output.h
+	../raii-wrapper.h ../sdl-wrapper.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
@@ -31,7 +33,6 @@ set_target_properties(clownmdemu-frontend-qt PROPERTIES
 target_link_libraries(clownmdemu-frontend-qt
 	PRIVATE
 		Qt::Core
-		Qt::Multimedia
 		Qt::OpenGL
 		Qt::OpenGLWidgets
 		Qt::Widgets
@@ -39,6 +40,17 @@ target_link_libraries(clownmdemu-frontend-qt
 
 add_subdirectory("../common" EXCLUDE_FROM_ALL "common")
 target_link_libraries(clownmdemu-frontend-qt PRIVATE clownmdemu-frontend-common)
+
+# Link SDL
+find_package(SDL3 3.1.3 CONFIG COMPONENTS SDL3)
+if(SDL3_FOUND)
+	target_link_libraries(clownmdemu-frontend-qt PRIVATE SDL3::SDL3)
+else()
+	set(SDL_STATIC ON)
+	set(SDL_SHARED OFF)
+	add_subdirectory("../libraries/SDL" EXCLUDE_FROM_ALL "SDL")
+	target_link_libraries(clownmdemu-frontend-qt PRIVATE SDL3::SDL3-static)
+endif()
 
 qt_add_resources(clownmdemu-frontend-qt "shaders"
 	PREFIX
