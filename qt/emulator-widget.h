@@ -69,7 +69,8 @@ protected:
 
 		[[nodiscard]] bool Exhausted() const
 		{
-			return state_buffer_remaining == 0;
+			// We need at least two frames, because rewinding pops one frame and then samples the frame below the head.
+			return state_buffer_remaining < 2;
 		}
 
 		[[nodiscard]] State& GetForward()
