@@ -61,7 +61,7 @@ void EmulatorWidget::initializeGL()
 
 	texture.setFormat(QOpenGLTexture::RGBFormat);
 	texture.setMinificationFilter(QOpenGLTexture::Nearest);
-	texture.setMagnificationFilter(QOpenGLTexture::Nearest);
+	texture.setMagnificationFilter(QOpenGLTexture::Linear);
 	texture.setSize(texture_buffer_width, texture_buffer_height);
 	texture.allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5);
 
@@ -96,8 +96,7 @@ void EmulatorWidget::paintGL()
 	}
 
 #define SET_UNIFORM_AND_INVERSE(NAME, X, Y) \
-	shader_program->setUniformValue(NAME, QVector2D(X, Y)); \
-	shader_program->setUniformValue("Inverse" NAME, QVector2D(1.0f / (X), 1.0f / (Y)))
+	shader_program->setUniformValue(NAME, QVector2D(X, Y))
 
 	SET_UNIFORM_AND_INVERSE("OutputSize", output_width, output_height);
 	SET_UNIFORM_AND_INVERSE("OutputSizeAspectCorrected", aspect_correct_width, aspect_correct_height);
