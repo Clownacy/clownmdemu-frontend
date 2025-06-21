@@ -298,20 +298,20 @@ bool EmulatorWidget::DoButton(QKeyEvent* const event, const bool pressed)
 
 void EmulatorWidget::Advance()
 {
-	if (rewinding)
-	{
-		if (state_buffer.Exhausted())
-			return;
-
-		SetParameters(configuration, constant, state_buffer.GetBackward());
-	}
-	else
-	{
-		SetParameters(configuration, constant, state_buffer.GetForward());
-	}
-
 	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
 	{
+		if (rewinding)
+		{
+			if (state_buffer.Exhausted())
+				return;
+
+			SetParameters(configuration, constant, state_buffer.GetBackward());
+		}
+		else
+		{
+			SetParameters(configuration, constant, state_buffer.GetForward());
+		}
+
 		audio_output.MixerBegin();
 		Iterate();
 		audio_output.MixerEnd();
