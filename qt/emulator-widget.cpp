@@ -8,17 +8,16 @@
 struct Vertex
 {
 	std::array<GLbyte, 2> position;
-	std::array<GLubyte, 2> texture_coordinate;
 };
 
 EmulatorWidget::Configuration EmulatorWidget::configuration;
 EmulatorWidget::Constant EmulatorWidget::constant;
 
 static constexpr auto vertices = std::to_array<Vertex>({
-	{{-0x80, -0x80}, {0x00, 0xFF}},
-	{{ 0x7F, -0x80}, {0xFF, 0xFF}},
-	{{-0x80,  0x7F}, {0x00, 0x00}},
-	{{ 0x7F,  0x7F}, {0xFF, 0x00}}
+	{{-0x80, -0x80}},
+	{{ 0x7F, -0x80}},
+	{{-0x80,  0x7F}},
+	{{ 0x7F,  0x7F}}
 });
 
 static constexpr const char *attribute_name_vertex_position = "vertex_position";
@@ -54,7 +53,6 @@ void EmulatorWidget::initializeGL()
 #define SetAttributeBuffer(PROGRAM, LOCATION, TYPE, STRUCT, MEMBER) (PROGRAM)->setAttributeBuffer(LOCATION, TYPE, offsetof(STRUCT, MEMBER), sizeof(STRUCT::MEMBER) / sizeof(STRUCT::MEMBER[0]), sizeof(STRUCT))
 
 	SetAttributeBuffer(shader_program, attribute_name_vertex_position, GL_BYTE, Vertex, position);
-	SetAttributeBuffer(shader_program, attribute_name_vertex_texture_coordinate, GL_UNSIGNED_BYTE, Vertex, texture_coordinate);
 
 #undef SetAttributeBuffer
 
@@ -80,7 +78,31 @@ void EmulatorWidget::paintGL()
 
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
-	shader_program->setUniformValue("texture_coordinate_scale", QVector2D(screen_width, screen_height) / QVector2D(texture_buffer_width, texture_buffer_height));
+
+	const cc_u16f output_width = width() * devicePixelRatio();
+	const cc_u16f output_height = height() * devicePixelRatio();
+
+	cc_u16f aspect_correct_width, aspect_correct_height;
+
+	if (static_cast<float>(output_width) / output_height > static_cast<float>(screen_width) / screen_height)
+	{
+		aspect_correct_height = output_height;
+		aspect_correct_width = output_height * screen_width / screen_height;
+	}
+	else
+	{
+		aspect_correct_width = output_width;
+		aspect_correct_height = output_width * screen_height / screen_width;
+	}
+
+#define SET_UNIFORM_AND_INVERSE(NAME, X, Y) \
+	shader_program->setUniformValue(NAME, QVector2D(X, Y)); \
+	shader_program->setUniformValue("Inverse" NAME, QVector2D(1.0f / (X), 1.0f / (Y)))
+
+	SET_UNIFORM_AND_INVERSE("OutputSize", output_width, output_height);
+	SET_UNIFORM_AND_INVERSE("OutputSizeAspectCorrected", aspect_correct_width, aspect_correct_height);
+	SET_UNIFORM_AND_INVERSE("TextureSize", texture_buffer_width, texture_buffer_height);
+	SET_UNIFORM_AND_INVERSE("InputSize", screen_width, screen_height);
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));

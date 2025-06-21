@@ -96,19 +96,21 @@ protected:
 	static constexpr auto texture_buffer_width = 320;
 	static constexpr auto texture_buffer_height = 480;
 
+	using Colour = GLushort;
+
 	QBasicTimer timer;
 
 	std::optional<QOpenGLShaderProgram> shader_program;
 	QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
 	QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
-	std::array<std::array<GLushort, texture_buffer_width>, texture_buffer_height> texture_buffer;
+	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	static Configuration configuration;
 	static Constant constant;
 	StateRingBuffer state_buffer = StateRingBuffer(10 * 60); // 10 seconds
 
 	QByteArray cartridge_rom_buffer;
-	std::array<GLushort, VDP_TOTAL_COLOURS> palette = {};
+	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 	bool rewinding = false, fastforwarding = false, paused = false;
