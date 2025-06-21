@@ -104,7 +104,7 @@ protected:
 
 	static Configuration configuration;
 	static Constant constant;
-	StateRingBuffer state_buffer = StateRingBuffer(60);
+	StateRingBuffer state_buffer = StateRingBuffer(10 * 60); // 10 seconds
 
 	QByteArray cartridge_rom_buffer;
 	std::array<GLushort, VDP_TOTAL_COLOURS> palette = {};
