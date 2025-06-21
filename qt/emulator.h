@@ -4,7 +4,9 @@
 #include <cassert>
 #include <cstdarg>
 #include <cstddef>
+#include <cstdio>
 #include <functional>
+#include <string>
 
 #include "../common/core/clownmdemu.h"
 
@@ -45,7 +47,8 @@ public:
 			}
 	};
 
-	using LogCallback = std::function<void(const char *format, std::va_list arg)>;
+	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
+	using LogCallbackPlain = std::function<void(const std::string &message)>;
 
 protected:
 	class Parameters
@@ -104,6 +107,7 @@ protected:
 	};
 
 	Parameters parameters;
+	LogCallbackFormatted log_callback;
 
 	static cc_u8f Callback_CartridgeRead(void *user_data, cc_u32f address);
 	static void Callback_CartridgeWritten(void *user_data, cc_u32f address, cc_u8f value);
@@ -155,7 +159,7 @@ protected:
 
 	static void LogCallbackWrapper(void* const user_data, const char *format, std::va_list arg)
 	{
-		(*static_cast<const LogCallback*>(user_data))(format, arg);
+		(*static_cast<const LogCallbackFormatted*>(user_data))(format, arg);
 	}
 
 public:
@@ -176,9 +180,26 @@ public:
 		ClownMDEmu_Iterate(&*parameters);
 	}
 
-	void SetLogCallback(const LogCallback &callback)
+	void SetLogCallback(const LogCallbackFormatted &callback)
 	{
-		ClownMDEmu_SetLogCallback(&LogCallbackWrapper, &callback);
+		log_callback = callback;
+		ClownMDEmu_SetLogCallback(&LogCallbackWrapper, &log_callback);
+	}
+
+	void SetLogCallback(const LogCallbackPlain &callback)
+	{
+		SetLogCallback(
+			[=](const char* const format, std::va_list arg)
+			{
+				std::va_list arg_copy;
+				va_copy(arg_copy, arg);
+				std::string string(std::vsnprintf(nullptr, 0, format, arg_copy), '\0');
+				va_end(arg_copy);
+
+				std::vsnprintf(std::data(string), std::size(string) + 1, format, arg);
+				callback(string);
+			}
+		);
 	}
 
 	const auto& GetState() const

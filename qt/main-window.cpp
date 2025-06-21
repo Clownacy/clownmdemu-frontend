@@ -1,5 +1,6 @@
 #include "main-window.h"
 
+#include <QDebug>
 #include <QFileDialog>
 #include <QLayout>
 
@@ -40,6 +41,13 @@ MainWindow::MainWindow(QWidget *parent)
 					connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &emulator_stuff->debug_cpu, &Debug::CPU::Dialog::StateChanged);
 
 					DoActionEnablement(true);
+
+					emulator_stuff->emulator.SetLogCallback(
+						[](const std::string &message)
+						{
+							qDebug() << message;
+						}
+					);
 				}, this
 			);
 		}
