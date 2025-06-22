@@ -59,8 +59,9 @@ void EmulatorWidget::initializeGL()
 	if (!texture.create())
 		DisplayError("create screen texture");
 
+	texture.setAutoMipMapGenerationEnabled(false);
 	texture.setFormat(QOpenGLTexture::RGBFormat);
-	texture.setMinificationFilter(QOpenGLTexture::Nearest);
+	texture.setMinificationFilter(QOpenGLTexture::Linear);
 	texture.setMagnificationFilter(QOpenGLTexture::Linear);
 	texture.setSize(texture_buffer_width, texture_buffer_height);
 	texture.allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5);
