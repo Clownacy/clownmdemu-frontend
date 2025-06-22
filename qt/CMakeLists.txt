@@ -65,6 +65,15 @@ qt_add_resources(clownmdemu-frontend-qt "shaders"
 		"fragment.glsl"
 )
 
+qt_add_resources(clownmdemu-frontend-qt "icons"
+	PREFIX
+		"/"
+	BASE
+		"../assets/icon/"
+	FILES
+		"../assets/icon/icon-512.png"
+)
+
 # Deployment
 
 include(GNUInstallDirs)
