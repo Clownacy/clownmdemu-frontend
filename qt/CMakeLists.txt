@@ -38,6 +38,11 @@ target_link_libraries(clownmdemu-frontend-qt
 		Qt::Widgets
 )
 
+# Add the Windows icon.
+if(WIN32)
+	target_sources(clownmdemu-frontend-qt PRIVATE "../assets/clownmdemu.rc")
+endif()
+
 add_subdirectory("../common" EXCLUDE_FROM_ALL "common")
 target_link_libraries(clownmdemu-frontend-qt PRIVATE clownmdemu-frontend-common)
 
