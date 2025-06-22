@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="build/Qt6-Debug/.qt/rcc/icons.qrc">
-    <normaloff>:/icon-512.png</normaloff>:/icon-512.png</iconset>
+    <normaloff>:/icon-qt.png</normaloff>:/icon-qt.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">

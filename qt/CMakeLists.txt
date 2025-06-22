@@ -71,7 +71,7 @@ qt_add_resources(clownmdemu-frontend-qt "icons"
 	BASE
 		"../assets/icon/"
 	FILES
-		"../assets/icon/icon-512.png"
+		"../assets/icon/icon-qt.png"
 )
 
 # Deployment

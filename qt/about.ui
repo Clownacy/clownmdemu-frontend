@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>200</height>
+    <height>400</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,7 +29,7 @@
       <enum>Qt::ContextMenuPolicy::DefaultContextMenu</enum>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h3 style=&quot; margin-top:14px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:large; font-weight:700;&quot;&gt;ClownMDEmu [VERSION]&lt;/span&gt;&lt;/h3&gt;&lt;p&gt;This is a Sega Mega Drive (A.K.A. Sega Genesis) emulator. Created by Clownacy.&lt;/p&gt;&lt;p&gt;ClownMDEmu is Free Software, released under the terms of the Affero General Public License (version 3 or later).&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://github.com/Clownacy/clownmdemu-core&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#8ab4f8;&quot;&gt;GitHub (Core)&lt;/span&gt;&lt;/a&gt; - &lt;a href=&quot;https://github.com/Clownacy/clownmdemu-frontend-qt&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#8ab4f8;&quot;&gt;GitHub (Frontend)&lt;/span&gt;&lt;/a&gt; - &lt;a href=&quot;https://clownacy.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#8ab4f8;&quot;&gt;Website&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;img src=&quot;:/icon-qt.png&quot; width=&quot;200&quot;/&gt;&lt;br/&gt;&lt;span style=&quot; font-size:14pt; font-weight:700;&quot;&gt;ClownMDEmu [VERSION]&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;This is a Sega Mega Drive (A.K.A. Sega Genesis) emulator.&lt;br/&gt;Created by Clownacy.&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;ClownMDEmu is Free Software, released under the terms&lt;br/&gt;of the Affero General Public License (version 3 or later).&lt;/p&gt;&lt;p align=&quot;center&quot;&gt;&lt;a href=&quot;https://github.com/Clownacy/clownmdemu-core&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#8ab4f8;&quot;&gt;GitHub (Core)&lt;/span&gt;&lt;/a&gt; - &lt;a href=&quot;https://github.com/Clownacy/clownmdemu-frontend-qt&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#8ab4f8;&quot;&gt;GitHub (Frontend)&lt;/span&gt;&lt;/a&gt; - &lt;a href=&quot;https://clownacy.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#8ab4f8;&quot;&gt;Website&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>
