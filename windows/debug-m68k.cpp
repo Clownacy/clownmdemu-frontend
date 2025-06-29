@@ -6,7 +6,7 @@
 
 void DebugM68k::Registers::DisplayInternal(const Clown68000_State &m68k)
 {
-	ImGui::PushFont(GetMonospaceFont(), GetMonospaceFont()->LegacySize);
+	ImGui::PushFont(GetMonospaceFont());
 
 	for (cc_u8f i = 0; i < 8; ++i)
 	{

@@ -31,7 +31,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Frequency");
 
-		ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
@@ -42,7 +42,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Feedback");
 
-		ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
@@ -53,7 +53,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Algorithm");
 
-		ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
@@ -90,7 +90,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Amplitude Modulation Sensitivity");
 
-		ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
@@ -118,7 +118,7 @@ void DebugFM::Registers::DisplayInternal()
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted("Phase Modulation Sensitivity");
 
-		ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+		ImGui::PushFont(monospace_font);
 		for (const auto &channel : fm.channels)
 		{
 			ImGui::TableNextColumn();
@@ -165,7 +165,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Detune");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -177,7 +177,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Multiplier");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -189,7 +189,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Total Level");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -201,7 +201,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Key Scale");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						static const std::array<cc_u8l, 8> decode = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
@@ -215,7 +215,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Attack Rate");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -227,7 +227,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Decay Rate");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -239,7 +239,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Sustain Rate");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -251,7 +251,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Release Rate");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -263,7 +263,7 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted("Sustain Level");
 
-					ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
 						ImGui::TableNextColumn();
@@ -287,7 +287,7 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted(label);
 
-						ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+						ImGui::PushFont(monospace_font);
 						for (const auto &op : channel.state.operators)
 						{
 							ImGui::TableNextColumn();
@@ -307,7 +307,7 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::TableNextColumn();
 						ImGui::TextUnformatted("Frequency");
 
-						ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+						ImGui::PushFont(monospace_font);
 						for (const auto &frequency : fm.channel_3_metadata.frequencies)
 						{
 							ImGui::TableNextColumn();
@@ -346,7 +346,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Sample");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:03X}", fm.dac_sample);
 			ImGui::PopFont();
@@ -382,7 +382,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Cached Counter");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			for (const auto &timer : fm.timers)
 			{
 				ImGui::TableNextColumn();
@@ -393,7 +393,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Active Counter");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			for (const auto &timer : fm.timers)
 			{
 				ImGui::TableNextColumn();
@@ -425,7 +425,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Latched Address");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:02X}", fm.address);
 			ImGui::PopFont();
@@ -433,7 +433,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Latched Port");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("{}", fm.port / 3);
 			ImGui::PopFont();
@@ -441,7 +441,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Status");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:02X}", fm.status);
 			ImGui::PopFont();
@@ -459,7 +459,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("LFO Frequency");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("{}", fm.lfo.frequency);
 			ImGui::PopFont();
@@ -467,7 +467,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Frequency Cache");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:02X}", fm.cached_upper_frequency_bits);
 			ImGui::PopFont();
@@ -475,7 +475,7 @@ void DebugFM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Multi-Frequency Cache");
 
-			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
+			ImGui::PushFont(monospace_font);
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:02X}", fm.cached_upper_frequency_bits_fm3_multi_frequency);
 			ImGui::PopFont();

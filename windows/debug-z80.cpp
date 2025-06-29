@@ -8,7 +8,7 @@ void DebugZ80::Registers::DisplayInternal()
 {
 	const Z80_State &z80 = Frontend::emulator->CurrentState().clownmdemu.z80.state;
 
-	ImGui::PushFont(GetMonospaceFont(), GetMonospaceFont()->LegacySize);
+	ImGui::PushFont(GetMonospaceFont());
 
 	ImGui::TextFormatted("Normal: A:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} F:{:02X} H:{:02X} L:{:02X}", z80.a, z80.b, z80.c, z80.d, z80.e, z80.f, z80.h, z80.l);
 	ImGui::Separator();

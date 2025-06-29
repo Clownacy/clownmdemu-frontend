@@ -28,6 +28,7 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 	ImGuiIO &io = ImGui::GetIO();
 
 	io.Fonts->Clear();
+	ImGui_ImplSDLRenderer3_DestroyFontsTexture();
 
 	ImFontConfig font_cfg;
 	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Noto Sans Regular, {}px", font_size).out = '\0';
