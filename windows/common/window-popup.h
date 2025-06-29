@@ -79,7 +79,7 @@ protected:
 		ImGui::TextUnformatted(label);
 		ImGui::TableNextColumn();
 		if (font != nullptr)
-			ImGui::PushFont(font);
+			ImGui::PushFont(font, font->LegacySize);
 		callback();
 		if (font != nullptr)
 			ImGui::PopFont();

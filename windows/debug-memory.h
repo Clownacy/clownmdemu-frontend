@@ -87,7 +87,7 @@ private:
 		if (IsResizeable())
 			ImGui::BeginChild("Memory contents");
 
-		ImGui::PushFont(GetMonospaceFont());
+		ImGui::PushFont(GetMonospaceFont(), GetMonospaceFont()->LegacySize);
 
 		const auto bytes_per_line = 0x10;
 		const auto values_per_line = bytes_per_line / bytes_per_value;

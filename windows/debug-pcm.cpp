@@ -30,7 +30,7 @@ void DebugPCM::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted(channel.disabled ? "No" : "Yes");
 
-			ImGui::PushFont(GetMonospaceFont());
+			ImGui::PushFont(GetMonospaceFont(), GetMonospaceFont()->LegacySize);
 
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:04X} ({:5}Hz)", channel.frequency, channel.frequency * CLOWNMDEMU_PCM_SAMPLE_RATE / 0x800);

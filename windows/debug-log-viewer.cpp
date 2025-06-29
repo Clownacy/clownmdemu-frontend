@@ -11,7 +11,7 @@ void DebugLogViewer::DisplayInternal()
 	if (ImGui::Button("Clear"))
 		Frontend::debug_log.lines.clear();
 
-	ImGui::PushFont(GetMonospaceFont());
+	ImGui::PushFont(GetMonospaceFont(), GetMonospaceFont()->LegacySize);
 	ImGui::InputTextMultiline("##log", &Frontend::debug_log.lines[0], Frontend::debug_log.lines.length() + 1, ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly);
 
 	ImGui::PopFont();

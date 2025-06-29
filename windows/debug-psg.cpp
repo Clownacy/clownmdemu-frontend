@@ -50,7 +50,7 @@ void DebugPSG::Registers::DisplayInternal()
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("Tone {}", i + 1);
 
-			ImGui::PushFont(monospace_font);
+			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
 
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("0x{:03X} ({:6}Hz)", tone.countdown_master, tone.countdown_master == 0 ? 0 : psg_clock / tone.countdown_master / 2);
@@ -89,7 +89,7 @@ void DebugPSG::Registers::DisplayInternal()
 				break;
 		}
 
-		ImGui::PushFont(monospace_font);
+		ImGui::PushFont(monospace_font, monospace_font->LegacySize);
 
 		ImGui::TableNextColumn();
 

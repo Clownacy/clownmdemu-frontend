@@ -143,7 +143,7 @@ private:
 
 		const auto DoLicence = [&monospace_font]<std::size_t S>(const std::array<char, S> &text)
 		{
-			ImGui::PushFont(monospace_font);
+			ImGui::PushFont(monospace_font, monospace_font->LegacySize);
 			ImGui::TextUnformatted(&text.front(), &text.back());
 			ImGui::PopFont();
 		};
@@ -2604,7 +2604,7 @@ void Frontend::Update()
 			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
 			// Draw the upscaled framebuffer in the window.
-			ImGui::Image(window->framebuffer_texture, ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
+			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 		}
 	}
 
