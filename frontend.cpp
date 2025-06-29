@@ -2604,7 +2604,7 @@ void Frontend::Update()
 			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
 			// Draw the upscaled framebuffer in the window.
-			ImGui::Image(window->framebuffer_texture.get(), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
+			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 		}
 	}
 

@@ -24,10 +24,8 @@ add_executable(clownmdemu WIN32
 	"file-utilities.h"
 	"frontend.cpp"
 	"frontend.h"
-	"imgui-configuration.h"
 	"raii-wrapper.h"
 	"sdl-wrapper.h"
-	"sdl-wrapper-inner.h"
 	"text-encoding.cpp"
 	"text-encoding.h"
 	"common/cd-reader.c"
@@ -141,8 +139,11 @@ endif()
 # Disable development stuff in non-development builds
 target_compile_definitions(clownmdemu PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
 
-# Apply customisations.
-target_compile_definitions(clownmdemu PRIVATE "IMGUI_USER_CONFIG=\"../../imgui-configuration.h\"")
+# Disable some deprecated junk in Dear ImGui
+target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
+
+# 'ImTextureID' needs to be a pointer, not an integer
+target_compile_definitions(clownmdemu PRIVATE ImTextureID=void*)
 
 # Dear ImGui needs these directories in the include path
 target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui/backends")
