@@ -408,7 +408,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(ImTextureRef(textures[0]), ImVec2(map_width_in_pixels * scale, map_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
+			ImGui::Image(textures[0].get(), ImVec2(map_width_in_pixels * scale, map_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -421,7 +421,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 				const auto dpi_scale = derived->GetWindow().GetDPIScale();
 				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
-				ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
+				ImGui::Image(textures[0].get(), ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
 				ImGui::SameLine();
 				piece_tooltip(piece_x, piece_y);
 				ImGui::EndTooltip();
@@ -649,7 +649,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 		const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-		ImGui::Image(ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+		ImGui::Image(texture.get(), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
 
 		if (ImGui::IsItemHovered())
 		{
@@ -711,7 +711,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 			const auto cursor_position = ImGui::GetCursorPos();
 			ImGui::Dummy(image_space);
 			ImGui::SetCursorPos(cursor_position + image_offset);
-			ImGui::Image(ImTextureRef(textures[index]), image_size, ImVec2(0, 0), image_size / image_internal_size);
+			ImGui::Image(textures[index].get(), image_size, ImVec2(0, 0), image_size / image_internal_size);
 		});
 
 		EverySprite("Position", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
@@ -842,7 +842,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 					const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
 
 					// Finally, display the tile.
-					draw_list->AddImage(ImTextureRef(regenerating_pieces.textures[0]), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
+					draw_list->AddImage(regenerating_pieces.textures[0].get(), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
 
 					if (window_is_hovered && ImGui::IsMouseHoveringRect(piece_boundary_position_top_left, piece_boundary_position_bottom_right))
 					{
@@ -855,7 +855,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 						if (destination_piece_size.x < 16 || destination_piece_size.y < 16)
 						{
 							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-							ImGui::Image(ImTextureRef(regenerating_pieces.textures[0]), ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
+							ImGui::Image(regenerating_pieces.textures[0].get(), ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
 						}
 
 						ImGui::EndTooltip();
