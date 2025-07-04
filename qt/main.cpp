@@ -10,17 +10,16 @@ int main(int argc, char *argv[])
 	SDL_Init(SDL_INIT_AUDIO);
 
 	const auto result = [&](){
+		// Let Qt decide our OpenGL version, since our renderer can adapt.
 		QSurfaceFormat format;
-	#if 1
 	#ifndef NDEBUG
 		format.setOption(QSurfaceFormat::DebugContext);
 	#endif
-		format.setProfile(QSurfaceFormat::CoreProfile);
-		format.setRenderableType(QSurfaceFormat::OpenGLES);
+		format.setProfile(QSurfaceFormat::NoProfile);
+		format.setRenderableType(QSurfaceFormat::DefaultRenderableType);
 		format.setSwapBehavior(QSurfaceFormat::SwapBehavior::DoubleBuffer);
 		format.setSwapInterval(1);
-		format.setVersion(2, 0);
-	#endif
+
 		QSurfaceFormat::setDefaultFormat(format);
 		QApplication a(argc, argv);
 		MainWindow w;

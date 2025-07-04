@@ -64,7 +64,8 @@ protected:
 		{
 			state_buffer_index = 0;
 			state_buffer_remaining = 0;
-			return state_buffer[state_buffer_index] = {};
+			state_buffer[state_buffer_index].Initialise();
+			return state_buffer[state_buffer_index];
 		}
 
 		[[nodiscard]] bool Exhausted() const
@@ -101,6 +102,7 @@ protected:
 	QBasicTimer timer;
 
 	std::optional<QOpenGLShaderProgram> shader_program;
+	QOpenGLVertexArrayObject  vertex_array_object;
 	QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
 	QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;

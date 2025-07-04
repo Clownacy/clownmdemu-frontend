@@ -19,10 +19,8 @@ public:
 
 		public:
 			Configuration()
-			{
-				// Default-initialise the underlying struct.
-				*static_cast<ClownMDEmu_Configuration*>(this) = {};
-			}
+				: ClownMDEmu_Configuration({})
+			{}
 	};
 
 	class Constant : protected ClownMDEmu_Constant
@@ -31,6 +29,11 @@ public:
 
 		public:
 			Constant()
+			{
+				Initialise();
+			}
+
+			void Initialise()
 			{
 				ClownMDEmu_Constant_Initialise(this);
 			}
@@ -42,6 +45,11 @@ public:
 
 		public:
 			State()
+			{
+				Initialise();
+			}
+
+			void Initialise()
 			{
 				ClownMDEmu_State_Initialise(this);
 			}

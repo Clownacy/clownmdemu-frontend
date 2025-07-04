@@ -27,21 +27,30 @@ void EmulatorWidget::initializeGL()
 {
 	initializeOpenGLFunctions();
 
-#define DisplayError(MESSAGE) QMessageBox::critical(this, "Fatal Error", "Failed to " MESSAGE "; emulator will not be displayed!")
+#define DisplayError2(MESSAGE, EXTRA) QMessageBox::critical(this, "Fatal Error", "Failed to " MESSAGE "; emulator will not be displayed!" EXTRA)
+#define DisplayError(MESSAGE) DisplayError2(MESSAGE, )
 
 	shader_program.emplace();
 
 	if (!shader_program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/vertex.glsl"))
-		DisplayError("load vertex shader");
+		DisplayError2("load vertex shader", "\n" + shader_program->log());
 
 	if (!shader_program->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/fragment.glsl"))
-		DisplayError("load fragment shader");
+		DisplayError2("load fragment shader", "\n" + shader_program->log());
 
 	if (!shader_program->link())
 		DisplayError("link shader program");
 
 	if (!shader_program->bind())
 		DisplayError("bind shader program");
+
+	if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL)
+	{
+		if (!vertex_array_object.create())
+			DisplayError("create vertex array object");
+
+		vertex_array_object.bind();
+	}
 
 	if (!vertex_buffer_object.create())
 		DisplayError("create vertex buffer object");
@@ -67,6 +76,8 @@ void EmulatorWidget::initializeGL()
 	texture.allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt16_R5G6B5);
 
 #undef DisplayError
+
+	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
 void EmulatorWidget::paintGL()
@@ -135,10 +146,9 @@ EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* 
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
 
+	// Initialise the emulator.
 	SetParameters(configuration, constant, state_buffer.Clear());
 	Reset();
-
-	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
 cc_u8f EmulatorWidget::CartridgeRead(const cc_u32f address)

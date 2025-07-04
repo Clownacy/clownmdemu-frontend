@@ -23,7 +23,7 @@ uniform COMPAT_PRECISION vec2 OutputSize;
 uniform COMPAT_PRECISION vec2 OutputSizeAspectCorrected;
 uniform COMPAT_PRECISION vec2 TextureSize;
 uniform COMPAT_PRECISION vec2 InputSize;
-uniform sampler2D texture;
+uniform sampler2D Texture0;
 
 void main()
 {
@@ -70,6 +70,6 @@ void main()
 		interpolated_texture_coordinate -= weight;
 
 		// Finally, sample the texture. The bilinear filter will ensure that uneven texels will have a smooth edge.
-		FragColor = COMPAT_TEXTURE(texture, interpolated_texture_coordinate / TextureSize);
+		FragColor = COMPAT_TEXTURE(Texture0, interpolated_texture_coordinate / TextureSize);
 	}
 }
