@@ -107,13 +107,10 @@ void EmulatorWidget::paintGL()
 		aspect_correct_height = output_width * screen_height / screen_width;
 	}
 
-#define SET_UNIFORM_AND_INVERSE(NAME, X, Y) \
-	shader_program->setUniformValue(NAME, QVector2D(X, Y))
-
-	SET_UNIFORM_AND_INVERSE("OutputSize", output_width, output_height);
-	SET_UNIFORM_AND_INVERSE("OutputSizeAspectCorrected", aspect_correct_width, aspect_correct_height);
-	SET_UNIFORM_AND_INVERSE("TextureSize", texture_buffer_width, texture_buffer_height);
-	SET_UNIFORM_AND_INVERSE("InputSize", screen_width, screen_height);
+	shader_program->setUniformValue("OutputSize", QVector2D(output_width, output_height));
+	shader_program->setUniformValue("OutputSizeAspectCorrected", QVector2D(aspect_correct_width, aspect_correct_height));
+	shader_program->setUniformValue("TextureSize", QVector2D(texture_buffer_width, texture_buffer_height));
+	shader_program->setUniformValue("InputSize", QVector2D(screen_width, screen_height));
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));
