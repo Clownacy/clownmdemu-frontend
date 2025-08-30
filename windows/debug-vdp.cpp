@@ -613,8 +613,8 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		const SDL_FRect visible_area_rectangle = {
 			static_cast<float>(0x80),
 			static_cast<float>(0x80 * vertical_scale),
-			static_cast<float>(vdp.h40_enabled ? 320 : 256),
-			static_cast<float>((vdp.v30_enabled ? 240 : 224) * vertical_scale)
+			static_cast<float>(VDP_GetScreenWidthInTiles(&vdp) * VDP_TILE_WIDTH),
+			static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
 		};
 		SDL_RenderFillRect(renderer, &visible_area_rectangle);
 

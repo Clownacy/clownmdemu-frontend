@@ -2544,29 +2544,21 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			switch (emulator->GetCurrentScreenHeight())
+			destination_height = emulator->GetCurrentScreenHeight();
+
+			switch (destination_height)
 			{
 				default:
 					assert(false);
 					[[fallthrough]];
 				case 224:
-					destination_width = 320;
-					destination_height = 224;
-					break;
-
 				case 240:
-					destination_width = 320;
-					destination_height = 240;
+					destination_width = FRAMEBUFFER_WIDTH;
 					break;
 
 				case 448:
-					destination_width = tall_double_resolution_mode ? 320 : 640;
-					destination_height = 448;
-					break;
-
 				case 480:
-					destination_width = tall_double_resolution_mode ? 320 : 640;
-					destination_height = 480;
+					destination_width = FRAMEBUFFER_WIDTH << (tall_double_resolution_mode ? 1 : 0);
 					break;
 			}
 
