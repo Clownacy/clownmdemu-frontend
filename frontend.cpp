@@ -518,6 +518,15 @@ private:
 				"Makes games that use Interlace Mode 2\n"
 				"for split-screen not appear squashed.");
 
+			ImGui::TableNextColumn();
+			bool widescreen_enabled = Frontend::emulator->GetConfigurationVDP().widescreen_enabled;
+			if (ImGui::Checkbox("Widescreen Hack", &widescreen_enabled))
+				Frontend::emulator->GetConfigurationVDP().widescreen_enabled = widescreen_enabled;
+			DoToolTip(
+				"Widens the display. Works well\n"
+				"with some games, badly with others."
+			);
+
 			ImGui::EndTable();
 		}
 
@@ -1198,6 +1207,7 @@ static void LoadConfiguration()
 	bool vsync = false;
 	bool integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
+	bool widescreen = false;
 #ifdef __EMSCRIPTEN__
 	native_windows = false;
 #else
@@ -1275,6 +1285,8 @@ static void LoadConfiguration()
 					integer_screen_scaling = value_boolean;
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
+				else if (name == "widescreen")
+					widescreen = value_boolean;
 			#ifndef __EMSCRIPTEN__
 				else if (name == "native-windows")
 					native_windows = value_boolean;
@@ -1410,6 +1422,7 @@ static void LoadConfiguration()
 
 	// Apply settings now that they have been decided.
 	window->SetVSync(vsync);
+	emulator->GetConfigurationVDP().widescreen_enabled = widescreen;
 	emulator->EnableRewinding(rewinding);
 	emulator->SetLowPassFilter(low_pass_filter);
 	emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
@@ -1456,6 +1469,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
+		PRINT_BOOLEAN_OPTION(file, "widescreen", emulator->GetConfigurationVDP().widescreen_enabled);
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
@@ -2544,6 +2558,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
+			destination_width = emulator->GetConfigurationVDP().widescreen_enabled ? 400 : 320; // TODO: STOP HARDCODING THIS!!!
 			destination_height = emulator->GetCurrentScreenHeight();
 
 			switch (destination_height)
@@ -2553,12 +2568,11 @@ void Frontend::Update()
 					[[fallthrough]];
 				case 224:
 				case 240:
-					destination_width = FRAMEBUFFER_WIDTH;
 					break;
 
 				case 448:
 				case 480:
-					destination_width = FRAMEBUFFER_WIDTH << (tall_double_resolution_mode ? 1 : 0);
+					destination_width <<= tall_double_resolution_mode ? 1 : 0;
 					break;
 			}
 
