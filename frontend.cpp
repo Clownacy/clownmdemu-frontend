@@ -55,8 +55,8 @@ using namespace Frontend;
 static constexpr unsigned int INITIAL_WINDOW_WIDTH = 320 * 2;
 static constexpr unsigned int INITIAL_WINDOW_HEIGHT = 224 * 2;
 
-static constexpr unsigned int FRAMEBUFFER_WIDTH = 320;
-static constexpr unsigned int FRAMEBUFFER_HEIGHT = 240 * 2; // *2 because of double-resolution mode.
+static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
+static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
