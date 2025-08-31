@@ -2575,7 +2575,7 @@ void Frontend::Update()
 
 				case 448:
 				case 480:
-					destination_width <<= tall_double_resolution_mode ? 1 : 0;
+					destination_width <<= tall_double_resolution_mode ? 0 : 1;
 					break;
 			}
 
