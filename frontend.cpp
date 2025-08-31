@@ -2455,7 +2455,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Z80"))
 				{
-					PopupButton("Registers", z80_status_window, 390, 80, false, std::nullopt, "Z80 Registers");
+					PopupButton("Registers", z80_status_window, 405, 80, false, std::nullopt, "Z80 Registers");
 					PopupButton("SOUND-RAM", z80_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
 				}
