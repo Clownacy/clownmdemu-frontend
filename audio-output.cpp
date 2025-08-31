@@ -12,6 +12,8 @@
 #define MIXER_MEMSET SDL_memset
 #include "common/mixer.h"
 
+Mixer::Constant AudioOutput::constant;
+
 static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 {
 	// We want a 10ms buffer (this value must be a power of two).

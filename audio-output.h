@@ -21,7 +21,8 @@ private:
 	std::array<cc_u32f, 0x10> rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
-	Mixer mixer = Mixer(pal_mode);
+	static Mixer::Constant constant;
+	Mixer mixer = Mixer(constant, pal_mode);
 
 public:
 	AudioOutput();
