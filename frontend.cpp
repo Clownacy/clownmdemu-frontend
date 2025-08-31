@@ -1645,7 +1645,10 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		if (window_width == static_cast<int>(INITIAL_WINDOW_WIDTH * scale) && window_height == static_cast<int>(INITIAL_WINDOW_HEIGHT * scale))
 		{
 			// Resize the window so that there's room for the menu bar.
-			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(INITIAL_WINDOW_WIDTH * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
+			// Also adjust for widescreen if the user has the option enabled.
+			const auto desired_width = emulator->GetConfigurationVDP().widescreen_enabled ? 400 * 2 : INITIAL_WINDOW_WIDTH;
+
+			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
 #ifdef FILE_PATH_SUPPORT
 		// If the user passed the path to the software on the command line, then load it here, automatically.
