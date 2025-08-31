@@ -2439,7 +2439,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
-					PopupButton("Registers", m68k_status_window, 376, 120, false, std::nullopt, "Main-68000 Registers");
+					PopupButton("Registers", m68k_status_window, 390, 120, false, std::nullopt, "Main-68000 Registers");
 					PopupButton("WORK-RAM", m68k_ram_viewer_window, 400, 400, true);
 					PopupButton("External RAM", external_ram_viewer_window, 460, 460, true);
 					ImGui::EndMenu();
@@ -2447,7 +2447,7 @@ void Frontend::Update()
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
-					PopupButton("Registers", mcd_m68k_status_window, 376, 120, false, std::nullopt, "Sub-68000 Registers");
+					PopupButton("Registers", mcd_m68k_status_window, 390, 120, false, std::nullopt, "Sub-68000 Registers");
 					PopupButton("PRG-RAM", prg_ram_viewer_window, 410, 410, true);
 					PopupButton("WORD-RAM", word_ram_viewer_window, 410, 410, true);
 					ImGui::EndMenu();
