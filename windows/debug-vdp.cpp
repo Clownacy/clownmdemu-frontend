@@ -611,9 +611,9 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
 		const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
 		const SDL_FRect visible_area_rectangle = {
-			static_cast<float>(0x80),
+			static_cast<float>(0x80 - (Frontend::emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
 			static_cast<float>(0x80 * vertical_scale),
-			static_cast<float>(VDP_GetScreenWidthInTiles(&vdp) * VDP_TILE_WIDTH),
+			static_cast<float>(Frontend::emulator->GetCurrentScreenWidth()),
 			static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
 		};
 		SDL_RenderFillRect(renderer, &visible_area_rectangle);
