@@ -43,7 +43,7 @@ private:
 	class Cartridge
 	{
 	private:
-		std::vector<unsigned char> rom_file_buffer;
+		std::vector<cc_u16l> rom_file_buffer;
 		std::filesystem::path save_data_path;
 		EmulatorInstance &emulator;
 
@@ -52,10 +52,9 @@ private:
 			: emulator(emulator)
 		{}
 
-		cc_u8f Read(cc_u32f address);
-		const std::vector<unsigned char>& GetROMBuffer() const { return rom_file_buffer; }
+		const std::vector<cc_u16l>& GetROMBuffer() const { return rom_file_buffer; }
 		bool IsInserted() const { return !rom_file_buffer.empty(); }
-		void Insert(const std::vector<unsigned char> &rom_file_buffer, const std::filesystem::path &save_data_path);
+		void Insert(const std::vector<cc_u16l> &rom_file_buffer, const std::filesystem::path &save_data_path);
 		void Eject();
 	};
 
@@ -156,7 +155,7 @@ public:
 	void Update(cc_bool fast_forward);
 	void SoftResetConsole();
 	void HardResetConsole();
-	void LoadCartridgeFile(std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path);
+	void LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path);
 	void UnloadCartridgeFile();
 	bool LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();
@@ -189,7 +188,7 @@ public:
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 	const State& CurrentState() const { return *state; }
 	void OverwriteCurrentState(const State &new_state) { LoadState(&new_state); }
-	const std::vector<unsigned char>& GetROMBuffer() const { return cartridge.GetROMBuffer(); }
+	const std::vector<cc_u16l>& GetROMBuffer() const { return cartridge.GetROMBuffer(); }
 
 	bool GetPALMode() const { return clownmdemu_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
 

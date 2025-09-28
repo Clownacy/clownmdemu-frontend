@@ -1002,7 +1002,7 @@ static void SetWindowTitleToSoftwareName()
 	SDL_SetWindowTitle(window->GetSDLWindow(), name.empty() ? DEFAULT_TITLE : name.c_str());
 }
 
-static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<unsigned char> &&file_buffer)
+static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_u16l> &&file_buffer)
 {
 	const auto save_file_path = GetSaveDataFilePath(path);
 
@@ -1020,7 +1020,7 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<uns
 
 static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
 {
-	auto file_buffer = file_utilities.LoadFileToBuffer(file);
+	auto file_buffer = file_utilities.LoadFileToBuffer<cc_u16l, 2>(file);
 
 	if (!file_buffer.has_value())
 	{
@@ -1103,7 +1103,7 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 
 static bool LoadSaveState(SDL::IOStream &file)
 {
-	const auto file_buffer = file_utilities.LoadFileToBuffer(file);
+	const auto file_buffer = file_utilities.LoadFileToBuffer<unsigned char, 1>(file);
 
 	if (!file_buffer.has_value())
 	{
@@ -2184,7 +2184,7 @@ void Frontend::Update()
 		}
 		else
 		{
-			auto file_buffer = file_utilities.LoadFileToBuffer(drag_and_drop_filename);
+			auto file_buffer = file_utilities.LoadFileToBuffer<unsigned char, 1>(drag_and_drop_filename);
 
 			if (file_buffer.has_value())
 			{
@@ -2195,8 +2195,13 @@ void Frontend::Update()
 				}
 				else
 				{
-					LoadCartridgeFile(drag_and_drop_filename, std::move(*file_buffer));
-					emulator_paused = false;
+					auto cartridge_file_buffer = file_utilities.LoadFileToBuffer<cc_u16l, 2>(drag_and_drop_filename);
+
+					if (cartridge_file_buffer.has_value())
+					{
+						LoadCartridgeFile(drag_and_drop_filename, std::move(*cartridge_file_buffer));
+						emulator_paused = false;
+					}
 				}
 			}
 		}

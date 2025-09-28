@@ -40,8 +40,72 @@ public:
 	bool IsDialogOpen() const { return active_file_picker_popup.has_value(); }
 
 	bool FileExists(const std::filesystem::path &path);
-	std::optional<std::vector<unsigned char>> LoadFileToBuffer(const std::filesystem::path &path);
-	std::optional<std::vector<unsigned char>> LoadFileToBuffer(SDL::IOStream &file);
+
+	template<typename T, std::size_t S>
+	void ReadFromIOStream(SDL::IOStream &file, std::vector<T> &buffer)
+	{
+		for (auto &value : buffer)
+		{
+			std::array<unsigned char, S> bytes;
+			SDL_ReadIO(file, std::data(bytes), std::size(bytes));
+
+			value = 0;
+
+			for (const auto byte : bytes)
+			{
+				value <<= 8;
+				value |= byte;
+			}
+		}
+	}
+
+	template<>
+	inline void ReadFromIOStream<unsigned char, 1>(SDL::IOStream &file, std::vector<unsigned char> &buffer)
+	{
+		SDL_ReadIO(file, std::data(buffer), std::size(buffer));
+	}
+
+	template<typename T, std::size_t S>
+	std::optional<std::vector<T>> LoadFileToBuffer(SDL::IOStream &file)
+	{
+		const Sint64 size_s64 = SDL_GetIOSize(file);
+
+		if (size_s64 < 0)
+		{
+			Frontend::debug_log.Log("SDL_GetIOSize failed with the following message - '{}'", SDL_GetError());
+		}
+		else
+		{
+			const std::size_t size = static_cast<std::size_t>(size_s64);
+
+			try
+			{
+				std::vector<T> buffer(size);
+				ReadFromIOStream<T, S>(file, buffer);
+				return buffer;
+			}
+			catch (const std::bad_alloc&)
+			{
+				Frontend::debug_log.Log("Could not allocate memory for file");
+			}
+		}
+
+		return std::nullopt;
+	}
+
+	template<typename T, std::size_t S>
+	std::optional<std::vector<T>> LoadFileToBuffer(const std::filesystem::path &path)
+	{
+		SDL::IOStream file = SDL::IOFromFile(path, "rb");
+
+		if (!file)
+		{
+			Frontend::debug_log.Log("SDL_IOFromFile failed with the following message - '{}'", SDL_GetError());
+			return std::nullopt;
+		}
+
+		return LoadFileToBuffer<T, S>(file);
+	}
 
 	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);

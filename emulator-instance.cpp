@@ -14,7 +14,7 @@ const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = []()
 	return constant;
 }();
 
-void EmulatorInstance::Cartridge::Insert(const std::vector<unsigned char> &in_rom_file_buffer, const std::filesystem::path &in_save_data_path)
+void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file_buffer, const std::filesystem::path &in_save_data_path)
 {
 	if (IsInserted())
 		Eject();
@@ -25,7 +25,7 @@ void EmulatorInstance::Cartridge::Insert(const std::vector<unsigned char> &in_ro
 	// Load save data from disk.
 	if (Frontend::file_utilities.FileExists(save_data_path))
 	{
-		const auto save_data_buffer = Frontend::file_utilities.LoadFileToBuffer(save_data_path);
+		const auto save_data_buffer = Frontend::file_utilities.LoadFileToBuffer<cc_u8l, 1>(save_data_path);
 
 		if (save_data_buffer.has_value())
 		{
@@ -56,35 +56,6 @@ void EmulatorInstance::Cartridge::Eject()
 	}
 
 	save_data_path.clear();
-}
-
-cc_u8f EmulatorInstance::Cartridge::Read(const cc_u32f address)
-{
-	if (address >= rom_file_buffer.size())
-		return 0;
-
-	return rom_file_buffer[address];
-}
-
-cc_u8f EmulatorInstance::CartridgeReadCallback(void* const user_data, const cc_u32f address)
-{
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	return emulator->cartridge.Read(address);
-}
-
-void EmulatorInstance::CartridgeWrittenCallback([[maybe_unused]] void* const user_data, [[maybe_unused]] const cc_u32f address, [[maybe_unused]] const cc_u8f value)
-{
-	//EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	// For now, let's pretend that the cartridge is read-only, like retail cartridges are.
-
-	/*
-	if (address >= emulator->rom_buffer_size)
-		return;
-
-	emulator->rom_buffer[address] = value;
-	*/
 }
 
 void EmulatorInstance::ColourUpdatedCallback(void* const user_data, const cc_u16f index, const cc_u16f colour)
@@ -265,8 +236,6 @@ EmulatorInstance::EmulatorInstance(
 	, texture(texture)
 	, input_callback(input_callback)
 	, callbacks({this,
-		CartridgeReadCallback,
-		CartridgeWrittenCallback,
 		ColourUpdatedCallback,
 		ScanlineRenderedCallback,
 		ReadInputCallback,
@@ -370,7 +339,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 
 void EmulatorInstance::SoftResetConsole()
 {
-	ClownMDEmu_Reset(&clownmdemu, !IsCartridgeFileLoaded(), std::size(cartridge.GetROMBuffer()));
+	ClownMDEmu_Reset(&clownmdemu, !IsCartridgeFileLoaded());
 }
 
 void EmulatorInstance::HardResetConsole()
@@ -379,10 +348,12 @@ void EmulatorInstance::HardResetConsole()
 
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
 	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+	const auto &buffer = cartridge.GetROMBuffer();
+	ClownMDEmu_SetCartridge(&clownmdemu, std::data(buffer), std::size(buffer));
 	SoftResetConsole();
 }
 
-void EmulatorInstance::LoadCartridgeFile(std::vector<unsigned char> &&file_buffer, const std::filesystem::path &path)
+void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path)
 {
 	cartridge.Insert(std::move(file_buffer), path);
 
@@ -392,6 +363,8 @@ void EmulatorInstance::LoadCartridgeFile(std::vector<unsigned char> &&file_buffe
 void EmulatorInstance::UnloadCartridgeFile()
 {
 	cartridge.Eject();
+
+	ClownMDEmu_SetCartridge(&clownmdemu, nullptr, 0);
 }
 
 bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
@@ -466,22 +439,30 @@ std::string EmulatorInstance::GetSoftwareName()
 		// '*4' for the maximum UTF-8 length.
 		name_buffer.reserve(name_buffer_size * 4);
 
-		const unsigned char* header_bytes;
-		std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
+		std::array<unsigned char, name_buffer_size> in_buffer;
+		// Choose the proper name based on the current region.
+		const auto header_offset = GetDomestic() ? 0x120 : 0x150;
 
 		if (IsCartridgeFileLoaded())
 		{
 			// TODO: This seems unsafe - add some bounds checks?
-			header_bytes = &cartridge.GetROMBuffer()[0x100];
+			const auto words = &cartridge.GetROMBuffer()[header_offset / 2];
+
+			for (cc_u8f i = 0; i < name_buffer_size / 2; ++i)
+			{
+				const auto word = words[i];
+
+				in_buffer[i * 2 + 0] = (word >> 8) & 0xFF;
+				in_buffer[i * 2 + 1] = (word >> 0) & 0xFF;
+			}
 		}
 		else //if (cd_file.IsOpen())
 		{
+			std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
 			cd_file.ReadMegaCDHeaderSector(sector.data());
-			header_bytes = &sector[0x100];
+			const auto bytes = &sector[header_offset];
+			std::copy(bytes, bytes + name_buffer_size, std::begin(in_buffer));
 		}
-
-		// Choose the proper name based on the current region.
-		const unsigned char* const in_buffer = &header_bytes[GetDomestic() ? 0x20 : 0x50];
 
 		cc_u32f previous_codepoint = '\0';
 

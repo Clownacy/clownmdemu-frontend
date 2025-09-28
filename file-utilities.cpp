@@ -207,46 +207,6 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 	return SDL::GetPathInfo(path, nullptr);
 }
 
-std::optional<std::vector<unsigned char>> FileUtilities::LoadFileToBuffer(const std::filesystem::path &path)
-{
-	SDL::IOStream file = SDL::IOFromFile(path, "rb");
-
-	if (!file)
-	{
-		Frontend::debug_log.Log("SDL_IOFromFile failed with the following message - '{}'", SDL_GetError());
-		return std::nullopt;
-	}
-
-	return LoadFileToBuffer(file);
-}
-
-std::optional<std::vector<unsigned char>> FileUtilities::LoadFileToBuffer(SDL::IOStream &file)
-{
-	const Sint64 size_s64 = SDL_GetIOSize(file);
-
-	if (size_s64 < 0)
-	{
-		Frontend::debug_log.Log("SDL_GetIOSize failed with the following message - '{}'", SDL_GetError());
-	}
-	else
-	{
-		const std::size_t size = static_cast<std::size_t>(size_s64);
-
-		try
-		{
-			std::vector<unsigned char> file_buffer(size);
-			SDL_ReadIO(file, file_buffer.data(), size);
-			return file_buffer;
-		}
-		catch (const std::bad_alloc&)
-		{
-			Frontend::debug_log.Log("Could not allocate memory for file");
-		}
-	}
-
-	return std::nullopt;
-}
-
 void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const LoadFileCallback &callback)
 {
 #ifdef __EMSCRIPTEN__
