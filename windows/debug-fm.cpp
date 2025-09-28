@@ -204,10 +204,8 @@ void DebugFM::Registers::DisplayInternal()
 					ImGui::PushFont(monospace_font);
 					for (const auto &op : channel.state.operators)
 					{
-						static const std::array<cc_u8l, 8> decode = {3, 2, 0xFF, 1, 0xFF, 0xFF, 0xFF, 0};
-
 						ImGui::TableNextColumn();
-						ImGui::TextFormatted("{}", decode[op.key_scale - 1]);
+						ImGui::TextFormatted("{}", 3 - op.key_scale);
 					}
 					ImGui::PopFont();
 
