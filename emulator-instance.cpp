@@ -319,6 +319,9 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 			}
 
 			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+			// TODO: This is so stupid... find a better place to store the cartridge metadata!
+			const auto &buffer = cartridge.GetROMBuffer();
+			ClownMDEmu_SetCartridge(&clownmdemu, std::data(buffer), std::size(buffer));
 		}
 
 		// Reset the audio buffers so that they can be mixed into.
