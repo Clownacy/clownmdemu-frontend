@@ -59,12 +59,6 @@ public:
 		}
 	}
 
-	template<>
-	inline void ReadFromIOStream<unsigned char, 1>(SDL::IOStream &file, std::vector<unsigned char> &buffer)
-	{
-		SDL_ReadIO(file, std::data(buffer), std::size(buffer));
-	}
-
 	template<typename T, std::size_t S>
 	std::optional<std::vector<T>> LoadFileToBuffer(SDL::IOStream &file)
 	{
@@ -110,5 +104,11 @@ public:
 	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);
 };
+
+template<>
+inline void FileUtilities::ReadFromIOStream<unsigned char, 1>(SDL::IOStream &file, std::vector<unsigned char> &buffer)
+{
+	SDL_ReadIO(file, std::data(buffer), std::size(buffer));
+}
 
 #endif /* FILE_UTILITIES_H */
