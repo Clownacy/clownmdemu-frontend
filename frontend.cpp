@@ -475,12 +475,12 @@ private:
 			if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
 				if (Frontend::emulator->GetPALMode())
 					Frontend::SetAudioPALMode(false);
-			DoToolTip("60 FPS");
+			DoToolTip("59.94Hz");
 			ImGui::TableNextColumn();
 			if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
 				if (!Frontend::emulator->GetPALMode())
 					Frontend::SetAudioPALMode(true);
-			DoToolTip("50 FPS");
+			DoToolTip("50Hz");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Region:");
