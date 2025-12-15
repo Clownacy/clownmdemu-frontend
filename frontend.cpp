@@ -581,6 +581,15 @@ private:
 				"of RAM and increases CPU usage, so disable\n"
 				"this if there is lag.");
 
+			ImGui::TableNextColumn();
+			bool cd_addon_enabled = Frontend::emulator->GetCDAddOnEnabled();
+			if (ImGui::Checkbox("CD Add-on", &cd_addon_enabled))
+				Frontend::emulator->SetCDAddOnEnabled(cd_addon_enabled);
+			DoToolTip(
+				"Allow cartridge software to utilise features of the\n"
+				"emulated Mega CD add-on, such as for CD music.\n"
+				"This may break some software.");
+
 			ImGui::EndTable();
 		}
 
@@ -1215,6 +1224,7 @@ static void LoadConfiguration()
 #endif
 	bool rewinding = true;
 	bool low_pass_filter = true;
+	bool cd_add_on = false;
 	bool ladder_effect = true;
 	bool pal_mode = false;
 	bool domestic = false;
@@ -1295,6 +1305,8 @@ static void LoadConfiguration()
 					rewinding = value_boolean;
 				else if (name == "low-pass-filter")
 					low_pass_filter = value_boolean;
+				else if (name == "cd-add-on")
+					cd_add_on = value_boolean;
 				else if (name == "low-volume-distortion")
 					ladder_effect = value_boolean;
 				else if (name == "pal")
@@ -1425,6 +1437,7 @@ static void LoadConfiguration()
 	emulator->GetConfigurationVDP().widescreen_enabled = widescreen;
 	emulator->EnableRewinding(rewinding);
 	emulator->SetLowPassFilter(low_pass_filter);
+	emulator->SetCDAddOnEnabled(cd_add_on);
 	emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
 
 	SetAudioPALMode(pal_mode);
@@ -1475,6 +1488,7 @@ static void SaveConfiguration()
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->RewindingEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file, "cd-add-on", emulator->GetCDAddOnEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());

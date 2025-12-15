@@ -200,6 +200,8 @@ public:
 	void SetDomestic(const bool enabled) { clownmdemu_configuration.general.region = enabled ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS; }
 	bool GetLowPassFilter() const { return !clownmdemu_configuration.general.low_pass_filter_disabled; }
 	void SetLowPassFilter(const bool enabled) { clownmdemu_configuration.general.low_pass_filter_disabled = !enabled; }
+	bool GetCDAddOnEnabled() const { return clownmdemu_configuration.general.cd_add_on_enabled; }
+	void SetCDAddOnEnabled(const bool enabled) { clownmdemu_configuration.general.cd_add_on_enabled = enabled; }
 	VDP_Configuration& GetConfigurationVDP() { return clownmdemu_configuration.vdp; }
 	FM_Configuration& GetConfigurationFM() { return clownmdemu_configuration.fm; }
 	PSG_Configuration& GetConfigurationPSG() { return clownmdemu_configuration.psg; }
