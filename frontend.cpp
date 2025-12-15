@@ -2523,7 +2523,7 @@ void Frontend::Update()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Misc."))
+			if (ImGui::BeginMenu("Miscellaneous"))
 			{
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
