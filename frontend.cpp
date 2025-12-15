@@ -494,6 +494,15 @@ private:
 				Frontend::emulator->SetDomestic(false);
 			DoToolTip("Games may show English text.");
 
+			ImGui::TableNextColumn();
+			bool cd_addon_enabled = Frontend::emulator->GetCDAddOnEnabled();
+			if (ImGui::Checkbox("CD Add-on", &cd_addon_enabled))
+				Frontend::emulator->SetCDAddOnEnabled(cd_addon_enabled);
+			DoToolTip(
+				"Allow cartridge-only software to utilise features of\n"
+				"the emulated Mega CD add-on, such as CD music.\n"
+				"This may break some software.");
+
 			ImGui::EndTable();
 		}
 
@@ -581,15 +590,6 @@ private:
 				"reverse for up to 10 seconds. This uses a lot\n"
 				"of RAM and increases CPU usage, so disable\n"
 				"this if there is lag.");
-
-			ImGui::TableNextColumn();
-			bool cd_addon_enabled = Frontend::emulator->GetCDAddOnEnabled();
-			if (ImGui::Checkbox("CD Add-on", &cd_addon_enabled))
-				Frontend::emulator->SetCDAddOnEnabled(cd_addon_enabled);
-			DoToolTip(
-				"Allow cartridge-only software to utilise features of\n"
-				"the emulated Mega CD add-on, such as CD music.\n"
-				"This may break some software.");
 
 			ImGui::EndTable();
 		}
