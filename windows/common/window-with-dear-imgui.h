@@ -35,6 +35,11 @@ namespace ImGui
 		const auto string = fmt::format(format, std::forward<T>(args)...);
 		ImGui::TextUnformatted(string);
 	}
+
+	inline void PushFont(ImFont* const font)
+	{
+		ImGui::PushFont(font, font->LegacySize);
+	}
 }
 
 class WindowWithDearImGui : public Window
