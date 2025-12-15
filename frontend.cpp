@@ -587,8 +587,8 @@ private:
 			if (ImGui::Checkbox("CD Add-on", &cd_addon_enabled))
 				Frontend::emulator->SetCDAddOnEnabled(cd_addon_enabled);
 			DoToolTip(
-				"Allow cartridge software to utilise features of the\n"
-				"emulated Mega CD add-on, such as for CD music.\n"
+				"Allow cartridge-only software to utilise features of\n"
+				"the emulated Mega CD add-on, such as CD music.\n"
 				"This may break some software.");
 
 			ImGui::EndTable();
