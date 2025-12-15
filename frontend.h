@@ -18,9 +18,8 @@
 template<typename T>
 inline void DoToolTip(const T& text)
 {
-	if (ImGui::IsItemHovered())
+	if (ImGui::BeginItemTooltip())
 	{
-		ImGui::BeginTooltip();
 		ImGui::TextUnformatted(text);
 		ImGui::EndTooltip();
 	}
