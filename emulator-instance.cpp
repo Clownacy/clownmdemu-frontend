@@ -335,7 +335,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 
 void EmulatorInstance::SoftResetConsole()
 {
-	ClownMDEmu_Reset(&clownmdemu, !IsCartridgeFileLoaded());
+	ClownMDEmu_Reset(&clownmdemu, IsCartridgeFileLoaded(), IsCDFileLoaded());
 }
 
 void EmulatorInstance::HardResetConsole()

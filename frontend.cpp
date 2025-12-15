@@ -309,7 +309,8 @@ private:
 				DoProperty(nullptr, "WORD-RAM Mode", "{}", clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
 				DoProperty(nullptr, "DMNA Bit", "{}", clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
 				DoProperty(nullptr, "RET Bit", "{}", clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
-				DoProperty(nullptr, "Boot Mode", "{}", clownmdemu_state.mega_cd.boot_from_cd ? "CD" : "Cartridge");
+				DoProperty(nullptr, "Cartridge Inserted", "{}", clownmdemu_state.cartridge_inserted ? "Yes" : "No");
+				DoProperty(nullptr, "CD Inserted", "{}", clownmdemu_state.mega_cd.cd_inserted ? "Yes" : "No");
 				DoProperty(monospace_font, "68000 Communication Flag", "0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
 
 				DoProperty(monospace_font, "68000 Communication Command",
