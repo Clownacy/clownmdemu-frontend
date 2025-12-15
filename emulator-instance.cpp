@@ -7,13 +7,6 @@
 #include "frontend.h"
 #include "text-encoding.h"
 
-const ClownMDEmu_Constant EmulatorInstance::clownmdemu_constant = []()
-{
-	ClownMDEmu_Constant constant;
-	ClownMDEmu_Constant_Initialise(&constant);
-	return constant;
-}();
-
 void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file_buffer, const std::filesystem::path &in_save_data_path)
 {
 	if (IsInserted())
@@ -318,7 +311,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 				state = &next_state;
 			}
 
-			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &state->clownmdemu, &callbacks);
 			// TODO: This is so stupid... find a better place to store the cartridge metadata!
 			const auto &buffer = cartridge.GetROMBuffer();
 			ClownMDEmu_SetCartridge(&clownmdemu, std::data(buffer), std::size(buffer));
@@ -350,7 +343,7 @@ void EmulatorInstance::HardResetConsole()
 	rewind.remaining = 0;
 
 	ClownMDEmu_State_Initialise(&state->clownmdemu);
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &state->clownmdemu, &callbacks);
 	const auto &buffer = cartridge.GetROMBuffer();
 	ClownMDEmu_SetCartridge(&clownmdemu, std::data(buffer), std::size(buffer));
 	SoftResetConsole();

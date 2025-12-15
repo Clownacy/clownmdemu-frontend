@@ -58,8 +58,6 @@ private:
 		void Eject();
 	};
 
-	static const ClownMDEmu_Constant clownmdemu_constant;
-
 	AudioOutput audio_output;
 	SDL::Texture &texture;
 	const InputCallback input_callback;
@@ -177,7 +175,7 @@ public:
 		if (rewind.Enable(enabled))
 		{
 			state = &rewind.buffer[0];
-			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &clownmdemu_constant, &state->clownmdemu, &callbacks);
+			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &state->clownmdemu, &callbacks);
 		}
 	}
 	bool IsRewinding() const { return rewind.InProgress(); }

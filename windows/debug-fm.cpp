@@ -279,7 +279,7 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::TextUnformatted(op.amplitude_modulation_on ? "On" : "Off");
 					}
 
-					const auto DoSSGEG = [&](const char* const label, const std::function<bool(const FM_Operator_State &op)> &function)
+					const auto DoSSGEG = [&](const char* const label, const std::function<bool(const FM_Operator &op)> &function)
 					{
 						ImGui::TableNextRow();
 						ImGui::TableNextColumn();
@@ -294,10 +294,10 @@ void DebugFM::Registers::DisplayInternal()
 						ImGui::PopFont();
 					};
 
-					DoSSGEG("SSG-EG Enabled", [](const FM_Operator_State &op) { return op.ssgeg.enabled; });
-					DoSSGEG("SSG-EG Attack", [](const FM_Operator_State &op) { return op.ssgeg.attack; });
-					DoSSGEG("SSG-EG Alternate", [](const FM_Operator_State &op) { return op.ssgeg.alternate; });
-					DoSSGEG("SSG-EG Hold", [](const FM_Operator_State &op) { return op.ssgeg.hold; });
+					DoSSGEG("SSG-EG Enabled", [](const FM_Operator &op) { return op.ssgeg.enabled; });
+					DoSSGEG("SSG-EG Attack", [](const FM_Operator &op) { return op.ssgeg.attack; });
+					DoSSGEG("SSG-EG Alternate", [](const FM_Operator &op) { return op.ssgeg.alternate; });
+					DoSSGEG("SSG-EG Hold", [](const FM_Operator &op) { return op.ssgeg.hold; });
 
 					if (channel_index == 2)
 					{
