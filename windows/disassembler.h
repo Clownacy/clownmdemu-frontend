@@ -12,7 +12,8 @@ private:
 
 	static constexpr Uint32 window_flags = 0;
 
-	int address;
+	int address_imgui;
+	unsigned long address;
 	int current_memory;
 	std::string assembly;
 

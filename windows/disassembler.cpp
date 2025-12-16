@@ -48,7 +48,7 @@ cc_u16f Disassembler::ReadMemory()
 		case 2:
 			// SOUND-RAM
 			address %= std::size(clownmdemu.z80.ram);
-			value = (static_cast<unsigned int>(clownmdemu.z80.ram[address + 0]) << 8) | clownmdemu.z80.ram[address + 1];
+			value = (static_cast<unsigned int>(clownmdemu.z80.ram[address / 2 * 2 + 0]) << 8) | clownmdemu.z80.ram[address / 2 * 2 + 1];
 			break;
 
 		case 3:
@@ -106,12 +106,13 @@ void Disassembler::DisplayInternal()
 
 	ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
-	ImGui::InputInt("Address", &address, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
+	ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
 
 	if (ImGui::Button("Disassemble"))
 	{
 		assembly.clear();
 
+		address = address_imgui;
 		Disassemble(address);
 
 		if (assembly[assembly.length() - 1] == '\n')
