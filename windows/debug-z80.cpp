@@ -6,7 +6,7 @@
 
 void DebugZ80::Registers::DisplayInternal()
 {
-	const Z80_State &z80 = Frontend::emulator->CurrentState().clownmdemu.z80.state;
+	const ClownZ80_State &z80 = Frontend::emulator->CurrentState().clownmdemu.z80.state;
 
 	ImGui::PushFont(GetMonospaceFont());
 
