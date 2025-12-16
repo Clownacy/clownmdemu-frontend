@@ -178,8 +178,9 @@ if(CLOWNMDEMU_FRONTEND_FREETYPE)
 	endif()
 endif()
 
-# Link 68000 disassembler
+# Link disassemblers
 target_link_libraries(clownmdemu clown68000-disassembler)
+target_link_libraries(clownmdemu clownz80-disassembler)
 
 # Link fmt
 find_package(fmt 8.0.0)

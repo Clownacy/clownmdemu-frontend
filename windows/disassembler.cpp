@@ -43,24 +43,30 @@ long Disassembler::ReadCallback()
 			break;
 
 		case 2:
+			// SOUND-RAM
+			address %= std::size(clownmdemu.z80.ram);
+			value = (static_cast<unsigned int>(clownmdemu.z80.ram[address + 0]) << 8) | clownmdemu.z80.ram[address + 1];
+			break;
+
+		case 3:
 			// PRG-RAM
 			address %= std::size(clownmdemu.mega_cd.prg_ram.buffer) * 2;
 			value = clownmdemu.mega_cd.prg_ram.buffer[address / 2];
 			break;
 
-		case 3:
+		case 4:
 			// WORD-RAM (1M) Bank 1
 			address %= std::size(clownmdemu.mega_cd.word_ram.buffer) * 2 / 2;
 			value = clownmdemu.mega_cd.word_ram.buffer[address / 2 * 2 + 0];
 			break;
 
-		case 4:
+		case 5:
 			// WORD-RAM (1M) Bank 2
 			address %= std::size(clownmdemu.mega_cd.word_ram.buffer) * 2 / 2;
 			value = clownmdemu.mega_cd.word_ram.buffer[address / 2 * 2 + 1];
 			break;
 
-		case 5:
+		case 6:
 			// WORD-RAM (2M)
 			address %= std::size(clownmdemu.mega_cd.word_ram.buffer) * 2;
 			value = clownmdemu.mega_cd.word_ram.buffer[address / 2];
@@ -80,7 +86,7 @@ void Disassembler::PrintCallback(const char* const string)
 
 void Disassembler::DisplayInternal()
 {
-	static const std::array<const char*, 6> memories = {"ROM", "WORK-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
+	static const std::array<const char*, 7> memories = {"ROM", "WORK-RAM", "SOUND-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
 
 	ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
