@@ -81,26 +81,53 @@ cc_u16f Disassembler::ReadMemory()
 	return value;
 }
 
-cc_u16f Disassembler::ReadCallback16Bit()
-{
-	const auto value = ReadMemory();
-	address += 2;
-	return value;
-}
-
-cc_u8f Disassembler::ReadCallback8Bit()
-{
-	auto value = ReadMemory();
-	if (address % 2 == 0)
-		value >>= 8;
-	address += 1;
-	return value & 0xFF;
-}
-
 void Disassembler::PrintCallback(const char* const string)
 {
 	assembly += string;
 }
+
+long Disassembler::ReadCallback68000(void* const user_data)
+{
+	auto &disassembler = *static_cast<Disassembler*>(user_data);
+
+	const auto value = disassembler.ReadMemory();
+	disassembler.address += 2;
+	return value;
+}
+
+void Disassembler::PrintCallback68000(void* const user_data, const char* const string)
+{
+	auto &disassembler = *static_cast<Disassembler*>(user_data);
+
+	disassembler.PrintCallback(string);
+	disassembler.PrintCallback("\n");
+};
+
+unsigned char Disassembler::ReadCallbackZ80(void* const user_data)
+{
+	auto &disassembler = *static_cast<Disassembler*>(user_data);
+
+	auto value = disassembler.ReadMemory();
+	if (disassembler.address % 2 == 0)
+		value >>= 8;
+	disassembler.address += 1;
+	return value & 0xFF;
+}
+
+void Disassembler::PrintCallbackZ80(void* const user_data, const char* const format, ...)
+{
+	auto &disassembler = *static_cast<Disassembler*>(user_data);
+
+	va_list args;
+	char *string;
+
+	va_start(args, format);
+	SDL_vasprintf(&string, format, args);
+	va_end(args);
+
+	disassembler.PrintCallback(string);
+	SDL_free(string);
+};
 
 void Disassembler::DisplayInternal()
 {
@@ -120,47 +147,14 @@ void Disassembler::DisplayInternal()
 		switch (current_cpu)
 		{
 			case 0:
-			{
 				// 68000
-				const auto ReadCallback = [](void* const user_data) -> long
-				{
-					return static_cast<Disassembler*>(user_data)->ReadCallback16Bit();
-				};
-
-				const auto PrintCallback = [](void* const user_data, const char* const string)
-				{
-					static_cast<Disassembler*>(user_data)->PrintCallback(string);
-					static_cast<Disassembler*>(user_data)->PrintCallback("\n");
-				};
-
-				Clown68000_Disassemble(address, maximum_instructions, ReadCallback, PrintCallback, this);
+				Clown68000_Disassemble(address, maximum_instructions, ReadCallback68000, PrintCallback68000, this);
 				break;
-			}
 
 			case 1:
-			{
 				// Z80
-				const auto ReadCallback = [](void* const user_data) -> unsigned char
-				{
-					return static_cast<Disassembler*>(user_data)->ReadCallback8Bit();
-				};
-
-				const auto PrintCallback = [](void* const user_data, const char* const format, ...)
-				{
-					va_list args;
-					char *string;
-
-					va_start(args, format);
-					SDL_vasprintf(&string, format, args);
-					va_end(args);
-
-					static_cast<Disassembler*>(user_data)->PrintCallback(string);
-					SDL_free(string);
-				};
-
-				ClownZ80_Disassemble(address, maximum_instructions, ReadCallback, PrintCallback, this);
+				ClownZ80_Disassemble(address, maximum_instructions, ReadCallbackZ80, PrintCallbackZ80, this);
 				break;
-			}
 		}
 
 		if (assembly[assembly.length() - 1] == '\n')

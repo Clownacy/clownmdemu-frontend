@@ -22,9 +22,11 @@ private:
 protected:
 	cc_u16f ReadMemory();
 
-	cc_u16f ReadCallback16Bit();
-	cc_u8f ReadCallback8Bit();
 	void PrintCallback(const char *string);
+	static long ReadCallback68000(void *user_data);
+	static void PrintCallback68000(void *user_data, const char *string);
+	static unsigned char ReadCallbackZ80(void *user_data);
+	static void PrintCallbackZ80(void *user_data, const char *format, ...);
 
 public:
 	using Base::WindowPopup;
