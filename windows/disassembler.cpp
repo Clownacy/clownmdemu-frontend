@@ -9,14 +9,9 @@
 #include "../emulator-instance.h"
 #include "../frontend.h"
 
-static unsigned int address;
-static int current_memory;
-static std::string assembly;
-
-static long ReadCallback(void* const user_data)
+long Disassembler::ReadCallback()
 {
-	const EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-	const ClownMDEmu_State &clownmdemu = emulator->CurrentState().clownmdemu;
+	const ClownMDEmu_State &clownmdemu = Frontend::emulator->CurrentState().clownmdemu;
 
 	long value;
 
@@ -26,7 +21,7 @@ static long ReadCallback(void* const user_data)
 		case 0:
 		{
 			// ROM
-			const auto &rom_buffer = emulator->GetROMBuffer();
+			const auto &rom_buffer = Frontend::emulator->GetROMBuffer();
 
 			if (rom_buffer.empty())
 			{
@@ -77,7 +72,7 @@ static long ReadCallback(void* const user_data)
 	return value;
 }
 
-static void PrintCallback(void* /*const user_data*/, const char* const string)
+void Disassembler::PrintCallback(const char* const string)
 {
 	assembly += string;
 	assembly += '\n';
@@ -89,16 +84,23 @@ void Disassembler::DisplayInternal()
 
 	ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
-	static int address_imgui;
-
-	ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
+	ImGui::InputInt("Address", &address, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
 
 	if (ImGui::Button("Disassemble"))
 	{
+		const auto ReadCallback = [](void* const user_data)
+		{
+			return static_cast<Disassembler*>(user_data)->ReadCallback();
+		};
+
+		const auto PrintCallback = [](void* const user_data, const char* const string)
+		{
+			static_cast<Disassembler*>(user_data)->PrintCallback(string);
+		};
+
 		assembly.clear();
 
-		address = address_imgui;
-		Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, &*Frontend::emulator);
+		Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, this);
 
 		if (assembly[assembly.length() - 1] == '\n')
 			assembly.pop_back();
