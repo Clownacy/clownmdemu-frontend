@@ -12,6 +12,8 @@
 #include "../emulator-instance.h"
 #include "../frontend.h"
 
+static constexpr unsigned int maximum_instructions = 0x1000;
+
 cc_u16f Disassembler::ReadMemory()
 {
 	const ClownMDEmu_State &clownmdemu = Frontend::emulator->CurrentState().clownmdemu;
@@ -102,8 +104,10 @@ void Disassembler::PrintCallback(const char* const string)
 
 void Disassembler::DisplayInternal()
 {
-	static const std::array<const char*, 7> memories = {"ROM", "WORK-RAM", "SOUND-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
+	static const std::array<const char*, 2> cpus = {"68000", "Z80"};
+	ImGui::Combo("CPU", &current_cpu, cpus.data(), cpus.size());
 
+	static const std::array<const char*, 7> memories = {"ROM", "WORK-RAM", "SOUND-RAM", "PRG-RAM", "WORD-RAM (1M) Bank 1", "WORD-RAM (1M) Bank 2", "WORD-RAM (2M)"};
 	ImGui::Combo("Memory", &current_memory, memories.data(), memories.size());
 
 	ImGui::InputInt("Address", &address_imgui, 0, 0, ImGuiInputTextFlags_CharsHexadecimal);
@@ -111,9 +115,53 @@ void Disassembler::DisplayInternal()
 	if (ImGui::Button("Disassemble"))
 	{
 		assembly.clear();
-
 		address = address_imgui;
-		Disassemble(address);
+
+		switch (current_cpu)
+		{
+			case 0:
+			{
+				// 68000
+				const auto ReadCallback = [](void* const user_data) -> long
+				{
+					return static_cast<Disassembler*>(user_data)->ReadCallback16Bit();
+				};
+
+				const auto PrintCallback = [](void* const user_data, const char* const string)
+				{
+					static_cast<Disassembler*>(user_data)->PrintCallback(string);
+					static_cast<Disassembler*>(user_data)->PrintCallback("\n");
+				};
+
+				Clown68000_Disassemble(address, maximum_instructions, ReadCallback, PrintCallback, this);
+				break;
+			}
+
+			case 1:
+			{
+				// Z80
+				const auto ReadCallback = [](void* const user_data) -> unsigned char
+				{
+					return static_cast<Disassembler*>(user_data)->ReadCallback8Bit();
+				};
+
+				const auto PrintCallback = [](void* const user_data, const char* const format, ...)
+				{
+					va_list args;
+					char *string;
+
+					va_start(args, format);
+					SDL_vasprintf(&string, format, args);
+					va_end(args);
+
+					static_cast<Disassembler*>(user_data)->PrintCallback(string);
+					SDL_free(string);
+				};
+
+				ClownZ80_Disassemble(address, maximum_instructions, ReadCallback, PrintCallback, this);
+				break;
+			}
+		}
 
 		if (assembly[assembly.length() - 1] == '\n')
 			assembly.pop_back();
@@ -122,43 +170,4 @@ void Disassembler::DisplayInternal()
 	ImGui::PushFont(GetMonospaceFont());
 	ImGui::InputTextMultiline("##code", &assembly[0], assembly.length() + 1, ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_ReadOnly); // '+1' to count the null character.
 	ImGui::PopFont();
-}
-
-void Disassembler68000::Disassemble(const unsigned long address)
-{
-		const auto ReadCallback = [](void* const user_data) -> long
-		{
-			return static_cast<Disassembler68000*>(user_data)->ReadCallback16Bit();
-		};
-
-		const auto PrintCallback = [](void* const user_data, const char* const string)
-		{
-			static_cast<Disassembler68000*>(user_data)->PrintCallback(string);
-			static_cast<Disassembler68000*>(user_data)->PrintCallback("\n");
-		};
-
-		Clown68000_Disassemble(address, 0x1000, ReadCallback, PrintCallback, this);
-}
-
-void DisassemblerZ80::Disassemble(const unsigned long address)
-{
-		const auto ReadCallback = [](void* const user_data) -> unsigned char
-		{
-			return static_cast<DisassemblerZ80*>(user_data)->ReadCallback8Bit();
-		};
-
-		const auto PrintCallback = [](void* const user_data, const char* const format, ...)
-		{
-			va_list args;
-			char *string;
-
-			va_start(args, format);
-			SDL_vasprintf(&string, format, args);
-			va_end(args);
-
-			static_cast<DisassemblerZ80*>(user_data)->PrintCallback(string);
-			SDL_free(string);
-		};
-
-		ClownZ80_Disassemble(address, 0x1000, ReadCallback, PrintCallback, this);
 }

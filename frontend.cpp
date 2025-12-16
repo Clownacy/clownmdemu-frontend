@@ -806,8 +806,7 @@ static EmulatorInstance::State quick_save_state;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
-static std::optional<Disassembler68000> m68k_disassembler_window;
-static std::optional<DisassemblerZ80> z80_disassembler_window;
+static std::optional<Disassembler> disassembler_window;
 static std::optional<DebugFrontend> debug_frontend_window;
 static std::optional<DebugM68k::Registers> m68k_status_window;
 static std::optional<DebugM68k::Registers> mcd_m68k_status_window;
@@ -843,8 +842,7 @@ static std::optional<AboutWindow> about_window;
 static constexpr auto popup_windows = std::make_tuple(
 	&debug_log_window,
 	&debugging_toggles_window,
-	&m68k_disassembler_window,
-	&z80_disassembler_window,
+	&disassembler_window,
 	&debug_frontend_window,
 	&m68k_status_window,
 	&mcd_m68k_status_window,
@@ -2455,8 +2453,7 @@ void Frontend::Update()
 
 				PopupButton("Toggles", debugging_toggles_window, 234, 444, false);
 
-				PopupButton("68000 Disassembler", m68k_disassembler_window, 380, 410, true);
-				PopupButton("Z80 Disassembler", z80_disassembler_window, 380, 410, true);
+				PopupButton("Disassembler", disassembler_window, 380, 410, true);
 
 				ImGui::Separator();
 
@@ -2655,8 +2652,7 @@ void Frontend::Update()
 
 	DisplayWindow(debug_log_window);
 	DisplayWindow(debugging_toggles_window);
-	DisplayWindow(m68k_disassembler_window);
-	DisplayWindow(z80_disassembler_window);
+	DisplayWindow(disassembler_window);
 	DisplayWindow(debug_frontend_window);
 	DisplayWindow(m68k_status_window, clownmdemu.m68k.state);
 	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
