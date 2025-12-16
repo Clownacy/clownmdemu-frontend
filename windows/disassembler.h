@@ -18,13 +18,37 @@ private:
 
 	void DisplayInternal();
 
+protected:
+	cc_u16f ReadMemory();
+
+	cc_u16f ReadCallback16Bit();
+	cc_u8f ReadCallback8Bit();
+	void PrintCallback(const char *string);
+
+	virtual void Disassemble(unsigned long address) = 0;
+
 public:
 	using Base::WindowPopup;
 
 	friend Base;
+};
 
-	long ReadCallback();
-	void PrintCallback(const char *string);
+class Disassembler68000 : public Disassembler
+{
+private:
+	void Disassemble(unsigned long address) override;
+
+public:
+	using Disassembler::Disassembler;
+};
+
+class DisassemblerZ80 : public Disassembler
+{
+private:
+	void Disassemble(unsigned long address) override;
+
+public:
+	using Disassembler::Disassembler;
 };
 
 #endif /* DISASSEMBLER_H */
