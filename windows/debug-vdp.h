@@ -132,8 +132,6 @@ namespace DebugVDP
 	private:
 		static constexpr Uint32 window_flags = 0;
 
-		int scale = 0;
-
 	protected:
 		void DisplayMap(
 			std::size_t map_width_in_pieces,
@@ -158,6 +156,7 @@ namespace DebugVDP
 	private:
 		using Base = MapViewer<PlaneViewer>;
 
+		int scale = 2;
 		RegeneratingPieces regenerating_pieces;
 
 		void DisplayInternal(cc_u16l plane_address, std::size_t plane_width, std::size_t plane_height);
@@ -174,6 +173,7 @@ namespace DebugVDP
 	private:
 		using Base = MapViewer<StampMapViewer>;
 
+		int scale = 1;
 		RegeneratingPieces regenerating_pieces;
 
 		void DisplayInternal();

@@ -390,9 +390,9 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 	if (!textures.empty())
 	{
-		ImGui::InputInt("Zoom", &scale);
-		if (scale < 1)
-			scale = 1;
+		ImGui::InputInt("Zoom", &derived->scale);
+		if (derived->scale < 1)
+			derived->scale = 1;
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
@@ -408,7 +408,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(ImTextureRef(textures[0]), ImVec2(map_width_in_pixels * scale, map_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
+			ImGui::Image(ImTextureRef(textures[0]), ImVec2(map_width_in_pixels * derived->scale, map_height_in_pixels * derived->scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
 
 			if (ImGui::IsItemHovered())
 			{
@@ -416,8 +416,8 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 				const ImVec2 mouse_position = ImGui::GetMousePos();
 
-				const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale / piece_width);
-				const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale / piece_height);
+				const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / derived->scale / piece_width);
+				const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / derived->scale / piece_height);
 
 				const auto dpi_scale = derived->GetWindow().GetDPIScale();
 				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
