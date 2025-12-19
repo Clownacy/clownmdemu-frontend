@@ -161,7 +161,7 @@ EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer_bytes, QWi
 
 void EmulatorWidget::ColourUpdated(const cc_u16f index, const cc_u16f colour)
 {
-	const auto Extract4BitChannelTo6Bit = [&](const unsigned int channel_index)
+	const auto &Extract4BitChannelTo6Bit = [&](const unsigned int channel_index)
 	{
 		const cc_u8f channel = (colour >> (channel_index * 4)) & 0xF;
 		return channel << 2 | channel >> 2;
@@ -174,9 +174,9 @@ void EmulatorWidget::ColourUpdated(const cc_u16f index, const cc_u16f colour)
 
 	// Pack into RGB565.
 	palette[index]
-			= (red   << (0 + 6 + 5))
-			| (green << (0 + 0 + 5))
-			| (blue  << (0 + 0 + 0));
+		= (red   << (0 + 6 + 5))
+		| (green << (0 + 0 + 5))
+		| (blue  << (0 + 0 + 0));
 }
 
 void EmulatorWidget::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)

@@ -15,11 +15,11 @@ class Emulator
 private:
 	class Constant
 	{
-		public:
-			Constant()
-			{
-				ClownMDEmu_Constant_Initialise();
-			}
+	public:
+		Constant()
+		{
+			ClownMDEmu_Constant_Initialise();
+		}
 	};
 
 	static Constant constant;
@@ -29,26 +29,26 @@ public:
 	{
 		friend Emulator;
 
-		public:
-			Configuration()
-				: ClownMDEmu_Configuration({})
-			{}
+	public:
+		Configuration()
+			: ClownMDEmu_Configuration({})
+		{}
 	};
 
 	class State : protected ClownMDEmu_State
 	{
 		friend Emulator;
 
-		public:
-			State()
-			{
-				Initialise();
-			}
+	public:
+		State()
+		{
+			Initialise();
+		}
 
-			void Initialise()
-			{
-				ClownMDEmu_State_Initialise(this);
-			}
+		void Initialise()
+		{
+			ClownMDEmu_State_Initialise(this);
+		}
 	};
 
 	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
