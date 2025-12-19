@@ -70,6 +70,7 @@
      <string>Miscellaneous</string>
     </property>
     <addaction name="actionFullscreen"/>
+    <addaction name="actionOptions"/>
     <addaction name="actionAbout"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -146,6 +147,11 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionOptions">
+   <property name="text">
+    <string>Options</string>
    </property>
   </action>
  </widget>

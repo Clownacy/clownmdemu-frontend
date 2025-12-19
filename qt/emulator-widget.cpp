@@ -10,8 +10,6 @@ struct Vertex
 	std::array<GLbyte, 2> position;
 };
 
-EmulatorWidget::Configuration EmulatorWidget::configuration;
-
 static constexpr auto vertices = std::to_array<Vertex>({
 	{{-0x80, -0x80}},
 	{{ 0x7F, -0x80}},
@@ -135,8 +133,9 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
-EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
+EmulatorWidget::EmulatorWidget(const Configuration &configuration, const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
+	, configuration(configuration)
 	, cartridge_rom_buffer(cartridge_rom_buffer_bytes.size() / sizeof(cc_u16l))
 {
 	// Enable keyboard input.

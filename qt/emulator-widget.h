@@ -94,8 +94,8 @@ protected:
 		}
 	};
 
-	static constexpr auto texture_buffer_width = 320;
-	static constexpr auto texture_buffer_height = 480;
+	static constexpr auto texture_buffer_width = VDP_MAX_SCANLINE_WIDTH;
+	static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
 
 	using Colour = GLushort;
 
@@ -107,7 +107,7 @@ protected:
 	QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
-	static Configuration configuration;
+	const Configuration &configuration;
 	StateRingBuffer state_buffer = StateRingBuffer(10 * 60); // 10 seconds
 
 	QVector<cc_u16l> cartridge_rom_buffer;
@@ -152,7 +152,7 @@ protected:
 	void Advance();
 
 public:
-	explicit EmulatorWidget(const QByteArray &cartridge_rom_buffer_bytes, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	explicit EmulatorWidget(const Configuration &configuration, const QByteArray &cartridge_rom_buffer_bytes, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 	~EmulatorWidget()
 	{

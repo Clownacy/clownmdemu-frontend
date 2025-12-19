@@ -8,6 +8,7 @@
 #include "about.h"
 #include "debug-cpu.h"
 #include "emulator-widget.h"
+#include "options.h"
 #include "ui_main-window.h"
 
 class MainWindow : public QMainWindow
@@ -27,15 +28,17 @@ private:
 		Debug::CPU::Dialog debug_cpu;
 
 		template<typename... Args>
-		EmulatorStuff(QWidget* const parent, Args... args)
+		EmulatorStuff(QWidget* const parent, Args &&...args)
 			: emulator(std::forward<Args>(args)..., parent)
 			, debug_cpu(emulator, parent)
 		{}
 	};
 
 	Ui::MainWindow ui;
+	Emulator::Configuration emulator_configuration;
 	std::optional<EmulatorStuff> emulator_stuff;
 	About about = About(this);
+	Options options = Options(emulator_configuration, this);
 	QWidget *central_widget = nullptr;
 
 	void DoActionEnablement(bool enabled);
