@@ -1,6 +1,6 @@
 #include "debug-cpu-z80.h"
 
-Debug::CPU::Z80::Z80(const Z80_State &state)
+Debug::CPU::Z80::Z80(const ClownZ80_State &state)
 {
 	layout.addWidget(&regular_registers.group_box);
 	layout.addWidget(&shadow_registers.group_box);
@@ -9,7 +9,7 @@ Debug::CPU::Z80::Z80(const Z80_State &state)
 	StateChanged(state);
 }
 
-void Debug::CPU::Z80::StateChanged(const Z80_State &state)
+void Debug::CPU::Z80::StateChanged(const ClownZ80_State &state)
 {
 	regular_registers.labels[0][0].setText(ByteRegisterToString("A", state.a));
 	regular_registers.labels[0][1].setText(ByteRegisterToString("B", state.b));

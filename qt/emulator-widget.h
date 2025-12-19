@@ -108,10 +108,9 @@ protected:
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	static Configuration configuration;
-	static Constant constant;
 	StateRingBuffer state_buffer = StateRingBuffer(10 * 60); // 10 seconds
 
-	QByteArray cartridge_rom_buffer;
+	QVector<cc_u16l> cartridge_rom_buffer;
 	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
 	cc_u16f screen_width, screen_height;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
@@ -119,14 +118,6 @@ protected:
 	AudioOutput audio_output;
 
 	// Emulator stuff.
-	unsigned char& AccessCartridgeBuffer(const std::size_t index)
-	{
-		// 'QByteArray' is signed, so we have to do some magic to treat it as unsigned.
-		return reinterpret_cast<unsigned char*>(cartridge_rom_buffer.data())[index];
-	}
-
-	cc_u8f CartridgeRead(cc_u32f address) override;
-	void CartridgeWritten(cc_u32f address, cc_u8f value) override;
 	void ColourUpdated(cc_u16f index, cc_u16f colour) override;
 	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
@@ -161,11 +152,16 @@ protected:
 	void Advance();
 
 public:
-	explicit EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	explicit EmulatorWidget(const QByteArray &cartridge_rom_buffer_bytes, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 	~EmulatorWidget()
 	{
 		makeCurrent();
+	}
+
+	bool IsCartridgeInserted() const
+	{
+		return !cartridge_rom_buffer.isEmpty();
 	}
 
 signals:
@@ -179,7 +175,7 @@ public slots:
 
 	void Reset()
 	{
-		Emulator::Reset(cc_false, std::size(cartridge_rom_buffer));
+		Emulator::Reset(IsCartridgeInserted(), cc_false);
 	}
 };
 

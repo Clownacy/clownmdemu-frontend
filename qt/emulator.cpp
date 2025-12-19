@@ -1,14 +1,6 @@
 #include "emulator.h"
 
-cc_u8f Emulator::Callback_CartridgeRead(void* const user_data, const cc_u32f address)
-{
-	return static_cast<Emulator*>(user_data)->CartridgeRead(address);
-}
-
-void Emulator::Callback_CartridgeWritten(void* const user_data, const cc_u32f address, const cc_u8f value)
-{
-	static_cast<Emulator*>(user_data)->CartridgeWritten(address, value);
-}
+Emulator::Constant Emulator::constant;
 
 void Emulator::Callback_ColourUpdated(void* const user_data, const cc_u16f index, const cc_u16f colour)
 {

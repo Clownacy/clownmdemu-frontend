@@ -3,7 +3,7 @@
 
 #include "debug-cpu-common.h"
 
-#include "../common/core/z80.h"
+#include "../common/core/clownz80/interpreter.h"
 
 namespace Debug
 {
@@ -17,9 +17,9 @@ namespace Debug
 			LabelGrid<6, 1> misc_registers = LabelGrid<6, 1>("Misc. Registers");
 
 		public:
-			Z80(const Z80_State &state);
+			Z80(const ClownZ80_State &state);
 
-			void StateChanged(const Z80_State &state);
+			void StateChanged(const ClownZ80_State &state);
 		};
 	}
 }

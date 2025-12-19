@@ -11,7 +11,6 @@ struct Vertex
 };
 
 EmulatorWidget::Configuration EmulatorWidget::configuration;
-EmulatorWidget::Constant EmulatorWidget::constant;
 
 static constexpr auto vertices = std::to_array<Vertex>({
 	{{-0x80, -0x80}},
@@ -136,32 +135,28 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
-EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer, QWidget* const parent, const Qt::WindowFlags f)
+EmulatorWidget::EmulatorWidget(const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, cartridge_rom_buffer(cartridge_rom_buffer)
+	, cartridge_rom_buffer(cartridge_rom_buffer_bytes.size() / sizeof(cc_u16l))
 {
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
 
+	// Convert the ROM buffer to 16-bit.
+	const auto &GetByte = [&](const auto index) { return static_cast<cc_u16f>(cartridge_rom_buffer_bytes[index]) & 0xFF; };
+
+	for (qsizetype i = 0; i < std::size(cartridge_rom_buffer); ++i)
+	{
+		cartridge_rom_buffer[i]
+			= (GetByte(i * 2 + 0) << 8)
+			| (GetByte(i * 2 + 1) << 0);
+	}
+
 	// Initialise the emulator.
-	SetParameters(configuration, constant, state_buffer.Clear());
+	SetParameters(configuration, state_buffer.Clear());
+	// TODO: Merge this with 'SetParameters'.
+	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	Reset();
-}
-
-cc_u8f EmulatorWidget::CartridgeRead(const cc_u32f address)
-{
-	if (static_cast<qsizetype>(address) >= cartridge_rom_buffer.size())
-		return 0;
-
-	return AccessCartridgeBuffer(address);
-}
-
-void EmulatorWidget::CartridgeWritten(const cc_u32f address, const cc_u8f value)
-{
-	if (static_cast<qsizetype>(address) >= cartridge_rom_buffer.size())
-		return;
-
-	AccessCartridgeBuffer(address) = value;
 }
 
 void EmulatorWidget::ColourUpdated(const cc_u16f index, const cc_u16f colour)
@@ -334,12 +329,15 @@ void EmulatorWidget::Advance()
 			if (state_buffer.Exhausted())
 				return;
 
-			SetParameters(configuration, constant, state_buffer.GetBackward());
+			SetParameters(configuration, state_buffer.GetBackward());
 		}
 		else
 		{
-			SetParameters(configuration, constant, state_buffer.GetForward());
+			SetParameters(configuration, state_buffer.GetForward());
 		}
+
+		// TODO: Merge this with 'SetParameters'.
+		SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 
 		audio_output.MixerBegin();
 		Iterate();

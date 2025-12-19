@@ -12,6 +12,18 @@
 
 class Emulator
 {
+private:
+	class Constant
+	{
+		public:
+			Constant()
+			{
+				ClownMDEmu_Constant_Initialise();
+			}
+	};
+
+	static Constant constant;
+
 public:
 	class Configuration : public ClownMDEmu_Configuration
 	{
@@ -21,22 +33,6 @@ public:
 			Configuration()
 				: ClownMDEmu_Configuration({})
 			{}
-	};
-
-	class Constant : protected ClownMDEmu_Constant
-	{
-		friend Emulator;
-
-		public:
-			Constant()
-			{
-				Initialise();
-			}
-
-			void Initialise()
-			{
-				ClownMDEmu_Constant_Initialise(this);
-			}
 	};
 
 	class State : protected ClownMDEmu_State
@@ -68,8 +64,8 @@ protected:
 		Parameters()
 		{}
 
-		Parameters(const ClownMDEmu_Configuration &configuration, const ClownMDEmu_Constant &constant, ClownMDEmu_State &state, const ClownMDEmu_Callbacks &callbacks)
-			: clownmdemu(CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &constant, &state, &callbacks))
+		Parameters(const ClownMDEmu_Configuration &configuration, ClownMDEmu_State &state, const ClownMDEmu_Callbacks &callbacks)
+			: clownmdemu(CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &state, &callbacks))
 		{}
 
 		bool has_value() const
@@ -84,7 +80,19 @@ protected:
 			return clownmdemu;
 		}
 
+		ClownMDEmu& operator*()
+		{
+			assert(has_value());
+
+			return clownmdemu;
+		}
+
 		const ClownMDEmu* operator->() const
+		{
+			return &**this;
+		}
+
+		ClownMDEmu* operator->()
 		{
 			return &**this;
 		}
@@ -92,8 +100,6 @@ protected:
 
 	const ClownMDEmu_Callbacks callbacks = {
 		this,
-		Callback_CartridgeRead,
-		Callback_CartridgeWritten,
 		Callback_ColourUpdated,
 		Callback_ScanlineRendered,
 		Callback_InputRequested,
@@ -141,8 +147,6 @@ protected:
 	static cc_bool Callback_SaveFileRemoved(void *user_data, const char *filename);
 	static cc_bool Callback_SaveFileSizeObtained(void *user_data, const char *filename, std::size_t *size);
 
-	virtual cc_u8f CartridgeRead(cc_u32f address) = 0;
-	virtual void CartridgeWritten(cc_u32f address, cc_u8f value) = 0;
 	virtual void ColourUpdated(cc_u16f index, cc_u16f colour) = 0;
 	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) = 0;
 	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) = 0;
@@ -174,13 +178,18 @@ public:
 	Emulator()
 	{}
 
-	Emulator(const Configuration &configuration, const Constant &constant, State &state)
-		: parameters(configuration, constant, state, callbacks)
+	Emulator(const Configuration &configuration, State &state)
+		: parameters(configuration, state, callbacks)
 	{}
 
-	void Reset(const cc_bool cd_boot, const cc_u32f cartridge_size)
+	void SetCartridge(const cc_u16l* const buffer, const cc_u32f buffer_length)
 	{
-		ClownMDEmu_Reset(&*parameters, cd_boot, cartridge_size);
+		ClownMDEmu_SetCartridge(&*parameters, buffer, buffer_length);
+	}
+
+	void Reset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)
+	{
+		ClownMDEmu_Reset(&*parameters, cartridge_inserted, cd_inserted);
 	}
 
 	void Iterate()
@@ -215,9 +224,9 @@ public:
 		return *parameters->state;
 	}
 
-	void SetParameters(const Configuration &configuration, const Constant &constant, State &state)
+	void SetParameters(const Configuration &configuration, State &state)
 	{
-		parameters = {configuration, constant, state, callbacks};
+		parameters = {configuration, state, callbacks};
 	}
 };
 
