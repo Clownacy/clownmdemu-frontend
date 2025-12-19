@@ -67,7 +67,7 @@
    </widget>
    <widget class="QMenu" name="menuMisc">
     <property name="title">
-     <string>Misc.</string>
+     <string>Miscellaneous</string>
     </property>
     <addaction name="actionFullscreen"/>
     <addaction name="actionAbout"/>
