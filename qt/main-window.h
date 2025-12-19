@@ -17,6 +17,9 @@ class MainWindow : public QMainWindow
 public:
 	MainWindow(QWidget *parent = nullptr);
 
+	void dragEnterEvent(QDragEnterEvent *event) override;
+	void dropEvent(QDropEvent *event) override;
+
 private:
 	struct EmulatorStuff
 	{
@@ -34,6 +37,11 @@ private:
 	std::optional<EmulatorStuff> emulator_stuff;
 	About about = About(this);
 	QWidget *central_widget = nullptr;
+
+	void DoActionEnablement(bool enabled);
+	[[nodiscard]] bool LoadCartridgeData(const QString &file_path);
+	void LoadCartridgeData(const QByteArray &file_contents);
+	void UnloadCartridgeData();
 };
 
 #endif // MAINWINDOW_H
