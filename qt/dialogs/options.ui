@@ -206,6 +206,20 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>ntsc</tabstop>
+  <tabstop>pal</tabstop>
+  <tabstop>japan</tabstop>
+  <tabstop>elsewhere</tabstop>
+  <tabstop>cdAddon</tabstop>
+  <tabstop>integerScreenScaling</tabstop>
+  <tabstop>tallInterlaceMode2</tabstop>
+  <tabstop>widescreenHack</tabstop>
+  <tabstop>lowPassFilter</tabstop>
+  <tabstop>lowVolumeDistortion</tabstop>
+  <tabstop>controlPad1</tabstop>
+  <tabstop>controlPad2</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

@@ -223,6 +223,31 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>scrollPlaneA</tabstop>
+  <tabstop>scrollPlaneB</tabstop>
+  <tabstop>windowPlane</tabstop>
+  <tabstop>spritePlane</tabstop>
+  <tabstop>fm1</tabstop>
+  <tabstop>fm2</tabstop>
+  <tabstop>fm3</tabstop>
+  <tabstop>fm4</tabstop>
+  <tabstop>fm5</tabstop>
+  <tabstop>fm6</tabstop>
+  <tabstop>dac</tabstop>
+  <tabstop>psg1</tabstop>
+  <tabstop>psg2</tabstop>
+  <tabstop>psg3</tabstop>
+  <tabstop>psgNoise</tabstop>
+  <tabstop>pcm1</tabstop>
+  <tabstop>pcm2</tabstop>
+  <tabstop>pcm3</tabstop>
+  <tabstop>pcm4</tabstop>
+  <tabstop>pcm5</tabstop>
+  <tabstop>pcm6</tabstop>
+  <tabstop>pcm7</tabstop>
+  <tabstop>pcm8</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
