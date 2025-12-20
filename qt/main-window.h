@@ -38,8 +38,8 @@ private:
 	Ui::MainWindow ui;
 	Emulator::Configuration emulator_configuration;
 	std::optional<EmulatorStuff> emulator_stuff;
-	std::unique_ptr<Options> options;
-	std::unique_ptr<About> about;
+	std::unique_ptr<Dialogs::Options> options;
+	std::unique_ptr<Dialogs::About> about;
 	QWidget *central_widget = nullptr;
 
 	void DoActionEnablement(bool enabled);

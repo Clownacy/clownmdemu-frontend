@@ -1,6 +1,6 @@
 #include "options.h"
 
-Options::Options(Emulator::Configuration &configuration, QWidget* const parent)
+Dialogs::Options::Options(Emulator::Configuration &configuration, QWidget* const parent)
 	: QDialog(parent)
 	, configuration(configuration)
 {

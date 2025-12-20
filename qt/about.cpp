@@ -2,7 +2,7 @@
 
 #include <QPushButton>
 
-About::About(QWidget *parent) :
+Dialogs::About::About(QWidget *parent) :
 	QDialog(parent)
 {
 	ui.setupUi(this);

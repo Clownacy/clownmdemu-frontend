@@ -5,16 +5,19 @@
 
 #include "emulator.h"
 
-class Options : public QDialog
+namespace Dialogs
 {
-	Q_OBJECT
+	class Options : public QDialog
+	{
+		Q_OBJECT
 
-private:
-	Ui::Options ui;
-	Emulator::Configuration &configuration;
+	private:
+		Ui::Options ui;
+		Emulator::Configuration &configuration;
 
-public:
-	explicit Options(Emulator::Configuration &configuration, QWidget *parent = nullptr);
-};
+	public:
+		explicit Options(Emulator::Configuration &configuration, QWidget *parent = nullptr);
+	};
+}
 
 #endif // OPTIONS_H
