@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 		format.setProfile(QSurfaceFormat::NoProfile);
 		format.setRenderableType(QSurfaceFormat::DefaultRenderableType);
 		format.setSwapBehavior(QSurfaceFormat::SwapBehavior::DoubleBuffer);
-		format.setSwapInterval(1);
+		format.setSwapInterval(1); // TODO: Allow V-sync to be disabled?
 
 		QSurfaceFormat::setDefaultFormat(format);
 		QApplication a(argc, argv);
