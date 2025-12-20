@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>359</width>
-    <height>416</height>
+    <width>360</width>
+    <height>443</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,62 +19,58 @@
      <property name="title">
       <string>Console</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_3">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
-        <item>
-         <widget class="QGroupBox" name="tvStandard">
-          <property name="title">
-           <string>TV Standard</string>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QRadioButton" name="ntsc">
-             <property name="text">
-              <string>NTSC</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="pal">
-             <property name="text">
-              <string>PAL</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="region">
-          <property name="title">
-           <string>Region</string>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <item>
-            <widget class="QRadioButton" name="japan">
-             <property name="text">
-              <string>Japan</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QRadioButton" name="elsewhere">
-             <property name="text">
-              <string>Elsewhere</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QGroupBox" name="tvStandard">
+        <property name="title">
+         <string>TV Standard</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="0" column="0">
+          <widget class="QRadioButton" name="ntsc">
+           <property name="text">
+            <string>NTSC</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QRadioButton" name="pal">
+           <property name="text">
+            <string>PAL</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </item>
-      <item>
+      <item row="1" column="0">
        <widget class="QCheckBox" name="cdAddon">
         <property name="text">
          <string>CD Add-on</string>
         </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QGroupBox" name="region">
+        <property name="title">
+         <string>Region</string>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_6">
+         <item row="0" column="0">
+          <widget class="QRadioButton" name="japan">
+           <property name="text">
+            <string>Japan</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QRadioButton" name="elsewhere">
+           <property name="text">
+            <string>Elsewhere</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
@@ -85,18 +81,25 @@
      <property name="title">
       <string>Video</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <widget class="QCheckBox" name="tallInterlaceMode2">
-        <property name="text">
-         <string>Tall Interlace Mode 2</string>
-        </property>
-       </widget>
-      </item>
-      <item>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="0">
        <widget class="QCheckBox" name="widescreenHack">
         <property name="text">
          <string>Widescreen Hack</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="integerScreenScaling">
+        <property name="text">
+         <string>Integer Screen Scaling</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="tallInterlaceMode2">
+        <property name="text">
+         <string>Tall Interlace Mode 2</string>
         </property>
        </widget>
       </item>
@@ -108,15 +111,15 @@
      <property name="title">
       <string>Audio</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
        <widget class="QCheckBox" name="lowPassFilter">
         <property name="text">
          <string>Low-Pass Filter</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <widget class="QCheckBox" name="lowVolumeDistortion">
         <property name="text">
          <string>Low-Volume Distortion</string>
@@ -131,15 +134,15 @@
      <property name="title">
       <string>Keyboard Input</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
-      <item>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
        <widget class="QRadioButton" name="controlPad1">
         <property name="text">
          <string>Control Pad #1</string>
         </property>
        </widget>
       </item>
-      <item>
+      <item row="0" column="1">
        <widget class="QRadioButton" name="controlPad2">
         <property name="text">
          <string>Control Pad #2</string>

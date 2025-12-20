@@ -31,6 +31,7 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	DoRadioButton(ui.elsewhere, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_OVERSEAS);
 
 	DoEnabledCheckBox(ui.cdAddon, options.emulator_configuration.general.cd_add_on_enabled);
+	DoEnabledCheckBox(ui.integerScreenScaling, options.integer_screen_scaling);
 	DoEnabledCheckBox(ui.tallInterlaceMode2, options.tall_interlace_mode_2);
 	DoEnabledCheckBox(ui.widescreenHack, options.emulator_configuration.vdp.widescreen_enabled);
 	DoDisableCheckBox(ui.lowPassFilter, options.emulator_configuration.general.low_pass_filter_disabled);

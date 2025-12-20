@@ -105,22 +105,44 @@ void EmulatorWidget::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
-	const auto &aspect_ratio = GetAspectRatio();
-
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();
 
-	cc_u16f aspect_correct_width, aspect_correct_height;
+	cc_u16f aspect_correct_width = 0, aspect_correct_height = 0;
 
-	if (static_cast<float>(output_width) / output_height > static_cast<float>(aspect_ratio.first) / aspect_ratio.second)
+	if (options.integer_screen_scaling)
 	{
-		aspect_correct_height = output_height;
-		aspect_correct_width = output_height * aspect_ratio.first / aspect_ratio.second;
+		cc_u16f scale_factor_x, scale_factor_y;
+
+		if (InterlaceMode2Enabled() && !options.tall_interlace_mode_2)
+		{
+			const cc_u16f scale_factor = std::min(output_width / 2 / screen_width, output_height / screen_height);
+			scale_factor_x = scale_factor * 2;
+			scale_factor_y = scale_factor;
+		}
+		else
+		{
+			scale_factor_x = scale_factor_y = std::min(output_width / screen_width, output_height / screen_height);
+		}
+
+		aspect_correct_width = screen_width * scale_factor_x;
+		aspect_correct_height = screen_height * scale_factor_y;
 	}
-	else
+
+	if (aspect_correct_width == 0 || aspect_correct_height == 0)
 	{
-		aspect_correct_width = output_width;
-		aspect_correct_height = output_width * aspect_ratio.second / aspect_ratio.first;
+		const auto &aspect_ratio = GetAspectRatio();
+
+		if (static_cast<float>(output_width) / output_height > static_cast<float>(aspect_ratio.first) / aspect_ratio.second)
+		{
+			aspect_correct_height = output_height;
+			aspect_correct_width = output_height * aspect_ratio.first / aspect_ratio.second;
+		}
+		else
+		{
+			aspect_correct_width = output_width;
+			aspect_correct_height = output_width * aspect_ratio.second / aspect_ratio.first;
+		}
 	}
 
 	shader_program->setUniformValue("OutputSize", QVector2D(output_width, output_height));
