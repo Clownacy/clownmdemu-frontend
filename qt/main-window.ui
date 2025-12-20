@@ -63,6 +63,7 @@
     <property name="title">
      <string>Debugging</string>
     </property>
+    <addaction name="actionToggles"/>
     <addaction name="actionCPUs"/>
    </widget>
    <widget class="QMenu" name="menuMisc">
@@ -152,6 +153,11 @@
   <action name="actionOptions">
    <property name="text">
     <string>Options</string>
+   </property>
+  </action>
+  <action name="actionToggles">
+   <property name="text">
+    <string>Toggles</string>
    </property>
   </action>
  </widget>

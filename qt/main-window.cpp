@@ -93,6 +93,8 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	connect(ui.actionUnload_Cartridge_File, &QAction::triggered, this, &MainWindow::UnloadCartridgeData);
 
+	connect(ui.actionToggles, &QAction::triggered, this, [&](){ debug_toggles.Open(this); });
+
 	// TODO: Full-screen the OpenGL widget only!
 	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
 	connect(ui.actionOptions, &QAction::triggered, this,
