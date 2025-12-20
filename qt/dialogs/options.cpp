@@ -4,7 +4,6 @@
 
 Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	: QDialog(parent)
-	, options(options)
 {
 	ui.setupUi(this);
 

@@ -13,7 +13,6 @@ namespace Dialogs
 
 	private:
 		Ui::Options ui;
-		::Options &options;
 
 	public:
 		explicit Options(::Options &options, QWidget *parent = nullptr);
