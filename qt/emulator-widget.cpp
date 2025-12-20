@@ -89,7 +89,7 @@ void EmulatorWidget::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
 	const cc_u16f uncorrected_width = screen_width;
-	const cc_u16f uncorrected_height = screen_height / (InterlaceMode2Enabled() ? 2 : 1);
+	const cc_u16f uncorrected_height = screen_height / (InterlaceMode2Enabled() && !options.tall_interlace_mode_2 ? 2 : 1);
 
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();

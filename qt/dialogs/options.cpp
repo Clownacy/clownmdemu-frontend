@@ -12,13 +12,13 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 		connect(radiobutton, &QRadioButton::toggled, this, [&variable, value](const bool enabled){ if (enabled) variable = value; });
 	};
 
-	const auto &DoEnabledCheckBox = [this](QCheckBox* const checkbox, cc_bool &boolean)
+	const auto &DoEnabledCheckBox = [this](QCheckBox* const checkbox, auto &boolean)
 	{
 		checkbox->setChecked(boolean);
 		connect(checkbox, &QCheckBox::checkStateChanged, this, [&boolean](const bool enabled){boolean = enabled;});
 	};
 
-	const auto &DoDisableCheckBox = [this](QCheckBox* const checkbox, cc_bool &boolean)
+	const auto &DoDisableCheckBox = [this](QCheckBox* const checkbox, auto &boolean)
 	{
 		checkbox->setChecked(!boolean);
 		connect(checkbox, &QCheckBox::checkStateChanged, this, [&](const bool enabled){boolean = !enabled;});
@@ -31,6 +31,7 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	DoRadioButton(ui.elsewhere, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_OVERSEAS);
 
 	DoEnabledCheckBox(ui.cdAddon, options.emulator_configuration.general.cd_add_on_enabled);
+	DoEnabledCheckBox(ui.tallInterlaceMode2, options.tall_interlace_mode_2);
 	DoEnabledCheckBox(ui.widescreenHack, options.emulator_configuration.vdp.widescreen_enabled);
 	DoDisableCheckBox(ui.lowPassFilter, options.emulator_configuration.general.low_pass_filter_disabled);
 	DoDisableCheckBox(ui.lowVolumeDistortion, options.emulator_configuration.fm.ladder_effect_disabled);

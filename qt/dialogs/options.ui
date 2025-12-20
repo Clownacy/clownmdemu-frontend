@@ -87,6 +87,13 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
+       <widget class="QCheckBox" name="tallInterlaceMode2">
+        <property name="text">
+         <string>Tall Interlace Mode 2</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="widescreenHack">
         <property name="text">
          <string>Widescreen Hack</string>
