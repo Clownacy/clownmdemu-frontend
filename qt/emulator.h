@@ -228,6 +228,11 @@ public:
 	{
 		parameters = {configuration, state, callbacks};
 	}
+
+	bool InterlaceMode2Enabled() const
+	{
+		return parameters->state->vdp.double_resolution_enabled;
+	}
 };
 
 #endif // EMULATOR_H

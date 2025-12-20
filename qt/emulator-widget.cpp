@@ -88,20 +88,23 @@ void EmulatorWidget::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
+	const cc_u16f uncorrected_width = screen_width;
+	const cc_u16f uncorrected_height = screen_height / (InterlaceMode2Enabled() ? 2 : 1);
+
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();
 
 	cc_u16f aspect_correct_width, aspect_correct_height;
 
-	if (static_cast<float>(output_width) / output_height > static_cast<float>(screen_width) / screen_height)
+	if (static_cast<float>(output_width) / output_height > static_cast<float>(uncorrected_width) / uncorrected_height)
 	{
 		aspect_correct_height = output_height;
-		aspect_correct_width = output_height * screen_width / screen_height;
+		aspect_correct_width = output_height * uncorrected_width / uncorrected_height;
 	}
 	else
 	{
 		aspect_correct_width = output_width;
-		aspect_correct_height = output_width * screen_height / screen_width;
+		aspect_correct_height = output_width * uncorrected_height / uncorrected_width;
 	}
 
 	shader_program->setUniformValue("OutputSize", QVector2D(output_width, output_height));
