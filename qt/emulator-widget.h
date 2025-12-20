@@ -154,9 +154,9 @@ protected:
 	void keyReleaseEvent(QKeyEvent *event) override;
 
 	// Miscellaneous.
-	bool DoButton(QKeyEvent *event, bool pressed);
+	[[nodiscard]] bool DoButton(QKeyEvent *event, bool pressed);
 	void Advance();
-	std::pair<cc_u16f, cc_u16f> GetAspectRatio() const;
+	[[nodiscard]] std::pair<cc_u16f, cc_u16f> GetAspectRatio() const;
 
 public:
 	explicit EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
@@ -166,7 +166,7 @@ public:
 		makeCurrent();
 	}
 
-	bool IsCartridgeInserted() const
+	[[nodiscard]] bool IsCartridgeInserted() const
 	{
 		return !cartridge_rom_buffer.isEmpty();
 	}

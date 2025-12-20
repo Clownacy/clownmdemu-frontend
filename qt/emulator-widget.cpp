@@ -154,7 +154,7 @@ void EmulatorWidget::paintGL()
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));
 }
 
-void EmulatorWidget::timerEvent(QTimerEvent* const event)
+void EmulatorWidget::timerEvent([[maybe_unused]] QTimerEvent* const event)
 {
 	if (paused)
 		return;

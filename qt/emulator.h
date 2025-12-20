@@ -68,7 +68,7 @@ protected:
 			: clownmdemu(CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &state, &callbacks))
 		{}
 
-		bool has_value() const
+		[[nodiscard]] bool has_value() const
 		{
 			return clownmdemu.state != nullptr;
 		}
@@ -219,7 +219,7 @@ public:
 		);
 	}
 
-	const auto& GetState() const
+	[[nodiscard]] const auto& GetState() const
 	{
 		return *parameters->state;
 	}
@@ -229,7 +229,7 @@ public:
 		parameters = {configuration, state, callbacks};
 	}
 
-	bool InterlaceMode2Enabled() const
+	[[nodiscard]] bool InterlaceMode2Enabled() const
 	{
 		return parameters->state->vdp.double_resolution_enabled;
 	}
