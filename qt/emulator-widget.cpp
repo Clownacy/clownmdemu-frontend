@@ -81,7 +81,7 @@ std::pair<cc_u16f, cc_u16f> EmulatorWidget::GetAspectRatio() const
 {
 	cc_u16f x, y;
 
-	if (options.emulator_configuration.vdp.widescreen_enabled)
+	if (screen_is_widescreen)
 		x = VDP_PAD_TILE_PAIRS_TO_WIDESCREEN(VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS) * VDP_TILE_PAIR_WIDTH;
 	else
 		x = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH;
@@ -226,6 +226,7 @@ void EmulatorWidget::ScanlineRendered(const cc_u16f scanline, const cc_u8l* cons
 
 	this->screen_width = screen_width;
 	this->screen_height = screen_height;
+	this->screen_is_widescreen = options.emulator_configuration.vdp.widescreen_enabled;
 }
 
 cc_bool EmulatorWidget::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)

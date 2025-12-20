@@ -115,6 +115,7 @@ protected:
 	QVector<cc_u16l> cartridge_rom_buffer;
 	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
 	cc_u16f screen_width, screen_height;
+	bool screen_is_widescreen;
 	std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 	bool rewinding = false, fastforwarding = false, paused = false;
 	AudioOutput audio_output;
