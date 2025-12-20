@@ -47,7 +47,7 @@ void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 		[&]()
 		{
 			emulator_stuff->debug_cpu.Open(this, emulator_stuff->emulator);
-			connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &*emulator_stuff->debug_cpu, &Debug::CPU::Dialog::StateChanged);
+			connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &*emulator_stuff->debug_cpu, &Dialogs::Debug::CPU::StateChanged);
 		}
 	);
 

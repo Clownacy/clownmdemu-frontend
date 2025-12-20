@@ -1,6 +1,6 @@
 #include "debug-cpu-m68k.h"
 
-Debug::CPU::M68k::M68k(const Clown68000_State &state)
+Dialogs::Widgets::Debug::CPU::M68k::M68k(const Clown68000_State &state)
 {
 	layout.addWidget(&data_registers.group_box);
 	layout.addWidget(&address_registers.group_box);
@@ -9,7 +9,7 @@ Debug::CPU::M68k::M68k(const Clown68000_State &state)
 	StateChanged(state);
 }
 
-void Debug::CPU::M68k::StateChanged(const Clown68000_State &state)
+void Dialogs::Widgets::Debug::CPU::M68k::StateChanged(const Clown68000_State &state)
 {
 	const auto DoRegisters = [](auto &label_grid, const QChar prefix, const cc_u32l (&registers)[8])
 	{

@@ -1,9 +1,9 @@
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef DIALOGS_OPTIONS_H
+#define DIALOGS_OPTIONS_H
 
 #include "ui_options.h"
 
-#include "emulator.h"
+#include "../emulator.h"
 
 namespace Dialogs
 {
@@ -20,4 +20,4 @@ namespace Dialogs
 	};
 }
 
-#endif // OPTIONS_H
+#endif // DIALOGS_OPTIONS_H

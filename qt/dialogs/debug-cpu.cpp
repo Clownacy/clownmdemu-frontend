@@ -1,6 +1,6 @@
 #include "debug-cpu.h"
 
-Debug::CPU::Dialog::Dialog(const Emulator &emulator, QWidget* const parent)
+Dialogs::Debug::CPU::CPU(const Emulator &emulator, QWidget* const parent)
 	: Base(parent)
 	, emulator(emulator)
 	, main_cpu(emulator.GetState().m68k.state)
@@ -16,7 +16,7 @@ Debug::CPU::Dialog::Dialog(const Emulator &emulator, QWidget* const parent)
 	ui.sound_cpu->layout()->addWidget(&sound_cpu);
 }
 
-void Debug::CPU::Dialog::StateChanged()
+void Dialogs::Debug::CPU::StateChanged()
 {
 	main_cpu.StateChanged(emulator.GetState().m68k.state);
 	sub_cpu.StateChanged(emulator.GetState().mega_cd.m68k.state);

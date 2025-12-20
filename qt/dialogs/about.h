@@ -1,5 +1,5 @@
-#ifndef ABOUT_H
-#define ABOUT_H
+#ifndef DIALOGS_ABOUT_H
+#define DIALOGS_ABOUT_H
 
 #include "ui_about.h"
 
@@ -17,4 +17,4 @@ namespace Dialogs
 	};
 }
 
-#endif // ABOUT_H
+#endif // DIALOGS_ABOUT_H

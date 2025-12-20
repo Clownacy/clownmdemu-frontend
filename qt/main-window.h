@@ -6,11 +6,11 @@
 
 #include <QMainWindow>
 
-#include "about.h"
+#include "dialogs/about.h"
+#include "dialogs/debug-cpu.h"
+#include "dialogs/options.h"
 #include "allocated-dialog.h"
-#include "debug-cpu.h"
 #include "emulator-widget.h"
-#include "options.h"
 #include "ui_main-window.h"
 
 class MainWindow : public QMainWindow
@@ -27,7 +27,7 @@ private:
 	struct EmulatorStuff
 	{
 		EmulatorWidget emulator;
-		AllocatedDialog<Debug::CPU::Dialog> debug_cpu;
+		AllocatedDialog<Dialogs::Debug::CPU> debug_cpu;
 
 		template<typename... Args>
 		EmulatorStuff(QWidget* const parent, Args &&...args)
