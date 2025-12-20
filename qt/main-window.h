@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <memory>
 #include <optional>
 
 #include <QMainWindow>
@@ -37,8 +38,8 @@ private:
 	Ui::MainWindow ui;
 	Emulator::Configuration emulator_configuration;
 	std::optional<EmulatorStuff> emulator_stuff;
-	About about = About(this);
-	Options options = Options(emulator_configuration, this);
+	std::unique_ptr<Options> options;
+	std::unique_ptr<About> about;
 	QWidget *central_widget = nullptr;
 
 	void DoActionEnablement(bool enabled);
