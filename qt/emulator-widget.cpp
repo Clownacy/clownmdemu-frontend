@@ -77,6 +77,23 @@ void EmulatorWidget::initializeGL()
 	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
+std::pair<cc_u16f, cc_u16f> EmulatorWidget::GetAspectRatio() const
+{
+	cc_u16f x, y;
+
+	if (options.emulator_configuration.vdp.widescreen_enabled)
+		x = VDP_PAD_TILE_PAIRS_TO_WIDESCREEN(VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS) * VDP_TILE_PAIR_WIDTH;
+	else
+		x = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH;
+
+	if (InterlaceMode2Enabled() && !options.tall_interlace_mode_2)
+		y = screen_height / 2;
+	else
+		y = screen_height;
+
+	return {x, y};
+}
+
 void EmulatorWidget::paintGL()
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -88,23 +105,22 @@ void EmulatorWidget::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
-	const cc_u16f uncorrected_width = screen_width;
-	const cc_u16f uncorrected_height = screen_height / (InterlaceMode2Enabled() && !options.tall_interlace_mode_2 ? 2 : 1);
+	const auto &aspect_ratio = GetAspectRatio();
 
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();
 
 	cc_u16f aspect_correct_width, aspect_correct_height;
 
-	if (static_cast<float>(output_width) / output_height > static_cast<float>(uncorrected_width) / uncorrected_height)
+	if (static_cast<float>(output_width) / output_height > static_cast<float>(aspect_ratio.first) / aspect_ratio.second)
 	{
 		aspect_correct_height = output_height;
-		aspect_correct_width = output_height * uncorrected_width / uncorrected_height;
+		aspect_correct_width = output_height * aspect_ratio.first / aspect_ratio.second;
 	}
 	else
 	{
 		aspect_correct_width = output_width;
-		aspect_correct_height = output_width * uncorrected_height / uncorrected_width;
+		aspect_correct_height = output_width * aspect_ratio.second / aspect_ratio.first;
 	}
 
 	shader_program->setUniformValue("OutputSize", QVector2D(output_width, output_height));

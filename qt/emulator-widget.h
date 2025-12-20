@@ -3,6 +3,7 @@
 
 #include <array>
 #include <optional>
+#include <utility>
 
 #include <QBasicTimer>
 #include <QByteArray>
@@ -151,6 +152,7 @@ protected:
 	// Miscellaneous.
 	bool DoButton(QKeyEvent *event, bool pressed);
 	void Advance();
+	std::pair<cc_u16f, cc_u16f> GetAspectRatio() const;
 
 public:
 	explicit EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
