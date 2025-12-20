@@ -70,7 +70,10 @@ namespace Dialogs::Widgets::Debug::CPU
 		};
 
 	public:
-		Common();
+		Common()
+		{
+			setLayout(&layout);
+		}
 	};
 }
 

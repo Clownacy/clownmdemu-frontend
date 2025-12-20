@@ -7,25 +7,20 @@ qt_standard_project_setup()
 
 qt_add_executable(clownmdemu-frontend-qt
 	WIN32 MACOSX_BUNDLE
-	main.cpp
-	main-window.cpp
-	main-window.h
-	main-window.ui
-	emulator.h emulator.cpp
-	dialogs/debug-cpu.h dialogs/debug-cpu.cpp dialogs/debug-cpu.ui
-	emulator-widget.cpp
-	emulator-widget.h
-	dialogs/widgets/debug-cpu-m68k.h dialogs/widgets/debug-cpu-m68k.cpp
-	dialogs/widgets/debug-cpu-common.cpp
+	dialogs/about.cpp dialogs/about.h dialogs/about.ui
+	dialogs/debug-cpu.cpp dialogs/debug-cpu.h dialogs/debug-cpu.ui
+	dialogs/options.cpp dialogs/options.h dialogs/options.ui
 	dialogs/widgets/debug-cpu-common.h
-	dialogs/widgets/debug-cpu-z80.cpp
-	dialogs/widgets/debug-cpu-z80.h
-	dialogs/about.h dialogs/about.cpp dialogs/about.ui
+	dialogs/widgets/debug-cpu-m68k.cpp dialogs/widgets/debug-cpu-m68k.h
+	dialogs/widgets/debug-cpu-z80.cpp dialogs/widgets/debug-cpu-z80.h
+	allocated-dialog.h
+	emulator.cpp emulator.h
+	emulator-widget.cpp emulator-widget.h
+	main.cpp
+	main-window.cpp main-window.h main-window.ui
 	../audio-device.cpp ../audio-device.h
 	../audio-output.cpp ../audio-output.h
 	../raii-wrapper.h ../sdl-wrapper.h
-	dialogs/options.h dialogs/options.cpp dialogs/options.ui
-	allocated-dialog.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
