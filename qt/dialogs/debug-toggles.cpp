@@ -8,10 +8,10 @@ Dialogs::Debug::Toggles::Toggles(Emulator::Configuration &configuration, QWidget
 	ui.setupUi(this);
 
 	// VDP
+	Common::BindInverseCheckBox(this, ui.spritePlane, configuration.vdp.sprites_disabled);
+	Common::BindInverseCheckBox(this, ui.windowPlane, configuration.vdp.window_disabled);
 	Common::BindInverseCheckBox(this, ui.scrollPlaneA, configuration.vdp.planes_disabled[0]);
 	Common::BindInverseCheckBox(this, ui.scrollPlaneB, configuration.vdp.planes_disabled[1]);
-	Common::BindInverseCheckBox(this, ui.windowPlane, configuration.vdp.window_disabled);
-	Common::BindInverseCheckBox(this, ui.spritePlane, configuration.vdp.sprites_disabled);
 
 	// FM
 	Common::BindInverseCheckBox(this, ui.fm1, configuration.fm.fm_channels_disabled[0]);
