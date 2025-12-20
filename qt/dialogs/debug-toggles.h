@@ -1,6 +1,8 @@
 #ifndef DIALOG_DEBUG_TOGGLES_H
 #define DIALOG_DEBUG_TOGGLES_H
 
+#include "../emulator.h"
+
 #include "ui_debug-toggles.h"
 
 namespace Dialogs::Debug
@@ -13,7 +15,7 @@ namespace Dialogs::Debug
 		Ui::DebugToggles ui;
 
 	public:
-		explicit Toggles(QWidget *parent = nullptr);
+		explicit Toggles(Emulator::Configuration &configuration, QWidget *parent = nullptr);
 	};
 }
 
