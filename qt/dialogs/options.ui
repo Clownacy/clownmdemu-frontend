@@ -22,12 +22,18 @@
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">
        <widget class="QGroupBox" name="tvStandard">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some games only work with a certain TV standard.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>TV Standard</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="0">
           <widget class="QRadioButton" name="ntsc">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;59.94Hz&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>NTSC</string>
            </property>
@@ -35,6 +41,9 @@
          </item>
          <item row="0" column="1">
           <widget class="QRadioButton" name="pal">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;50Hz&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>PAL</string>
            </property>
@@ -45,6 +54,9 @@
       </item>
       <item row="1" column="0">
        <widget class="QCheckBox" name="cdAddon">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allow cartridge-only software to utilise features of the emulated Mega CD add-on, such as CD music.&lt;/p&gt;&lt;p&gt;This may break some software.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>CD Add-on</string>
         </property>
@@ -52,12 +64,18 @@
       </item>
       <item row="0" column="1">
        <widget class="QGroupBox" name="region">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some games only work with a certain region.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="title">
          <string>Region</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="0" column="0">
           <widget class="QRadioButton" name="japan">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Games may show Japanese text.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>Japan</string>
            </property>
@@ -65,6 +83,9 @@
          </item>
          <item row="0" column="1">
           <widget class="QRadioButton" name="elsewhere">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Games may show English text.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
            <property name="text">
             <string>Elsewhere</string>
            </property>
@@ -84,6 +105,9 @@
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="0">
        <widget class="QCheckBox" name="widescreenHack">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Widens the display.&lt;/p&gt;&lt;p&gt;Works well with some games, badly with others.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Widescreen Hack</string>
         </property>
@@ -91,6 +115,9 @@
       </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="integerScreenScaling">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Preserves pixel aspect ratio, avoiding non-square pixels.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Integer Screen Scaling</string>
         </property>
@@ -98,6 +125,9 @@
       </item>
       <item row="0" column="1">
        <widget class="QCheckBox" name="tallInterlaceMode2">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Makes games that use Interlace Mode 2 for split-screen not appear squashed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Tall Interlace Mode 2</string>
         </property>
@@ -114,6 +144,9 @@
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
        <widget class="QCheckBox" name="lowPassFilter">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Lowers the volume of high frequencies to make the audio 'softer', like a real Mega Drive does.&lt;/p&gt;&lt;p&gt;Without this, treble will become louder due to differences in volume balancing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Low-Pass Filter</string>
         </property>
@@ -121,6 +154,9 @@
       </item>
       <item row="0" column="1">
        <widget class="QCheckBox" name="lowVolumeDistortion">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enables the so-called 'ladder effect' that is present in early Mega Drives.&lt;/p&gt;&lt;p&gt;Without this, some quiet sounds will become inaudible.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Low-Volume Distortion</string>
         </property>
@@ -137,6 +173,9 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <widget class="QRadioButton" name="controlPad1">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bind keyboard to control pad #1.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Control Pad #1</string>
         </property>
@@ -144,6 +183,9 @@
       </item>
       <item row="0" column="1">
        <widget class="QRadioButton" name="controlPad2">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bind keyboard to control pad #2.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>Control Pad #2</string>
         </property>
