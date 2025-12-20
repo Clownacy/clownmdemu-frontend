@@ -8,7 +8,9 @@ qt_standard_project_setup()
 qt_add_executable(clownmdemu-frontend-qt
 	WIN32 MACOSX_BUNDLE
 	dialogs/about.cpp dialogs/about.h dialogs/about.ui
+	dialogs/common.h
 	dialogs/debug-cpu.cpp dialogs/debug-cpu.h dialogs/debug-cpu.ui
+	dialogs/debug-toggles.cpp dialogs/debug-toggles.h dialogs/debug-toggles.ui
 	dialogs/options.cpp dialogs/options.h dialogs/options.ui
 	dialogs/widgets/debug-cpu-common.h
 	dialogs/widgets/debug-cpu-m68k.cpp dialogs/widgets/debug-cpu-m68k.h
@@ -22,8 +24,6 @@ qt_add_executable(clownmdemu-frontend-qt
 	../audio-device.cpp ../audio-device.h
 	../audio-output.cpp ../audio-output.h
 	../raii-wrapper.h ../sdl-wrapper.h
-	dialogs/debug-toggles.h dialogs/debug-toggles.cpp dialogs/debug-toggles.ui
-	dialogs/common.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
