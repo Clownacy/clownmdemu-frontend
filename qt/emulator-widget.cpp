@@ -81,15 +81,15 @@ std::pair<cc_u16f, cc_u16f> EmulatorWidget::GetAspectRatio() const
 {
 	cc_u16f x, y;
 
-	if (screen_is_widescreen)
+	if (screen_properties.is_widescreen)
 		x = VDP_PAD_TILE_PAIRS_TO_WIDESCREEN(VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS) * VDP_TILE_PAIR_WIDTH;
 	else
 		x = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH;
 
 	if (InterlaceMode2Enabled() && !options.tall_interlace_mode_2)
-		y = screen_height / 2;
+		y = screen_properties.height / 2;
 	else
-		y = screen_height;
+		y = screen_properties.height;
 
 	return {x, y};
 }
@@ -116,17 +116,17 @@ void EmulatorWidget::paintGL()
 
 		if (InterlaceMode2Enabled() && !options.tall_interlace_mode_2)
 		{
-			const cc_u16f scale_factor = std::min(output_width / 2 / screen_width, output_height / screen_height);
+			const cc_u16f scale_factor = std::min(output_width / 2 / screen_properties.width, output_height / screen_properties.height);
 			scale_factor_x = scale_factor * 2;
 			scale_factor_y = scale_factor;
 		}
 		else
 		{
-			scale_factor_x = scale_factor_y = std::min(output_width / screen_width, output_height / screen_height);
+			scale_factor_x = scale_factor_y = std::min(output_width / screen_properties.width, output_height / screen_properties.height);
 		}
 
-		aspect_correct_width = screen_width * scale_factor_x;
-		aspect_correct_height = screen_height * scale_factor_y;
+		aspect_correct_width = screen_properties.width * scale_factor_x;
+		aspect_correct_height = screen_properties.height * scale_factor_y;
 	}
 
 	if (aspect_correct_width == 0 || aspect_correct_height == 0)
@@ -148,7 +148,7 @@ void EmulatorWidget::paintGL()
 	shader_program->setUniformValue("OutputSize", QVector2D(output_width, output_height));
 	shader_program->setUniformValue("OutputSizeAspectCorrected", QVector2D(aspect_correct_width, aspect_correct_height));
 	shader_program->setUniformValue("TextureSize", QVector2D(texture_buffer_width, texture_buffer_height));
-	shader_program->setUniformValue("InputSize", QVector2D(screen_width, screen_height));
+	shader_program->setUniformValue("InputSize", QVector2D(screen_properties.width, screen_properties.height));
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));
@@ -224,9 +224,9 @@ void EmulatorWidget::ScanlineRendered(const cc_u16f scanline, const cc_u8l* cons
 	for (cc_u16f i = 0; i < right_boundary - left_boundary; ++i)
 		texture_buffer[scanline][left_boundary + i] = palette[pixels[i]];
 
-	this->screen_width = screen_width;
-	this->screen_height = screen_height;
-	this->screen_is_widescreen = options.emulator_configuration.vdp.widescreen_enabled;
+	screen_properties.width = screen_width;
+	screen_properties.height = screen_height;
+	screen_properties.is_widescreen = options.emulator_configuration.vdp.widescreen_enabled;
 }
 
 cc_bool EmulatorWidget::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
