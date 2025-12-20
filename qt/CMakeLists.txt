@@ -25,6 +25,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	../audio-output.cpp ../audio-output.h
 	../raii-wrapper.h ../sdl-wrapper.h
 	options.h options.cpp options.ui
+	allocated-dialog.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES

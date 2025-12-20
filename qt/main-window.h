@@ -7,6 +7,7 @@
 #include <QMainWindow>
 
 #include "about.h"
+#include "allocated-dialog.h"
 #include "debug-cpu.h"
 #include "emulator-widget.h"
 #include "options.h"
@@ -38,8 +39,8 @@ private:
 	Ui::MainWindow ui;
 	Emulator::Configuration emulator_configuration;
 	std::optional<EmulatorStuff> emulator_stuff;
-	std::unique_ptr<Dialogs::Options> options;
-	std::unique_ptr<Dialogs::About> about;
+	AllocatedDialog<Dialogs::Options> options;
+	AllocatedDialog<Dialogs::About> about;
 	QWidget *central_widget = nullptr;
 
 	void DoActionEnablement(bool enabled);
