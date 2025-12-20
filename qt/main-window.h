@@ -23,20 +23,16 @@ public:
 	void dropEvent(QDropEvent *event) override;
 
 private:
-	struct EmulatorStuff
+	struct EmulatorStuff : public EmulatorWidget
 	{
-		EmulatorWidget emulator;
 		AllocatedDialog<Dialogs::Debug::CPU> debug_cpu;
 
-		template<typename... Args>
-		EmulatorStuff(QWidget* const parent, Args &&...args)
-			: emulator(std::forward<Args>(args)..., parent)
-		{}
+		using EmulatorWidget::EmulatorWidget;
 	};
 
 	Ui::MainWindow ui;
 	Emulator::Configuration emulator_configuration;
-	std::optional<EmulatorStuff> emulator_stuff;
+	std::optional<EmulatorStuff> emulator;
 	AllocatedDialog<Dialogs::Options> options;
 	AllocatedDialog<Dialogs::About> about;
 	QWidget *central_widget = nullptr;

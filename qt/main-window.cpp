@@ -34,26 +34,26 @@ bool MainWindow::LoadCartridgeData(const QString &file_path)
 
 void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 {
-	emulator_stuff.emplace(this, emulator_configuration, file_contents);
-	emulator_stuff->emulator.Pause(ui.actionPause->isChecked());
+	emulator.emplace(emulator_configuration, file_contents, this);
+	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
 		central_widget = takeCentralWidget();
-	setCentralWidget(&emulator_stuff->emulator);
+	setCentralWidget(&*emulator);
 
-	connect(ui.actionPause, &QAction::triggered, &emulator_stuff->emulator, &EmulatorWidget::Pause);
-	connect(ui.actionReset, &QAction::triggered, &emulator_stuff->emulator, &EmulatorWidget::Reset);
+	connect(ui.actionPause, &QAction::triggered, &*emulator, &EmulatorWidget::Pause);
+	connect(ui.actionReset, &QAction::triggered, &*emulator, &EmulatorWidget::Reset);
 	connect(ui.actionCPUs, &QAction::triggered, this,
 		[&]()
 		{
-			emulator_stuff->debug_cpu.Open(this, emulator_stuff->emulator);
-			connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &*emulator_stuff->debug_cpu, &Dialogs::Debug::CPU::StateChanged);
+			emulator->debug_cpu.Open(this, *emulator);
+			connect(&*emulator, &EmulatorWidget::NewFrame, &*emulator->debug_cpu, &Dialogs::Debug::CPU::StateChanged);
 		}
 	);
 
 	DoActionEnablement(true);
 
-	emulator_stuff->emulator.SetLogCallback(
+	emulator->SetLogCallback(
 		[](const std::string &message)
 		{
 			qDebug() << message;
@@ -63,7 +63,7 @@ void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 
 void MainWindow::UnloadCartridgeData()
 {
-	emulator_stuff = std::nullopt;
+	emulator = std::nullopt;
 
 	DoActionEnablement(false);
 
