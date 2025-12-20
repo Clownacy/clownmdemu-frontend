@@ -7,28 +7,22 @@
 #include <QObject>
 
 template<typename T>
-class AllocatedDialog
+class AllocatedDialog : private std::unique_ptr<T>
 {
 private:
-	std::unique_ptr<T> menu;
+	using Base = std::unique_ptr<T>;
 
 public:
+	using Base::operator*;
+	using Base::operator->;
+
 	template<typename... Ts>
 	void Open(QWidget* const parent, Ts &&...args)
 	{
-		menu = std::make_unique<T>(std::forward<Ts>(args)..., parent);
-		menu->show();
-		QObject::connect(&*menu, &QDialog::finished, parent, [&](){menu = nullptr;});
-	}
-
-	T& operator*(this auto &&self)
-	{
-		return *self.menu;
-	}
-
-	T* operator->(this auto &&self)
-	{
-		return &*self;
+		Base &base = *this;
+		base = std::make_unique<T>(std::forward<Ts>(args)..., parent);
+		base->show();
+		QObject::connect(&*base, &QDialog::finished, parent, [&](){base = nullptr;});
 	}
 };
 

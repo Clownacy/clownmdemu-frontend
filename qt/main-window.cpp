@@ -43,8 +43,13 @@ void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 
 	connect(ui.actionPause, &QAction::triggered, &emulator_stuff->emulator, &EmulatorWidget::Pause);
 	connect(ui.actionReset, &QAction::triggered, &emulator_stuff->emulator, &EmulatorWidget::Reset);
-	connect(ui.actionCPUs, &QAction::triggered, &emulator_stuff->debug_cpu, &Debug::CPU::Dialog::show);
-	connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &emulator_stuff->debug_cpu, &Debug::CPU::Dialog::StateChanged);
+	connect(ui.actionCPUs, &QAction::triggered, this,
+		[&]()
+		{
+			emulator_stuff->debug_cpu.Open(this, emulator_stuff->emulator);
+			connect(&emulator_stuff->emulator, &EmulatorWidget::NewFrame, &*emulator_stuff->debug_cpu, &Debug::CPU::Dialog::StateChanged);
+		}
+	);
 
 	DoActionEnablement(true);
 
@@ -90,20 +95,8 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	// TODO: Full-screen the OpenGL widget only!
 	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
-
-	const auto &DoMenu = [&]<typename T, typename... Ts>(QAction* const action, AllocatedDialog<T> &menu, Ts &&...args)
-	{
-		connect(action, &QAction::triggered, this,
-			[&]()
-			{
-				menu.Open(this, std::forward<Ts>(args)...);
-			}
-		);
-	};
-
-	DoMenu(ui.actionOptions, options, emulator_configuration);
-	DoMenu(ui.actionAbout, about);
-
+	connect(ui.actionOptions, &QAction::triggered, this, [&](){ options.Open(this, emulator_configuration); });
+	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about.Open(this); });
 	connect(ui.actionExit, &QAction::triggered, this, &MainWindow::close);
 }
 

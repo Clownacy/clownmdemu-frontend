@@ -27,12 +27,11 @@ private:
 	struct EmulatorStuff
 	{
 		EmulatorWidget emulator;
-		Debug::CPU::Dialog debug_cpu;
+		AllocatedDialog<Debug::CPU::Dialog> debug_cpu;
 
 		template<typename... Args>
 		EmulatorStuff(QWidget* const parent, Args &&...args)
 			: emulator(std::forward<Args>(args)..., parent)
-			, debug_cpu(emulator, parent)
 		{}
 	};
 
