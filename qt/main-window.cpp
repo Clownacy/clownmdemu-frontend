@@ -34,7 +34,7 @@ bool MainWindow::LoadCartridgeData(const QString &file_path)
 
 void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 {
-	emulator.emplace(emulator_configuration, file_contents, this);
+	emulator.emplace(options.emulator_configuration, file_contents, this);
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
@@ -95,8 +95,8 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	// TODO: Full-screen the OpenGL widget only!
 	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
-	connect(ui.actionOptions, &QAction::triggered, this, [&](){ options.Open(this, emulator_configuration); });
-	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about.Open(this); });
+	connect(ui.actionOptions, &QAction::triggered, this, [&](){ options_menu.Open(this, options); });
+	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about_menu.Open(this); });
 	connect(ui.actionExit, &QAction::triggered, this, &MainWindow::close);
 }
 

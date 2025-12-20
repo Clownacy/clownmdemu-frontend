@@ -18,6 +18,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	emulator-widget.cpp emulator-widget.h
 	main.cpp
 	main-window.cpp main-window.h main-window.ui
+	options.cpp options.h
 	../audio-device.cpp ../audio-device.h
 	../audio-output.cpp ../audio-output.h
 	../raii-wrapper.h ../sdl-wrapper.h

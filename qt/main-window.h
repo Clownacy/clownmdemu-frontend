@@ -10,6 +10,7 @@
 #include "dialogs/options.h"
 #include "allocated-dialog.h"
 #include "emulator-widget.h"
+#include "options.h"
 #include "ui_main-window.h"
 
 class MainWindow : public QMainWindow
@@ -31,10 +32,10 @@ private:
 	};
 
 	Ui::MainWindow ui;
-	Emulator::Configuration emulator_configuration;
+	Options options;
 	std::optional<EmulatorStuff> emulator;
-	AllocatedDialog<Dialogs::Options> options;
-	AllocatedDialog<Dialogs::About> about;
+	AllocatedDialog<Dialogs::Options> options_menu;
+	AllocatedDialog<Dialogs::About> about_menu;
 	QWidget *central_widget = nullptr;
 
 	void DoActionEnablement(bool enabled);

@@ -1,8 +1,8 @@
 #include "options.h"
 
-Dialogs::Options::Options(Emulator::Configuration &configuration, QWidget* const parent)
+Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	: QDialog(parent)
-	, configuration(configuration)
+	, options(options)
 {
 	ui.setupUi(this);
 
@@ -12,11 +12,11 @@ Dialogs::Options::Options(Emulator::Configuration &configuration, QWidget* const
 		connect(radiobutton, &QRadioButton::toggled, this, [&variable, value](const bool enabled){ if (enabled) variable = value; });
 	};
 
-	DoRadioButton(ui.ntsc, configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_NTSC);
-	DoRadioButton(ui.pal, configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_PAL);
+	DoRadioButton(ui.ntsc, options.emulator_configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_NTSC);
+	DoRadioButton(ui.pal, options.emulator_configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_PAL);
 
-	DoRadioButton(ui.japan, configuration.general.region, CLOWNMDEMU_REGION_DOMESTIC);
-	DoRadioButton(ui.elsewhere, configuration.general.region, CLOWNMDEMU_REGION_OVERSEAS);
+	DoRadioButton(ui.japan, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_DOMESTIC);
+	DoRadioButton(ui.elsewhere, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_OVERSEAS);
 
 	const auto &DoEnabledCheckBox = [this](QCheckBox* const checkbox, cc_bool &boolean)
 	{
@@ -30,8 +30,8 @@ Dialogs::Options::Options(Emulator::Configuration &configuration, QWidget* const
 		connect(checkbox, &QCheckBox::checkStateChanged, this, [&](const bool enabled){boolean = !enabled;});
 	};
 
-	DoEnabledCheckBox(ui.cdAddon, configuration.general.cd_add_on_enabled);
-	DoEnabledCheckBox(ui.widescreenHack, configuration.vdp.widescreen_enabled);
-	DoDisableCheckBox(ui.lowPassFilter, configuration.general.low_pass_filter_disabled);
-	DoDisableCheckBox(ui.lowVolumeDistortion, configuration.fm.ladder_effect_disabled);
+	DoEnabledCheckBox(ui.cdAddon, options.emulator_configuration.general.cd_add_on_enabled);
+	DoEnabledCheckBox(ui.widescreenHack, options.emulator_configuration.vdp.widescreen_enabled);
+	DoDisableCheckBox(ui.lowPassFilter, options.emulator_configuration.general.low_pass_filter_disabled);
+	DoDisableCheckBox(ui.lowVolumeDistortion, options.emulator_configuration.fm.ladder_effect_disabled);
 }

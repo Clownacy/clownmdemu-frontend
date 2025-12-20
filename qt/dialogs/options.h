@@ -3,7 +3,7 @@
 
 #include "ui_options.h"
 
-#include "../emulator.h"
+#include "../options.h"
 
 namespace Dialogs
 {
@@ -13,10 +13,10 @@ namespace Dialogs
 
 	private:
 		Ui::Options ui;
-		Emulator::Configuration &configuration;
+		::Options &options;
 
 	public:
-		explicit Options(Emulator::Configuration &configuration, QWidget *parent = nullptr);
+		explicit Options(::Options &options, QWidget *parent = nullptr);
 	};
 }
 
