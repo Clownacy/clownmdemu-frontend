@@ -95,7 +95,19 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	// TODO: Full-screen the OpenGL widget only!
 	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
-	connect(ui.actionOptions, &QAction::triggered, this, [&](){ options_menu.Open(this, options); });
+	connect(ui.actionOptions, &QAction::triggered, this,
+		[&]()
+		{
+			options_menu.Open(this, options);
+			connect(&*options_menu, &Dialogs::Options::presentationOptionChanged, this,
+				[this]()
+				{
+					if (emulator)
+						emulator->update();
+				}
+			);
+		}
+	);
 	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about_menu.Open(this); });
 	connect(ui.actionExit, &QAction::triggered, this, &MainWindow::close);
 }

@@ -32,7 +32,9 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 
 	DoEnabledCheckBox(ui.cdAddon, options.emulator_configuration.general.cd_add_on_enabled);
 	DoEnabledCheckBox(ui.integerScreenScaling, options.integer_screen_scaling);
+	connect(ui.integerScreenScaling, &QCheckBox::checkStateChanged, this, &Options::presentationOptionChanged);
 	DoEnabledCheckBox(ui.tallInterlaceMode2, options.tall_interlace_mode_2);
+	connect(ui.tallInterlaceMode2, &QCheckBox::checkStateChanged, this, &Options::presentationOptionChanged);
 	DoEnabledCheckBox(ui.widescreenHack, options.emulator_configuration.vdp.widescreen_enabled);
 	DoDisableCheckBox(ui.lowPassFilter, options.emulator_configuration.general.low_pass_filter_disabled);
 	DoDisableCheckBox(ui.lowVolumeDistortion, options.emulator_configuration.fm.ladder_effect_disabled);
