@@ -86,7 +86,7 @@ std::pair<cc_u16f, cc_u16f> EmulatorWidget::GetAspectRatio() const
 	else
 		x = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH;
 
-	if (InterlaceMode2Enabled() && !options.tall_interlace_mode_2)
+	if (InterlaceMode2Enabled() && !options.TallInterlaceMode2Enabled())
 		y = screen_properties.height / 2;
 	else
 		y = screen_properties.height;
@@ -110,11 +110,11 @@ void EmulatorWidget::paintGL()
 
 	cc_u16f aspect_correct_width = 0, aspect_correct_height = 0;
 
-	if (options.integer_screen_scaling)
+	if (options.IntegerScreenScalingEnabled())
 	{
 		cc_u16f scale_factor_x, scale_factor_y;
 
-		if (InterlaceMode2Enabled() && !options.tall_interlace_mode_2)
+		if (InterlaceMode2Enabled() && !options.TallInterlaceMode2Enabled())
 		{
 			const cc_u16f scale_factor = std::min(output_width / 2 / screen_properties.width, output_height / screen_properties.height);
 			scale_factor_x = scale_factor * 2;
@@ -193,7 +193,7 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartrid
 	}
 
 	// Initialise the emulator.
-	SetParameters(options.emulator_configuration, state_buffer.Clear());
+	SetParameters(options.GetEmulatorConfiguration(), state_buffer.Clear());
 	// TODO: Merge this with 'SetParameters'.
 	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	Reset();
@@ -226,13 +226,13 @@ void EmulatorWidget::ScanlineRendered(const cc_u16f scanline, const cc_u8l* cons
 
 	screen_properties.width = screen_width;
 	screen_properties.height = screen_height;
-	screen_properties.is_widescreen = options.emulator_configuration.vdp.widescreen_enabled;
+	screen_properties.is_widescreen = options.WidescreenEnabled();
 }
 
 cc_bool EmulatorWidget::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
 	// TODO: Player 2.
-	if (player_id != options.keyboard_control_pad)
+	if (player_id != options.KeyboardControlPad())
 		return cc_false;
 
 	return buttons[button_id];
@@ -370,11 +370,11 @@ void EmulatorWidget::Advance()
 			if (state_buffer.Exhausted())
 				return;
 
-			SetParameters(options.emulator_configuration, state_buffer.GetBackward());
+			SetParameters(options.GetEmulatorConfiguration(), state_buffer.GetBackward());
 		}
 		else
 		{
-			SetParameters(options.emulator_configuration, state_buffer.GetForward());
+			SetParameters(options.GetEmulatorConfiguration(), state_buffer.GetForward());
 		}
 
 		// TODO: Merge this with 'SetParameters'.

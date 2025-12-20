@@ -2,39 +2,39 @@
 
 #include "common.h"
 
-Dialogs::Debug::Toggles::Toggles(Emulator::Configuration &configuration, QWidget *parent) :
+Dialogs::Debug::Toggles::Toggles(Options &options, QWidget *parent) :
 	QDialog(parent)
 {
 	ui.setupUi(this);
 
 	// VDP
-	Common::BindInverseCheckBox(this, ui.spritePlane, configuration.vdp.sprites_disabled);
-	Common::BindInverseCheckBox(this, ui.windowPlane, configuration.vdp.window_disabled);
-	Common::BindInverseCheckBox(this, ui.scrollPlaneA, configuration.vdp.planes_disabled[0]);
-	Common::BindInverseCheckBox(this, ui.scrollPlaneB, configuration.vdp.planes_disabled[1]);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.spritePlane, options, SpritesDisabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.windowPlane, options, WindowPlaneDisabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.scrollPlaneA, options, ScrollPlaneADisabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.scrollPlaneB, options, ScrollPlaneBDisabled);
 
 	// FM
-	Common::BindInverseCheckBox(this, ui.fm1, configuration.fm.fm_channels_disabled[0]);
-	Common::BindInverseCheckBox(this, ui.fm2, configuration.fm.fm_channels_disabled[1]);
-	Common::BindInverseCheckBox(this, ui.fm3, configuration.fm.fm_channels_disabled[2]);
-	Common::BindInverseCheckBox(this, ui.fm4, configuration.fm.fm_channels_disabled[3]);
-	Common::BindInverseCheckBox(this, ui.fm5, configuration.fm.fm_channels_disabled[4]);
-	Common::BindInverseCheckBox(this, ui.fm6, configuration.fm.fm_channels_disabled[5]);
-	Common::BindInverseCheckBox(this, ui.dac, configuration.fm.dac_channel_disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm1, options, FM1Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm2, options, FM2Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm3, options, FM3Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm4, options, FM4Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm5, options, FM5Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm6, options, FM6Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.dac, options, DACDisabled);
 
 	// PSG
-	Common::BindInverseCheckBox(this, ui.psg1, configuration.psg.tone_disabled[0]);
-	Common::BindInverseCheckBox(this, ui.psg2, configuration.psg.tone_disabled[1]);
-	Common::BindInverseCheckBox(this, ui.psg3, configuration.psg.tone_disabled[2]);
-	Common::BindInverseCheckBox(this, ui.psgNoise, configuration.psg.noise_disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psg1, options, PSG1Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psg2, options, PSG1Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psg3, options, PSG1Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psgNoise, options, PSGNoiseDisabled);
 
 	// PCM
-	Common::BindInverseCheckBox(this, ui.pcm1, configuration.pcm.channels_disabled[0]);
-	Common::BindInverseCheckBox(this, ui.pcm2, configuration.pcm.channels_disabled[1]);
-	Common::BindInverseCheckBox(this, ui.pcm3, configuration.pcm.channels_disabled[2]);
-	Common::BindInverseCheckBox(this, ui.pcm4, configuration.pcm.channels_disabled[3]);
-	Common::BindInverseCheckBox(this, ui.pcm5, configuration.pcm.channels_disabled[4]);
-	Common::BindInverseCheckBox(this, ui.pcm6, configuration.pcm.channels_disabled[5]);
-	Common::BindInverseCheckBox(this, ui.pcm7, configuration.pcm.channels_disabled[6]);
-	Common::BindInverseCheckBox(this, ui.pcm8, configuration.pcm.channels_disabled[7]);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm1, options, PCM1Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm2, options, PCM2Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm3, options, PCM3Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm4, options, PCM4Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm5, options, PCM5Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm6, options, PCM6Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm7, options, PCM7Disabled);
+	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm8, options, PCM8Disabled);
 }
