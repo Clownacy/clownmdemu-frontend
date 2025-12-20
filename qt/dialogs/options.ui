@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>359</width>
-    <height>342</height>
+    <height>416</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QGroupBox" name="groupBox">
+         <widget class="QGroupBox" name="tvStandard">
           <property name="title">
            <string>TV Standard</string>
           </property>
@@ -46,7 +46,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QGroupBox" name="groupBox_2">
+         <widget class="QGroupBox" name="region">
           <property name="title">
            <string>Region</string>
           </property>
@@ -113,6 +113,29 @@
        <widget class="QCheckBox" name="lowVolumeDistortion">
         <property name="text">
          <string>Low-Volume Distortion</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="keyboardInput">
+     <property name="title">
+      <string>Keyboard Input</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_6">
+      <item>
+       <widget class="QRadioButton" name="controlPad1">
+        <property name="text">
+         <string>Control Pad #1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="controlPad2">
+        <property name="text">
+         <string>Control Pad #2</string>
         </property>
        </widget>
       </item>

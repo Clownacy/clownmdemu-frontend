@@ -12,12 +12,6 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 		connect(radiobutton, &QRadioButton::toggled, this, [&variable, value](const bool enabled){ if (enabled) variable = value; });
 	};
 
-	DoRadioButton(ui.ntsc, options.emulator_configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_NTSC);
-	DoRadioButton(ui.pal, options.emulator_configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_PAL);
-
-	DoRadioButton(ui.japan, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_DOMESTIC);
-	DoRadioButton(ui.elsewhere, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_OVERSEAS);
-
 	const auto &DoEnabledCheckBox = [this](QCheckBox* const checkbox, cc_bool &boolean)
 	{
 		checkbox->setChecked(boolean);
@@ -30,8 +24,17 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 		connect(checkbox, &QCheckBox::checkStateChanged, this, [&](const bool enabled){boolean = !enabled;});
 	};
 
+	DoRadioButton(ui.ntsc, options.emulator_configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_NTSC);
+	DoRadioButton(ui.pal, options.emulator_configuration.general.tv_standard, CLOWNMDEMU_TV_STANDARD_PAL);
+
+	DoRadioButton(ui.japan, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_DOMESTIC);
+	DoRadioButton(ui.elsewhere, options.emulator_configuration.general.region, CLOWNMDEMU_REGION_OVERSEAS);
+
 	DoEnabledCheckBox(ui.cdAddon, options.emulator_configuration.general.cd_add_on_enabled);
 	DoEnabledCheckBox(ui.widescreenHack, options.emulator_configuration.vdp.widescreen_enabled);
 	DoDisableCheckBox(ui.lowPassFilter, options.emulator_configuration.general.low_pass_filter_disabled);
 	DoDisableCheckBox(ui.lowVolumeDistortion, options.emulator_configuration.fm.ladder_effect_disabled);
+
+	DoRadioButton(ui.controlPad1, options.keyboard_control_pad, 0u);
+	DoRadioButton(ui.controlPad2, options.keyboard_control_pad, 1u);
 }

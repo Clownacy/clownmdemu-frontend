@@ -34,7 +34,7 @@ bool MainWindow::LoadCartridgeData(const QString &file_path)
 
 void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 {
-	emulator.emplace(options.emulator_configuration, file_contents, this);
+	emulator.emplace(options, file_contents, this);
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)

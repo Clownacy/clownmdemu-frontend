@@ -136,9 +136,9 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
-EmulatorWidget::EmulatorWidget(const Configuration &configuration, const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
+EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, configuration(configuration)
+	, options(options)
 	, cartridge_rom_buffer(cartridge_rom_buffer_bytes.size() / sizeof(cc_u16l))
 {
 	// Enable keyboard input.
@@ -155,7 +155,7 @@ EmulatorWidget::EmulatorWidget(const Configuration &configuration, const QByteAr
 	}
 
 	// Initialise the emulator.
-	SetParameters(configuration, state_buffer.Clear());
+	SetParameters(options.emulator_configuration, state_buffer.Clear());
 	// TODO: Merge this with 'SetParameters'.
 	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	Reset();
@@ -193,7 +193,7 @@ void EmulatorWidget::ScanlineRendered(const cc_u16f scanline, const cc_u8l* cons
 cc_bool EmulatorWidget::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
 	// TODO: Player 2.
-	if (player_id != 0)
+	if (player_id != options.keyboard_control_pad)
 		return cc_false;
 
 	return buttons[button_id];
@@ -331,11 +331,11 @@ void EmulatorWidget::Advance()
 			if (state_buffer.Exhausted())
 				return;
 
-			SetParameters(configuration, state_buffer.GetBackward());
+			SetParameters(options.emulator_configuration, state_buffer.GetBackward());
 		}
 		else
 		{
-			SetParameters(configuration, state_buffer.GetForward());
+			SetParameters(options.emulator_configuration, state_buffer.GetForward());
 		}
 
 		// TODO: Merge this with 'SetParameters'.
