@@ -41,7 +41,7 @@ public:
 		VARIABLE = value; \
  \
 		QSettings settings; \
-		settings.setValue(STRINGIFY(IDENTIFIER), value); \
+		settings.setValue(STRINGIFY(IDENTIFIER), VARIABLE); \
 	}
 
 #define DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER, VARIABLE) \
@@ -55,8 +55,17 @@ public:
 #define DEFINE_UNSAVED_OPTIONS(...) \
 	PASTE2(DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__)
 
+#define DEFINE_SAVED_OPTION_LOAD(IDENTIFIER, VARIABLE) \
+	VARIABLE = settings.value(STRINGIFY(IDENTIFIER)).value<decltype(VARIABLE)>();
+
 #define DEFINE_SAVED_OPTIONS(...) \
-	PASTE2(DEFINE_SAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__)
+	PASTE2(DEFINE_SAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__) \
+ \
+	Options() \
+	{ \
+		QSettings settings; \
+		PASTE2(DEFINE_SAVED_OPTION_LOAD, __VA_ARGS__) \
+	}
 
 	DEFINE_SAVED_OPTIONS(
 		TVStandard, emulator_configuration.general.tv_standard,
