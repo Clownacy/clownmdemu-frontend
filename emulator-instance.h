@@ -103,8 +103,6 @@ private:
 
 	SDL::IOStream save_data_stream;
 
-	static cc_u8f CartridgeReadCallback(void *user_data, cc_u32f address);
-	static void CartridgeWrittenCallback(void *user_data, cc_u32f address, cc_u8f value);
 	static void ColourUpdatedCallback(void *user_data, cc_u16f index, cc_u16f colour);
 	static void ScanlineRenderedCallback(void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
 	static cc_bool ReadInputCallback(void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
