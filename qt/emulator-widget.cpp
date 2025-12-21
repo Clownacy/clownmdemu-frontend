@@ -193,7 +193,7 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartrid
 	}
 
 	// Initialise the emulator.
-	SetParameters(options.GetEmulatorConfiguration(), state_buffer.Clear());
+	SetParameters(options.GetEmulatorConfiguration(), state);
 	// TODO: Merge this with 'SetParameters'.
 	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	Reset();
@@ -367,18 +367,15 @@ void EmulatorWidget::Advance()
 	{
 		if (rewinding)
 		{
-			if (state_buffer.Exhausted())
+			if (state_rewind_buffer.Exhausted())
 				return;
 
-			SetParameters(options.GetEmulatorConfiguration(), state_buffer.GetBackward());
+			state = state_rewind_buffer.GetBackward();
 		}
 		else
 		{
-			SetParameters(options.GetEmulatorConfiguration(), state_buffer.GetForward());
+			state_rewind_buffer.GetForward() = state;
 		}
-
-		// TODO: Merge this with 'SetParameters'.
-		SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 
 		audio_output.MixerBegin();
 		Iterate();

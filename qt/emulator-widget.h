@@ -82,17 +82,16 @@ protected:
 
 			const auto old_index = state_buffer_index;
 			state_buffer_index = NextIndex(state_buffer_index);
-			return state_buffer[state_buffer_index] = state_buffer[old_index];
+			return state_buffer[old_index];
 		}
 
-		[[nodiscard]] State& GetBackward()
+		[[nodiscard]] const State& GetBackward()
 		{
 			assert(!Exhausted());
 			--state_buffer_remaining;
 
 			state_buffer_index = PreviousIndex(state_buffer_index);
-			const auto old_index = PreviousIndex(state_buffer_index);
-			return state_buffer[state_buffer_index] = state_buffer[old_index];
+			return state_buffer[PreviousIndex(state_buffer_index)];
 		}
 	};
 
@@ -110,7 +109,8 @@ protected:
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	const Options &options;
-	StateRingBuffer state_buffer = StateRingBuffer(10 * 60); // 10 seconds
+	StateRingBuffer state_rewind_buffer = StateRingBuffer(10 * 60); // 10 seconds
+	State state;
 
 	QVector<cc_u16l> cartridge_rom_buffer;
 	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
