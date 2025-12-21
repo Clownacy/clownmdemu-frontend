@@ -801,8 +801,7 @@ static bool emulator_has_focus; // Used for deciding when to pass inputs to the 
 static bool emulator_paused;
 static bool emulator_frame_advance;
 
-static bool quick_save_exists;
-static EmulatorInstance::SaveState quick_save_state;
+static std::optional<EmulatorInstance::SaveState> quick_save_state;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -1022,7 +1021,7 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_
 	AddToRecentSoftware(path, false, false);
 #endif
 
-	quick_save_exists = false;
+	quick_save_state = std::nullopt;
 	emulator->LoadCartridgeFile(std::move(file_buffer), save_file_path);
 
 	SetWindowTitleToSoftwareName();
@@ -1795,15 +1794,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						// Save save state
-						quick_save_exists = true;
 						quick_save_state = emulator->CreateSaveState();
 						break;
 
 					case INPUT_BINDING_QUICK_LOAD_STATE:
 						// Load save state
-						if (quick_save_exists)
+						if (quick_save_state)
 						{
-							emulator->ApplySaveState(quick_save_state);
+							emulator->ApplySaveState(*quick_save_state);
 							emulator_paused = false;
 						}
 
@@ -2381,13 +2379,12 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 				{
-					quick_save_exists = true;
 					quick_save_state = emulator->CreateSaveState();
 				}
 
-				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_exists))
+				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_state))
 				{
-					emulator->ApplySaveState(quick_save_state);
+					emulator->ApplySaveState(*quick_save_state);
 
 					emulator_paused = false;
 				}
