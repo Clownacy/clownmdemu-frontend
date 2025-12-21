@@ -144,10 +144,6 @@ public:
 	bool LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();
 
-	// TODO: This.
-//	void LoadState(const void *buffer);
-//	void SaveState(void *buffer);
-
 	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	std::size_t GetSaveStateFileSize();
