@@ -15,6 +15,7 @@ private:
 	Emulator::Configuration emulator_configuration = {};
 	bool integer_screen_scaling = false;
 	bool tall_interlace_mode_2 = false;
+	bool rewinding = false;
 	unsigned int keyboard_control_pad = 0;
 
 public:
@@ -78,6 +79,8 @@ public:
 
 		LowPassFilterDisabled, emulator_configuration.general.low_pass_filter_disabled,
 		LowVolumeDistortionDisabled, emulator_configuration.fm.ladder_effect_disabled,
+
+		RewindingEnabled, rewinding,
 
 		KeyboardControlPad, keyboard_control_pad
 	)

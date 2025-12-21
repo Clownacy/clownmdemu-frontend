@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>360</width>
-    <height>443</height>
+    <height>517</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -159,6 +159,25 @@
         </property>
         <property name="text">
          <string>Low-Volume Distortion</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="miscellaneous">
+     <property name="title">
+      <string>Miscellaneous</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="rewinding">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows the emulated console to be played in reverse for up to 10 seconds.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This uses a lot of RAM and increases CPU usage, so disable this if there is lag.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Rewinding</string>
         </property>
        </widget>
       </item>

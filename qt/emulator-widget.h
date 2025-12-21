@@ -109,7 +109,7 @@ protected:
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	const Options &options;
-	StateRingBuffer state_rewind_buffer = StateRingBuffer(10 * 60); // 10 seconds
+	std::optional<StateRingBuffer> state_rewind_buffer;
 	State state;
 
 	QVector<cc_u16l> cartridge_rom_buffer;
@@ -169,6 +169,14 @@ public:
 	[[nodiscard]] bool IsCartridgeInserted() const
 	{
 		return !cartridge_rom_buffer.isEmpty();
+	}
+
+	void SetRewindEnabled(const bool enabled)
+	{
+		if (enabled)
+			state_rewind_buffer.emplace(10 * 60); // 10 seconds
+		else
+			state_rewind_buffer = std::nullopt;
 	}
 
 signals:

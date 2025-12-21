@@ -192,6 +192,9 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartrid
 			| (GetByte(i * 2 + 1) << 0);
 	}
 
+	// Initialise state rewind buffer.
+	SetRewindEnabled(options.RewindingEnabled());
+
 	// Initialise the emulator.
 	SetParameters(options.GetEmulatorConfiguration(), state);
 	// TODO: Merge this with 'SetParameters'.
@@ -365,16 +368,19 @@ void EmulatorWidget::Advance()
 {
 	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
 	{
-		if (rewinding)
+		if (state_rewind_buffer)
 		{
-			if (state_rewind_buffer.Exhausted())
-				return;
+			if (rewinding)
+			{
+				if (state_rewind_buffer->Exhausted())
+					return;
 
-			state = state_rewind_buffer.GetBackward();
-		}
-		else
-		{
-			state_rewind_buffer.GetForward() = state;
+				state = state_rewind_buffer->GetBackward();
+			}
+			else
+			{
+				state_rewind_buffer->GetForward() = state;
+			}
 		}
 
 		audio_output.MixerBegin();

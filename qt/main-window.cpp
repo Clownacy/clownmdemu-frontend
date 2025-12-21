@@ -108,6 +108,13 @@ MainWindow::MainWindow(QWidget* const parent)
 						emulator->update();
 				}
 			);
+			connect(&*options_menu, &Dialogs::Options::rewindingOptionChanged, this,
+				[this](const bool enabled)
+				{
+					if (emulator)
+						emulator->SetRewindEnabled(enabled);
+				}
+			);
 		}
 	);
 	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about_menu.Open(this); });

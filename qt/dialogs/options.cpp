@@ -27,6 +27,10 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.lowPassFilter, options, LowPassFilterDisabled);
 	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.lowVolumeDistortion, options, LowVolumeDistortionDisabled);
 
+	// Miscellaneous
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.rewinding, options, RewindingEnabled);
+	connect(ui.rewinding, &QCheckBox::checkStateChanged, this, &Options::rewindingOptionChanged);
+
 	// Keyboard Input
 	DIALOGS_COMMON_BIND_RADIO_BUTTON(ui.controlPad1, options, KeyboardControlPad, 0);
 	DIALOGS_COMMON_BIND_RADIO_BUTTON(ui.controlPad2, options, KeyboardControlPad, 1);

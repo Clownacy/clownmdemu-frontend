@@ -19,6 +19,7 @@ namespace Dialogs
 
 	signals:
 		void presentationOptionChanged();
+		void rewindingOptionChanged(bool enabled);
 	};
 }
 
