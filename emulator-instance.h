@@ -13,6 +13,7 @@
 #include "audio-output.h"
 #include "cd-reader.h"
 #include "sdl-wrapper.h"
+#include "state-ring-buffer.h"
 
 class EmulatorInstance
 {
@@ -72,29 +73,25 @@ private:
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 
-	class Rewind
+	class Rewind : public StateRingBuffer<State>
 	{
 	private:
+		using Base = StateRingBuffer<State>;
+
 		bool in_progress = false;
 
 	public:
-		std::vector<State> buffer;
-		std::size_t index = 0;
-		std::size_t remaining = 0;
-
-		Rewind(const bool enabled)
-			: buffer(enabled ? 60 * 10 : 0) // Roughly 10 seconds of rewinding at 60FPS
-		{}
+		using Base::Base;
 
 		bool Enabled() const
 		{
-			return !buffer.empty();
+			return Exists();
 		}
 
 		bool InProgress() const { return Enabled() ? in_progress : false; }
 		void InProgress(const bool active) { in_progress = Enabled() ? active : false; }
 		// We need at least two frames and the frame before it, because rewinding pops one frame and then samples the frame below the head.
-		bool Exhausted() const { return Enabled() ? in_progress && remaining <= 2 : false; }
+		bool Exhausted() const { return Enabled() ? in_progress && Base::Exhausted() : false; }
 	};
 
 	Rewind rewind;

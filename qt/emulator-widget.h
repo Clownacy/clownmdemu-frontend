@@ -16,6 +16,7 @@
 #include <QVector>
 
 #include "../audio-output.h"
+#include "../state-ring-buffer.h"
 #include "emulator.h"
 #include "options.h"
 
@@ -25,71 +26,6 @@ class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public 
 
 protected:
 	using Base = QOpenGLWidget;
-
-	class StateRingBuffer
-	{
-	protected:
-		QVector<State> state_buffer;
-		qsizetype state_buffer_index = 0;
-		qsizetype state_buffer_remaining = 0;
-
-		qsizetype NextIndex(qsizetype index) const
-		{
-			++index;
-
-			if (index == std::size(state_buffer))
-				index = 0;
-
-			return index;
-		}
-
-		qsizetype PreviousIndex(qsizetype index) const
-		{
-			if (index == 0)
-				index = std::size(state_buffer);
-
-			--index;
-
-			return index;
-		}
-
-	public:
-		StateRingBuffer(const bool enabled)
-			: state_buffer(enabled ? 10 * 60 : 0) // 10 seconds
-		{}
-
-		[[nodiscard]] bool Exhausted() const
-		{
-			// We need at least two frames, because rewinding pops one frame and then samples the frame below the head.
-			return state_buffer_remaining < 2;
-		}
-
-		[[nodiscard]] State& GetForward()
-		{
-			assert(Exists());
-
-			state_buffer_remaining = qMin(state_buffer_remaining + 1, std::size(state_buffer) - 2);
-
-			const auto old_index = state_buffer_index;
-			state_buffer_index = NextIndex(state_buffer_index);
-			return state_buffer[old_index];
-		}
-
-		[[nodiscard]] const State& GetBackward()
-		{
-			assert(Exists());
-			assert(!Exhausted());
-			--state_buffer_remaining;
-
-			state_buffer_index = PreviousIndex(state_buffer_index);
-			return state_buffer[PreviousIndex(state_buffer_index)];
-		}
-
-		[[nodiscard]] bool Exists() const
-		{
-			return !state_buffer.isEmpty();
-		}
-	};
 
 	static constexpr auto texture_buffer_width = VDP_MAX_SCANLINE_WIDTH;
 	static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
@@ -105,7 +41,7 @@ protected:
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	const Options &options;
-	StateRingBuffer state_rewind_buffer;
+	StateRingBuffer<State> state_rewind_buffer;
 	State state;
 
 	QVector<cc_u16l> cartridge_rom_buffer;
@@ -169,7 +105,7 @@ public:
 
 	void SetRewindEnabled(const bool enabled)
 	{
-		state_rewind_buffer = StateRingBuffer(enabled);
+		state_rewind_buffer = StateRingBuffer<State>(enabled);
 	}
 
 signals:
