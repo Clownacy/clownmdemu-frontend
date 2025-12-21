@@ -25,6 +25,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	../audio-output.cpp ../audio-output.h
 	../emulator.cpp ../emulator.h
 	../raii-wrapper.h ../sdl-wrapper.h
+	../state-ring-buffer.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
