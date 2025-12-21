@@ -49,32 +49,20 @@ protected:
 	class Parameters
 	{
 	protected:
-		ClownMDEmu clownmdemu = {};
+		ClownMDEmu clownmdemu;
 
 	public:
-		Parameters()
-		{}
-
 		Parameters(const ClownMDEmu_Configuration &configuration, ClownMDEmu_State &state, const ClownMDEmu_Callbacks &callbacks)
 			: clownmdemu(CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &state, &callbacks))
 		{}
 
-		[[nodiscard]] bool has_value() const
-		{
-			return clownmdemu.state != nullptr;
-		}
-
 		const ClownMDEmu& operator*() const
 		{
-			assert(has_value());
-
 			return clownmdemu;
 		}
 
 		ClownMDEmu& operator*()
 		{
-			assert(has_value());
-
 			return clownmdemu;
 		}
 
@@ -216,11 +204,6 @@ public:
 	void SetState(const State &state)
 	{
 		this->state = state;
-	}
-
-	void SetParameters(const Configuration &configuration, State &state)
-	{
-		parameters = {configuration, state, callbacks};
 	}
 
 	[[nodiscard]] bool InterlaceMode2Enabled() const
