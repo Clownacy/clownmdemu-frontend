@@ -216,7 +216,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdc = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdc;
+		const auto &cdc = Frontend::emulator->GetState().mega_cd.cdc;
 
 		DoTable("Sector Buffer", [&]()
 			{
@@ -256,7 +256,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdda = Frontend::emulator->CurrentState().clownmdemu.mega_cd.cdda;
+		const auto &cdda = Frontend::emulator->GetState().mega_cd.cdda;
 
 		DoTable("Volume", [&]()
 			{
@@ -295,7 +295,7 @@ private:
 	void DisplayInternal()
 	{
 		const auto monospace_font = GetMonospaceFont();
-		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->CurrentState().clownmdemu;
+		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->GetState();
 
 		DoTable("##Settings", [&]()
 			{
@@ -802,7 +802,7 @@ static bool emulator_paused;
 static bool emulator_frame_advance;
 
 static bool quick_save_exists;
-static EmulatorInstance::State quick_save_state;
+static EmulatorInstance::SaveState quick_save_state;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -1796,14 +1796,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						// Save save state
 						quick_save_exists = true;
-						quick_save_state = emulator->CurrentState();
+						quick_save_state = emulator->CreateSaveState();
 						break;
 
 					case INPUT_BINDING_QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_exists)
 						{
-							emulator->OverwriteCurrentState(quick_save_state);
+							emulator->ApplySaveState(quick_save_state);
 							emulator_paused = false;
 						}
 
@@ -2382,12 +2382,12 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 				{
 					quick_save_exists = true;
-					quick_save_state = emulator->CurrentState();
+					quick_save_state = emulator->CreateSaveState();
 				}
 
 				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_exists))
 				{
-					emulator->OverwriteCurrentState(quick_save_state);
+					emulator->ApplySaveState(quick_save_state);
 
 					emulator_paused = false;
 				}
@@ -2641,7 +2641,7 @@ void Frontend::Update()
 
 	ImGui::End();
 
-	const auto &clownmdemu = emulator->CurrentState().clownmdemu;
+	const auto &clownmdemu = emulator->GetState();
 
 	const auto DisplayWindow = []<typename T, typename... Ts>(std::optional<T> &window, Ts&&... arguments)
 	{

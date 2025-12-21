@@ -18,6 +18,8 @@ add_executable(clownmdemu WIN32
 	"cd-reader.h"
 	"debug-log.cpp"
 	"debug-log.h"
+	"emulator.cpp"
+	"emulator.h"
 	"emulator-instance.cpp"
 	"emulator-instance.h"
 	"file-utilities.cpp"

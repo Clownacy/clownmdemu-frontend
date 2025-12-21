@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-#include "../common/core/clownmdemu.h"
+#include "common/core/clownmdemu.h"
 
 class Emulator
 {
@@ -164,9 +164,15 @@ public:
 		ClownMDEmu_SetCartridge(&*parameters, buffer, buffer_length);
 	}
 
-	void Reset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)
+	void SoftReset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)
 	{
 		ClownMDEmu_Reset(&*parameters, cartridge_inserted, cd_inserted);
+	}
+
+	void HardReset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)
+	{
+		state = State();
+		SoftReset(cartridge_inserted, cd_inserted);
 	}
 
 	void Iterate()
@@ -204,6 +210,11 @@ public:
 	void SetState(const State &state)
 	{
 		this->state = state;
+	}
+
+	[[nodiscard]] auto& GetExternalRAM()
+	{
+		return state.external_ram.buffer;
 	}
 
 	[[nodiscard]] bool InterlaceMode2Enabled() const

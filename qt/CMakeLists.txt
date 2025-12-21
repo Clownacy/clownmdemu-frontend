@@ -16,7 +16,6 @@ qt_add_executable(clownmdemu-frontend-qt
 	dialogs/widgets/debug-cpu-m68k.cpp dialogs/widgets/debug-cpu-m68k.h
 	dialogs/widgets/debug-cpu-z80.cpp dialogs/widgets/debug-cpu-z80.h
 	allocated-dialog.h
-	emulator.cpp emulator.h
 	emulator-widget.cpp emulator-widget.h
 	main.cpp
 	main-window.cpp main-window.h main-window.ui
@@ -24,6 +23,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	paste.h
 	../audio-device.cpp ../audio-device.h
 	../audio-output.cpp ../audio-output.h
+	../emulator.cpp ../emulator.h
 	../raii-wrapper.h ../sdl-wrapper.h
 )
 

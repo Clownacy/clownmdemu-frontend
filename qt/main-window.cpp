@@ -42,7 +42,7 @@ void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 	setCentralWidget(&*emulator);
 
 	connect(ui.actionPause, &QAction::triggered, &*emulator, &EmulatorWidget::Pause);
-	connect(ui.actionReset, &QAction::triggered, &*emulator, &EmulatorWidget::Reset);
+	connect(ui.actionReset, &QAction::triggered, &*emulator, &EmulatorWidget::SoftReset);
 	connect(ui.actionCPUs, &QAction::triggered, this,
 		[&]()
 		{

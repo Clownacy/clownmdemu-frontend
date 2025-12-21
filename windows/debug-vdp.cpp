@@ -70,27 +70,27 @@ static constexpr std::size_t maximum_stamp_diameter_in_tiles = 4;
 static constexpr std::size_t maximum_stamp_width_in_pixels = maximum_stamp_diameter_in_tiles * tile_width;
 static constexpr std::size_t maximum_stamp_height_in_pixels = maximum_stamp_diameter_in_tiles * tile_height_normal;
 
-static std::size_t StampDiameterInTiles(const EmulatorInstance::State &state)
+static std::size_t StampDiameterInTiles(const Emulator::State &state)
 {
-	return state.clownmdemu.mega_cd.rotation.large_stamp ? maximum_stamp_diameter_in_tiles : 2;
+	return state.mega_cd.rotation.large_stamp ? maximum_stamp_diameter_in_tiles : 2;
 }
 
-static std::size_t StampWidthInPixels(const EmulatorInstance::State &state)
+static std::size_t StampWidthInPixels(const Emulator::State &state)
 {
 	return StampDiameterInTiles(state) * tile_width;
 }
 
-static std::size_t StampHeightInPixels(const EmulatorInstance::State &state)
+static std::size_t StampHeightInPixels(const Emulator::State &state)
 {
 	return StampDiameterInTiles(state) * tile_height_normal;
 }
 
-static cc_u16f TilesPerStamp(const EmulatorInstance::State &state)
+static cc_u16f TilesPerStamp(const Emulator::State &state)
 {
 	return StampDiameterInTiles(state) * StampDiameterInTiles(state);
 }
 
-static std::size_t TotalStamps(const EmulatorInstance::State &state)
+static std::size_t TotalStamps(const Emulator::State &state)
 {
 	return 0x800 * 4 / TilesPerStamp(state);
 }
@@ -98,17 +98,17 @@ static std::size_t TotalStamps(const EmulatorInstance::State &state)
 static constexpr std::size_t maximum_stamp_map_diameter_in_pixels = 4096;
 static constexpr std::size_t maximum_stamp_map_size_in_pixels = maximum_stamp_map_diameter_in_pixels * maximum_stamp_map_diameter_in_pixels;
 
-static std::size_t StampMapDiameterInPixels(const EmulatorInstance::State &state)
+static std::size_t StampMapDiameterInPixels(const Emulator::State &state)
 {
-	return state.clownmdemu.mega_cd.rotation.large_stamp_map ? maximum_stamp_map_diameter_in_pixels : 256;
+	return state.mega_cd.rotation.large_stamp_map ? maximum_stamp_map_diameter_in_pixels : 256;
 }
 
-static std::size_t StampMapWidthInStamps(const EmulatorInstance::State &state)
+static std::size_t StampMapWidthInStamps(const Emulator::State &state)
 {
 	return StampMapDiameterInPixels(state) / StampWidthInPixels(state);
 }
 
-static std::size_t StampMapHeightInStamps(const EmulatorInstance::State &state)
+static std::size_t StampMapHeightInStamps(const Emulator::State &state)
 {
 	return StampMapDiameterInPixels(state) / StampHeightInPixels(state);
 }
@@ -128,7 +128,7 @@ static Sprite GetSprite(const VDP_State &vdp, const cc_u16f sprite_index)
 	return sprite;
 }
 
-static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
+static void DrawTile(const Emulator::State &state, const EmulatorInstance::State &frontend_state, const VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
 	{
@@ -140,9 +140,9 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-	const auto &vdp = state.clownmdemu.vdp;
-	const auto &background_colour = state.colours[vdp.background_colour];
-	const auto &palette_line = state.GetPaletteLine(brightness, tile_metadata.palette_line);
+	const auto &vdp = state.vdp;
+	const auto &background_colour = frontend_state.colours[vdp.background_colour];
+	const auto &palette_line = frontend_state.GetPaletteLine(brightness, tile_metadata.palette_line);
 
 	cc_u16f word_index = tile_metadata.tile_index * tile_size_in_words;
 
@@ -173,14 +173,14 @@ static void DrawTile(const EmulatorInstance::State &state, const VDP_TileMetadat
 	}
 }
 
-static void DrawTileFromVRAM(const EmulatorInstance::State &state, const VDP_TileMetadata tile_metadata, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
+static void DrawTileFromVRAM(const Emulator::State &state, const EmulatorInstance::State &frontend_state, const VDP_TileMetadata tile_metadata, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
-	const auto &vdp = state.clownmdemu.vdp;
+	const auto &vdp = state.vdp;
 
-	DrawTile(state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
+	DrawTile(state, frontend_state, tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
 }
 
-static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
+static void DrawSprite(const Emulator::State &state, const EmulatorInstance::State &frontend_state, VDP_TileMetadata tile_metadata, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height, const bool transparency, const cc_u8f brightness, const bool swap_coordinates = false)
 {
 	for (cc_u8f ix = 0; ix < width; ++ix)
 	{
@@ -193,7 +193,7 @@ static void DrawSprite(const EmulatorInstance::State &state, VDP_TileMetadata ti
 			const cc_u8f tile_x = x * width + (swap_coordinates ? y_unswapped : x_unswapped);
 			const cc_u8f tile_y = y * height + (swap_coordinates ? x_unswapped : y_unswapped);
 
-			DrawTile(state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, tile_x, tile_y, transparency, brightness, swap_coordinates);
+			DrawTile(state, frontend_state, tile_metadata, tile_width, tile_height, read_tile_word, pixels, pitch, tile_x, tile_y, transparency, brightness, swap_coordinates);
 			tile_metadata.tile_index = (tile_metadata.tile_index + 1) % maximum_tile_index;
 		}
 	}
@@ -203,11 +203,11 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 {
 	bool options_changed = false;
 
-	const auto &state = Frontend::emulator->CurrentState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
 
 	// Handle VRAM viewing options.
 	ImGui::SeparatorText("Brightness");
-	for (std::size_t i = 0; i < state.total_brightnesses; ++i)
+	for (std::size_t i = 0; i < frontend_state.total_brightnesses; ++i)
 	{
 		if (i != 0)
 			ImGui::SameLine();
@@ -222,7 +222,7 @@ bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLine
 	}
 
 	ImGui::SeparatorText("Palette Line");
-	for (std::size_t i = 0; i < state.total_palette_lines; ++i)
+	for (std::size_t i = 0; i < frontend_state.total_palette_lines; ++i)
 	{
 		if (i != 0)
 			ImGui::SameLine();
@@ -434,8 +434,9 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const std::size_t plane_width, const std::size_t plane_height)
 {
-	const auto &state = Frontend::emulator->CurrentState();
-	const VDP_State &vdp = state.clownmdemu.vdp;
+	const auto &state = Frontend::emulator->GetState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
+	const VDP_State &vdp = state.vdp;
 
 	const auto maximum_plane_width_in_pixels = 128 * tile_width; // 128 is the maximum plane size
 	const auto maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
@@ -448,7 +449,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const s
 				return;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = tile_index, .palette_line = palette_line, .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
+			DrawTileFromVRAM(state, frontend_state, tile_metadata, pixels, pitch, 0, 0, false, brightness);
 		}
 	);
 
@@ -457,7 +458,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const s
 		{
 			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
 			const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
-			const cc_u8f brightness = state.clownmdemu.vdp.shadow_highlight_enabled && !tile_metadata.priority;
+			const cc_u8f brightness = state.vdp.shadow_highlight_enabled && !tile_metadata.priority;
 			regenerating_pieces.Draw(renderer, tile_metadata, TileWidth(), TileHeight(vdp), tile_buffer_size_in_pixels, x, y, brightness, false);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
@@ -483,7 +484,8 @@ static StampMetadata DecomposeStampMetadata(const cc_u16f data)
 
 void DebugVDP::StampMapViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->CurrentState();
+	const auto &state = Frontend::emulator->GetState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
 
 	const bool options_changed = DisplayBrightnessAndPaletteLineSettings();
 
@@ -502,14 +504,14 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 				return;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = stamp_index * tiles_per_stamp, .palette_line = static_cast<cc_u8f>(palette_line_option_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles, false, brightness_option_index);
+			DrawSprite(state, frontend_state, tile_metadata, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles, false, brightness_option_index);
 		}, options_changed
 	);
 
 	DisplayMap(stamp_map_width_in_stamps, stamp_map_height_in_stamps, maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, StampWidthInPixels(state), StampHeightInPixels(state),
 		[&](SDL::Renderer &renderer, const cc_u16f x, const cc_u16f y)
 		{
-			const auto &mega_cd = state.clownmdemu.mega_cd;
+			const auto &mega_cd = state.mega_cd;
 
 			const cc_u16f stamp_map_index = y * stamp_map_width_in_stamps + x;
 			const auto stamp_metadata = DecomposeStampMetadata(mega_cd.word_ram.buffer[mega_cd.rotation.stamp_map_address * 2 + stamp_map_index]);
@@ -547,7 +549,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
-			const auto &mega_cd = state.clownmdemu.mega_cd;
+			const auto &mega_cd = state.mega_cd;
 			const cc_u16f stamp_map_index = y * stamp_map_width_in_stamps + x;
 			const auto stamp_metadata = DecomposeStampMetadata(mega_cd.word_ram.buffer[mega_cd.rotation.stamp_map_address * 2 + stamp_map_index]);
 			const cc_u16f stamp_index = (stamp_metadata.stamp_index * 4) / TilesPerStamp(state);
@@ -560,8 +562,9 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 
 void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 {
-	const auto &state = Frontend::emulator->CurrentState();
-	const VDP_State &vdp = state.clownmdemu.vdp;
+	const auto &state = Frontend::emulator->GetState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
+	const VDP_State &vdp = state.vdp;
 
 	if (textures.empty())
 	{
@@ -578,7 +581,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 			const Sprite sprite = GetSprite(vdp, texture_index);
 
-			DrawSprite(state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, sprite.cached.width, sprite.cached.height, true, 0);
+			DrawSprite(state, frontend_state, sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, sprite.cached.width, sprite.cached.height, true, 0);
 		}
 	);
 }
@@ -588,7 +591,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	DisplaySpriteCommon(GetWindow());
 
 	SDL::Renderer &renderer = GetWindow().GetRenderer();
-	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
+	const VDP_State &vdp = Frontend::emulator->GetState().vdp;
 
 	constexpr cc_u16f plane_texture_width = 512;
 	constexpr cc_u16f plane_texture_height = 1024;
@@ -673,7 +676,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 {
 	DisplaySpriteCommon(GetWindow());
 
-	const VDP_State &vdp = Frontend::emulator->CurrentState().clownmdemu.vdp;
+	const VDP_State &vdp = Frontend::emulator->GetState().vdp;
 
 	if (ImGui::BeginTable("Sprite Table", 1 + TOTAL_SPRITES, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX))
 	{
@@ -870,8 +873,9 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 
 void DebugVDP::VRAMViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->CurrentState();
-	const VDP_State &vdp = state.clownmdemu.vdp;
+	const auto &state = Frontend::emulator->GetState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
+	const VDP_State &vdp = state.vdp;
 
 	constexpr cc_u16f piece_width = TileWidth();
 	const cc_u16f piece_height = TileHeight(vdp);
@@ -885,14 +889,15 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 				return;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = piece_index, .palette_line = static_cast<cc_u8f>(palette_line_option_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawTileFromVRAM(state, tile_metadata, pixels, pitch, 0, 0, false, brightness_option_index);
+			DrawTileFromVRAM(state, frontend_state, tile_metadata, pixels, pitch, 0, 0, false, brightness_option_index);
 		}
 	, "Tile", "Tiles");
 }
 
 void DebugVDP::StampViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->CurrentState();
+	const auto &state = Frontend::emulator->GetState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
 
 	constexpr auto maximum_piece_diameter_in_tiles = maximum_stamp_diameter_in_tiles;
 	const auto piece_diameter_in_tiles = StampDiameterInTiles(state);
@@ -908,14 +913,14 @@ void DebugVDP::StampViewer::DisplayInternal()
 				return;
 
 			const VDP_TileMetadata tile_metadata = {.tile_index = piece_index * tiles_per_stamp, .palette_line = static_cast<cc_u8f>(palette_line_option_index), .x_flip = cc_false, .y_flip = cc_false, .priority = cc_false};
-			DrawSprite(state, tile_metadata, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.clownmdemu.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, piece_diameter_in_tiles, piece_diameter_in_tiles, false, brightness_option_index);
+			DrawSprite(state, frontend_state, tile_metadata, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, piece_diameter_in_tiles, piece_diameter_in_tiles, false, brightness_option_index);
 		}
 	, "Stamp", "Stamps");
 }
 
 void DebugVDP::CRAMViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->CurrentState();
+	const auto &state = Frontend::emulator->GetState();
 
 	ImGui::SeparatorText("Brightness");
 	ImGui::RadioButton("Shadow", &brightness, 0);
@@ -926,7 +931,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 
 	ImGui::SeparatorText("Colours");
 
-	for (std::size_t cram_index = 0; cram_index != std::size(state.clownmdemu.vdp.cram); ++cram_index)
+	for (std::size_t cram_index = 0; cram_index != std::size(state.vdp.cram); ++cram_index)
 	{
 		constexpr cc_u16f length_of_palette_line = 16;
 		const cc_u16f palette_line_option_index = cram_index / length_of_palette_line;
@@ -934,7 +939,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 
 		ImGui::PushID(cram_index);
 
-		const cc_u16f value = state.clownmdemu.vdp.cram[cram_index];
+		const cc_u16f value = state.vdp.cram[cram_index];
 		const cc_u16f blue = (value >> 9) & 7;
 		const cc_u16f green = (value >> 5) & 7;
 		const cc_u16f red = (value >> 1) & 7;
@@ -992,8 +997,9 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 void DebugVDP::Registers::DisplayInternal()
 {
 	const auto monospace_font = GetMonospaceFont();
-	const auto &state = Frontend::emulator->CurrentState();
-	const VDP_State &vdp = state.clownmdemu.vdp;
+	const auto &state = Frontend::emulator->GetState();
+	const auto &frontend_state = Frontend::emulator->GetFrontendState();
+	const VDP_State &vdp = state.vdp;
 
 	static const auto tab_names = std::to_array<std::string>({
 		"Miscellaneous",
@@ -1048,7 +1054,7 @@ void DebugVDP::Registers::DisplayInternal()
 					DoProperty(nullptr, "Mega Drive Mode Enabled", "{}", vdp.mega_drive_mode_enabled ? "Yes" : "No");
 					DoProperty(nullptr, "Shadow/Highlight Enabled", "{}", vdp.shadow_highlight_enabled ? "Yes" : "No");
 					DoProperty(nullptr, "Double-Resolution Enabled", "{}", vdp.double_resolution_enabled ? "Yes" : "No");
-					DoProperty(nullptr, "Background Colour", "Palette Line {}, Entry {}", vdp.background_colour / state.total_colours_in_palette_line, vdp.background_colour % state.total_colours_in_palette_line);
+					DoProperty(nullptr, "Background Colour", "Palette Line {}, Entry {}", vdp.background_colour / frontend_state.total_colours_in_palette_line, vdp.background_colour % frontend_state.total_colours_in_palette_line);
 					DoProperty(monospace_font, "H-Int Interval", "{}", vdp.h_int_interval);
 				}
 			);

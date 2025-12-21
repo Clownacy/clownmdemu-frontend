@@ -3,7 +3,7 @@
 
 #include <QSettings>
 
-#include "emulator.h"
+#include "../emulator.h"
 #include "paste.h"
 
 #define STRINGIFY(STRING) STRINGIFY_INTERNAL(STRING)

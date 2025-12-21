@@ -1,6 +1,7 @@
 #include "emulator-instance.h"
 
 #include <algorithm>
+#include <bit>
 #include <iterator>
 #include <utility>
 
@@ -22,14 +23,15 @@ void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file
 
 		if (save_data_buffer.has_value())
 		{
-			if (std::size(*save_data_buffer) > std::size(emulator.state.clownmdemu.external_ram.buffer))
+			auto &external_ram_buffer = emulator.GetExternalRAM();
+			if (std::size(*save_data_buffer) > std::size(external_ram_buffer))
 			{
-				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(*save_data_buffer), std::size(emulator.state.clownmdemu.external_ram.buffer));
+				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(*save_data_buffer), std::size(emulator.GetState().external_ram.buffer));
 			}
 			else
 			{
-				std::copy(std::begin(*save_data_buffer), std::end(*save_data_buffer), emulator.state.clownmdemu.external_ram.buffer);
-				std::fill(std::begin(emulator.state.clownmdemu.external_ram.buffer) + std::size(*save_data_buffer), std::end(emulator.state.clownmdemu.external_ram.buffer), 0xFF);
+				std::copy(std::begin(*save_data_buffer), std::end(*save_data_buffer), external_ram_buffer);
+				std::fill(std::begin(external_ram_buffer) + std::size(*save_data_buffer), std::end(external_ram_buffer), 0xFF);
 			}
 		}
 	}
@@ -40,100 +42,80 @@ void EmulatorInstance::Cartridge::Eject()
 	rom_file_buffer.clear();
 
 	// Write save data to disk.
-	if (emulator.state.clownmdemu.external_ram.non_volatile && emulator.state.clownmdemu.external_ram.size != 0)
+	if (emulator.GetState().external_ram.non_volatile && emulator.GetState().external_ram.size != 0)
 	{
 		SDL::IOStream file = SDL::IOFromFile(save_data_path, "wb");
 
-		if (!file || SDL_WriteIO(file, emulator.state.clownmdemu.external_ram.buffer, emulator.state.clownmdemu.external_ram.size) != emulator.state.clownmdemu.external_ram.size)
+		if (!file || SDL_WriteIO(file, emulator.GetState().external_ram.buffer, emulator.GetState().external_ram.size) != emulator.GetState().external_ram.size)
 			Frontend::debug_log.Log("Could not write save data file");
 	}
 
 	save_data_path.clear();
 }
 
-void EmulatorInstance::ColourUpdatedCallback(void* const user_data, const cc_u16f index, const cc_u16f colour)
+void EmulatorInstance::ColourUpdated(const cc_u16f index, const cc_u16f colour)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
 	// Decompose XBGR4444 into individual colour channels
 	const cc_u32f red = (colour >> 4 * 0) & 0xF;
 	const cc_u32f green = (colour >> 4 * 1) & 0xF;
 	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	emulator->state.colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
+	state.colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
-void EmulatorInstance::ScanlineRenderedCallback(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
+void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
+	current_screen_width = screen_width;
+	current_screen_height = screen_height;
 
-	emulator->current_screen_width = screen_width;
-	emulator->current_screen_height = screen_height;
-
-	if (emulator->framebuffer_texture_pixels == nullptr)
+	if (framebuffer_texture_pixels == nullptr)
 		return;
 
 	auto input_pointer = pixels + left_boundary;
-	auto output_pointer = &emulator->framebuffer_texture_pixels[scanline * emulator->framebuffer_texture_pitch + left_boundary];
+	auto output_pointer = &framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + left_boundary];
 
 	for (cc_u16f i = left_boundary; i < right_boundary; ++i)
-		*output_pointer++ = emulator->state.colours[*input_pointer++];
+		*output_pointer++ = state.colours[*input_pointer++];
 }
 
-cc_bool EmulatorInstance::ReadInputCallback(void* const user_data, const cc_u8f player_id, const ClownMDEmu_Button button_id)
+cc_bool EmulatorInstance::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	return emulator->input_callback(player_id, button_id);
+	return input_callback(player_id, button_id);
 }
 
-void EmulatorInstance::FMAudioCallback(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void EmulatorInstance::FMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	generate_fm_audio(clownmdemu, emulator->audio_output.MixerAllocateFMSamples(total_frames), total_frames);
+	generate_fm_audio(clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
 }
 
-void EmulatorInstance::PSGAudioCallback(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_samples, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
+void EmulatorInstance::PSGAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_samples, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	generate_psg_audio(clownmdemu, emulator->audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
+	generate_psg_audio(clownmdemu, audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
 }
 
-void EmulatorInstance::PCMAudioCallback(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void EmulatorInstance::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	generate_pcm_audio(clownmdemu, emulator->audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
+	generate_pcm_audio(clownmdemu, audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
 }
 
-void EmulatorInstance::CDDAAudioCallback(void* const user_data, const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void EmulatorInstance::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	generate_cdda_audio(clownmdemu, emulator->audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
+	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
 }
 
-void EmulatorInstance::CDSeekCallback(void* const user_data, const cc_u32f sector_index)
+void EmulatorInstance::CDSeeked(const cc_u32f sector_index)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	emulator->cd_file.SeekToSector(sector_index);
+	cd_file.SeekToSector(sector_index);
 }
 
-void EmulatorInstance::CDSectorReadCallback(void* const user_data, cc_u16l* const buffer)
+void EmulatorInstance::CDSectorRead(cc_u16l* const buffer)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	emulator->cd_file.ReadSector(buffer);
+	cd_file.ReadSector(buffer);
 }
 
-cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
+cc_bool EmulatorInstance::CDTrackSeeked(const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
 	CDReader::PlaybackSetting playback_setting;
 
 	switch (mode)
@@ -155,63 +137,52 @@ cc_bool EmulatorInstance::CDSeekTrackCallback(void* const user_data, const cc_u1
 			break;
 	}
 
-	return emulator->cd_file.PlayAudio(track_index, playback_setting);
+	return cd_file.PlayAudio(track_index, playback_setting);
 }
 
-std::size_t EmulatorInstance::CDAudioReadCallback(void* const user_data, cc_s16l* const sample_buffer, const std::size_t total_frames)
+std::size_t EmulatorInstance::CDAudioRead(cc_s16l* const sample_buffer, const std::size_t total_frames)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	return emulator->cd_file.ReadAudio(sample_buffer, total_frames);
+	return cd_file.ReadAudio(sample_buffer, total_frames);
 }
 
-cc_bool EmulatorInstance::SaveFileOpenedForReadingCallback(void* const user_data, const char* const filename)
+cc_bool EmulatorInstance::SaveFileOpenedForReading(const char* const filename)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	emulator->save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "rb");
-	return emulator->save_data_stream != nullptr;
+	save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "rb");
+	return save_data_stream != nullptr;
 }
 
-cc_s16f EmulatorInstance::SaveFileReadCallback(void* const user_data)
+cc_s16f EmulatorInstance::SaveFileRead()
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
 	Uint8 byte;
 
-	if (!SDL_ReadU8(emulator->save_data_stream, &byte))
+	if (!SDL_ReadU8(save_data_stream, &byte))
 		return -1;
 
 	return byte;
 }
 
-cc_bool EmulatorInstance::SaveFileOpenedForWriting(void* const user_data, const char* const filename)
+cc_bool EmulatorInstance::SaveFileOpenedForWriting(const char* const filename)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	emulator->save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "wb");
-	return emulator->save_data_stream != nullptr;
+	save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "wb");
+	return save_data_stream != nullptr;
 }
 
-void EmulatorInstance::SaveFileWritten(void* const user_data, const cc_u8f byte)
+void EmulatorInstance::SaveFileWritten(const cc_u8f byte)
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	SDL_WriteU8(emulator->save_data_stream, byte);
+	SDL_WriteU8(save_data_stream, byte);
 }
 
-void EmulatorInstance::SaveFileClosed(void* const user_data)
+void EmulatorInstance::SaveFileClosed()
 {
-	EmulatorInstance* const emulator = static_cast<EmulatorInstance*>(user_data);
-
-	emulator->save_data_stream.reset();
+	save_data_stream.reset();
 }
 
-cc_bool EmulatorInstance::SaveFileRemoved([[maybe_unused]] void* const user_data, const char* const filename)
+cc_bool EmulatorInstance::SaveFileRemoved(const char* const filename)
 {
 	return SDL::RemovePath(Frontend::GetSaveDataDirectoryPath() / filename);
 }
 
-cc_bool EmulatorInstance::SaveFileSizeObtained([[maybe_unused]] void* const user_data, const char* const filename, std::size_t* const size)
+cc_bool EmulatorInstance::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
 {
 	SDL_PathInfo info;
 	if (!SDL::GetPathInfo(Frontend::GetSaveDataDirectoryPath() / filename, &info))
@@ -225,37 +196,16 @@ EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback
 )
-	: audio_output()
+	: Emulator(emulator_configuration)
+	, audio_output()
 	, texture(texture)
 	, input_callback(input_callback)
-	, callbacks({this,
-		ColourUpdatedCallback,
-		ScanlineRenderedCallback,
-		ReadInputCallback,
-		FMAudioCallback,
-		PSGAudioCallback,
-		PCMAudioCallback,
-		CDDAAudioCallback,
-		CDSeekCallback,
-		CDSectorReadCallback,
-		CDSeekTrackCallback,
-		CDAudioReadCallback,
-		SaveFileOpenedForReadingCallback,
-		SaveFileReadCallback,
-		SaveFileOpenedForWriting,
-		SaveFileWritten,
-		SaveFileClosed,
-		SaveFileRemoved,
-		SaveFileSizeObtained
-	})
 	, rewind(false)
 {
 	ClownCD_SetErrorCallback([]([[maybe_unused]] void* const user_data, const char* const message) { Frontend::debug_log.Log("ClownCD: {}", message); }, nullptr);
 
 	// This should be called before any other clownmdemu functions are called!
-	ClownMDEmu_SetLogCallback([](void* const user_data, const char* const format, va_list args) { static_cast<DebugLog*>(user_data)->Log(format, args); }, &Frontend::debug_log);
-
-	ClownMDEmu_State_Initialise(&state.clownmdemu);
+	SetLogCallback([](const char* const format, va_list args) { Frontend::debug_log.Log(format, args); });
 }
 
 void EmulatorInstance::Update(const cc_bool fast_forward)
@@ -273,21 +223,18 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 		{
 			// Handle rewinding.
 			if (IsRewinding())
-				LoadState(&rewind.GetBackward());
+				ApplySaveState(rewind.GetBackward());
 			else
-				SaveState(&rewind.GetForward());
+				rewind.GetForward() = CreateSaveState();
 		}
 
 		// Reset the audio buffers so that they can be mixed into.
 		audio_output.MixerBegin();
 
-		ClownMDEmu_Iterate(&clownmdemu);
+		Iterate();
 
 		// Resample, mix, and output the audio for this frame.
 		audio_output.MixerEnd();
-
-		// Log CD state for this frame.
-		state.cd = cd_file.GetState();
 	}
 
 	// Unlock the texture so that we can draw it
@@ -296,24 +243,22 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 
 void EmulatorInstance::SoftResetConsole()
 {
-	ClownMDEmu_Reset(&clownmdemu, IsCartridgeFileLoaded(), IsCDFileLoaded());
+	SoftReset(IsCartridgeFileLoaded(), IsCDFileLoaded());
 }
 
 void EmulatorInstance::HardResetConsole()
 {
 	rewind.Clear();
 
-	ClownMDEmu_State_Initialise(&state.clownmdemu);
-	ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &state.clownmdemu, &callbacks);
-	const auto &buffer = cartridge.GetROMBuffer();
-	ClownMDEmu_SetCartridge(&clownmdemu, std::data(buffer), std::size(buffer));
-	SoftResetConsole();
+	HardReset(IsCartridgeFileLoaded(), IsCDFileLoaded());
 }
 
 void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path)
 {
 	cartridge.Insert(std::move(file_buffer), path);
 
+	const auto &buffer = cartridge.GetROMBuffer();
+	SetCartridge(std::data(buffer), std::size(buffer));
 	HardResetConsole();
 }
 
@@ -321,7 +266,7 @@ void EmulatorInstance::UnloadCartridgeFile()
 {
 	cartridge.Eject();
 
-	ClownMDEmu_SetCartridge(&clownmdemu, nullptr, 0);
+	SetCartridge(nullptr, 0);
 }
 
 bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
@@ -339,17 +284,6 @@ void EmulatorInstance::UnloadCDFile()
 	cd_file.Close();
 }
 
-void EmulatorInstance::LoadState(const void* const buffer)
-{
-	SDL_memcpy(&state, buffer, sizeof(state));
-	cd_file.SetState(state.cd);
-}
-
-void EmulatorInstance::SaveState(void* const buffer)
-{
-	SDL_memcpy(buffer, &state, sizeof(state));
-}
-
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
 
 bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer)
@@ -363,7 +297,7 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 	if (ValidateSaveStateFile(file_buffer))
 	{
-		LoadState(&file_buffer[save_state_magic.size()]);
+		ApplySaveState(*std::bit_cast<const SaveState*>(&file_buffer[save_state_magic.size()]));
 
 		success = true;
 	}
@@ -380,7 +314,9 @@ bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
 	bool success = false;
 
-	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &state, sizeof(state)) == sizeof(state))
+	const SaveState save_state = CreateSaveState();
+
+	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &save_state, sizeof(save_state)) == sizeof(save_state))
 		success = true;
 
 	return success;

@@ -16,8 +16,8 @@
 #include <QVector>
 
 #include "../audio-output.h"
+#include "../emulator.h"
 #include "../state-ring-buffer.h"
-#include "emulator.h"
 #include "options.h"
 
 class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator
@@ -116,9 +116,14 @@ public slots:
 		this->paused = paused;
 	}
 
-	void Reset()
+	void SoftReset()
 	{
-		Emulator::Reset(IsCartridgeInserted(), cc_false);
+		Emulator::SoftReset(IsCartridgeInserted(), cc_false);
+	}
+
+	void HardReset()
+	{
+		Emulator::HardReset(IsCartridgeInserted(), cc_false);
 	}
 };
 

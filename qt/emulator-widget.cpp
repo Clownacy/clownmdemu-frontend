@@ -196,7 +196,7 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartrid
 
 	// TODO: Merge this with 'SetParameters'?
 	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
-	Reset();
+	SoftReset();
 }
 
 void EmulatorWidget::ColourUpdated(const cc_u16f index, const cc_u16f colour)

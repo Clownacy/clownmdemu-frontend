@@ -90,7 +90,7 @@ public:
 		return CDReader_ReadAudio(&state, sample_buffer, total_frames);
 	}
 
-	State GetState()
+	State GetState() const
 	{
 		CDReader_StateBackup backup;
 		CDReader_GetStateBackup(&state, &backup);

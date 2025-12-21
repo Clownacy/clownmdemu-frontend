@@ -16,7 +16,7 @@ static constexpr unsigned int maximum_instructions = 0x1000;
 
 cc_u16f Disassembler::ReadMemory()
 {
-	const ClownMDEmu_State &clownmdemu = Frontend::emulator->CurrentState().clownmdemu;
+	const auto &clownmdemu = Frontend::emulator->GetState();
 
 	cc_u16f value;
 
