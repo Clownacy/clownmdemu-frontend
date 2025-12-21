@@ -28,7 +28,7 @@ qt_add_executable(clownmdemu-frontend-qt
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
-	CXX_STANDARD 23
+	CXX_STANDARD 20
 )
 
 target_link_libraries(clownmdemu-frontend-qt
