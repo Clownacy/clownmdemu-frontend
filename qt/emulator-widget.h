@@ -30,8 +30,8 @@ protected:
 	{
 	protected:
 		QVector<State> state_buffer;
-		qsizetype state_buffer_index;
-		qsizetype state_buffer_remaining;
+		qsizetype state_buffer_index = 0;
+		qsizetype state_buffer_remaining = 0;
 
 		qsizetype NextIndex(qsizetype index) const
 		{
@@ -54,21 +54,9 @@ protected:
 		}
 
 	public:
-		StateRingBuffer(const qsizetype size)
-			: state_buffer(size)
-		{
-			assert(size > 0);
-
-			static_cast<void>(Clear());
-		}
-
-		[[nodiscard]] State& Clear()
-		{
-			state_buffer_index = 0;
-			state_buffer_remaining = 0;
-			state_buffer[state_buffer_index].Initialise();
-			return state_buffer[state_buffer_index];
-		}
+		StateRingBuffer(const bool enabled)
+			: state_buffer(enabled ? 10 * 60 : 0) // 10 seconds
+		{}
 
 		[[nodiscard]] bool Exhausted() const
 		{
@@ -78,6 +66,8 @@ protected:
 
 		[[nodiscard]] State& GetForward()
 		{
+			assert(Exists());
+
 			state_buffer_remaining = qMin(state_buffer_remaining + 1, std::size(state_buffer) - 2);
 
 			const auto old_index = state_buffer_index;
@@ -87,11 +77,17 @@ protected:
 
 		[[nodiscard]] const State& GetBackward()
 		{
+			assert(Exists());
 			assert(!Exhausted());
 			--state_buffer_remaining;
 
 			state_buffer_index = PreviousIndex(state_buffer_index);
 			return state_buffer[PreviousIndex(state_buffer_index)];
+		}
+
+		[[nodiscard]] bool Exists() const
+		{
+			return !state_buffer.isEmpty();
 		}
 	};
 
@@ -109,7 +105,7 @@ protected:
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	const Options &options;
-	std::optional<StateRingBuffer> state_rewind_buffer;
+	StateRingBuffer state_rewind_buffer;
 	State state;
 
 	QVector<cc_u16l> cartridge_rom_buffer;
@@ -173,10 +169,7 @@ public:
 
 	void SetRewindEnabled(const bool enabled)
 	{
-		if (enabled)
-			state_rewind_buffer.emplace(10 * 60); // 10 seconds
-		else
-			state_rewind_buffer = std::nullopt;
+		state_rewind_buffer = StateRingBuffer(enabled);
 	}
 
 signals:

@@ -177,6 +177,7 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
 	, options(options)
+	, state_rewind_buffer(options.RewindingEnabled())
 	, cartridge_rom_buffer(cartridge_rom_buffer_bytes.size() / sizeof(cc_u16l))
 {
 	// Enable keyboard input.
@@ -191,9 +192,6 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartrid
 			= (GetByte(i * 2 + 0) << 8)
 			| (GetByte(i * 2 + 1) << 0);
 	}
-
-	// Initialise state rewind buffer.
-	SetRewindEnabled(options.RewindingEnabled());
 
 	// Initialise the emulator.
 	SetParameters(options.GetEmulatorConfiguration(), state);
@@ -368,11 +366,11 @@ void EmulatorWidget::Advance()
 {
 	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
 	{
-		if (state_rewind_buffer)
+		if (state_rewind_buffer.Exists())
 		{
 			if (rewinding)
 			{
-				if (state_rewind_buffer->Exhausted())
+				if (state_rewind_buffer.Exhausted())
 				{
 					// If the emulator has not updated at all, then don't bother redrawing the screen.
 					if (i == 0)
@@ -381,11 +379,11 @@ void EmulatorWidget::Advance()
 					break;
 				}
 
-				state = state_rewind_buffer->GetBackward();
+				state = state_rewind_buffer.GetBackward();
 			}
 			else
 			{
-				state_rewind_buffer->GetForward() = state;
+				state_rewind_buffer.GetForward() = state;
 			}
 		}
 
