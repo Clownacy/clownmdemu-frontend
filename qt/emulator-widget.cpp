@@ -176,6 +176,7 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 
 EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
+	, Emulator(options.GetEmulatorConfiguration())
 	, options(options)
 	, state_rewind_buffer(options.RewindingEnabled())
 	, cartridge_rom_buffer(cartridge_rom_buffer_bytes.size() / sizeof(cc_u16l))
@@ -193,9 +194,7 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartrid
 			| (GetByte(i * 2 + 1) << 0);
 	}
 
-	// Initialise the emulator.
-	SetParameters(options.GetEmulatorConfiguration(), state);
-	// TODO: Merge this with 'SetParameters'.
+	// TODO: Merge this with 'SetParameters'?
 	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	Reset();
 }

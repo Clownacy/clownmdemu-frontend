@@ -27,25 +27,16 @@ private:
 public:
 	class Configuration : public ClownMDEmu_Configuration
 	{
-		friend Emulator;
-
 	public:
 		Configuration()
 			: ClownMDEmu_Configuration({})
 		{}
 	};
 
-	class State : protected ClownMDEmu_State
+	class State : public ClownMDEmu_State
 	{
-		friend Emulator;
-
 	public:
 		State()
-		{
-			Initialise();
-		}
-
-		void Initialise()
 		{
 			ClownMDEmu_State_Initialise(this);
 		}
@@ -120,6 +111,7 @@ protected:
 		Callback_SaveFileSizeObtained
 	};
 
+	State state;
 	Parameters parameters;
 	LogCallbackFormatted log_callback;
 
@@ -175,10 +167,7 @@ protected:
 	}
 
 public:
-	Emulator()
-	{}
-
-	Emulator(const Configuration &configuration, State &state)
+	Emulator(const Configuration &configuration)
 		: parameters(configuration, state, callbacks)
 	{}
 
@@ -221,7 +210,12 @@ public:
 
 	[[nodiscard]] const auto& GetState() const
 	{
-		return *parameters->state;
+		return state;
+	}
+
+	void SetState(const State &state)
+	{
+		this->state = state;
 	}
 
 	void SetParameters(const Configuration &configuration, State &state)

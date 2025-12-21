@@ -42,7 +42,6 @@ protected:
 
 	const Options &options;
 	StateRingBuffer<State> state_rewind_buffer;
-	State state;
 
 	QVector<cc_u16l> cartridge_rom_buffer;
 	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
