@@ -373,7 +373,13 @@ void EmulatorWidget::Advance()
 			if (rewinding)
 			{
 				if (state_rewind_buffer->Exhausted())
-					return;
+				{
+					// If the emulator has not updated at all, then don't bother redrawing the screen.
+					if (i == 0)
+						return;
+
+					break;
+				}
 
 				state = state_rewind_buffer->GetBackward();
 			}
