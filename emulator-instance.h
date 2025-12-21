@@ -78,30 +78,17 @@ private:
 		bool in_progress = false;
 
 	public:
-		std::vector<State> buffer = std::vector<State>(1);
+		std::vector<State> buffer;
 		std::size_t index = 0;
 		std::size_t remaining = 0;
 
+		Rewind(const bool enabled)
+			: buffer(enabled ? 60 * 10 : 0) // Roughly 10 seconds of rewinding at 60FPS
+		{}
+
 		bool Enabled() const
 		{
-			return buffer.size() != 1;
-		}
-		bool Enable(const bool enabled)
-		{
-			if (enabled == Enabled())
-				return false;
-
-			std::vector<State> new_buffer(enabled ? 60 * 10 : 1); // Roughly 10 seconds of rewinding at 60FPS
-			// Transfer the old state to the new buffer.
-			new_buffer[0] = buffer[index];
-
-			// Reinitialise
-			std::swap(buffer, new_buffer);
-			in_progress = false;
-			index = 0;
-			remaining = 0;
-
-			return true;
+			return !buffer.empty();
 		}
 
 		bool InProgress() const { return Enabled() ? in_progress : false; }
@@ -112,7 +99,7 @@ private:
 
 	Rewind rewind;
 
-	State *state = &rewind.buffer[0];
+	State state;
 
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
@@ -172,19 +159,15 @@ public:
 	bool RewindingEnabled() const { return rewind.Enabled(); }
 	void EnableRewinding(const bool enabled)
 	{
-		if (rewind.Enable(enabled))
-		{
-			state = &rewind.buffer[0];
-			ClownMDEmu_Parameters_Initialise(&clownmdemu, &clownmdemu_configuration, &state->clownmdemu, &callbacks);
-		}
+		rewind = Rewind(enabled);
 	}
 	bool IsRewinding() const { return rewind.InProgress(); }
-	void Rewind(const bool active) { rewind.InProgress(active); }
+	void SetRewinding(const bool active) { rewind.InProgress(active); }
 	bool RewindingExhausted() const { return rewind.Exhausted(); }
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
-	const State& CurrentState() const { return *state; }
+	const State& CurrentState() const { return state; }
 	void OverwriteCurrentState(const State &new_state) { LoadState(&new_state); }
 	const std::vector<cc_u16l>& GetROMBuffer() const { return cartridge.GetROMBuffer(); }
 

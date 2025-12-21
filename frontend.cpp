@@ -963,7 +963,7 @@ static void UpdateRewindStatus()
 	for (const auto &controller_input : controller_input_list)
 		will_rewind |= controller_input.input.rewind != 0;
 
-	emulator->Rewind(will_rewind);
+	emulator->SetRewinding(will_rewind);
 }
 
 
