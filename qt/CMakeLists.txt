@@ -24,7 +24,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	../audio-device.cpp ../audio-device.h
 	../audio-output.cpp ../audio-output.h
 	../emulator.cpp ../emulator.h
-	../raii-wrapper.h ../sdl-wrapper.h
+	../raii-wrapper.h ../sdl-wrapper-inner.h
 	../state-ring-buffer.h
 )
 
