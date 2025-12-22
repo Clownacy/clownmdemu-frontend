@@ -5,7 +5,7 @@
 
 #include "widgets/debug-cpu-m68k.h"
 #include "widgets/debug-cpu-z80.h"
-#include "../emulator-widget.h"
+#include "../../emulator.h"
 #include "ui_debug-cpu.h"
 
 namespace Dialogs::Debug
@@ -18,12 +18,12 @@ namespace Dialogs::Debug
 		using Base = QDialog;
 
 		Ui::DebugCPU ui;
-		const EmulatorWidget &emulator;
+		const Emulator &emulator;
 		Widgets::Debug::CPU::M68k main_cpu, sub_cpu;
 		Widgets::Debug::CPU::Z80 sound_cpu;
 
 	public:
-		explicit CPU(const EmulatorWidget &emulator, QWidget *parent = nullptr);
+		explicit CPU(const Emulator &emulator, QWidget *parent = nullptr);
 
 	public slots:
 		void StateChanged();

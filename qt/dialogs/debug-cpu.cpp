@@ -1,6 +1,6 @@
 #include "debug-cpu.h"
 
-Dialogs::Debug::CPU::CPU(const EmulatorWidget &emulator, QWidget* const parent)
+Dialogs::Debug::CPU::CPU(const Emulator &emulator, QWidget* const parent)
 	: Base(parent)
 	, emulator(emulator)
 	, main_cpu(emulator.GetState().m68k.state)
