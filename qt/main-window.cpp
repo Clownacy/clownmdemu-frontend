@@ -137,7 +137,7 @@ MainWindow::MainWindow(QWidget* const parent)
 	connect(ui.actionLoad_CD_File, &QAction::triggered, this,
 		[this]()
 		{
-			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue)",
+			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue *.iso)",
 				[this]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
 				{
 					LoadCDData(file_contents, file_name);
