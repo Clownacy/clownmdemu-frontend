@@ -110,12 +110,12 @@ public slots:
 
 	void SoftReset()
 	{
-		EmulatorWithCDReader::SoftReset(IsCartridgeInserted(), IsCDInserted());
+		EmulatorWithCDReader::SoftReset();
 	}
 
 	void HardReset()
 	{
-		EmulatorWithCDReader::HardReset(IsCartridgeInserted(), IsCDInserted());
+		EmulatorWithCDReader::HardReset();
 	}
 };
 

@@ -143,9 +143,6 @@ public:
 	std::size_t GetSaveStateFileSize();
 	bool WriteSaveStateFile(SDL::IOStream &file);
 
-	bool IsCartridgeFileLoaded() const { return cartridge.IsInserted(); }
-	bool IsCDFileLoaded() const { return IsCDInserted(); }
-
 	bool RewindingEnabled() const { return rewind.Enabled(); }
 	void EnableRewinding(const bool enabled)
 	{

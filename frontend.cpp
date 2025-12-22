@@ -1614,7 +1614,7 @@ static void SaveConfiguration()
 
 static void PreEventStuff()
 {
-	emulator_on = emulator->IsCartridgeFileLoaded() || emulator->IsCDFileLoaded();
+	emulator_on = emulator->IsCartridgeInserted() || emulator->IsCDInserted();
 	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen() && !emulator->RewindingExhausted();
 
 	emulator_frame_advance = false;
@@ -2296,11 +2296,11 @@ void Frontend::Update()
 					});
 				}
 
-				if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, emulator->IsCartridgeFileLoaded()))
+				if (ImGui::MenuItem("Unload Cartridge File", nullptr, false, emulator->IsCartridgeInserted()))
 				{
 					emulator->UnloadCartridgeFile();
 
-					if (emulator->IsCDFileLoaded())
+					if (emulator->IsCDInserted())
 						emulator->HardResetConsole();
 
 					SetWindowTitleToSoftwareName();
@@ -2321,11 +2321,11 @@ void Frontend::Update()
 					});
 				}
 
-				if (ImGui::MenuItem("Unload CD File", nullptr, false, emulator->IsCDFileLoaded()))
+				if (ImGui::MenuItem("Unload CD File", nullptr, false, emulator->IsCDInserted()))
 				{
 					emulator->UnloadCDFile();
 
-					if (emulator->IsCartridgeFileLoaded())
+					if (emulator->IsCartridgeInserted())
 						emulator->HardResetConsole();
 
 					SetWindowTitleToSoftwareName();

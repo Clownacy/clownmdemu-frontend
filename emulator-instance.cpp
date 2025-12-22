@@ -202,14 +202,14 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 
 void EmulatorInstance::SoftResetConsole()
 {
-	SoftReset(IsCartridgeFileLoaded(), IsCDFileLoaded());
+	SoftReset();
 }
 
 void EmulatorInstance::HardResetConsole()
 {
 	rewind.Clear();
 
-	HardReset(IsCartridgeFileLoaded(), IsCDFileLoaded());
+	HardReset();
 }
 
 void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path)
@@ -284,7 +284,7 @@ std::string EmulatorInstance::GetSoftwareName()
 {
 	std::string name_buffer;
 
-	if (IsCartridgeFileLoaded() || IsCDFileLoaded())
+	if (IsCartridgeInserted() || IsCDInserted())
 	{
 		constexpr cc_u8f name_buffer_size = 0x30;
 		// '*4' for the maximum UTF-8 length.
@@ -294,7 +294,7 @@ std::string EmulatorInstance::GetSoftwareName()
 		// Choose the proper name based on the current region.
 		const auto header_offset = GetDomestic() ? 0x120 : 0x150;
 
-		if (IsCartridgeFileLoaded())
+		if (IsCartridgeInserted())
 		{
 			// TODO: This seems unsafe - add some bounds checks?
 			const auto words = &cartridge.GetROMBuffer()[header_offset / 2];
@@ -307,7 +307,7 @@ std::string EmulatorInstance::GetSoftwareName()
 				in_buffer[i * 2 + 1] = (word >> 0) & 0xFF;
 			}
 		}
-		else //if (cd_file.IsOpen())
+		else //if (IsCDInserted)
 		{
 			std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
 			ReadMegaCDHeaderSector(sector.data());

@@ -169,15 +169,15 @@ public:
 		ClownMDEmu_SetCartridge(&*parameters, nullptr, 0);
 	}
 
-	void SoftReset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)
+	void SoftReset(const cc_bool cd_inserted)
 	{
-		ClownMDEmu_Reset(&*parameters, cartridge_inserted, cd_inserted);
+		ClownMDEmu_Reset(&*parameters, IsCartridgeInserted(), cd_inserted);
 	}
 
-	void HardReset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)
+	void HardReset(const cc_bool cd_inserted)
 	{
 		state = State();
-		SoftReset(cartridge_inserted, cd_inserted);
+		SoftReset(cd_inserted);
 	}
 
 	void Iterate()

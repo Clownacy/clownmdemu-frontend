@@ -51,6 +51,18 @@ public:
 		// TODO: Make this return an array instead!
 		cd_reader.ReadMegaCDHeaderSector(buffer);
 	}
+
+	void SoftReset(const cc_bool cd_inserted) = delete;
+	void SoftReset()
+	{
+		Emulator::SoftReset(IsCDInserted());
+	}
+
+	void HardReset(const cc_bool cd_inserted) = delete;
+	void HardReset()
+	{
+		Emulator::HardReset(IsCDInserted());
+	}
 };
 
 #endif // EMULATOR_WITH_CD_READER_H
