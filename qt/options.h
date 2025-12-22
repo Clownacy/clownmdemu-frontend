@@ -12,7 +12,7 @@
 class Options
 {
 private:
-	Emulator::Configuration emulator_configuration = {};
+	ClownMDEmuCPP::Configuration emulator_configuration = {};
 	bool integer_screen_scaling = false;
 	bool tall_interlace_mode_2 = false;
 	bool rewinding = false;

@@ -16,8 +16,10 @@
 #include "sdl-wrapper.h"
 #include "state-ring-buffer.h"
 
-class EmulatorInstance : public Emulator
+class EmulatorInstance : public Emulator<EmulatorInstance>
 {
+	friend Emulator<EmulatorInstance>::Base;
+
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
 
@@ -41,7 +43,7 @@ public:
 
 	struct SaveState
 	{
-		Emulator::State emulator;
+		ClownMDEmuCPP::State emulator;
 		CDReader::State cd;
 		State frontend;
 	};
@@ -69,7 +71,7 @@ private:
 	SDL::Texture &texture;
 	const InputCallback input_callback;
 
-	Emulator::Configuration emulator_configuration;
+	ClownMDEmuCPP::Configuration emulator_configuration;
 
 	Cartridge cartridge = {*this};
 	CDReader cd_file;
@@ -107,27 +109,27 @@ private:
 
 	SDL::IOStream save_data_stream;
 
-	virtual void ColourUpdated(cc_u16f index, cc_u16f colour) override;
-	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
-	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
+	void ColourUpdated(cc_u16f index, cc_u16f colour);
+	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
+	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
 
-	virtual void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	virtual void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples)) override;
-	virtual void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	virtual void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
+	void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples));
+	void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 
-	virtual void CDSeeked(cc_u32f sector_index) override;
-	virtual void CDSectorRead(cc_u16l *buffer) override;
-	virtual cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode) override;
-	virtual std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames) override;
+	void CDSeeked(cc_u32f sector_index);
+	void CDSectorRead(cc_u16l *buffer);
+	cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode);
+	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames);
 
-	virtual cc_bool SaveFileOpenedForReading(const char *filename) override;
-	virtual cc_s16f SaveFileRead() override;
-	virtual cc_bool SaveFileOpenedForWriting(const char *filename) override;
-	virtual void SaveFileWritten(cc_u8f byte) override;
-	virtual void SaveFileClosed() override;
-	virtual cc_bool SaveFileRemoved(const char *filename) override;
-	virtual cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override;
+	cc_bool SaveFileOpenedForReading(const char *filename);
+	cc_s16f SaveFileRead();
+	cc_bool SaveFileOpenedForWriting(const char *filename);
+	void SaveFileWritten(cc_u8f byte);
+	void SaveFileClosed();
+	cc_bool SaveFileRemoved(const char *filename);
+	cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size);
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);

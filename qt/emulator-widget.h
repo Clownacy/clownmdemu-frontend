@@ -20,9 +20,11 @@
 #include "../state-ring-buffer.h"
 #include "options.h"
 
-class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator
+class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator<EmulatorWidget>
 {
 	Q_OBJECT
+
+	friend Emulator<EmulatorWidget>::Base;
 
 protected:
 	using Base = QOpenGLWidget;
@@ -41,7 +43,7 @@ protected:
 	std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 	const Options &options;
-	StateRingBuffer<State> state_rewind_buffer;
+	StateRingBuffer<::ClownMDEmuCPP::State> state_rewind_buffer;
 
 	QVector<cc_u16l> cartridge_rom_buffer;
 	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
@@ -55,27 +57,27 @@ protected:
 	AudioOutput audio_output;
 
 	// Emulator stuff.
-	void ColourUpdated(cc_u16f index, cc_u16f colour) override;
-	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
-	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
+	void ColourUpdated(cc_u16f index, cc_u16f colour);
+	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
+	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
 
-	void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
+	void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 
-	void CDSeeked(cc_u32f sector_index) override;
-	void CDSectorRead(cc_u16l *buffer) override;
-	cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode) override;
-	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames) override;
+	void CDSeeked(cc_u32f sector_index);
+	void CDSectorRead(cc_u16l *buffer);
+	cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode);
+	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames);
 
-	cc_bool SaveFileOpenedForReading(const char *filename) override;
-	cc_s16f SaveFileRead() override;
-	cc_bool SaveFileOpenedForWriting(const char *filename) override;
-	void SaveFileWritten(cc_u8f byte) override;
-	void SaveFileClosed() override;
-	cc_bool SaveFileRemoved(const char *filename) override;
-	cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override;
+	cc_bool SaveFileOpenedForReading(const char *filename);
+	cc_s16f SaveFileRead();
+	cc_bool SaveFileOpenedForWriting(const char *filename);
+	void SaveFileWritten(cc_u8f byte);
+	void SaveFileClosed();
+	cc_bool SaveFileRemoved(const char *filename);
+	cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size);
 
 	// Qt stuff.
 	void initializeGL() override;
@@ -104,7 +106,7 @@ public:
 
 	void SetRewindEnabled(const bool enabled)
 	{
-		state_rewind_buffer = StateRingBuffer<State>(enabled);
+		state_rewind_buffer = StateRingBuffer<::ClownMDEmuCPP::State>(enabled);
 	}
 
 signals:
