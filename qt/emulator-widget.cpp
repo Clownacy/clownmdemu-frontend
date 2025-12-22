@@ -1,5 +1,6 @@
 #include "emulator-widget.h"
 
+#include <algorithm>
 #include <array>
 
 #include <QKeyEvent>
@@ -77,23 +78,6 @@ void EmulatorWidget::initializeGL()
 	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
-std::pair<cc_u16f, cc_u16f> EmulatorWidget::GetAspectRatio() const
-{
-	cc_u16f x, y;
-
-	if (screen_properties.is_widescreen)
-		x = VDP_PAD_TILE_PAIRS_TO_WIDESCREEN(VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS) * VDP_TILE_PAIR_WIDTH;
-	else
-		x = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH;
-
-	if (InterlaceMode2Enabled() && !options.TallInterlaceMode2Enabled())
-		y = screen_properties.height / 2;
-	else
-		y = screen_properties.height;
-
-	return {x, y};
-}
-
 void EmulatorWidget::paintGL()
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -105,6 +89,8 @@ void EmulatorWidget::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
+	const bool squashed = GetState().vdp.double_resolution_enabled && !options.TallInterlaceMode2Enabled();
+
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();
 
@@ -114,7 +100,7 @@ void EmulatorWidget::paintGL()
 	{
 		cc_u16f scale_factor_x, scale_factor_y;
 
-		if (InterlaceMode2Enabled() && !options.TallInterlaceMode2Enabled())
+		if (squashed)
 		{
 			const cc_u16f scale_factor = std::min(output_width / 2 / screen_properties.width, output_height / screen_properties.height);
 			scale_factor_x = scale_factor * 2;
@@ -131,6 +117,23 @@ void EmulatorWidget::paintGL()
 
 	if (aspect_correct_width == 0 || aspect_correct_height == 0)
 	{
+		const auto &GetAspectRatio = [&]()
+		{
+			cc_u16f x, y;
+
+			if (screen_properties.is_widescreen)
+				x = VDP_PAD_TILE_PAIRS_TO_WIDESCREEN(VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS) * VDP_TILE_PAIR_WIDTH;
+			else
+				x = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH;
+
+			if (squashed)
+				y = screen_properties.height / 2;
+			else
+				y = screen_properties.height;
+
+			return std::make_pair(x, y);
+		};
+
 		const auto &aspect_ratio = GetAspectRatio();
 
 		if (static_cast<float>(output_width) / output_height > static_cast<float>(aspect_ratio.first) / aspect_ratio.second)

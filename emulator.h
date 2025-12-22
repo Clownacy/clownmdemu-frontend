@@ -169,6 +169,11 @@ public:
 		ClownMDEmu_SetCartridge(&*parameters, nullptr, 0);
 	}
 
+	[[nodiscard]] bool IsCartridgeInserted() const
+	{
+		return parameters->cartridge_buffer_length != 0;
+	}
+
 	void SoftReset(const cc_bool cd_inserted)
 	{
 		ClownMDEmu_Reset(&*parameters, IsCartridgeInserted(), cd_inserted);
@@ -176,7 +181,7 @@ public:
 
 	void HardReset(const cc_bool cd_inserted)
 	{
-		state = State();
+		state = {};
 		SoftReset(cd_inserted);
 	}
 
@@ -196,7 +201,7 @@ public:
 		SetLogCallback(
 			[=](const char* const format, std::va_list arg)
 			{
-				// TODO: Use 'std::string::resize_and_overwrite' here.
+				// TODO: Use 'std::string::resize_and_overwrite' here when C++23 becomes the norm.
 				std::va_list arg_copy;
 				va_copy(arg_copy, arg);
 				std::string string(std::vsnprintf(nullptr, 0, format, arg_copy), '\0');
@@ -221,16 +226,6 @@ public:
 	[[nodiscard]] auto& GetExternalRAM()
 	{
 		return state.external_ram.buffer;
-	}
-
-	[[nodiscard]] bool InterlaceMode2Enabled() const
-	{
-		return parameters->state->vdp.double_resolution_enabled;
-	}
-
-	[[nodiscard]] bool IsCartridgeInserted() const
-	{
-		return parameters->cartridge_buffer_length != 0;
 	}
 };
 

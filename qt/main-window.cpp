@@ -19,45 +19,6 @@ void MainWindow::DoActionEnablement(const bool enabled)
 	Do(ui.actionCPUs);
 };
 
-bool MainWindow::LoadCartridgeData(const QString &file_path)
-{
-	QFile file(file_path);
-
-	if (!file.open(QIODevice::ReadOnly))
-		return false;
-
-	LoadCartridgeData(file.readAll());
-
-	return true;
-}
-
-void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
-{
-	// Convert the ROM buffer to 16-bit.
-	cartridge_rom_buffer.resize(file_contents.size() / sizeof(cc_u16l));
-
-	const auto &GetByte = [&](const auto index) { return static_cast<cc_u16f>(file_contents[index]) & 0xFF; };
-
-	for (qsizetype i = 0; i < std::size(cartridge_rom_buffer); ++i)
-	{
-		cartridge_rom_buffer[i]
-			= (GetByte(i * 2 + 0) << 8)
-			| (GetByte(i * 2 + 1) << 0);
-	}
-
-	ui.actionUnload_Cartridge_File->setEnabled(true);
-	CreateEmulator();
-}
-
-void MainWindow::LoadCDData(const QByteArray &file_contents, const QString &file_path)
-{
-	cd_buffer = file_contents;
-	cd_file_path = reinterpret_cast<const char8_t*>(file_path.toStdString().c_str());
-
-	ui.actionUnload_CD_File->setEnabled(true);
-	CreateEmulator();
-}
-
 void MainWindow::CreateEmulator()
 {
 	emulator.emplace(options, cartridge_rom_buffer, SDL::IOStream(SDL_IOFromConstMem(std::data(cd_buffer), std::size(cd_buffer))), cd_file_path, this);
@@ -87,6 +48,34 @@ void MainWindow::CreateEmulator()
 	);
 }
 
+void MainWindow::DestroyEmulator()
+{
+	emulator = std::nullopt;
+
+	DoActionEnablement(false);
+
+	setCentralWidget(central_widget);
+	central_widget = nullptr;
+}
+
+void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
+{
+	// Convert the ROM buffer to 16-bit.
+	cartridge_rom_buffer.resize(file_contents.size() / sizeof(cc_u16l));
+
+	const auto &GetByte = [&](const auto index) { return static_cast<cc_u16f>(file_contents[index]) & 0xFF; };
+
+	for (qsizetype i = 0; i < std::size(cartridge_rom_buffer); ++i)
+	{
+		cartridge_rom_buffer[i]
+			= (GetByte(i * 2 + 0) << 8)
+			| (GetByte(i * 2 + 1) << 0);
+	}
+
+	ui.actionUnload_Cartridge_File->setEnabled(true);
+	CreateEmulator();
+}
+
 void MainWindow::UnloadCartridgeData()
 {
 	DestroyEmulator();
@@ -98,6 +87,15 @@ void MainWindow::UnloadCartridgeData()
 
 	if (!cd_buffer.isEmpty())
 		CreateEmulator();
+}
+
+void MainWindow::LoadCDData(const QByteArray &file_contents, const QString &file_path)
+{
+	cd_buffer = file_contents;
+	cd_file_path = reinterpret_cast<const char8_t*>(file_path.toStdString().c_str());
+
+	ui.actionUnload_CD_File->setEnabled(true);
+	CreateEmulator();
 }
 
 void MainWindow::UnloadCDData()
@@ -112,16 +110,6 @@ void MainWindow::UnloadCDData()
 
 	if (!cartridge_rom_buffer.isEmpty())
 		CreateEmulator();
-}
-
-void MainWindow::DestroyEmulator()
-{
-	emulator = std::nullopt;
-
-	DoActionEnablement(false);
-
-	setCentralWidget(central_widget);
-	central_widget = nullptr;
 }
 
 MainWindow::MainWindow(QWidget* const parent)

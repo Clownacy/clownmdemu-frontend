@@ -39,13 +39,13 @@ private:
 	QWidget *central_widget = nullptr;
 
 	void DoActionEnablement(bool enabled);
+	void CreateEmulator();
+	void DestroyEmulator();
 	[[nodiscard]] bool LoadCartridgeData(const QString &file_path);
 	void LoadCartridgeData(const QByteArray &file_contents);
-	void LoadCDData(const QByteArray &file_contents, const QString &file_path);
-	void CreateEmulator();
 	void UnloadCartridgeData();
+	void LoadCDData(const QByteArray &file_contents, const QString &file_path);
 	void UnloadCDData();
-	void DestroyEmulator();
 
 public:
 	MainWindow(QWidget *parent = nullptr);
