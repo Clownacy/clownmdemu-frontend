@@ -1,5 +1,5 @@
-#ifndef DIALOGS_WIDGETS_DEBUG_CPU_COMMON_H
-#define DIALOGS_WIDGETS_DEBUG_CPU_COMMON_H
+#ifndef WIDGETS_DEBUG_CPU_COMMON_H
+#define WIDGETS_DEBUG_CPU_COMMON_H
 
 #include <array>
 
@@ -9,7 +9,7 @@
 #include <QLabel>
 #include <QWidget>
 
-namespace Dialogs::Widgets::Debug::CPU
+namespace Widgets::Debug::CPU
 {
 	class Common : public QWidget
 	{
@@ -77,4 +77,4 @@ namespace Dialogs::Widgets::Debug::CPU
 	};
 }
 
-#endif // DIALOGS_WIDGETS_DEBUG_CPU_COMMON_H
+#endif // WIDGETS_DEBUG_CPU_COMMON_H

@@ -10,7 +10,7 @@
 #include "dialogs/debug-cpu.h"
 #include "dialogs/debug-toggles.h"
 #include "dialogs/options.h"
-#include "dialogs/widgets/emulator.h"
+#include "widgets/emulator.h"
 #include "allocated-dialog.h"
 #include "options.h"
 #include "ui_main-window.h"
@@ -20,11 +20,11 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 private:
-	struct EmulatorStuff : public Dialogs::Widgets::Emulator
+	struct EmulatorStuff : public Widgets::Emulator
 	{
 		AllocatedDialog<Dialogs::Debug::CPU> debug_cpu;
 
-		using Dialogs::Widgets::Emulator::Emulator;
+		using Widgets::Emulator::Emulator;
 	};
 
 	Ui::MainWindow ui;

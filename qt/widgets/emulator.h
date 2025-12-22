@@ -1,5 +1,5 @@
-#ifndef DIALOGS_WIDGETS_EMULATOR_H
-#define DIALOGS_WIDGETS_EMULATOR_H
+#ifndef WIDGETS_EMULATOR_H
+#define WIDGETS_EMULATOR_H
 
 #include <array>
 #include <filesystem>
@@ -15,13 +15,13 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
-#include "../../../audio-output.h"
-#include "../../../emulator-with-cd-reader.h"
-#include "../../../sdl-wrapper-inner.h"
-#include "../../../state-ring-buffer.h"
-#include "../../options.h"
+#include "../../audio-output.h"
+#include "../../emulator-with-cd-reader.h"
+#include "../../sdl-wrapper-inner.h"
+#include "../../state-ring-buffer.h"
+#include "../options.h"
 
-namespace Dialogs::Widgets
+namespace Widgets
 {
 	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorWithCDReader
 	{
@@ -87,7 +87,7 @@ namespace Dialogs::Widgets
 		void Advance();
 
 	public:
-		explicit Emulator(const ::Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+		explicit Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 		~Emulator()
 		{
@@ -120,4 +120,4 @@ namespace Dialogs::Widgets
 	};
 }
 
-#endif // DIALOGS_WIDGETS_EMULATOR_H
+#endif // WIDGETS_EMULATOR_H

@@ -1,11 +1,11 @@
-#ifndef DIALOGS_WIDGETS_DEBUG_CPU_Z80_H
-#define DIALOGS_WIDGETS_DEBUG_CPU_Z80_H
+#ifndef WIDGETS_DEBUG_CPU_Z80_H
+#define WIDGETS_DEBUG_CPU_Z80_H
 
 #include "debug-cpu-common.h"
 
-#include "../../../common/core/clownz80/interpreter.h"
+#include "../../common/core/clownz80/interpreter.h"
 
-namespace Dialogs::Widgets::Debug::CPU
+namespace Widgets::Debug::CPU
 {
 	class Z80 : public Common
 	{
@@ -21,4 +21,4 @@ namespace Dialogs::Widgets::Debug::CPU
 	};
 }
 
-#endif // DIALOGS_WIDGETS_DEBUG_CPU_Z80_H
+#endif // WIDGETS_DEBUG_CPU_Z80_H

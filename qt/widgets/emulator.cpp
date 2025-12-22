@@ -21,7 +21,7 @@ static constexpr auto vertices = std::to_array<Vertex>({
 static constexpr const char *attribute_name_vertex_position = "vertex_position";
 static constexpr const char *attribute_name_vertex_texture_coordinate = "vertex_texture_coordinate";
 
-void Dialogs::Widgets::Emulator::initializeGL()
+void Widgets::Emulator::initializeGL()
 {
 	initializeOpenGLFunctions();
 
@@ -78,7 +78,7 @@ void Dialogs::Widgets::Emulator::initializeGL()
 	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
 }
 
-void Dialogs::Widgets::Emulator::paintGL()
+void Widgets::Emulator::paintGL()
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -157,7 +157,7 @@ void Dialogs::Widgets::Emulator::paintGL()
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, std::size(vertices));
 }
 
-void Dialogs::Widgets::Emulator::timerEvent([[maybe_unused]] QTimerEvent* const event)
+void Widgets::Emulator::timerEvent([[maybe_unused]] QTimerEvent* const event)
 {
 	if (paused)
 		return;
@@ -165,19 +165,19 @@ void Dialogs::Widgets::Emulator::timerEvent([[maybe_unused]] QTimerEvent* const 
 	Advance();
 }
 
-void Dialogs::Widgets::Emulator::keyPressEvent(QKeyEvent* const event)
+void Widgets::Emulator::keyPressEvent(QKeyEvent* const event)
 {
 	if (!DoButton(event, true))
 		Base::keyPressEvent(event);
 }
 
-void Dialogs::Widgets::Emulator::keyReleaseEvent(QKeyEvent* const event)
+void Widgets::Emulator::keyReleaseEvent(QKeyEvent* const event)
 {
 	if (!DoButton(event, false))
 		Base::keyReleaseEvent(event);
 }
 
-Dialogs::Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
+Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
 	, EmulatorWithCDReader(options.GetEmulatorConfiguration())
 	, options(options)
@@ -193,7 +193,7 @@ Dialogs::Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u1
 	SoftReset();
 }
 
-void Dialogs::Widgets::Emulator::ColourUpdated(const cc_u16f index, const cc_u16f colour)
+void Widgets::Emulator::ColourUpdated(const cc_u16f index, const cc_u16f colour)
 {
 	const auto &Extract4BitChannelTo6Bit = [&](const unsigned int channel_index)
 	{
@@ -213,7 +213,7 @@ void Dialogs::Widgets::Emulator::ColourUpdated(const cc_u16f index, const cc_u16
 		| (blue  << (0 + 0 + 0));
 }
 
-void Dialogs::Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
+void Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
 {
 	for (cc_u16f i = 0; i < right_boundary - left_boundary; ++i)
 		texture_buffer[scanline][left_boundary + i] = palette[pixels[i]];
@@ -223,7 +223,7 @@ void Dialogs::Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const 
 	screen_properties.is_widescreen = options.WidescreenEnabled();
 }
 
-cc_bool Dialogs::Widgets::Emulator::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
+cc_bool Widgets::Emulator::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
 	// TODO: Player 2.
 	if (player_id != options.KeyboardControlPad())
@@ -232,62 +232,62 @@ cc_bool Dialogs::Widgets::Emulator::InputRequested(const cc_u8f player_id, const
 	return buttons[button_id];
 }
 
-void Dialogs::Widgets::Emulator::FMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Widgets::Emulator::FMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	generate_fm_audio(clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
 }
 
-void Dialogs::Widgets::Emulator::PSGAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Widgets::Emulator::PSGAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	generate_psg_audio(clownmdemu, audio_output.MixerAllocatePSGSamples(total_frames), total_frames);
 }
 
-void Dialogs::Widgets::Emulator::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Widgets::Emulator::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	generate_pcm_audio(clownmdemu, audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
 }
 
-void Dialogs::Widgets::Emulator::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+void Widgets::Emulator::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
 }
 
-cc_bool Dialogs::Widgets::Emulator::SaveFileOpenedForReading(const char* const filename)
+cc_bool Widgets::Emulator::SaveFileOpenedForReading(const char* const filename)
 {
 	return cc_false;
 }
 
-cc_s16f Dialogs::Widgets::Emulator::SaveFileRead()
+cc_s16f Widgets::Emulator::SaveFileRead()
 {
 	return 0;
 }
 
-cc_bool Dialogs::Widgets::Emulator::SaveFileOpenedForWriting(const char* const filename)
+cc_bool Widgets::Emulator::SaveFileOpenedForWriting(const char* const filename)
 {
 	return cc_false;
 }
 
-void Dialogs::Widgets::Emulator::SaveFileWritten(const cc_u8f byte)
+void Widgets::Emulator::SaveFileWritten(const cc_u8f byte)
 {
 
 }
 
-void Dialogs::Widgets::Emulator::SaveFileClosed()
+void Widgets::Emulator::SaveFileClosed()
 {
 
 }
 
-cc_bool Dialogs::Widgets::Emulator::SaveFileRemoved(const char* const filename)
-{
-	return cc_false;
-}
-
-cc_bool Dialogs::Widgets::Emulator::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
+cc_bool Widgets::Emulator::SaveFileRemoved(const char* const filename)
 {
 	return cc_false;
 }
 
-bool Dialogs::Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pressed)
+cc_bool Widgets::Emulator::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
+{
+	return cc_false;
+}
+
+bool Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pressed)
 {
 	if (event->isAutoRepeat())
 		return false;
@@ -335,7 +335,7 @@ bool Dialogs::Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pre
 	return true;
 }
 
-void Dialogs::Widgets::Emulator::Advance()
+void Widgets::Emulator::Advance()
 {
 	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
 	{

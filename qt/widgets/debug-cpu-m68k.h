@@ -1,11 +1,11 @@
-#ifndef DIALOGS_WIDGETS_DEBUG_CPU_M68K_H
-#define DIALOGS_WIDGETS_DEBUG_CPU_M68K_H
+#ifndef WIDGETS_DEBUG_CPU_M68K_H
+#define WIDGETS_DEBUG_CPU_M68K_H
 
 #include "debug-cpu-common.h"
 
-#include "../../../common/core/clown68000/interpreter/clown68000.h"
+#include "../../common/core/clown68000/interpreter/clown68000.h"
 
-namespace Dialogs::Widgets::Debug::CPU
+namespace Widgets::Debug::CPU
 {
 	class M68k : public Common
 	{
@@ -21,4 +21,4 @@ namespace Dialogs::Widgets::Debug::CPU
 	};
 }
 
-#endif // DIALOGS_WIDGETS_DEBUG_CPU_M68K_H
+#endif // WIDGETS_DEBUG_CPU_M68K_H

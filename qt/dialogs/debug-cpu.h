@@ -3,9 +3,9 @@
 
 #include <QDialog>
 
-#include "widgets/debug-cpu-m68k.h"
-#include "widgets/debug-cpu-z80.h"
 #include "../../emulator.h"
+#include "../widgets/debug-cpu-m68k.h"
+#include "../widgets/debug-cpu-z80.h"
 #include "ui_debug-cpu.h"
 
 namespace Dialogs::Debug
