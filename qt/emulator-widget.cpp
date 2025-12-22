@@ -185,8 +185,8 @@ EmulatorWidget::EmulatorWidget(const Options &options, const QVector<cc_u16l> &c
 	setFocusPolicy(Qt::StrongFocus);
 
 	// TODO: Merge this with 'SetParameters'?
-	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
-	SetCD(std::move(cd_stream), cd_path);
+	InsertCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
+	InsertCD(std::move(cd_stream), cd_path);
 	SoftReset();
 }
 

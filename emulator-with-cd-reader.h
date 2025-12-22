@@ -20,14 +20,36 @@ protected:
 public:
 	using Emulator::Emulator;
 
-	void SetCD(SDL::IOStream &&stream, const std::filesystem::path &path)
+	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
 	{
 		cd_reader.Open(std::move(stream), path);
+		return cd_reader.IsOpen();
+	}
+
+	void EjectCD()
+	{
+		cd_reader.Close();
 	}
 
 	[[nodiscard]] bool IsCDInserted() const
 	{
 		return cd_reader.IsOpen();
+	}
+
+	CDReader::State GetCDState() const
+	{
+		return cd_reader.GetState();
+	}
+
+	void SetCDState(const CDReader::State &state)
+	{
+		cd_reader.SetState(state);
+	}
+
+	void ReadMegaCDHeaderSector(unsigned char* const buffer)
+	{
+		// TODO: Make this return an array instead!
+		cd_reader.ReadMegaCDHeaderSector(buffer);
 	}
 };
 

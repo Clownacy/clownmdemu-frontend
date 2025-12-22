@@ -104,47 +104,6 @@ void EmulatorInstance::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu
 	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
 }
 
-void EmulatorInstance::CDSeeked(const cc_u32f sector_index)
-{
-	cd_file.SeekToSector(sector_index);
-}
-
-void EmulatorInstance::CDSectorRead(cc_u16l* const buffer)
-{
-	cd_file.ReadSector(buffer);
-}
-
-cc_bool EmulatorInstance::CDTrackSeeked(const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
-{
-	CDReader::PlaybackSetting playback_setting;
-
-	switch (mode)
-	{
-		default:
-			SDL_assert(false);
-			return cc_false;
-
-		case CLOWNMDEMU_CDDA_PLAY_ALL:
-			playback_setting = CDReader::PlaybackSetting::ALL;
-			break;
-
-		case CLOWNMDEMU_CDDA_PLAY_ONCE:
-			playback_setting = CDReader::PlaybackSetting::ONCE;
-			break;
-
-		case CLOWNMDEMU_CDDA_PLAY_REPEAT:
-			playback_setting = CDReader::PlaybackSetting::REPEAT;
-			break;
-	}
-
-	return cd_file.PlayAudio(track_index, playback_setting);
-}
-
-std::size_t EmulatorInstance::CDAudioRead(cc_s16l* const sample_buffer, const std::size_t total_frames)
-{
-	return cd_file.ReadAudio(sample_buffer, total_frames);
-}
-
 cc_bool EmulatorInstance::SaveFileOpenedForReading(const char* const filename)
 {
 	save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "rb");
@@ -196,7 +155,7 @@ EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback
 )
-	: Emulator(emulator_configuration)
+	: EmulatorWithCDReader(emulator_configuration)
 	, audio_output()
 	, texture(texture)
 	, input_callback(input_callback)
@@ -258,7 +217,7 @@ void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, con
 	cartridge.Insert(std::move(file_buffer), path);
 
 	const auto &buffer = cartridge.GetROMBuffer();
-	SetCartridge(std::data(buffer), std::size(buffer));
+	InsertCartridge(std::data(buffer), std::size(buffer));
 	HardResetConsole();
 }
 
@@ -266,13 +225,12 @@ void EmulatorInstance::UnloadCartridgeFile()
 {
 	cartridge.Eject();
 
-	SetCartridge(nullptr, 0);
+	EjectCartridge();
 }
 
 bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
 {
-	cd_file.Open(std::move(stream), path);
-	if (!cd_file.IsOpen())
+	if (!InsertCD(std::move(stream), path))
 		return false;
 
 	HardResetConsole();
@@ -281,7 +239,7 @@ bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem:
 
 void EmulatorInstance::UnloadCDFile()
 {
-	cd_file.Close();
+	EjectCD();
 }
 
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
@@ -326,7 +284,7 @@ std::string EmulatorInstance::GetSoftwareName()
 {
 	std::string name_buffer;
 
-	if (IsCartridgeFileLoaded() || cd_file.IsOpen())
+	if (IsCartridgeFileLoaded() || IsCDFileLoaded())
 	{
 		constexpr cc_u8f name_buffer_size = 0x30;
 		// '*4' for the maximum UTF-8 length.
@@ -352,7 +310,7 @@ std::string EmulatorInstance::GetSoftwareName()
 		else //if (cd_file.IsOpen())
 		{
 			std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
-			cd_file.ReadMegaCDHeaderSector(sector.data());
+			ReadMegaCDHeaderSector(sector.data());
 			const auto bytes = &sector[header_offset];
 			std::copy(bytes, bytes + name_buffer_size, std::begin(in_buffer));
 		}

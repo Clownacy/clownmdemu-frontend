@@ -159,9 +159,14 @@ public:
 		: parameters(configuration, state, callbacks)
 	{}
 
-	void SetCartridge(const cc_u16l* const buffer, const cc_u32f buffer_length)
+	void InsertCartridge(const cc_u16l* const buffer, const cc_u32f buffer_length)
 	{
 		ClownMDEmu_SetCartridge(&*parameters, buffer, buffer_length);
+	}
+
+	void EjectCartridge()
+	{
+		ClownMDEmu_SetCartridge(&*parameters, nullptr, 0);
 	}
 
 	void SoftReset(const cc_bool cartridge_inserted, const cc_bool cd_inserted)

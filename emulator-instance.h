@@ -11,12 +11,11 @@
 #include "common/core/clownmdemu.h"
 
 #include "audio-output.h"
-#include "cd-reader.h"
-#include "emulator.h"
+#include "emulator-with-cd-reader.h"
 #include "sdl-wrapper.h"
 #include "state-ring-buffer.h"
 
-class EmulatorInstance : public Emulator
+class EmulatorInstance : public EmulatorWithCDReader
 {
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
@@ -72,7 +71,7 @@ private:
 	Emulator::Configuration emulator_configuration;
 
 	Cartridge cartridge = {*this};
-	CDReader cd_file;
+
 
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
@@ -116,11 +115,6 @@ private:
 	virtual void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 	virtual void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 
-	virtual void CDSeeked(cc_u32f sector_index) override;
-	virtual void CDSectorRead(cc_u16l *buffer) override;
-	virtual cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode) override;
-	virtual std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames) override;
-
 	virtual cc_bool SaveFileOpenedForReading(const char *filename) override;
 	virtual cc_s16f SaveFileRead() override;
 	virtual cc_bool SaveFileOpenedForWriting(const char *filename) override;
@@ -150,7 +144,7 @@ public:
 	bool WriteSaveStateFile(SDL::IOStream &file);
 
 	bool IsCartridgeFileLoaded() const { return cartridge.IsInserted(); }
-	bool IsCDFileLoaded() const { return cd_file.IsOpen(); }
+	bool IsCDFileLoaded() const { return IsCDInserted(); }
 
 	bool RewindingEnabled() const { return rewind.Enabled(); }
 	void EnableRewinding(const bool enabled)
@@ -168,13 +162,13 @@ public:
 
 	[[nodiscard]] SaveState CreateSaveState() const
 	{
-		return {GetState(), cd_file.GetState(), GetFrontendState()};
+		return {GetState(), GetCDState(), GetFrontendState()};
 	}
 
 	void ApplySaveState(const SaveState &state)
 	{
 		SetState(state.emulator);
-		cd_file.SetState(state.cd);
+		SetCDState(state.cd);
 		this->state = state.frontend;
 	}
 

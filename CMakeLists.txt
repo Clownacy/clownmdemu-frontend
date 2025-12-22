@@ -22,6 +22,8 @@ add_executable(clownmdemu WIN32
 	"emulator.h"
 	"emulator-instance.cpp"
 	"emulator-instance.h"
+	"emulator-with-cd-reader.cpp"
+	"emulator-with-cd-reader.h"
 	"file-utilities.cpp"
 	"file-utilities.h"
 	"frontend.cpp"
