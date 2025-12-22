@@ -2,6 +2,7 @@
 #define EMULATOR_WIDGET_H
 
 #include <array>
+#include <filesystem>
 #include <optional>
 #include <utility>
 
@@ -16,11 +17,12 @@
 #include <QVector>
 
 #include "../audio-output.h"
-#include "../emulator.h"
+#include "../emulator-with-cd-reader.h"
+#include "../sdl-wrapper-inner.h"
 #include "../state-ring-buffer.h"
 #include "options.h"
 
-class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public Emulator
+class EmulatorWidget : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorWithCDReader
 {
 	Q_OBJECT
 
@@ -43,7 +45,7 @@ protected:
 	const Options &options;
 	StateRingBuffer<State> state_rewind_buffer;
 
-	QVector<cc_u16l> cartridge_rom_buffer;
+	const QVector<cc_u16l> &cartridge_rom_buffer;
 	std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
 	struct
 	{
@@ -63,11 +65,6 @@ protected:
 	void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 	void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 	void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-
-	void CDSeeked(cc_u32f sector_index) override;
-	void CDSectorRead(cc_u16l *buffer) override;
-	cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode) override;
-	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames) override;
 
 	cc_bool SaveFileOpenedForReading(const char *filename) override;
 	cc_s16f SaveFileRead() override;
@@ -90,16 +87,11 @@ protected:
 	[[nodiscard]] std::pair<cc_u16f, cc_u16f> GetAspectRatio() const;
 
 public:
-	explicit EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+	explicit EmulatorWidget(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 	~EmulatorWidget()
 	{
 		makeCurrent();
-	}
-
-	[[nodiscard]] bool IsCartridgeInserted() const
-	{
-		return !cartridge_rom_buffer.isEmpty();
 	}
 
 	void SetRewindEnabled(const bool enabled)
@@ -118,12 +110,12 @@ public slots:
 
 	void SoftReset()
 	{
-		Emulator::SoftReset(IsCartridgeInserted(), cc_false);
+		EmulatorWithCDReader::SoftReset(IsCartridgeInserted(), IsCDInserted());
 	}
 
 	void HardReset()
 	{
-		Emulator::HardReset(IsCartridgeInserted(), cc_false);
+		EmulatorWithCDReader::HardReset(IsCartridgeInserted(), IsCDInserted());
 	}
 };
 

@@ -174,28 +174,19 @@ void EmulatorWidget::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
-EmulatorWidget::EmulatorWidget(const Options &options, const QByteArray &cartridge_rom_buffer_bytes, QWidget* const parent, const Qt::WindowFlags f)
+EmulatorWidget::EmulatorWidget(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, Emulator(options.GetEmulatorConfiguration())
+	, EmulatorWithCDReader(options.GetEmulatorConfiguration())
 	, options(options)
 	, state_rewind_buffer(options.RewindingEnabled())
-	, cartridge_rom_buffer(cartridge_rom_buffer_bytes.size() / sizeof(cc_u16l))
+	, cartridge_rom_buffer(cartridge_rom_buffer)
 {
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
 
-	// Convert the ROM buffer to 16-bit.
-	const auto &GetByte = [&](const auto index) { return static_cast<cc_u16f>(cartridge_rom_buffer_bytes[index]) & 0xFF; };
-
-	for (qsizetype i = 0; i < std::size(cartridge_rom_buffer); ++i)
-	{
-		cartridge_rom_buffer[i]
-			= (GetByte(i * 2 + 0) << 8)
-			| (GetByte(i * 2 + 1) << 0);
-	}
-
 	// TODO: Merge this with 'SetParameters'?
 	SetCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
+	SetCD(std::move(cd_stream), cd_path);
 	SoftReset();
 }
 
@@ -256,26 +247,6 @@ void EmulatorWidget::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, c
 void EmulatorWidget::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 {
 	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
-}
-
-void EmulatorWidget::CDSeeked(const cc_u32f sector_index)
-{
-
-}
-
-void EmulatorWidget::CDSectorRead(cc_u16l* const buffer)
-{
-
-}
-
-cc_bool EmulatorWidget::CDTrackSeeked(const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
-{
-	return cc_false;
-}
-
-std::size_t EmulatorWidget::CDAudioRead(cc_s16l* const sample_buffer, const std::size_t total_frames)
-{
-	return 0;
 }
 
 cc_bool EmulatorWidget::SaveFileOpenedForReading(const char* const filename)

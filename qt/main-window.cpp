@@ -14,7 +14,6 @@ void MainWindow::DoActionEnablement(const bool enabled)
 		action->setEnabled(enabled);
 	};
 
-	Do(ui.actionUnload_Cartridge_File);
 	Do(ui.actionPause);
 	Do(ui.actionReset);
 	Do(ui.actionCPUs);
@@ -34,7 +33,34 @@ bool MainWindow::LoadCartridgeData(const QString &file_path)
 
 void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 {
-	emulator.emplace(options, file_contents, this);
+	// Convert the ROM buffer to 16-bit.
+	cartridge_rom_buffer.resize(file_contents.size() / sizeof(cc_u16l));
+
+	const auto &GetByte = [&](const auto index) { return static_cast<cc_u16f>(file_contents[index]) & 0xFF; };
+
+	for (qsizetype i = 0; i < std::size(cartridge_rom_buffer); ++i)
+	{
+		cartridge_rom_buffer[i]
+			= (GetByte(i * 2 + 0) << 8)
+			| (GetByte(i * 2 + 1) << 0);
+	}
+
+	ui.actionUnload_Cartridge_File->setEnabled(true);
+	CreateEmulator();
+}
+
+void MainWindow::LoadCDData(const QByteArray &file_contents, const QString &file_path)
+{
+	cd_buffer = file_contents;
+	cd_file_path = reinterpret_cast<const char8_t*>(file_path.toStdString().c_str());
+
+	ui.actionUnload_CD_File->setEnabled(true);
+	CreateEmulator();
+}
+
+void MainWindow::CreateEmulator()
+{
+	emulator.emplace(options, cartridge_rom_buffer, SDL::IOStream(SDL_IOFromConstMem(std::data(cd_buffer), std::size(cd_buffer))), cd_file_path, this);
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
@@ -63,6 +89,33 @@ void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 
 void MainWindow::UnloadCartridgeData()
 {
+	DestroyEmulator();
+
+	cartridge_rom_buffer.clear();
+	cartridge_rom_buffer.squeeze();
+
+	ui.actionUnload_Cartridge_File->setEnabled(false);
+
+	if (!cd_buffer.isEmpty())
+		CreateEmulator();
+}
+
+void MainWindow::UnloadCDData()
+{
+	DestroyEmulator();
+
+	cd_buffer.clear();
+	cd_buffer.squeeze();
+	cd_file_path.clear();
+
+	ui.actionUnload_CD_File->setEnabled(false);
+
+	if (!cartridge_rom_buffer.isEmpty())
+		CreateEmulator();
+}
+
+void MainWindow::DestroyEmulator()
+{
 	emulator = std::nullopt;
 
 	DoActionEnablement(false);
@@ -78,7 +131,7 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	setAcceptDrops(true);
 
-	connect(ui.actionLoad_Cartridge_Software, &QAction::triggered, this,
+	connect(ui.actionLoad_Cartridge_File, &QAction::triggered, this,
 		[this]()
 		{
 			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
@@ -92,6 +145,21 @@ MainWindow::MainWindow(QWidget* const parent)
 	);
 
 	connect(ui.actionUnload_Cartridge_File, &QAction::triggered, this, &MainWindow::UnloadCartridgeData);
+
+	connect(ui.actionLoad_CD_File, &QAction::triggered, this,
+		[this]()
+		{
+			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue)",
+				[this]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
+				{
+					LoadCDData(file_contents, file_name);
+				},
+				this
+			);
+		}
+	);
+
+	connect(ui.actionUnload_CD_File, &QAction::triggered, this, &MainWindow::UnloadCDData);
 
 	connect(ui.actionToggles, &QAction::triggered, this, [&](){ debug_toggles.Open(this, options); });
 

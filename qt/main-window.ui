@@ -53,8 +53,11 @@
     <property name="title">
      <string>Software</string>
     </property>
-    <addaction name="actionLoad_Cartridge_Software"/>
+    <addaction name="actionLoad_Cartridge_File"/>
     <addaction name="actionUnload_Cartridge_File"/>
+    <addaction name="separator"/>
+    <addaction name="actionLoad_CD_File"/>
+    <addaction name="actionUnload_CD_File"/>
     <addaction name="separator"/>
     <addaction name="actionPause"/>
     <addaction name="actionReset"/>
@@ -80,7 +83,7 @@
    <addaction name="menuDebugging"/>
    <addaction name="menuMisc"/>
   </widget>
-  <action name="actionLoad_Cartridge_Software">
+  <action name="actionLoad_Cartridge_File">
    <property name="text">
     <string>Load Cartridge File...</string>
    </property>
@@ -158,6 +161,19 @@
   <action name="actionToggles">
    <property name="text">
     <string>Toggles</string>
+   </property>
+  </action>
+  <action name="actionLoad_CD_File">
+   <property name="text">
+    <string>Load CD File...</string>
+   </property>
+  </action>
+  <action name="actionUnload_CD_File">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Unload CD File</string>
    </property>
   </action>
  </widget>

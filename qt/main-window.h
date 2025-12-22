@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <filesystem>
 #include <optional>
 
 #include <QMainWindow>
@@ -28,6 +29,9 @@ private:
 
 	Ui::MainWindow ui;
 	Options options;
+	QVector<cc_u16l> cartridge_rom_buffer;
+	QByteArray cd_buffer;
+	std::filesystem::path cd_file_path;
 	std::optional<EmulatorStuff> emulator;
 	AllocatedDialog<Dialogs::Debug::Toggles> debug_toggles;
 	AllocatedDialog<Dialogs::Options> options_menu;
@@ -37,7 +41,11 @@ private:
 	void DoActionEnablement(bool enabled);
 	[[nodiscard]] bool LoadCartridgeData(const QString &file_path);
 	void LoadCartridgeData(const QByteArray &file_contents);
+	void LoadCDData(const QByteArray &file_contents, const QString &file_path);
+	void CreateEmulator();
 	void UnloadCartridgeData();
+	void UnloadCDData();
+	void DestroyEmulator();
 
 public:
 	MainWindow(QWidget *parent = nullptr);

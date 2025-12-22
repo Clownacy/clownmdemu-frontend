@@ -222,6 +222,11 @@ public:
 	{
 		return parameters->state->vdp.double_resolution_enabled;
 	}
+
+	[[nodiscard]] bool IsCartridgeInserted() const
+	{
+		return parameters->cartridge_buffer_length != 0;
+	}
 };
 
 #endif // EMULATOR_H

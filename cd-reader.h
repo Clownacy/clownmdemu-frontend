@@ -1,11 +1,10 @@
 #ifndef CD_READER_H
 #define CD_READER_H
 
-#include <array>
 #include <cstddef>
 #include <filesystem>
 
-#include "sdl-wrapper.h"
+#include "sdl-wrapper-inner.h"
 
 #include "common/cd-reader.h"
 
@@ -52,7 +51,7 @@ public:
 	CDReader(CDReader &&other) = delete;
 	CDReader& operator=(const CDReader &other) = delete;
 	CDReader& operator=(CDReader &&other) = delete;
-	void Open(void* const stream, const std::filesystem::path &path)
+	void Open(SDL_IOStream* const stream, const std::filesystem::path &path)
 	{
 		CDReader_Open(&state, stream, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
 	}
