@@ -28,13 +28,13 @@ void MainWindow::CreateEmulator()
 		central_widget = takeCentralWidget();
 	setCentralWidget(&*emulator);
 
-	connect(ui.actionPause, &QAction::triggered, &*emulator, &EmulatorWidget::Pause);
-	connect(ui.actionReset, &QAction::triggered, &*emulator, &EmulatorWidget::SoftReset);
+	connect(ui.actionPause, &QAction::triggered, &*emulator, &Dialogs::Widgets::Emulator::Pause);
+	connect(ui.actionReset, &QAction::triggered, &*emulator, &Dialogs::Widgets::Emulator::SoftReset);
 	connect(ui.actionCPUs, &QAction::triggered, this,
 		[&]()
 		{
 			emulator->debug_cpu.Open(this, *emulator);
-			connect(&*emulator, &EmulatorWidget::NewFrame, &*emulator->debug_cpu, &Dialogs::Debug::CPU::StateChanged);
+			connect(&*emulator, &Dialogs::Widgets::Emulator::NewFrame, &*emulator->debug_cpu, &Dialogs::Debug::CPU::StateChanged);
 		}
 	);
 
