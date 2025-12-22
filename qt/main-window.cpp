@@ -58,6 +58,18 @@ void MainWindow::DestroyEmulator()
 	central_widget = nullptr;
 }
 
+bool MainWindow::LoadCartridgeData(const QString &file_path)
+{
+	QFile file(file_path);
+
+	if (!file.open(QIODevice::ReadOnly))
+		return false;
+
+	LoadCartridgeData(file.readAll());
+
+	return true;
+}
+
 void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 {
 	// Convert the ROM buffer to 16-bit.
