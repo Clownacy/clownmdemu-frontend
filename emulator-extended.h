@@ -277,9 +277,6 @@ public:
 		palette = state.palette;
 	}
 
-	// Hide this, so that the frontend cannot accidentally set only part of the state.
-	void SetState(const Emulator::State &state) = delete;
-
 	///////////////////
 	// Miscellaneous //
 	///////////////////
