@@ -53,11 +53,6 @@ void EmulatorInstance::Cartridge::Eject()
 	save_data_path.clear();
 }
 
-void EmulatorInstance::ColourUpdated(const cc_u16f index, const cc_u16f colour)
-{
-	frontend_state.colours[index] = colour;
-}
-
 void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
 {
 	current_screen_width = screen_width;
@@ -70,7 +65,7 @@ void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* co
 	auto output_pointer = &framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + left_boundary];
 
 	for (cc_u16f i = left_boundary; i < right_boundary; ++i)
-		*output_pointer++ = frontend_state.colours[*input_pointer++];
+		*output_pointer++ = GetColour(*input_pointer++);
 }
 
 cc_bool EmulatorInstance::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
@@ -155,9 +150,9 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 		{
 			// Handle rewinding.
 			if (IsRewinding())
-				ApplySaveState(rewind.GetBackward());
+				LoadState(rewind.GetBackward());
 			else
-				rewind.GetForward() = CreateSaveState();
+				rewind.GetForward() = SaveState();
 		}
 
 		Iterate();
@@ -222,7 +217,7 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 	if (ValidateSaveStateFile(file_buffer))
 	{
-		ApplySaveState(*reinterpret_cast<const State*>(&file_buffer[save_state_magic.size()]));
+		LoadState(*reinterpret_cast<const State*>(&file_buffer[save_state_magic.size()]));
 
 		success = true;
 	}
@@ -239,7 +234,7 @@ bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
 	bool success = false;
 
-	const auto &save_state = CreateSaveState();
+	const auto &save_state = SaveState();
 
 	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &save_state, sizeof(save_state)) == sizeof(save_state))
 		success = true;

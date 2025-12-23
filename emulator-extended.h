@@ -1,18 +1,36 @@
 #ifndef EMULATOR_EXTENDED_H
 #define EMULATOR_EXTENDED_H
 
+#include <array>
 #include <filesystem>
+#include <type_traits>
 
 #include "audio-output.h"
 #include "cd-reader.h"
 #include "emulator.h"
 #include "sdl-wrapper-inner.h"
 
+template<typename Colour>
 class EmulatorExtended : public Emulator
 {
 protected:
+	struct Palette
+	{
+		static constexpr unsigned int total_brightnesses = VDP_TOTAL_BRIGHTNESSES;
+		static constexpr unsigned int total_lines = VDP_TOTAL_PALETTE_LINES;
+		static constexpr unsigned int total_colours_in_line = VDP_PALETTE_LINE_LENGTH;
+
+		std::array<Colour, total_colours_in_line * total_lines * total_brightnesses> colours;
+	};
+
 	CDReader cd_reader;
 	AudioOutput audio_output;
+	Palette palette;
+
+	void ColourUpdated(const cc_u16f index, const cc_u16f colour) override final
+	{
+		palette.colours[index] = colour;
+	}
 
 	void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final
 	{
@@ -74,7 +92,11 @@ public:
 	{
 		Emulator::State emulator;
 		CDReader::State cd_reader;
+		Palette palette;
 	};
+
+	// Ensure that this is safe to save to (and read from) a file.
+	static_assert(std::is_trivially_copyable_v<State>);
 
 	using Emulator::Emulator;
 
@@ -96,13 +118,14 @@ public:
 
 	State SaveState() const
 	{
-		return {Emulator::GetState(), cd_reader.SaveState()};
+		return {Emulator::GetState(), cd_reader.SaveState(), palette};
 	}
 
 	void LoadState(const State &state)
 	{
 		Emulator::SetState(state.emulator);
 		cd_reader.LoadState(state.cd_reader);
+		palette = state.palette;
 	}
 
 	// Hide this, so that the frontend cannot accidentally set only part of the state.
@@ -147,6 +170,19 @@ public:
 	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
 	cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
 	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
+
+	const Colour* GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
+	{
+		return &palette.colours[brightness * Palette::total_lines * Palette::total_colours_in_line + palette_line * Palette::total_colours_in_line];
+	}
+	const Colour& GetColour(const cc_u8f brightness, const cc_u8f palette_line, const cc_u8f colour_index) const
+	{
+		return GetPaletteLine(brightness, palette_line)[colour_index];
+	}
+	const Colour& GetColour(const cc_u8f index) const
+	{
+		return palette.colours[index];
+	}
 };
 
 #endif // EMULATOR_EXTENDED_H

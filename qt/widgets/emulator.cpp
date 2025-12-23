@@ -192,15 +192,10 @@ Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cart
 	SoftReset();
 }
 
-void Widgets::Emulator::ColourUpdated(const cc_u16f index, const cc_u16f colour)
-{
-	palette[index] = colour;
-}
-
 void Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
 {
 	for (cc_u16f i = 0; i < right_boundary - left_boundary; ++i)
-		texture_buffer[scanline][left_boundary + i] = palette[pixels[i]];
+		texture_buffer[scanline][left_boundary + i] = GetColour(pixels[i]);
 
 	screen_properties.width = screen_width;
 	screen_properties.height = screen_height;

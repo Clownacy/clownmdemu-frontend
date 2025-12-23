@@ -6,7 +6,6 @@
 #include <filesystem>
 #include <functional>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "common/core/clownmdemu.h"
@@ -16,37 +15,10 @@
 #include "sdl-wrapper.h"
 #include "state-ring-buffer.h"
 
-class EmulatorInstance : public EmulatorExtended
+class EmulatorInstance : public EmulatorExtended<Colour>
 {
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
-
-	struct FrontendState
-	{
-		static constexpr unsigned int total_brightnesses = 3;
-		static constexpr unsigned int total_palette_lines = 4;
-		static constexpr unsigned int total_colours_in_palette_line = 16;
-
-		std::array<Colour, total_colours_in_palette_line * total_palette_lines * total_brightnesses> colours;
-
-		auto GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
-		{
-			return &colours[brightness * total_palette_lines * total_colours_in_palette_line + palette_line * total_colours_in_palette_line];
-		}
-		auto GetColour(const cc_u8f brightness, const cc_u8f palette_line, const cc_u8f colour_index) const
-		{
-			return GetPaletteLine(brightness, palette_line)[colour_index];
-		}
-	};
-
-	struct State
-	{
-		EmulatorExtended::State emulator;
-		FrontendState frontend;
-	};
-
-	// Ensure that this is safe to save to (and read from) a file.
-	static_assert(std::is_trivially_copyable_v<State>);
 
 private:
 	class Cartridge
@@ -101,14 +73,11 @@ private:
 
 	Rewind rewind;
 
-	FrontendState frontend_state;
-
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
 
 	SDL::IOStream save_data_stream;
 
-	virtual void ColourUpdated(cc_u16f index, cc_u16f colour) override;
 	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
 
@@ -151,19 +120,6 @@ public:
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
-
-	const FrontendState& GetFrontendState() const { return frontend_state; }
-
-	[[nodiscard]] State CreateSaveState() const
-	{
-		return {SaveState(), GetFrontendState()};
-	}
-
-	void ApplySaveState(const State &state)
-	{
-		LoadState(state.emulator);
-		this->frontend_state = state.frontend;
-	}
 
 	const std::vector<cc_u16l>& GetROMBuffer() const { return cartridge.GetROMBuffer(); }
 

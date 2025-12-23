@@ -24,7 +24,7 @@
 
 namespace Widgets
 {
-	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorExtended
+	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorExtended<Colour>
 	{
 		Q_OBJECT
 
@@ -35,12 +35,6 @@ namespace Widgets
 		static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
 
 	public:
-		struct State
-		{
-				EmulatorExtended::State emulator;
-				std::array<Colour, VDP_TOTAL_COLOURS> palette;
-		};
-
 		// Ensure that this is safe to save to (and read from) a file.
 		static_assert(std::is_trivially_copyable_v<State>);
 
@@ -56,7 +50,6 @@ namespace Widgets
 		const Options &options;
 		StateRingBuffer<State> state_rewind_buffer;
 
-		std::array<Colour, VDP_TOTAL_COLOURS> palette = {};
 		struct
 		{
 			cc_u16f width, height;
@@ -66,7 +59,6 @@ namespace Widgets
 		bool rewinding = false, fastforwarding = false, paused = false;
 
 		// Emulator stuff.
-		void ColourUpdated(cc_u16f index, cc_u16f colour) override;
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 		cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
 
@@ -100,17 +92,6 @@ namespace Widgets
 		void SetRewindEnabled(const bool enabled)
 		{
 			state_rewind_buffer = {enabled};
-		}
-
-		State SaveState() const
-		{
-				return {EmulatorExtended::SaveState(), palette};
-		}
-
-		void LoadState(const State &state)
-		{
-				EmulatorExtended::LoadState(state.emulator);
-				palette = state.palette;
 		}
 
 	signals:

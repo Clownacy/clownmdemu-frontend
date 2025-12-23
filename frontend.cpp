@@ -1125,7 +1125,7 @@ static bool LoadSaveState(SDL::IOStream &file)
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool CreateSaveState(const std::filesystem::path &path)
+static bool SaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
@@ -1794,14 +1794,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						// Save save state
-						quick_save_state = emulator->CreateSaveState();
+						quick_save_state = emulator->SaveState();
 						break;
 
 					case INPUT_BINDING_QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_state)
 						{
-							emulator->ApplySaveState(*quick_save_state);
+							emulator->LoadState(*quick_save_state);
 							emulator_paused = false;
 						}
 
@@ -2379,12 +2379,12 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 				{
-					quick_save_state = emulator->CreateSaveState();
+					quick_save_state = emulator->SaveState();
 				}
 
 				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_state))
 				{
-					emulator->ApplySaveState(*quick_save_state);
+					emulator->LoadState(*quick_save_state);
 
 					emulator_paused = false;
 				}
@@ -2394,7 +2394,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 				#ifdef FILE_PATH_SUPPORT
-					file_utilities.CreateSaveFileDialog(*window, "Create Save State", CreateSaveState);
+					file_utilities.CreateSaveFileDialog(*window, "Create Save State", SaveState);
 				#else
 					file_utilities.SaveFile(*window, "Create Save State", [](const FileUtilities::SaveFileInnerCallback &callback)
 					{
