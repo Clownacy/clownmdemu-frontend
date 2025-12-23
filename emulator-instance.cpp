@@ -17,22 +17,21 @@ void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file
 	save_data_path = in_save_data_path;
 
 	// Load save data from disk.
-	if (Frontend::file_utilities.FileExists(save_data_path))
+	if (std::filesystem::exists(save_data_path))
 	{
-		const auto save_data_buffer = Frontend::file_utilities.LoadFileToBuffer<cc_u8l, 1>(save_data_path);
+		const auto save_data_size = std::filesystem::file_size(save_data_path);
 
-		if (save_data_buffer.has_value())
+		auto &external_ram_buffer = emulator.GetExternalRAM();
+
+		if (save_data_size > std::size(external_ram_buffer))
 		{
-			auto &external_ram_buffer = emulator.GetExternalRAM();
-			if (std::size(*save_data_buffer) > std::size(external_ram_buffer))
-			{
-				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", std::size(*save_data_buffer), std::size(emulator.GetState().external_ram.buffer));
-			}
-			else
-			{
-				std::copy(std::begin(*save_data_buffer), std::end(*save_data_buffer), external_ram_buffer);
-				std::fill(std::begin(external_ram_buffer) + std::size(*save_data_buffer), std::end(external_ram_buffer), 0xFF);
-			}
+			Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", save_data_size, std::size(external_ram_buffer));
+		}
+		else
+		{
+			std::ifstream save_data_stream(save_data_path, std::ios::binary);
+			save_data_stream.read(reinterpret_cast<char*>(external_ram_buffer), save_data_size);
+			std::fill(std::begin(external_ram_buffer) + save_data_size, std::end(external_ram_buffer), 0xFF);
 		}
 	}
 }
@@ -42,12 +41,16 @@ void EmulatorInstance::Cartridge::Eject()
 	rom_file_buffer.clear();
 
 	// Write save data to disk.
-	if (emulator.GetState().external_ram.non_volatile && emulator.GetState().external_ram.size != 0)
-	{
-		SDL::IOStream file = SDL::IOFromFile(save_data_path, "wb");
+	const auto &external_ram = emulator.GetState().external_ram;
 
-		if (!file || SDL_WriteIO(file, emulator.GetState().external_ram.buffer, emulator.GetState().external_ram.size) != emulator.GetState().external_ram.size)
-			Frontend::debug_log.Log("Could not write save data file");
+	if (external_ram.non_volatile && external_ram.size != 0)
+	{
+		std::ofstream save_data_stream(save_data_path, std::ios::binary);
+
+		if (!save_data_stream.is_open())
+			Frontend::debug_log.Log("Could not open save data for writing");
+		else
+			save_data_stream.write(reinterpret_cast<const char*>(external_ram.buffer), external_ram.size);
 	}
 
 	save_data_path.clear();
