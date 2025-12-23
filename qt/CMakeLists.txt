@@ -19,6 +19,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	allocated-dialog.h
 	main.cpp
 	main-window.cpp main-window.h main-window.ui
+	message-box.h
 	options.cpp options.h
 	paste.h
 	../audio-device.cpp ../audio-device.h

@@ -7,6 +7,8 @@
 #include <QLayout>
 #include <QMimeData>
 
+#include "message-box.h"
+
 void MainWindow::DoActionEnablement(const bool enabled)
 {
 	const auto Do = [&](QAction* const action)
@@ -60,6 +62,12 @@ void MainWindow::CreateEmulator()
 			QFileDialog::getOpenFileContent("Save State (*.*)",
 				[this]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
 				{
+					if (std::size(file_contents) != sizeof(EmulatorStuff::State))
+					{
+						MessageBox::critical(this, "Load State", "Unable to load save-state file.", "Size was incorrect.");
+						return;
+					}
+
 					emulator->LoadState(*reinterpret_cast<const EmulatorStuff::State*>(std::data(file_contents)));
 				},
 				this
