@@ -96,7 +96,7 @@ namespace Widgets
 
 		void SetRewindEnabled(const bool enabled)
 		{
-			state_rewind_buffer = StateRingBuffer<State>(enabled);
+			state_rewind_buffer = {enabled};
 		}
 
 		State SaveState() const
