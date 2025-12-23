@@ -1,5 +1,5 @@
-#ifndef DIALOG_DEBUG_TOGGLES_H
-#define DIALOG_DEBUG_TOGGLES_H
+#ifndef DIALOGS_DEBUG_TOGGLES_H
+#define DIALOGS_DEBUG_TOGGLES_H
 
 #include "../options.h"
 
@@ -19,4 +19,4 @@ namespace Dialogs::Debug
 	};
 }
 
-#endif // DIALOG_DEBUG_TOGGLES_H
+#endif // DIALOGS_DEBUG_TOGGLES_H
