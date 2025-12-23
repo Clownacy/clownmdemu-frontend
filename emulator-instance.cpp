@@ -109,8 +109,6 @@ void EmulatorInstance::SoftResetConsole()
 
 void EmulatorInstance::HardResetConsole()
 {
-	ClearRewindBuffer();
-
 	HardReset();
 }
 

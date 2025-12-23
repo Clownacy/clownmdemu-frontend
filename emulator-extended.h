@@ -154,14 +154,35 @@ public:
 		std::filesystem::create_directories(save_file_directory);
 	}
 
+	template<typename... Ts>
+	void InsertCartridge(Ts &&...args)
+	{
+		// Reset state buffer, since it cannot undo the cartridge or CD being changed.
+		state_rewind_buffer.Clear();
+
+		Emulator::InsertCartridge(std::forward<Ts>(args)...);
+	}
+
+	template<typename... Ts>
+	void EjectCartridge(Ts &&...args)
+	{
+		state_rewind_buffer.Clear();
+
+		Emulator::EjectCartridge(std::forward<Ts>(args)...);
+	}
+
 	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
 	{
+		state_rewind_buffer.Clear();
+
 		cd_reader.Open(std::move(stream), path);
 		return cd_reader.IsOpen();
 	}
 
 	void EjectCD()
 	{
+		state_rewind_buffer.Clear();
+
 		cd_reader.Close();
 	}
 
@@ -266,11 +287,6 @@ public:
 	void SetRewindEnabled(const bool enabled)
 	{
 		state_rewind_buffer = {enabled};
-	}
-
-	void ClearRewindBuffer()
-	{
-		state_rewind_buffer.Clear();
 	}
 
 	[[nodiscard]] bool IsRewindExhausted() const
