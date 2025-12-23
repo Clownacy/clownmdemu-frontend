@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "common/core/clownmdemu.h"
@@ -42,6 +43,9 @@ public:
 		EmulatorExtended::State emulator;
 		FrontendState frontend;
 	};
+
+	// Ensure that this is safe to save to (and read from) a file.
+	static_assert(std::is_trivially_copyable_v<State>);
 
 private:
 	class Cartridge

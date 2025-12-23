@@ -4,6 +4,7 @@
 #include <array>
 #include <filesystem>
 #include <optional>
+#include <type_traits>
 
 #include <QBasicTimer>
 #include <QByteArray>
@@ -40,6 +41,9 @@ namespace Widgets
 				EmulatorExtended::State emulator;
 				std::array<Colour, VDP_TOTAL_COLOURS> palette;
 		};
+
+		// Ensure that this is safe to save to (and read from) a file.
+		static_assert(std::is_trivially_copyable_v<State>);
 
 	protected:
 		QBasicTimer timer;
