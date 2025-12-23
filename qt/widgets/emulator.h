@@ -15,7 +15,6 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
-#include "../../audio-output.h"
 #include "../../emulator-with-cd-reader.h"
 #include "../../sdl-wrapper-inner.h"
 #include "../../state-ring-buffer.h"
@@ -55,17 +54,11 @@ namespace Widgets
 		} screen_properties;
 		std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 		bool rewinding = false, fastforwarding = false, paused = false;
-		AudioOutput audio_output;
 
 		// Emulator stuff.
 		void ColourUpdated(cc_u16f index, cc_u16f colour) override;
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 		cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
-
-		void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-		void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-		void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-		void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 
 		cc_bool SaveFileOpenedForReading(const char *filename) override;
 		cc_s16f SaveFileRead() override;

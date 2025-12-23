@@ -10,7 +10,6 @@
 
 #include "common/core/clownmdemu.h"
 
-#include "audio-output.h"
 #include "emulator-with-cd-reader.h"
 #include "sdl-wrapper.h"
 #include "state-ring-buffer.h"
@@ -63,7 +62,6 @@ private:
 		void Eject();
 	};
 
-	AudioOutput audio_output;
 	SDL::Texture &texture;
 	const InputCallback input_callback;
 
@@ -108,11 +106,6 @@ private:
 	virtual void ColourUpdated(cc_u16f index, cc_u16f colour) override;
 	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
-
-	virtual void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	virtual void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_samples, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples)) override;
-	virtual void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
-	virtual void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override;
 
 	virtual cc_bool SaveFileOpenedForReading(const char *filename) override;
 	virtual cc_s16f SaveFileRead() override;
@@ -174,7 +167,7 @@ public:
 	void SetPALMode(const bool enabled)
 	{
 		emulator_configuration.general.tv_standard = enabled ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
-		audio_output.SetPALMode(enabled);
+		SetAudioPALMode(enabled);
 	}
 
 	bool GetDomestic() const { return emulator_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC; }
@@ -187,11 +180,6 @@ public:
 	FM_Configuration& GetConfigurationFM() { return emulator_configuration.fm; }
 	PSG_Configuration& GetConfigurationPSG() { return emulator_configuration.psg; }
 	PCM_Configuration& GetConfigurationPCM() { return emulator_configuration.pcm; }
-
-	cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
-	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
-	cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
-	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
 
 	std::string GetSoftwareName();
 };

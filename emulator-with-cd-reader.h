@@ -3,6 +3,7 @@
 
 #include <filesystem>
 
+#include "audio-output.h"
 #include "cd-reader.h"
 #include "emulator.h"
 #include "sdl-wrapper-inner.h"
@@ -11,6 +12,12 @@ class EmulatorWithCDReader : public Emulator
 {
 protected:
 	CDReader cd_reader;
+	AudioOutput audio_output;
+
+	void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final;
+	void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final;
+	void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final;
+	void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final;
 
 	void CDSeeked(cc_u32f sector_index) override final;
 	void CDSectorRead(cc_u16l *buffer) override final;
@@ -73,6 +80,19 @@ public:
 	{
 		Emulator::HardReset(IsCDInserted());
 	}
+
+	void Iterate();
+
+	// TODO: Make Qt frontend use this!!!
+	void SetAudioPALMode(const bool enabled)
+	{
+		audio_output.SetPALMode(enabled);
+	}
+
+	cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
+	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
+	cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
+	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
 };
 
 #endif // EMULATOR_WITH_CD_READER_H

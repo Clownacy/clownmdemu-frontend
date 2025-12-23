@@ -84,26 +84,6 @@ cc_bool EmulatorInstance::InputRequested(const cc_u8f player_id, const ClownMDEm
 	return input_callback(player_id, button_id);
 }
 
-void EmulatorInstance::FMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_fm_audio(clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
-}
-
-void EmulatorInstance::PSGAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_samples, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_samples))
-{
-	generate_psg_audio(clownmdemu, audio_output.MixerAllocatePSGSamples(total_samples), total_samples);
-}
-
-void EmulatorInstance::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_pcm_audio(clownmdemu, audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
-}
-
-void EmulatorInstance::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
-}
-
 cc_bool EmulatorInstance::SaveFileOpenedForReading(const char* const filename)
 {
 	save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "rb");
@@ -156,7 +136,6 @@ EmulatorInstance::EmulatorInstance(
 	const InputCallback &input_callback
 )
 	: EmulatorWithCDReader(emulator_configuration)
-	, audio_output()
 	, texture(texture)
 	, input_callback(input_callback)
 	, rewind(false)
@@ -187,13 +166,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 				rewind.GetForward() = CreateSaveState();
 		}
 
-		// Reset the audio buffers so that they can be mixed into.
-		audio_output.MixerBegin();
-
 		Iterate();
-
-		// Resample, mix, and output the audio for this frame.
-		audio_output.MixerEnd();
 	}
 
 	// Unlock the texture so that we can draw it

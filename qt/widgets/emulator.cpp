@@ -232,26 +232,6 @@ cc_bool Widgets::Emulator::InputRequested(const cc_u8f player_id, const ClownMDE
 	return buttons[button_id];
 }
 
-void Widgets::Emulator::FMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_fm_audio(clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
-}
-
-void Widgets::Emulator::PSGAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_psg_audio(clownmdemu, audio_output.MixerAllocatePSGSamples(total_frames), total_frames);
-}
-
-void Widgets::Emulator::PCMAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_pcm_audio(clownmdemu, audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
-}
-
-void Widgets::Emulator::CDDAAudioToBeGenerated(const ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
-{
-	generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
-}
-
 cc_bool Widgets::Emulator::SaveFileOpenedForReading(const char* const filename)
 {
 	return cc_false;
@@ -360,9 +340,7 @@ void Widgets::Emulator::Advance()
 			}
 		}
 
-		audio_output.MixerBegin();
 		Iterate();
-		audio_output.MixerEnd();
 	}
 
 	makeCurrent();
