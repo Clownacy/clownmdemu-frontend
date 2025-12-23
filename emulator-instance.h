@@ -24,7 +24,6 @@ private:
 	{
 	private:
 		std::vector<cc_u16l> rom_file_buffer;
-		std::filesystem::path save_data_path;
 		EmulatorInstance &emulator;
 
 	public:
@@ -34,7 +33,7 @@ private:
 
 		const std::vector<cc_u16l>& GetROMBuffer() const { return rom_file_buffer; }
 		bool IsInserted() const { return !rom_file_buffer.empty(); }
-		void Insert(const std::vector<cc_u16l> &rom_file_buffer, const std::filesystem::path &save_data_path);
+		void Insert(const std::vector<cc_u16l> &rom_file_buffer);
 		void Eject();
 	};
 

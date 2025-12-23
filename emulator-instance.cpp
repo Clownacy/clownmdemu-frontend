@@ -8,52 +8,17 @@
 #include "frontend.h"
 #include "text-encoding.h"
 
-void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file_buffer, const std::filesystem::path &in_save_data_path)
+void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file_buffer)
 {
 	if (IsInserted())
 		Eject();
 
 	rom_file_buffer = in_rom_file_buffer;
-	save_data_path = in_save_data_path;
-
-	// Load save data from disk.
-	if (std::filesystem::exists(save_data_path))
-	{
-		const auto save_data_size = std::filesystem::file_size(save_data_path);
-
-		auto &external_ram_buffer = emulator.GetExternalRAM();
-
-		if (save_data_size > std::size(external_ram_buffer))
-		{
-			Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", save_data_size, std::size(external_ram_buffer));
-		}
-		else
-		{
-			std::ifstream save_data_stream(save_data_path, std::ios::binary);
-			save_data_stream.read(reinterpret_cast<char*>(external_ram_buffer), save_data_size);
-			std::fill(std::begin(external_ram_buffer) + save_data_size, std::end(external_ram_buffer), 0xFF);
-		}
-	}
 }
 
 void EmulatorInstance::Cartridge::Eject()
 {
 	rom_file_buffer.clear();
-
-	// Write save data to disk.
-	const auto &external_ram = emulator.GetState().external_ram;
-
-	if (external_ram.non_volatile && external_ram.size != 0)
-	{
-		std::ofstream save_data_stream(save_data_path, std::ios::binary);
-
-		if (!save_data_stream.is_open())
-			Frontend::debug_log.Log("Could not open save data for writing");
-		else
-			save_data_stream.write(reinterpret_cast<const char*>(external_ram.buffer), external_ram.size);
-	}
-
-	save_data_path.clear();
 }
 
 void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
@@ -117,10 +82,10 @@ void EmulatorInstance::HardResetConsole()
 
 void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path)
 {
-	cartridge.Insert(std::move(file_buffer), path);
+	cartridge.Insert(std::move(file_buffer));
 
 	const auto &buffer = cartridge.GetROMBuffer();
-	InsertCartridge(std::data(buffer), std::size(buffer));
+	InsertCartridge(path, std::data(buffer), std::size(buffer));
 	HardResetConsole();
 }
 

@@ -8,6 +8,7 @@
 
 #include "audio-output.h"
 #include "cd-reader.h"
+#include "debug-log.h"
 #include "emulator.h"
 #include "sdl-wrapper-inner.h"
 #include "state-ring-buffer.h"
@@ -46,6 +47,7 @@ private:
 	StateRingBuffer<State> state_rewind_buffer;
 	std::fstream save_data_stream;
 	std::filesystem::path save_file_directory;
+	std::filesystem::path cartridge_save_file_path;
 
 	void ColourUpdated(const cc_u16f index, const cc_u16f colour) override final
 	{
@@ -145,6 +147,51 @@ private:
 		return !ec;
 	}
 
+	void LoadCartridgeSaveData(const std::filesystem::path &cartridge_file_path)
+	{
+		cartridge_save_file_path = save_file_directory / cartridge_file_path.stem().replace_extension(".srm");
+
+		// Load save data from disk.
+		if (std::filesystem::exists(cartridge_save_file_path))
+		{
+			const auto save_data_size = std::filesystem::file_size(cartridge_save_file_path);
+
+			auto &external_ram_buffer = GetExternalRAM();
+
+			if (save_data_size > std::size(external_ram_buffer))
+			{
+				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", save_data_size, std::size(external_ram_buffer));
+			}
+			else
+			{
+				std::ifstream save_data_stream(cartridge_save_file_path, std::ios::binary);
+				save_data_stream.read(reinterpret_cast<char*>(external_ram_buffer), save_data_size);
+				std::fill(std::begin(external_ram_buffer) + save_data_size, std::end(external_ram_buffer), 0xFF);
+			}
+		}
+	}
+
+	void SaveCartridgeSaveData()
+	{
+		if (cartridge_save_file_path.empty())
+			return;
+
+		// Write save data to disk.
+		const auto &external_ram = GetState().external_ram;
+
+		if (external_ram.non_volatile && external_ram.size != 0)
+		{
+			std::ofstream save_data_stream(cartridge_save_file_path, std::ios::binary);
+
+			if (!save_data_stream.is_open())
+				Frontend::debug_log.Log("Could not open save data for writing");
+			else
+				save_data_stream.write(reinterpret_cast<const char*>(external_ram.buffer), external_ram.size);
+		}
+
+		cartridge_save_file_path.clear();
+	}
+
 public:
 	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
@@ -154,13 +201,19 @@ public:
 		std::filesystem::create_directories(save_file_directory);
 	}
 
+	~EmulatorExtended()
+	{
+		SaveCartridgeSaveData();
+	}
+
 	template<typename... Ts>
-	void InsertCartridge(Ts &&...args)
+	void InsertCartridge(const std::filesystem::path &cartridge_file_path, Ts &&...args)
 	{
 		// Reset state buffer, since it cannot undo the cartridge or CD being changed.
 		state_rewind_buffer.Clear();
 
 		Emulator::InsertCartridge(std::forward<Ts>(args)...);
+		LoadCartridgeSaveData(cartridge_file_path);
 	}
 
 	template<typename... Ts>
@@ -168,6 +221,7 @@ public:
 	{
 		state_rewind_buffer.Clear();
 
+		SaveCartridgeSaveData();
 		Emulator::EjectCartridge(std::forward<Ts>(args)...);
 	}
 

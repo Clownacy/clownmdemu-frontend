@@ -1000,11 +1000,6 @@ static std::filesystem::path GetDearImGuiSettingsFilePath()
 	return GetConfigurationDirectoryPath() / "dear-imgui-settings.ini";
 }
 
-static std::filesystem::path GetSaveDataFilePath(const std::filesystem::path &rom_path)
-{
-	return (GetSaveDataDirectoryPath() / rom_path.stem()).replace_extension(".srm");
-}
-
 static void SetWindowTitleToSoftwareName()
 {
 	const std::string name = emulator->GetSoftwareName();
@@ -1016,16 +1011,12 @@ static void SetWindowTitleToSoftwareName()
 
 static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_u16l> &&file_buffer)
 {
-	const auto save_file_path = GetSaveDataFilePath(path);
-
-	std::filesystem::create_directories(save_file_path.parent_path());
-
 #ifdef FILE_PATH_SUPPORT
 	AddToRecentSoftware(path, false, false);
 #endif
 
 	quick_save_state = std::nullopt;
-	emulator->LoadCartridgeFile(std::move(file_buffer), save_file_path);
+	emulator->LoadCartridgeFile(std::move(file_buffer), path);
 
 	SetWindowTitleToSoftwareName();
 }

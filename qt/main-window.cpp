@@ -30,7 +30,7 @@ void MainWindow::DoActionEnablement(const bool enabled)
 
 void MainWindow::CreateEmulator()
 {
-	emulator.emplace(options, cartridge_rom_buffer, SDL::IOStream(SDL_IOFromConstMem(std::data(cd_buffer), std::size(cd_buffer))), cd_file_path, this);
+	emulator.emplace(options, cartridge_rom_buffer, cartridge_file_path, SDL::IOStream(SDL_IOFromConstMem(std::data(cd_buffer), std::size(cd_buffer))), cd_file_path, this);
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
@@ -110,12 +110,12 @@ bool MainWindow::LoadCartridgeData(const QString &file_path)
 	if (!file.open(QIODevice::ReadOnly))
 		return false;
 
-	LoadCartridgeData(file.readAll());
+	LoadCartridgeData(file.readAll(), file_path);
 
 	return true;
 }
 
-void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
+void MainWindow::LoadCartridgeData(const QByteArray &file_contents, const QString &file_path)
 {
 	// Convert the ROM buffer to 16-bit.
 	cartridge_rom_buffer.resize(file_contents.size() / sizeof(cc_u16l));
@@ -129,6 +129,8 @@ void MainWindow::LoadCartridgeData(const QByteArray &file_contents)
 			| (GetByte(i * 2 + 1) << 0);
 	}
 
+	cartridge_file_path = QtExtensions::toStdPath(file_path);
+
 	ui.actionUnload_Cartridge_File->setEnabled(true);
 	CreateEmulator();
 }
@@ -139,6 +141,7 @@ void MainWindow::UnloadCartridgeData()
 
 	cartridge_rom_buffer.clear();
 	cartridge_rom_buffer.squeeze();
+	cartridge_file_path.clear();
 
 	ui.actionUnload_Cartridge_File->setEnabled(false);
 
@@ -180,9 +183,9 @@ MainWindow::MainWindow(QWidget* const parent)
 		[this]()
 		{
 			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
-				[this]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
+				[this](const QString &file_name, const QByteArray &file_contents)
 				{
-					LoadCartridgeData(file_contents);
+					LoadCartridgeData(file_contents, file_name);
 				},
 				this
 			);
@@ -195,7 +198,7 @@ MainWindow::MainWindow(QWidget* const parent)
 		[this]()
 		{
 			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue *.iso)",
-				[this]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
+				[this](const QString &file_name, const QByteArray &file_contents)
 				{
 					LoadCDData(file_contents, file_name);
 				},

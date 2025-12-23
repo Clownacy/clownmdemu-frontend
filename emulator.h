@@ -185,7 +185,9 @@ public:
 
 	void HardReset(const cc_bool cd_inserted)
 	{
+		const auto external_ram = state.external_ram.buffer;
 		state = {};
+		state.external_ram.buffer = external_ram;
 		SoftReset(cd_inserted);
 	}
 

@@ -185,7 +185,7 @@ static std::filesystem::path GetSaveDataDirectoryPath()
 	return QtExtensions::toStdPath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)) / "Save Data";
 }
 
-Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
+Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, const std::filesystem::path &cartridge_path, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
 	, EmulatorExtended(options.GetEmulatorConfiguration(), options.RewindingEnabled(), GetSaveDataDirectoryPath())
 	, options(options)
@@ -194,7 +194,7 @@ Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cart
 	setFocusPolicy(Qt::StrongFocus);
 
 	// TODO: Merge this with 'SetParameters'?
-	InsertCartridge(std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
+	InsertCartridge(cartridge_path, std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	InsertCD(std::move(cd_stream), cd_path);
 	SoftReset();
 }
