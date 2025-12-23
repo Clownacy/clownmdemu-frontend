@@ -49,6 +49,10 @@ private:
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;
 
+	////////////////////////
+	// Emulator Callbacks //
+	////////////////////////
+
 	void ColourUpdated(const cc_u16f index, const cc_u16f colour) override final
 	{
 		palette.colours[index] = colour;
@@ -147,6 +151,10 @@ private:
 		return !ec;
 	}
 
+	/////////////////////////
+	// Cartridge Save Data //
+	/////////////////////////
+
 	void LoadCartridgeSaveData(const std::filesystem::path &cartridge_file_path)
 	{
 		cartridge_save_file_path = save_file_directory / cartridge_file_path.stem().replace_extension(".srm");
@@ -206,6 +214,10 @@ public:
 		SaveCartridgeSaveData();
 	}
 
+	///////////////
+	// Cartridge //
+	///////////////
+
 	template<typename... Ts>
 	void InsertCartridge(const std::filesystem::path &cartridge_file_path, Ts &&...args)
 	{
@@ -224,6 +236,10 @@ public:
 		SaveCartridgeSaveData();
 		Emulator::EjectCartridge(std::forward<Ts>(args)...);
 	}
+
+	////////
+	// CD //
+	////////
 
 	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
 	{
@@ -245,6 +261,10 @@ public:
 		return cd_reader.IsOpen();
 	}
 
+	///////////
+	// State //
+	///////////
+
 	[[nodiscard]] State SaveState() const
 	{
 		return {Emulator::GetState(), cd_reader.SaveState(), palette};
@@ -259,6 +279,10 @@ public:
 
 	// Hide this, so that the frontend cannot accidentally set only part of the state.
 	void SetState(const Emulator::State &state) = delete;
+
+	///////////////////
+	// Miscellaneous //
+	///////////////////
 
 	void ReadMegaCDHeaderSector(unsigned char* const buffer)
 	{
@@ -303,6 +327,10 @@ public:
 		return true;
 	}
 
+	///////////
+	// Audio //
+	///////////
+
 	// TODO: Make Qt frontend use this!!!
 	void SetAudioPALMode(const bool enabled)
 	{
@@ -313,6 +341,10 @@ public:
 	[[nodiscard]] cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
 	[[nodiscard]] cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
 	[[nodiscard]] cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
+
+	////////////////////
+	// Colour Palette //
+	////////////////////
 
 	[[nodiscard]] const Colour* GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
 	{
@@ -326,6 +358,10 @@ public:
 	{
 		return palette.colours[index];
 	}
+
+	////////////
+	// Rewind //
+	////////////
 
 	[[nodiscard]] bool GetRewindEnabled() const
 	{
