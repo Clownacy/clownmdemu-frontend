@@ -266,16 +266,10 @@ public:
 		cd_reader.ReadMegaCDHeaderSector(buffer);
 	}
 
-	void SoftReset(const cc_bool cd_inserted) = delete;
-	void SoftReset()
+	void Reset(const cc_bool cd_inserted) = delete;
+	void Reset()
 	{
-		Emulator::SoftReset(IsCDInserted());
-	}
-
-	void HardReset(const cc_bool cd_inserted) = delete;
-	void HardReset()
-	{
-		Emulator::HardReset(IsCDInserted());
+		Emulator::Reset(IsCDInserted());
 	}
 
 	bool Iterate()

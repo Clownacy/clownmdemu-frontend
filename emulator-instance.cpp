@@ -70,23 +70,13 @@ void EmulatorInstance::Update()
 	SDL_UnlockTexture(texture);
 }
 
-void EmulatorInstance::SoftResetConsole()
-{
-	SoftReset();
-}
-
-void EmulatorInstance::HardResetConsole()
-{
-	HardReset();
-}
-
 void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path)
 {
 	cartridge.Insert(std::move(file_buffer));
 
 	const auto &buffer = cartridge.GetROMBuffer();
 	InsertCartridge(path, std::data(buffer), std::size(buffer));
-	HardResetConsole();
+	Reset();
 }
 
 void EmulatorInstance::UnloadCartridgeFile()
@@ -101,7 +91,7 @@ bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem:
 	if (!InsertCD(std::move(stream), path))
 		return false;
 
-	HardResetConsole();
+	Reset();
 	return true;
 }
 

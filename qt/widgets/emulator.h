@@ -88,14 +88,9 @@ namespace Widgets
 			this->paused = paused;
 		}
 
-		void SoftReset()
+		void Reset()
 		{
-			EmulatorExtended::SoftReset();
-		}
-
-		void HardReset()
-		{
-			EmulatorExtended::HardReset();
+			EmulatorExtended::Reset();
 		}
 	};
 }

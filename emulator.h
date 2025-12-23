@@ -178,17 +178,9 @@ public:
 		return parameters->cartridge_buffer_length != 0;
 	}
 
-	void SoftReset(const cc_bool cd_inserted)
+	void Reset(const cc_bool cd_inserted)
 	{
 		ClownMDEmu_Reset(&*parameters, IsCartridgeInserted(), cd_inserted);
-	}
-
-	void HardReset(const cc_bool cd_inserted)
-	{
-		const auto external_ram = state.external_ram.buffer;
-		state = {};
-		state.external_ram.buffer = external_ram;
-		SoftReset(cd_inserted);
 	}
 
 	void Iterate()

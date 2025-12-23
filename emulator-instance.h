@@ -62,8 +62,6 @@ public:
 	}
 
 	void Update();
-	void SoftResetConsole();
-	void HardResetConsole();
 	void LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path);
 	void UnloadCartridgeFile();
 	bool LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path);

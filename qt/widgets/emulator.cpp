@@ -196,7 +196,7 @@ Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cart
 	// TODO: Merge this with 'SetParameters'?
 	InsertCartridge(cartridge_path, std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
 	InsertCD(std::move(cd_stream), cd_path);
-	SoftReset();
+	Reset();
 }
 
 void Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)

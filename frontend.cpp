@@ -1782,7 +1782,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 					case INPUT_BINDING_RESET:
 						// Soft-reset console
-						emulator->SoftResetConsole();
+						emulator->Reset();
 						emulator_paused = false;
 						break;
 
@@ -2295,7 +2295,7 @@ void Frontend::Update()
 					emulator->UnloadCartridgeFile();
 
 					if (emulator->IsCDInserted())
-						emulator->HardResetConsole();
+						emulator->Reset();
 
 					SetWindowTitleToSoftwareName();
 					emulator_paused = false;
@@ -2320,7 +2320,7 @@ void Frontend::Update()
 					emulator->UnloadCDFile();
 
 					if (emulator->IsCartridgeInserted())
-						emulator->HardResetConsole();
+						emulator->Reset();
 
 					SetWindowTitleToSoftwareName();
 					emulator_paused = false;
@@ -2332,7 +2332,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Reset", nullptr, false, emulator_on))
 				{
-					emulator->SoftResetConsole();
+					emulator->Reset();
 					emulator_paused = false;
 				}
 
