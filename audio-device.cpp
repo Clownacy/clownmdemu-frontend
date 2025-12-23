@@ -1,6 +1,6 @@
 #include "audio-device.h"
 
-//#include "frontend.h"
+#include "debug-log.h"
 
 AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 	: channels(channels)
@@ -15,8 +15,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 
 	if (stream == nullptr)
 	{
-		// TODO: Put this back!
-		//Frontend::debug_log.Log("SDL_GetAudioDeviceFormat failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.Log("SDL_GetAudioDeviceFormat failed with the following message - '{}'", SDL_GetError());
 	}
 	else
 	{
