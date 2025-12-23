@@ -126,7 +126,7 @@ public:
 		return cd_reader.IsOpen();
 	}
 
-	State SaveState() const
+	[[nodiscard]] State SaveState() const
 	{
 		return {Emulator::GetState(), cd_reader.SaveState(), palette};
 	}
@@ -193,20 +193,20 @@ public:
 		audio_output.SetPALMode(enabled);
 	}
 
-	cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
-	cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
-	cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
-	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
+	[[nodiscard]] cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
+	[[nodiscard]] cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
+	[[nodiscard]] cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
+	[[nodiscard]] cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
 
-	const Colour* GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
+	[[nodiscard]] const Colour* GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
 	{
 		return &palette.colours[brightness * Palette::total_lines * Palette::total_colours_in_line + palette_line * Palette::total_colours_in_line];
 	}
-	const Colour& GetColour(const cc_u8f brightness, const cc_u8f palette_line, const cc_u8f colour_index) const
+	[[nodiscard]] const Colour& GetColour(const cc_u8f brightness, const cc_u8f palette_line, const cc_u8f colour_index) const
 	{
 		return GetPaletteLine(brightness, palette_line)[colour_index];
 	}
-	const Colour& GetColour(const cc_u8f index) const
+	[[nodiscard]] const Colour& GetColour(const cc_u8f index) const
 	{
 		return palette.colours[index];
 	}
