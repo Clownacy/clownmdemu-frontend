@@ -26,7 +26,7 @@ void MainWindow::DoActionEnablement(const bool enabled)
 	Do(ui.actionLoad_from_File);
 
 	Do(ui.actionCPUs);
-};
+}
 
 void MainWindow::CreateEmulator()
 {
