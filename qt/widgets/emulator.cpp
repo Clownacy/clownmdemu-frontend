@@ -182,7 +182,6 @@ Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cart
 	, EmulatorExtended(options.GetEmulatorConfiguration())
 	, options(options)
 	, state_rewind_buffer(options.RewindingEnabled())
-	, cartridge_rom_buffer(cartridge_rom_buffer)
 {
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
