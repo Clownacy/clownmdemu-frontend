@@ -1,5 +1,5 @@
-#ifndef EMULATOR_WITH_CD_READER_H
-#define EMULATOR_WITH_CD_READER_H
+#ifndef EMULATOR_EXTENDED_H
+#define EMULATOR_EXTENDED_H
 
 #include <filesystem>
 
@@ -8,7 +8,7 @@
 #include "emulator.h"
 #include "sdl-wrapper-inner.h"
 
-class EmulatorWithCDReader : public Emulator
+class EmulatorExtended : public Emulator
 {
 protected:
 	CDReader cd_reader;
@@ -95,4 +95,4 @@ public:
 	cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
 };
 
-#endif // EMULATOR_WITH_CD_READER_H
+#endif // EMULATOR_EXTENDED_H

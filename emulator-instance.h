@@ -10,11 +10,11 @@
 
 #include "common/core/clownmdemu.h"
 
-#include "emulator-with-cd-reader.h"
+#include "emulator-extended.h"
 #include "sdl-wrapper.h"
 #include "state-ring-buffer.h"
 
-class EmulatorInstance : public EmulatorWithCDReader
+class EmulatorInstance : public EmulatorExtended
 {
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
@@ -39,7 +39,7 @@ public:
 
 	struct State
 	{
-		EmulatorWithCDReader::State emulator;
+		EmulatorExtended::State emulator;
 		FrontendState frontend;
 	};
 

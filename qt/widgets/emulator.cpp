@@ -179,7 +179,7 @@ void Widgets::Emulator::keyReleaseEvent(QKeyEvent* const event)
 
 Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, EmulatorWithCDReader(options.GetEmulatorConfiguration())
+	, EmulatorExtended(options.GetEmulatorConfiguration())
 	, options(options)
 	, state_rewind_buffer(options.RewindingEnabled())
 	, cartridge_rom_buffer(cartridge_rom_buffer)

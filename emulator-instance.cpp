@@ -135,7 +135,7 @@ EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback
 )
-	: EmulatorWithCDReader(emulator_configuration)
+	: EmulatorExtended(emulator_configuration)
 	, texture(texture)
 	, input_callback(input_callback)
 	, rewind(false)

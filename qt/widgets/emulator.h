@@ -15,14 +15,14 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
-#include "../../emulator-with-cd-reader.h"
+#include "../../emulator-extended.h"
 #include "../../sdl-wrapper-inner.h"
 #include "../../state-ring-buffer.h"
 #include "../options.h"
 
 namespace Widgets
 {
-	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorWithCDReader
+	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorExtended
 	{
 		Q_OBJECT
 
@@ -103,12 +103,12 @@ namespace Widgets
 
 		void SoftReset()
 		{
-			EmulatorWithCDReader::SoftReset();
+			EmulatorExtended::SoftReset();
 		}
 
 		void HardReset()
 		{
-			EmulatorWithCDReader::HardReset();
+			EmulatorExtended::HardReset();
 		}
 	};
 }
