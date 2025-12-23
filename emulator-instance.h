@@ -11,6 +11,7 @@
 
 #include "common/core/clownmdemu.h"
 
+#include "colour.h"
 #include "emulator-extended.h"
 #include "sdl-wrapper.h"
 #include "state-ring-buffer.h"
@@ -26,7 +27,7 @@ public:
 		static constexpr unsigned int total_palette_lines = 4;
 		static constexpr unsigned int total_colours_in_palette_line = 16;
 
-		std::array<SDL::Pixel, total_colours_in_palette_line * total_palette_lines * total_brightnesses> colours;
+		std::array<Colour, total_colours_in_palette_line * total_palette_lines * total_brightnesses> colours;
 
 		auto GetPaletteLine(const cc_u8f brightness, const cc_u8f palette_line) const
 		{

@@ -17,6 +17,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	widgets/debug-cpu-z80.cpp widgets/debug-cpu-z80.h
 	widgets/emulator.cpp widgets/emulator.h
 	allocated-dialog.h
+	colour.h
 	main.cpp
 	main-window.cpp main-window.h main-window.ui
 	message-box.h

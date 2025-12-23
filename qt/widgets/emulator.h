@@ -19,6 +19,7 @@
 #include "../../emulator-extended.h"
 #include "../../sdl-wrapper-inner.h"
 #include "../../state-ring-buffer.h"
+#include "../colour.h"
 #include "../options.h"
 
 namespace Widgets
@@ -32,8 +33,6 @@ namespace Widgets
 
 		static constexpr auto texture_buffer_width = VDP_MAX_SCANLINE_WIDTH;
 		static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
-
-		using Colour = GLushort;
 
 	public:
 		struct State

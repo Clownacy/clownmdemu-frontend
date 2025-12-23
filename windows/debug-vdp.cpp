@@ -167,7 +167,17 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 
 				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
 
-				pixels[destination_x + destination_y * pitch] = colour_index != 0 ? palette_line[colour_index] : transparency ? 0 : background_colour;
+				const auto &GetPixel = [&]() -> SDL::Pixel
+				{
+					if (colour_index != 0)
+						return palette_line[colour_index];
+					else if (transparency)
+						return 0;
+					else
+						return background_colour;
+				};
+
+				pixels[destination_x + destination_y * pitch] = GetPixel();
 			}
 		}
 	}

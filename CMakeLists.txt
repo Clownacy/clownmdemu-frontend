@@ -16,6 +16,7 @@ add_executable(clownmdemu WIN32
 	"audio-output.h"
 	"cd-reader.cpp"
 	"cd-reader.h"
+	"colour.h"
 	"debug-log.cpp"
 	"debug-log.h"
 	"emulator.cpp"

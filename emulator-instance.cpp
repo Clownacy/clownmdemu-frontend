@@ -55,13 +55,7 @@ void EmulatorInstance::Cartridge::Eject()
 
 void EmulatorInstance::ColourUpdated(const cc_u16f index, const cc_u16f colour)
 {
-	// Decompose XBGR4444 into individual colour channels
-	const cc_u32f red = (colour >> 4 * 0) & 0xF;
-	const cc_u32f green = (colour >> 4 * 1) & 0xF;
-	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
-
-	// Reassemble into ARGB8888
-	frontend_state.colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
+	frontend_state.colours[index] = colour;
 }
 
 void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
