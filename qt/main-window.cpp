@@ -16,6 +16,10 @@ void MainWindow::DoActionEnablement(const bool enabled)
 
 	Do(ui.actionPause);
 	Do(ui.actionReset);
+
+	Do(ui.actionQuick_Save);
+	ui.actionQuick_Load->setEnabled(false);
+
 	Do(ui.actionCPUs);
 };
 
@@ -30,6 +34,16 @@ void MainWindow::CreateEmulator()
 
 	connect(ui.actionPause, &QAction::triggered, &*emulator, &Widgets::Emulator::Pause);
 	connect(ui.actionReset, &QAction::triggered, &*emulator, &Widgets::Emulator::SoftReset);
+
+	connect(ui.actionQuick_Save, &QAction::triggered, this,
+		[this]()
+		{
+			quick_save_state = emulator->SaveState();
+			ui.actionQuick_Load->setEnabled(true);
+		}
+	);
+	connect(ui.actionQuick_Load, &QAction::triggered, this, [this](){ emulator->LoadState(quick_save_state); });
+
 	connect(ui.actionCPUs, &QAction::triggered, this,
 		[&]()
 		{

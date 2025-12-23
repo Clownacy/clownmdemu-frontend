@@ -79,7 +79,15 @@
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuSave_States">
+    <property name="title">
+     <string>Save States</string>
+    </property>
+    <addaction name="actionQuick_Save"/>
+    <addaction name="actionQuick_Load"/>
+   </widget>
    <addaction name="menuSoftware"/>
+   <addaction name="menuSave_States"/>
    <addaction name="menuDebugging"/>
    <addaction name="menuMisc"/>
   </widget>
@@ -174,6 +182,28 @@
    </property>
    <property name="text">
     <string>Unload CD File</string>
+   </property>
+  </action>
+  <action name="actionQuick_Save">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Quick Save</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+  </action>
+  <action name="actionQuick_Load">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Quick Load</string>
+   </property>
+   <property name="shortcut">
+    <string>F9</string>
    </property>
   </action>
  </widget>
