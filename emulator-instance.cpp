@@ -61,7 +61,7 @@ void EmulatorInstance::ColourUpdated(const cc_u16f index, const cc_u16f colour)
 	const cc_u32f blue = (colour >> 4 * 2) & 0xF;
 
 	// Reassemble into ARGB8888
-	state.colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
+	frontend_state.colours[index] = static_cast<Uint32>(0xFF000000 | (blue << 4 * 0) | (blue << 4 * 1) | (green << 4 * 2) | (green << 4 * 3) | (red << 4 * 4) | (red << 4 * 5));
 }
 
 void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
@@ -76,7 +76,7 @@ void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* co
 	auto output_pointer = &framebuffer_texture_pixels[scanline * framebuffer_texture_pitch + left_boundary];
 
 	for (cc_u16f i = left_boundary; i < right_boundary; ++i)
-		*output_pointer++ = state.colours[*input_pointer++];
+		*output_pointer++ = frontend_state.colours[*input_pointer++];
 }
 
 cc_bool EmulatorInstance::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
@@ -246,7 +246,7 @@ static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Meg
 
 bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer)
 {
-	return file_buffer.size() == save_state_magic.size() + sizeof(state) && std::equal(save_state_magic.cbegin(), save_state_magic.cend(), file_buffer.cbegin());
+	return file_buffer.size() == save_state_magic.size() + sizeof(State) && std::equal(save_state_magic.cbegin(), save_state_magic.cend(), file_buffer.cbegin());
 }
 
 bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_buffer)
@@ -255,7 +255,7 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 	if (ValidateSaveStateFile(file_buffer))
 	{
-		ApplySaveState(*std::bit_cast<const SaveState*>(&file_buffer[save_state_magic.size()]));
+		ApplySaveState(*reinterpret_cast<const State*>(&file_buffer[save_state_magic.size()]));
 
 		success = true;
 	}
@@ -265,14 +265,14 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 std::size_t EmulatorInstance::GetSaveStateFileSize()
 {
-	return save_state_magic.size() + sizeof(state);
+	return save_state_magic.size() + sizeof(State);
 }
 
 bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
 	bool success = false;
 
-	const SaveState save_state = CreateSaveState();
+	const auto &save_state = CreateSaveState();
 
 	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &save_state, sizeof(save_state)) == sizeof(save_state))
 		success = true;

@@ -801,7 +801,7 @@ static bool emulator_has_focus; // Used for deciding when to pass inputs to the 
 static bool emulator_paused;
 static bool emulator_frame_advance;
 
-static std::optional<EmulatorInstance::SaveState> quick_save_state;
+static std::optional<EmulatorInstance::State> quick_save_state;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;

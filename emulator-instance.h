@@ -20,7 +20,7 @@ class EmulatorInstance : public EmulatorWithCDReader
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
 
-	struct State
+	struct FrontendState
 	{
 		static constexpr unsigned int total_brightnesses = 3;
 		static constexpr unsigned int total_palette_lines = 4;
@@ -38,11 +38,10 @@ public:
 		}
 	};
 
-	struct SaveState
+	struct State
 	{
-		Emulator::State emulator;
-		CDReader::State cd;
-		State frontend;
+		EmulatorWithCDReader::State emulator;
+		FrontendState frontend;
 	};
 
 private:
@@ -76,10 +75,10 @@ private:
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 
-	class Rewind : public StateRingBuffer<SaveState>
+	class Rewind : public StateRingBuffer<State>
 	{
 	private:
-		using Base = StateRingBuffer<SaveState>;
+		using Base = StateRingBuffer<State>;
 
 		bool in_progress = false;
 
@@ -99,7 +98,7 @@ private:
 
 	Rewind rewind;
 
-	State state;
+	FrontendState frontend_state;
 
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
@@ -155,18 +154,17 @@ public:
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 
-	const State& GetFrontendState() const { return state; }
+	const FrontendState& GetFrontendState() const { return frontend_state; }
 
-	[[nodiscard]] SaveState CreateSaveState() const
+	[[nodiscard]] State CreateSaveState() const
 	{
-		return {GetState(), GetCDState(), GetFrontendState()};
+		return {SaveState(), GetFrontendState()};
 	}
 
-	void ApplySaveState(const SaveState &state)
+	void ApplySaveState(const State &state)
 	{
-		SetState(state.emulator);
-		SetCDState(state.cd);
-		this->state = state.frontend;
+		LoadState(state.emulator);
+		this->frontend_state = state.frontend;
 	}
 
 	const std::vector<cc_u16l>& GetROMBuffer() const { return cartridge.GetROMBuffer(); }
