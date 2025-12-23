@@ -34,6 +34,14 @@ namespace Widgets
 
 		using Colour = GLushort;
 
+	public:
+		struct State
+		{
+				EmulatorExtended::State emulator;
+				std::array<Colour, VDP_TOTAL_COLOURS> palette;
+		};
+
+	protected:
 		QBasicTimer timer;
 
 		std::optional<QOpenGLShaderProgram> shader_program;
@@ -89,6 +97,17 @@ namespace Widgets
 		void SetRewindEnabled(const bool enabled)
 		{
 			state_rewind_buffer = StateRingBuffer<State>(enabled);
+		}
+
+		State SaveState() const
+		{
+				return {EmulatorExtended::SaveState(), palette};
+		}
+
+		void LoadState(const State &state)
+		{
+				EmulatorExtended::LoadState(state.emulator);
+				palette = state.palette;
 		}
 
 	signals:
