@@ -72,7 +72,7 @@ public:
 		cartridge.Eject();
 	}
 
-	void Update(cc_bool fast_forward);
+	void Update();
 	void SoftResetConsole();
 	void HardResetConsole();
 	void LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path);

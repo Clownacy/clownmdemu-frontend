@@ -295,17 +295,9 @@ bool Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pressed)
 
 void Widgets::Emulator::Advance()
 {
-	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
-	{
-		if (!Iterate())
-		{
-			// If the emulator has not updated at all, then don't bother redrawing the screen.
-			if (i == 0)
-				return;
-
-			break;
-		}
-	}
+	// If the emulator has not updated at all, then don't bother redrawing the screen.
+	if (!Iterate())
+		return;
 
 	makeCurrent();
 	texture.bind();

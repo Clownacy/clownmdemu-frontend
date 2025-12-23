@@ -54,7 +54,7 @@ namespace Widgets
 			bool is_widescreen;
 		} screen_properties;
 		std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
-		bool fastforwarding = false, paused = false;
+		bool paused = false;
 
 		// Emulator stuff.
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;

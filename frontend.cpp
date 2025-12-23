@@ -779,7 +779,6 @@ unsigned int Frontend::frame_counter;
 
 bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
-bool Frontend::fast_forward_in_progress;
 bool Frontend::native_windows;
 
 Input Frontend::keyboard_input;
@@ -949,10 +948,14 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 
 static void UpdateFastForwardStatus()
 {
+	bool fast_forward_in_progress;
+
 	fast_forward_in_progress = keyboard_input.fast_forward;
 
 	for (const auto &controller_input : controller_input_list)
 		fast_forward_in_progress |= controller_input.input.fast_forward != 0;
+
+	emulator->fastforwarding = fast_forward_in_progress;
 }
 
 static void UpdateRewindStatus()
@@ -2183,7 +2186,7 @@ void Frontend::Update()
 {
 	if (emulator_running)
 	{
-		emulator->Update(fast_forward_in_progress);
+		emulator->Update();
 		++frame_counter;
 	}
 

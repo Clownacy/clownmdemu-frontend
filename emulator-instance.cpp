@@ -134,7 +134,7 @@ EmulatorInstance::EmulatorInstance(
 	SetLogCallback([](const char* const format, va_list args) { Frontend::debug_log.Log(format, args); });
 }
 
-void EmulatorInstance::Update(const cc_bool fast_forward)
+void EmulatorInstance::Update()
 {
 	// Lock the texture so that we can write to its pixels later
 	if (!SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&framebuffer_texture_pixels), &framebuffer_texture_pitch))
@@ -143,9 +143,7 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 	framebuffer_texture_pitch /= sizeof(SDL::Pixel);
 
 	// Run the emulator for a frame
-	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1); ++i)
-		if (!Iterate())
-			break;
+	Iterate();
 
 	// Unlock the texture so that we can draw it
 	SDL_UnlockTexture(texture);

@@ -36,7 +36,7 @@ public:
 	static_assert(std::is_trivially_copyable_v<State>);
 
 	// TODO: Make this private and use getters and setters instead, for consistency?
-	bool rewinding = false;
+	bool rewinding = false, fastforwarding = false;
 
 private:
 	CDReader cd_reader;
@@ -161,28 +161,31 @@ public:
 
 	bool Iterate()
 	{
-		if (state_rewind_buffer.Exists())
+		for (unsigned int i = 0; i < (fastforwarding ? 3 : 1); ++i)
 		{
-			if (rewinding)
+			if (state_rewind_buffer.Exists())
 			{
-				if (state_rewind_buffer.Exhausted())
-					return false;
+				if (rewinding)
+				{
+					if (state_rewind_buffer.Exhausted())
+						return i != 0;
 
-				LoadState(state_rewind_buffer.GetBackward());
+					LoadState(state_rewind_buffer.GetBackward());
+				}
+				else
+				{
+					state_rewind_buffer.GetForward() = SaveState();
+				}
 			}
-			else
-			{
-				state_rewind_buffer.GetForward() = SaveState();
-			}
+
+			// Reset the audio buffers so that they can be mixed into.
+			audio_output.MixerBegin();
+
+			Emulator::Iterate();
+
+			// Resample, mix, and output the audio for this frame.
+			audio_output.MixerEnd();
 		}
-
-		// Reset the audio buffers so that they can be mixed into.
-		audio_output.MixerBegin();
-
-		Emulator::Iterate();
-
-		// Resample, mix, and output the audio for this frame.
-		audio_output.MixerEnd();
 
 		return true;
 	}
