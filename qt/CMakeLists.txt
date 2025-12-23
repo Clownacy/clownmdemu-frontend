@@ -20,9 +20,9 @@ qt_add_executable(clownmdemu-frontend-qt
 	colour.h
 	main.cpp
 	main-window.cpp main-window.h main-window.ui
-	message-box.h
 	options.cpp options.h
 	paste.h
+	qt-extensions.h
 	../audio-device.cpp ../audio-device.h
 	../audio-output.cpp ../audio-output.h
 	../cd-reader.cpp ../cd-reader.h

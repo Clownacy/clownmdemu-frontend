@@ -7,6 +7,8 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 
+#include "../qt-extensions.h"
+
 struct Vertex
 {
 	std::array<GLbyte, 2> position;
@@ -180,11 +182,7 @@ void Widgets::Emulator::keyReleaseEvent(QKeyEvent* const event)
 
 static std::filesystem::path GetSaveDataDirectoryPath()
 {
-	const auto &qt_app_data_path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-
-	std::filesystem::path app_data_path(reinterpret_cast<const char8_t*>(qt_app_data_path.toStdString().c_str()));
-
-	return app_data_path / "Save Data";
+	return QtExtensions::toStdPath(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)) / "Save Data";
 }
 
 Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)

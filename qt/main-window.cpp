@@ -7,7 +7,7 @@
 #include <QLayout>
 #include <QMimeData>
 
-#include "message-box.h"
+#include "qt-extensions.h"
 
 void MainWindow::DoActionEnablement(const bool enabled)
 {
@@ -64,7 +64,7 @@ void MainWindow::CreateEmulator()
 				{
 					if (std::size(file_contents) != sizeof(EmulatorStuff::State))
 					{
-						MessageBox::critical(this, "Load State", "Unable to load save-state file.", "Size was incorrect.");
+						QtExtensions::MessageBox::critical(this, "Load State", "Unable to load save-state file.", "Size was incorrect.");
 						return;
 					}
 
@@ -149,7 +149,7 @@ void MainWindow::UnloadCartridgeData()
 void MainWindow::LoadCDData(const QByteArray &file_contents, const QString &file_path)
 {
 	cd_buffer = file_contents;
-	cd_file_path = reinterpret_cast<const char8_t*>(file_path.toStdString().c_str());
+	cd_file_path = QtExtensions::toStdPath(file_path);
 
 	ui.actionUnload_CD_File->setEnabled(true);
 	CreateEmulator();
