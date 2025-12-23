@@ -85,6 +85,9 @@
     </property>
     <addaction name="actionQuick_Save"/>
     <addaction name="actionQuick_Load"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave_to_File"/>
+    <addaction name="actionLoad_from_File"/>
    </widget>
    <addaction name="menuSoftware"/>
    <addaction name="menuSave_States"/>
@@ -204,6 +207,22 @@
    </property>
    <property name="shortcut">
     <string>F9</string>
+   </property>
+  </action>
+  <action name="actionSave_to_File">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Save to File...</string>
+   </property>
+  </action>
+  <action name="actionLoad_from_File">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Load from File...</string>
    </property>
   </action>
  </widget>
