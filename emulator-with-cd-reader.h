@@ -18,6 +18,12 @@ protected:
 	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames) override final;
 
 public:
+	struct State
+	{
+		Emulator::State emulator;
+		CDReader::State cd_reader;
+	};
+
 	using Emulator::Emulator;
 
 	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
@@ -36,15 +42,19 @@ public:
 		return cd_reader.IsOpen();
 	}
 
-	CDReader::State GetCDState() const
+	State SaveState() const
 	{
-		return cd_reader.GetState();
+		return {Emulator::GetState(), cd_reader.SaveState()};
 	}
 
-	void SetCDState(const CDReader::State &state)
+	void LoadState(const State &state)
 	{
-		cd_reader.SetState(state);
+		Emulator::SetState(state.emulator);
+		cd_reader.LoadState(state.cd_reader);
 	}
+
+	// Hide this, so that the frontend cannot accidentally set only part of the state.
+	void SetState(const Emulator::State &state) = delete;
 
 	void ReadMegaCDHeaderSector(unsigned char* const buffer)
 	{

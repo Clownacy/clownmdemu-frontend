@@ -99,10 +99,14 @@ protected:
 		Callback_SaveFileSizeObtained
 	};
 
+private:
 	State state;
+
+protected:
 	Parameters parameters;
 	LogCallbackFormatted log_callback;
 
+private:
 	static cc_u8f Callback_CartridgeRead(void *user_data, cc_u32f address);
 	static void Callback_CartridgeWritten(void *user_data, cc_u32f address, cc_u8f value);
 	static void Callback_ColourUpdated(void *user_data, cc_u16f index, cc_u16f colour);

@@ -352,11 +352,11 @@ void Widgets::Emulator::Advance()
 					break;
 				}
 
-				state = state_rewind_buffer.GetBackward();
+				LoadState(state_rewind_buffer.GetBackward());
 			}
 			else
 			{
-				state_rewind_buffer.GetForward() = state;
+				state_rewind_buffer.GetForward() = SaveState();
 			}
 		}
 
