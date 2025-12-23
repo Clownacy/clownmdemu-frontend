@@ -13,7 +13,6 @@
 #include "colour.h"
 #include "emulator-extended.h"
 #include "sdl-wrapper.h"
-#include "state-ring-buffer.h"
 
 class EmulatorInstance : public EmulatorExtended<Colour>
 {
@@ -50,29 +49,6 @@ private:
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
 
-	class Rewind : public StateRingBuffer<State>
-	{
-	private:
-		using Base = StateRingBuffer<State>;
-
-		bool in_progress = false;
-
-	public:
-		using Base::Base;
-
-		bool Enabled() const
-		{
-			return Exists();
-		}
-
-		bool InProgress() const { return Enabled() ? in_progress : false; }
-		void InProgress(const bool active) { in_progress = Enabled() ? active : false; }
-		// We need at least two frames and the frame before it, because rewinding pops one frame and then samples the frame below the head.
-		bool Exhausted() const { return Enabled() ? in_progress && Base::Exhausted() : false; }
-	};
-
-	Rewind rewind;
-
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
 
@@ -108,15 +84,6 @@ public:
 	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
 	std::size_t GetSaveStateFileSize();
 	bool WriteSaveStateFile(SDL::IOStream &file);
-
-	bool RewindingEnabled() const { return rewind.Enabled(); }
-	void EnableRewinding(const bool enabled)
-	{
-		rewind = Rewind(enabled);
-	}
-	bool IsRewinding() const { return rewind.InProgress(); }
-	void SetRewinding(const bool active) { rewind.InProgress(active); }
-	bool RewindingExhausted() const { return rewind.Exhausted(); }
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }

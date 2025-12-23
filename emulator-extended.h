@@ -9,6 +9,7 @@
 #include "cd-reader.h"
 #include "emulator.h"
 #include "sdl-wrapper-inner.h"
+#include "state-ring-buffer.h"
 
 template<typename Colour>
 class EmulatorExtended : public Emulator
@@ -23,9 +24,25 @@ protected:
 		std::array<Colour, total_colours_in_line * total_lines * total_brightnesses> colours;
 	};
 
+public:
+	struct State
+	{
+		Emulator::State emulator;
+		CDReader::State cd_reader;
+		Palette palette;
+	};
+
+	// Ensure that this is safe to save to (and read from) a file.
+	static_assert(std::is_trivially_copyable_v<State>);
+
+	// TODO: Make this private and use getters and setters instead, for consistency?
+	bool rewinding = false;
+
+private:
 	CDReader cd_reader;
 	AudioOutput audio_output;
 	Palette palette;
+	StateRingBuffer<State> state_rewind_buffer;
 
 	void ColourUpdated(const cc_u16f index, const cc_u16f colour) override final
 	{
@@ -88,17 +105,10 @@ protected:
 	}
 
 public:
-	struct State
-	{
-		Emulator::State emulator;
-		CDReader::State cd_reader;
-		Palette palette;
-	};
-
-	// Ensure that this is safe to save to (and read from) a file.
-	static_assert(std::is_trivially_copyable_v<State>);
-
-	using Emulator::Emulator;
+	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling)
+		: Emulator(configuration)
+		, state_rewind_buffer(rewinding_enabling)
+	{}
 
 	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
 	{
@@ -149,8 +159,23 @@ public:
 		Emulator::HardReset(IsCDInserted());
 	}
 
-	void Iterate()
+	bool Iterate()
 	{
+		if (state_rewind_buffer.Exists())
+		{
+			if (rewinding)
+			{
+				if (state_rewind_buffer.Exhausted())
+					return false;
+
+				LoadState(state_rewind_buffer.GetBackward());
+			}
+			else
+			{
+				state_rewind_buffer.GetForward() = SaveState();
+			}
+		}
+
 		// Reset the audio buffers so that they can be mixed into.
 		audio_output.MixerBegin();
 
@@ -158,6 +183,8 @@ public:
 
 		// Resample, mix, and output the audio for this frame.
 		audio_output.MixerEnd();
+
+		return true;
 	}
 
 	// TODO: Make Qt frontend use this!!!
@@ -182,6 +209,26 @@ public:
 	const Colour& GetColour(const cc_u8f index) const
 	{
 		return palette.colours[index];
+	}
+
+	[[nodiscard]] bool GetRewindEnabled() const
+	{
+		return state_rewind_buffer.Exists();
+	}
+
+	void SetRewindEnabled(const bool enabled)
+	{
+		state_rewind_buffer = {enabled};
+	}
+
+	void ClearRewindBuffer()
+	{
+		state_rewind_buffer.Clear();
+	}
+
+	[[nodiscard]] bool IsRewindExhausted() const
+	{
+		return state_rewind_buffer.Exhausted();
 	}
 };
 

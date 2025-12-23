@@ -179,9 +179,8 @@ void Widgets::Emulator::keyReleaseEvent(QKeyEvent* const event)
 
 Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, EmulatorExtended(options.GetEmulatorConfiguration())
+	, EmulatorExtended(options.GetEmulatorConfiguration(), options.RewindingEnabled())
 	, options(options)
-	, state_rewind_buffer(options.RewindingEnabled())
 {
 	// Enable keyboard input.
 	setFocusPolicy(Qt::StrongFocus);
@@ -298,28 +297,14 @@ void Widgets::Emulator::Advance()
 {
 	for (unsigned int i = 0; i < (fastforwarding && !paused ? 3 : 1); ++i)
 	{
-		if (state_rewind_buffer.Exists())
+		if (!Iterate())
 		{
-			if (rewinding)
-			{
-				if (state_rewind_buffer.Exhausted())
-				{
-					// If the emulator has not updated at all, then don't bother redrawing the screen.
-					if (i == 0)
-						return;
+			// If the emulator has not updated at all, then don't bother redrawing the screen.
+			if (i == 0)
+				return;
 
-					break;
-				}
-
-				LoadState(state_rewind_buffer.GetBackward());
-			}
-			else
-			{
-				state_rewind_buffer.GetForward() = SaveState();
-			}
+			break;
 		}
-
-		Iterate();
 	}
 
 	makeCurrent();

@@ -124,10 +124,9 @@ EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback
 )
-	: EmulatorExtended(emulator_configuration)
+	: EmulatorExtended(emulator_configuration, false)
 	, texture(texture)
 	, input_callback(input_callback)
-	, rewind(false)
 {
 	ClownCD_SetErrorCallback([]([[maybe_unused]] void* const user_data, const char* const message) { Frontend::debug_log.Log("ClownCD: {}", message); }, nullptr);
 
@@ -144,19 +143,9 @@ void EmulatorInstance::Update(const cc_bool fast_forward)
 	framebuffer_texture_pitch /= sizeof(SDL::Pixel);
 
 	// Run the emulator for a frame
-	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1) && !RewindingExhausted(); ++i)
-	{
-		if (rewind.Enabled())
-		{
-			// Handle rewinding.
-			if (IsRewinding())
-				LoadState(rewind.GetBackward());
-			else
-				rewind.GetForward() = SaveState();
-		}
-
-		Iterate();
-	}
+	for (cc_u8f i = 0; i < (fast_forward ? 3 : 1); ++i)
+		if (!Iterate())
+			break;
 
 	// Unlock the texture so that we can draw it
 	SDL_UnlockTexture(texture);
@@ -169,7 +158,7 @@ void EmulatorInstance::SoftResetConsole()
 
 void EmulatorInstance::HardResetConsole()
 {
-	rewind.Clear();
+	ClearRewindBuffer();
 
 	HardReset();
 }

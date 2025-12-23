@@ -18,7 +18,6 @@
 
 #include "../../emulator-extended.h"
 #include "../../sdl-wrapper-inner.h"
-#include "../../state-ring-buffer.h"
 #include "../colour.h"
 #include "../options.h"
 
@@ -48,7 +47,6 @@ namespace Widgets
 		std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
 
 		const Options &options;
-		StateRingBuffer<State> state_rewind_buffer;
 
 		struct
 		{
@@ -56,7 +54,7 @@ namespace Widgets
 			bool is_widescreen;
 		} screen_properties;
 		std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
-		bool rewinding = false, fastforwarding = false, paused = false;
+		bool fastforwarding = false, paused = false;
 
 		// Emulator stuff.
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
@@ -87,11 +85,6 @@ namespace Widgets
 		~Emulator()
 		{
 			makeCurrent();
-		}
-
-		void SetRewindEnabled(const bool enabled)
-		{
-			state_rewind_buffer = {enabled};
 		}
 
 	signals:

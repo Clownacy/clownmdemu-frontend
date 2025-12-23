@@ -582,9 +582,9 @@ private:
 	#endif
 
 			ImGui::TableNextColumn();
-			bool rewinding_enabled = Frontend::emulator->RewindingEnabled();
+			bool rewinding_enabled = Frontend::emulator->GetRewindEnabled();
 			if (ImGui::Checkbox("Rewinding", &rewinding_enabled))
-				Frontend::emulator->EnableRewinding(rewinding_enabled);
+				Frontend::emulator->SetRewindEnabled(rewinding_enabled);
 			DoToolTip(
 				"Allows the emulated console to be played in\n"
 				"reverse for up to 10 seconds. This uses a lot\n"
@@ -962,7 +962,7 @@ static void UpdateRewindStatus()
 	for (const auto &controller_input : controller_input_list)
 		will_rewind |= controller_input.input.rewind != 0;
 
-	emulator->SetRewinding(will_rewind);
+	emulator->rewinding = will_rewind;
 }
 
 
@@ -1435,7 +1435,7 @@ static void LoadConfiguration()
 	// Apply settings now that they have been decided.
 	window->SetVSync(vsync);
 	emulator->GetConfigurationVDP().widescreen_enabled = widescreen;
-	emulator->EnableRewinding(rewinding);
+	emulator->SetRewindEnabled(rewinding);
 	emulator->SetLowPassFilter(low_pass_filter);
 	emulator->SetCDAddOnEnabled(cd_add_on);
 	emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
@@ -1486,7 +1486,7 @@ static void SaveConfiguration()
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
-		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->RewindingEnabled());
+		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->GetRewindEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
 		PRINT_BOOLEAN_OPTION(file, "cd-add-on", emulator->GetCDAddOnEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
@@ -1615,7 +1615,7 @@ static void SaveConfiguration()
 static void PreEventStuff()
 {
 	emulator_on = emulator->IsCartridgeInserted() || emulator->IsCDInserted();
-	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen() && !emulator->RewindingExhausted();
+	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen() && (!emulator->rewinding || !emulator->IsRewindExhausted());
 
 	emulator_frame_advance = false;
 }
