@@ -8,9 +8,6 @@
 #include <string>
 #include <vector>
 
-// TODO: Move this to EmulatorExtended!
-#include <fstream>
-
 #include "common/core/clownmdemu.h"
 
 #include "colour.h"
@@ -55,19 +52,8 @@ private:
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
 
-	// TODO: Move this to EmulatorExtended!
-	std::fstream save_data_stream;
-
 	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
-
-	virtual cc_bool SaveFileOpenedForReading(const char *filename) override;
-	virtual cc_s16f SaveFileRead() override;
-	virtual cc_bool SaveFileOpenedForWriting(const char *filename) override;
-	virtual void SaveFileWritten(cc_u8f byte) override;
-	virtual void SaveFileClosed() override;
-	virtual cc_bool SaveFileRemoved(const char *filename) override;
-	virtual cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override;
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);

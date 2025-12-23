@@ -5,6 +5,7 @@
 
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QStandardPaths>
 
 struct Vertex
 {
@@ -177,9 +178,18 @@ void Widgets::Emulator::keyReleaseEvent(QKeyEvent* const event)
 		Base::keyReleaseEvent(event);
 }
 
+static std::filesystem::path GetSaveDataDirectoryPath()
+{
+	const auto &qt_app_data_path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+
+	std::filesystem::path app_data_path(reinterpret_cast<const char8_t*>(qt_app_data_path.toStdString().c_str()));
+
+	return app_data_path / "Save Data";
+}
+
 Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, EmulatorExtended(options.GetEmulatorConfiguration(), options.RewindingEnabled())
+	, EmulatorExtended(options.GetEmulatorConfiguration(), options.RewindingEnabled(), GetSaveDataDirectoryPath())
 	, options(options)
 {
 	// Enable keyboard input.
@@ -208,41 +218,6 @@ cc_bool Widgets::Emulator::InputRequested(const cc_u8f player_id, const ClownMDE
 		return cc_false;
 
 	return buttons[button_id];
-}
-
-cc_bool Widgets::Emulator::SaveFileOpenedForReading(const char* const filename)
-{
-	return cc_false;
-}
-
-cc_s16f Widgets::Emulator::SaveFileRead()
-{
-	return 0;
-}
-
-cc_bool Widgets::Emulator::SaveFileOpenedForWriting(const char* const filename)
-{
-	return cc_false;
-}
-
-void Widgets::Emulator::SaveFileWritten(const cc_u8f byte)
-{
-
-}
-
-void Widgets::Emulator::SaveFileClosed()
-{
-
-}
-
-cc_bool Widgets::Emulator::SaveFileRemoved(const char* const filename)
-{
-	return cc_false;
-}
-
-cc_bool Widgets::Emulator::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
-{
-	return cc_false;
 }
 
 bool Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pressed)

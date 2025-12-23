@@ -60,14 +60,6 @@ namespace Widgets
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
 		cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
 
-		cc_bool SaveFileOpenedForReading(const char *filename) override;
-		cc_s16f SaveFileRead() override;
-		cc_bool SaveFileOpenedForWriting(const char *filename) override;
-		void SaveFileWritten(cc_u8f byte) override;
-		void SaveFileClosed() override;
-		cc_bool SaveFileRemoved(const char *filename) override;
-		cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override;
-
 		// Qt stuff.
 		void initializeGL() override;
 		void paintGL() override;

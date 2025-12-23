@@ -3,6 +3,7 @@
 
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <type_traits>
 
 #include "audio-output.h"
@@ -43,6 +44,8 @@ private:
 	AudioOutput audio_output;
 	Palette palette;
 	StateRingBuffer<State> state_rewind_buffer;
+	std::fstream save_data_stream;
+	std::filesystem::path save_file_directory;
 
 	void ColourUpdated(const cc_u16f index, const cc_u16f colour) override final
 	{
@@ -104,11 +107,52 @@ private:
 		return cd_reader.ReadAudio(sample_buffer, total_frames);
 	}
 
+	cc_bool SaveFileOpenedForReading(const char *filename) override final
+	{
+		save_data_stream.open(save_file_directory / filename, std::ios::binary | std::ios::in);
+		return save_data_stream.is_open();
+	}
+	cc_s16f SaveFileRead() override final
+	{
+		const auto byte = save_data_stream.get();
+
+		if (save_data_stream.eof())
+			return -1;
+
+		return byte;
+	}
+	cc_bool SaveFileOpenedForWriting(const char *filename) override final
+	{
+		save_data_stream.open(save_file_directory / filename, std::ios::binary | std::ios::out);
+		return save_data_stream.is_open();
+	}
+	void SaveFileWritten(cc_u8f byte) override final
+	{
+		save_data_stream.put(byte);
+	}
+	void SaveFileClosed() override final
+	{
+		save_data_stream.close();
+	}
+	cc_bool SaveFileRemoved(const char *filename) override final
+	{
+		return std::filesystem::remove(save_file_directory / filename);
+	}
+	cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override final
+	{
+		std::error_code ec;
+		*size = std::filesystem::file_size(save_file_directory / filename, ec);
+		return !ec;
+	}
+
 public:
-	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling)
+	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
 		, state_rewind_buffer(rewinding_enabling)
-	{}
+		, save_file_directory(save_file_directory)
+	{
+		std::filesystem::create_directories(save_file_directory);
+	}
 
 	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
 	{
