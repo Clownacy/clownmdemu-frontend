@@ -3,10 +3,9 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <format>
 #include <functional>
 #include <string>
-
-#include <fmt/core.h>
 
 #include <SDL3/SDL.h>
 
@@ -34,17 +33,17 @@ public:
 
 	void Log(const char *format, std::va_list args);
 
-	template <typename... T>
-	void Log(fmt::format_string<T...> format, T&&... args)
+	template <typename... Ts>
+	void Log(std::format_string<Ts...> format, Ts &&...args)
 	{
 		const auto GetSize = [&]()
 		{
-			return fmt::formatted_size(format, std::forward<T>(args)...);
+			return std::formatted_size(format, std::forward<Ts>(args)...);
 		};
 
 		const auto WriteBuffer = [&](char* const message_buffer, const std::size_t message_buffer_size)
 		{
-			fmt::format_to_n(message_buffer, message_buffer_size, format, std::forward<T>(args)...);
+			std::format_to_n(message_buffer, message_buffer_size, format, std::forward<Ts>(args)...);
 		};
 
 		Log(GetSize, WriteBuffer);
