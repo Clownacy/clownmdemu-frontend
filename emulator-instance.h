@@ -20,30 +20,12 @@ public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
 
 private:
-	class Cartridge
-	{
-	private:
-		std::vector<cc_u16l> rom_file_buffer;
-		EmulatorInstance &emulator;
-
-	public:
-		Cartridge(EmulatorInstance &emulator)
-			: emulator(emulator)
-		{}
-
-		const std::vector<cc_u16l>& GetROMBuffer() const { return rom_file_buffer; }
-		bool IsInserted() const { return !rom_file_buffer.empty(); }
-		void Insert(const std::vector<cc_u16l> &rom_file_buffer);
-		void Eject();
-	};
-
 	SDL::Texture &texture;
 	const InputCallback input_callback;
 
 	Emulator::Configuration emulator_configuration;
 
-	Cartridge cartridge = {*this};
-
+	std::vector<cc_u16l> rom_file_buffer;
 
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;
@@ -56,10 +38,6 @@ private:
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);
-	~EmulatorInstance()
-	{
-		cartridge.Eject();
-	}
 
 	void Update();
 	void LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path);
@@ -75,7 +53,7 @@ public:
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
 
-	const std::vector<cc_u16l>& GetROMBuffer() const { return cartridge.GetROMBuffer(); }
+	const auto& GetROMBuffer() const { return rom_file_buffer; }
 
 	bool GetPALMode() const { return emulator_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
 

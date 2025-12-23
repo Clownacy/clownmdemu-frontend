@@ -8,19 +8,6 @@
 #include "frontend.h"
 #include "text-encoding.h"
 
-void EmulatorInstance::Cartridge::Insert(const std::vector<cc_u16l> &in_rom_file_buffer)
-{
-	if (IsInserted())
-		Eject();
-
-	rom_file_buffer = in_rom_file_buffer;
-}
-
-void EmulatorInstance::Cartridge::Eject()
-{
-	rom_file_buffer.clear();
-}
-
 void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
 {
 	current_screen_width = screen_width;
@@ -72,16 +59,15 @@ void EmulatorInstance::Update()
 
 void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path)
 {
-	cartridge.Insert(std::move(file_buffer));
-
-	const auto &buffer = cartridge.GetROMBuffer();
-	InsertCartridge(path, std::data(buffer), std::size(buffer));
+	rom_file_buffer = std::move(file_buffer);
+	InsertCartridge(path, std::data(rom_file_buffer), std::size(rom_file_buffer));
 	Reset();
 }
 
 void EmulatorInstance::UnloadCartridgeFile()
 {
-	cartridge.Eject();
+	rom_file_buffer.clear();
+	rom_file_buffer.shrink_to_fit();
 
 	EjectCartridge();
 }
@@ -155,7 +141,7 @@ std::string EmulatorInstance::GetSoftwareName()
 		if (IsCartridgeInserted())
 		{
 			// TODO: This seems unsafe - add some bounds checks?
-			const auto words = &cartridge.GetROMBuffer()[header_offset / 2];
+			const auto words = &rom_file_buffer[header_offset / 2];
 
 			for (cc_u8f i = 0; i < name_buffer_size / 2; ++i)
 			{
