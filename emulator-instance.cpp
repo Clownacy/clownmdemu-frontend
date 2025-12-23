@@ -75,15 +75,15 @@ cc_bool EmulatorInstance::InputRequested(const cc_u8f player_id, const ClownMDEm
 
 cc_bool EmulatorInstance::SaveFileOpenedForReading(const char* const filename)
 {
-	save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "rb");
-	return save_data_stream != nullptr;
+	save_data_stream.open(Frontend::GetSaveDataDirectoryPath() / filename, std::ios::binary | std::ios::in);
+	return save_data_stream.is_open();
 }
 
 cc_s16f EmulatorInstance::SaveFileRead()
 {
-	Uint8 byte;
+	const auto byte = save_data_stream.get();
 
-	if (!SDL_ReadU8(save_data_stream, &byte))
+	if (save_data_stream.eof())
 		return -1;
 
 	return byte;
@@ -91,33 +91,30 @@ cc_s16f EmulatorInstance::SaveFileRead()
 
 cc_bool EmulatorInstance::SaveFileOpenedForWriting(const char* const filename)
 {
-	save_data_stream = SDL::IOFromFile(Frontend::GetSaveDataDirectoryPath() / filename, "wb");
-	return save_data_stream != nullptr;
+	save_data_stream.open(Frontend::GetSaveDataDirectoryPath() / filename, std::ios::binary | std::ios::out);
+	return save_data_stream.is_open();
 }
 
 void EmulatorInstance::SaveFileWritten(const cc_u8f byte)
 {
-	SDL_WriteU8(save_data_stream, byte);
+	save_data_stream.put(byte);
 }
 
 void EmulatorInstance::SaveFileClosed()
 {
-	save_data_stream.reset();
+	save_data_stream.close();
 }
 
 cc_bool EmulatorInstance::SaveFileRemoved(const char* const filename)
 {
-	return SDL::RemovePath(Frontend::GetSaveDataDirectoryPath() / filename);
+	return std::filesystem::remove(Frontend::GetSaveDataDirectoryPath() / filename);
 }
 
 cc_bool EmulatorInstance::SaveFileSizeObtained(const char* const filename, std::size_t* const size)
 {
-	SDL_PathInfo info;
-	if (!SDL::GetPathInfo(Frontend::GetSaveDataDirectoryPath() / filename, &info))
-		return cc_false;
-
-	*size = info.size;
-	return cc_true;
+	std::error_code ec;
+	*size = std::filesystem::file_size(Frontend::GetSaveDataDirectoryPath() / filename, ec);
+	return !ec;
 }
 
 EmulatorInstance::EmulatorInstance(
