@@ -17,14 +17,14 @@ namespace QtExtensions
 			QMessageBox::StandardButtons buttons = QMessageBox::Ok,
 			QMessageBox::StandardButton defaultButton = QMessageBox::NoButton)
 		{
-			QMessageBox msgBox(parent);
-			msgBox.setIcon(QMessageBox::Critical);
-			msgBox.setWindowTitle(what_failed);
-			msgBox.setText(how_it_failed);
-			msgBox.setInformativeText(why_it_failed);
-			msgBox.setStandardButtons(buttons);
-			msgBox.setDefaultButton(defaultButton);
-			return static_cast<QMessageBox::StandardButton>(msgBox.exec());
+			QMessageBox message_box(parent);
+			message_box.setIcon(QMessageBox::Critical);
+			message_box.setWindowTitle(what_failed);
+			message_box.setText(how_it_failed);
+			message_box.setInformativeText(why_it_failed);
+			message_box.setStandardButtons(buttons);
+			message_box.setDefaultButton(defaultButton);
+			return static_cast<QMessageBox::StandardButton>(message_box.exec());
 		}
 	}
 
