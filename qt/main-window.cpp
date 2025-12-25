@@ -103,15 +103,24 @@ void MainWindow::DestroyEmulator()
 	central_widget = nullptr;
 }
 
-bool MainWindow::LoadCartridgeData(const QString &file_path)
+static std::optional<QByteArray> ReadFileToBuffer(const QString &file_path)
 {
 	QFile file(file_path);
 
 	if (!file.open(QIODevice::ReadOnly))
+		return std::nullopt;
+
+	return file.readAll();
+}
+
+bool MainWindow::LoadCartridgeData(const QString &file_path)
+{
+	const auto &buffer = ReadFileToBuffer(file_path);
+
+	if (!buffer)
 		return false;
 
-	LoadCartridgeData(file.readAll(), file_path);
-
+	LoadCartridgeData(*buffer, file_path);
 	return true;
 }
 
@@ -147,6 +156,17 @@ void MainWindow::UnloadCartridgeData()
 
 	if (!cd_buffer.isEmpty())
 		CreateEmulator();
+}
+
+bool MainWindow::LoadCDData(const QString &file_path)
+{
+	const auto &buffer = ReadFileToBuffer(file_path);
+
+	if (!buffer)
+		return false;
+
+	LoadCDData(*buffer, file_path);
+	return true;
 }
 
 void MainWindow::LoadCDData(const QByteArray &file_contents, const QString &file_path)
@@ -262,8 +282,18 @@ void MainWindow::dropEvent(QDropEvent* const event)
 	if (!url.isLocalFile())
 		return;
 
-	if (!LoadCartridgeData(url.toLocalFile()))
-		return;
+	const auto &file_path = url.toLocalFile();
+
+	if (CDReader::IsMegaCDGame(QtExtensions::toStdPath(file_path)))
+	{
+		if (!LoadCDData(file_path))
+			return;
+	}
+	else
+	{
+		if (!LoadCartridgeData(file_path))
+			return;
+	}
 
 	event->acceptProposedAction();
 }

@@ -46,6 +46,7 @@ private:
 	[[nodiscard]] bool LoadCartridgeData(const QString &file_path);
 	void LoadCartridgeData(const QByteArray &file_contents, const QString &file_path);
 	void UnloadCartridgeData();
+	[[nodiscard]] bool LoadCDData(const QString &file_path);
 	void LoadCDData(const QByteArray &file_contents, const QString &file_path);
 	void UnloadCDData();
 
