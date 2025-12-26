@@ -88,10 +88,37 @@ namespace Widgets
 			this->paused = paused;
 		}
 
-		void Reset()
-		{
-			EmulatorExtended::Reset();
-		}
+		void Reset(){ EmulatorExtended::Reset(); }
+		void SetTVStandard(const ClownMDEmu_TVStandard tv_standard){ EmulatorExtended::SetTVStandard(tv_standard); }
+		void SetRegion(const ClownMDEmu_Region region){ EmulatorExtended::SetRegion(region); }
+		void SetCDAddOnEnabled(const cc_bool enabled){ EmulatorExtended::SetCDAddOnEnabled(enabled); }
+		void SetWidescreenEnabled(const cc_bool enabled){ EmulatorExtended::SetWidescreenEnabled(enabled); }
+		void SetLowPassFilterEnabled(const cc_bool enabled){ EmulatorExtended::SetLowPassFilterEnabled(enabled); }
+		void SetLadderEffectEnabled(const cc_bool enabled){ EmulatorExtended::SetLadderEffectEnabled(enabled); }
+
+		void SetSpritePlaneEnabled(const cc_bool enabled){ EmulatorExtended::SetSpritePlaneEnabled(enabled); }
+		void SetWindowPlaneEnabled(const cc_bool enabled){ EmulatorExtended::SetWindowPlaneEnabled(enabled); }
+		void SetScrollPlaneAEnabled(const cc_bool enabled){ EmulatorExtended::SetScrollPlaneAEnabled(enabled); }
+		void SetScrollPlaneBEnabled(const cc_bool enabled){ EmulatorExtended::SetScrollPlaneBEnabled(enabled); }
+		void SetFM1Enabled(const cc_bool enabled){ EmulatorExtended::SetFM1Enabled(enabled); }
+		void SetFM2Enabled(const cc_bool enabled){ EmulatorExtended::SetFM2Enabled(enabled); }
+		void SetFM3Enabled(const cc_bool enabled){ EmulatorExtended::SetFM3Enabled(enabled); }
+		void SetFM4Enabled(const cc_bool enabled){ EmulatorExtended::SetFM4Enabled(enabled); }
+		void SetFM5Enabled(const cc_bool enabled){ EmulatorExtended::SetFM5Enabled(enabled); }
+		void SetFM6Enabled(const cc_bool enabled){ EmulatorExtended::SetFM6Enabled(enabled); }
+		void SetDACEnabled(const cc_bool enabled){ EmulatorExtended::SetDACEnabled(enabled); }
+		void SetPSG1Enabled(const cc_bool enabled){ EmulatorExtended::SetPSG1Enabled(enabled); }
+		void SetPSG2Enabled(const cc_bool enabled){ EmulatorExtended::SetPSG2Enabled(enabled); }
+		void SetPSG3Enabled(const cc_bool enabled){ EmulatorExtended::SetPSG3Enabled(enabled); }
+		void SetPSGNoiseEnabled(const cc_bool enabled){ EmulatorExtended::SetPSGNoiseEnabled(enabled); }
+		void SetPCM1Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM1Enabled(enabled); }
+		void SetPCM2Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM2Enabled(enabled); }
+		void SetPCM3Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM3Enabled(enabled); }
+		void SetPCM4Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM4Enabled(enabled); }
+		void SetPCM5Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM5Enabled(enabled); }
+		void SetPCM6Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM6Enabled(enabled); }
+		void SetPCM7Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM7Enabled(enabled); }
+		void SetPCM8Enabled(const cc_bool enabled){ EmulatorExtended::SetPCM8Enabled(enabled); }
 	};
 }
 
