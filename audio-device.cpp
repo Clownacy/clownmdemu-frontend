@@ -3,7 +3,7 @@
 #include "debug-log.h"
 
 AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
-	: channels(channels)
+	: size_of_frame(channels * sizeof(cc_s16l))
 {
 	SDL_AudioSpec specification;
 	specification.freq = sample_rate;
@@ -26,10 +26,10 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 
 void AudioDevice::QueueFrames(const cc_s16l *buffer, cc_u32f total_frames)
 {
-	SDL_PutAudioStreamData(stream, buffer, total_frames * SIZE_OF_FRAME);
+	SDL_PutAudioStreamData(stream, buffer, total_frames * size_of_frame);
 }
 
 cc_u32f AudioDevice::GetTotalQueuedFrames()
 {
-	return SDL_GetAudioStreamQueued(stream) / SIZE_OF_FRAME;
+	return SDL_GetAudioStreamQueued(stream) / size_of_frame;
 }
