@@ -16,10 +16,6 @@ namespace Dialogs
 
 	public:
 		explicit Options(::Options &options, QWidget *parent = nullptr);
-
-	signals:
-		void presentationOptionChanged();
-		void rewindingOptionChanged(bool enabled);
 	};
 }
 

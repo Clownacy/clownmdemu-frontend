@@ -18,9 +18,7 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 
 	// Video
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.integerScreenScaling, options, IntegerScreenScalingEnabled);
-	connect(ui.integerScreenScaling, &QCheckBox::checkStateChanged, this, &Options::presentationOptionChanged);
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.tallInterlaceMode2, options, TallInterlaceMode2Enabled);
-	connect(ui.tallInterlaceMode2, &QCheckBox::checkStateChanged, this, &Options::presentationOptionChanged);
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.widescreenHack, options, WidescreenEnabled);
 
 	// Audio
@@ -29,7 +27,6 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 
 	// Miscellaneous
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.rewinding, options, RewindingEnabled);
-	connect(ui.rewinding, &QCheckBox::checkStateChanged, this, &Options::rewindingOptionChanged);
 
 	// Keyboard Input
 	DIALOGS_COMMON_BIND_RADIO_BUTTON(ui.controlPad1, options, KeyboardControlPad, 0);

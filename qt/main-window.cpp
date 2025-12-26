@@ -87,6 +87,10 @@ void MainWindow::CreateEmulator()
 	);
 
 	// Options
+	connect(&options, &Options::IntegerScreenScalingEnabledChanged, &*emulator, qOverload<>(&Widgets::Emulator::update));
+	connect(&options, &Options::TallInterlaceMode2EnabledChanged, &*emulator, qOverload<>(&Widgets::Emulator::update));
+	connect(&options, &Options::RewindingEnabledChanged, &*emulator, &Widgets::Emulator::SetRewindEnabled);
+
 	connect(&options, &Options::TVStandardChanged, &*emulator, &Widgets::Emulator::SetTVStandard);
 	connect(&options, &Options::RegionChanged, &*emulator, &Widgets::Emulator::SetRegion);
 	connect(&options, &Options::CDAddOnEnabledChanged, &*emulator, &Widgets::Emulator::SetCDAddOnEnabled);
@@ -255,26 +259,7 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	// TODO: Full-screen the OpenGL widget only!
 	connect(ui.actionFullscreen, &QAction::triggered, this, [this](const bool enabled){enabled ? showFullScreen() : showNormal();});
-	connect(ui.actionOptions, &QAction::triggered, this,
-		[&]()
-		{
-			options_menu.Open(this, options);
-			connect(&*options_menu, &Dialogs::Options::presentationOptionChanged, this,
-				[this]()
-				{
-					if (emulator)
-						emulator->update();
-				}
-			);
-			connect(&*options_menu, &Dialogs::Options::rewindingOptionChanged, this,
-				[this](const bool enabled)
-				{
-					if (emulator)
-						emulator->SetRewindEnabled(enabled);
-				}
-			);
-		}
-	);
+	connect(ui.actionOptions, &QAction::triggered, this, [&](){ options_menu.Open(this, options); });
 	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about_menu.Open(this); });
 	connect(ui.actionExit, &QAction::triggered, this, &MainWindow::close);
 }
