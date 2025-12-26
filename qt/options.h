@@ -1,6 +1,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <QObject>
 #include <QSettings>
 
 #include "../emulator.h"
@@ -23,12 +24,22 @@ public:
 	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(KeyboardControlPad, keyboard_control_pad)
 };
 
-class Options : private OptionsPlain
+class Options : public QObject, private OptionsPlain
 {
+	Q_OBJECT
+
 public:
 	const Emulator::Configuration& GetEmulatorConfiguration() const
 	{
 		return *this;
+	}
+
+#define DEFINE_UNSAVED_OPTION_SETTER(IDENTIFIER) \
+	void Set##IDENTIFIER(const auto value) \
+	{ \
+		OptionsPlain::Set##IDENTIFIER(value); \
+ \
+		emit IDENTIFIER##Changed(Get##IDENTIFIER()); \
 	}
 
 #define DEFINE_SAVED_OPTION_SETTER(IDENTIFIER) \
@@ -36,13 +47,15 @@ public:
 	{ \
 		OptionsPlain::Set##IDENTIFIER(value); \
  \
+		emit IDENTIFIER##Changed(Get##IDENTIFIER()); \
+ \
 		QSettings settings; \
 		settings.setValue(STRINGIFY(IDENTIFIER), OptionsPlain::Get##IDENTIFIER()); \
 	}
 
 #define DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
 	using OptionsPlain::Get##IDENTIFIER; \
-	using OptionsPlain::Set##IDENTIFIER;
+	DEFINE_UNSAVED_OPTION_SETTER(IDENTIFIER)
 
 #define DEFINE_SAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
 	using OptionsPlain::Get##IDENTIFIER; \
@@ -108,6 +121,42 @@ public:
 		PCM7Enabled,
 		PCM8Enabled
 	)
+
+signals:
+	void TVStandardChanged(ClownMDEmu_TVStandard tv_standard);
+	void RegionChanged(ClownMDEmu_Region region);
+	void CDAddOnEnabledChanged(cc_bool enabled);
+	void IntegerScreenScalingEnabledChanged(cc_bool enabled);
+	void TallInterlaceMode2EnabledChanged(cc_bool enabled);
+	void WidescreenEnabledChanged(cc_bool enabled);
+	void LowPassFilterEnabledChanged(cc_bool enabled);
+	void LadderEffectEnabledChanged(cc_bool enabled);
+	void RewindingEnabledChanged(cc_bool enabled);
+	void KeyboardControlPadChanged(unsigned int value);
+
+	void SpritePlaneEnabledChanged(cc_bool enabled);
+	void WindowPlaneEnabledChanged(cc_bool enabled);
+	void ScrollPlaneAEnabledChanged(cc_bool enabled);
+	void ScrollPlaneBEnabledChanged(cc_bool enabled);
+	void FM1EnabledChanged(cc_bool enabled);
+	void FM2EnabledChanged(cc_bool enabled);
+	void FM3EnabledChanged(cc_bool enabled);
+	void FM4EnabledChanged(cc_bool enabled);
+	void FM5EnabledChanged(cc_bool enabled);
+	void FM6EnabledChanged(cc_bool enabled);
+	void DACEnabledChanged(cc_bool enabled);
+	void PSG1EnabledChanged(cc_bool enabled);
+	void PSG2EnabledChanged(cc_bool enabled);
+	void PSG3EnabledChanged(cc_bool enabled);
+	void PSGNoiseEnabledChanged(cc_bool enabled);
+	void PCM1EnabledChanged(cc_bool enabled);
+	void PCM2EnabledChanged(cc_bool enabled);
+	void PCM3EnabledChanged(cc_bool enabled);
+	void PCM4EnabledChanged(cc_bool enabled);
+	void PCM5EnabledChanged(cc_bool enabled);
+	void PCM6EnabledChanged(cc_bool enabled);
+	void PCM7EnabledChanged(cc_bool enabled);
+	void PCM8EnabledChanged(cc_bool enabled);
 };
 
 #endif // OPTIONS_H
