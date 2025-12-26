@@ -34,6 +34,7 @@ private:
 	QVector<cc_u16l> cartridge_rom_buffer;
 	std::filesystem::path cartridge_file_path;
 	std::optional<QByteArray> cd_buffer;
+	SDL::IOStream cd_stream;
 	std::filesystem::path cd_file_path;
 	std::optional<EmulatorStuff> emulator;
 	EmulatorStuff::State quick_save_state;
@@ -48,7 +49,8 @@ private:
 	[[nodiscard]] bool LoadCartridgeData(const std::filesystem::path &file_path);
 	void LoadCartridgeData(const std::filesystem::path &file_path, SDL::IOStream &&stream);
 	void UnloadCartridgeData();
-	void LoadCDData(const std::filesystem::path &file_path, const QByteArray *file_contents);
+	[[nodiscard]] bool LoadCDData(const std::filesystem::path &file_path);
+	void LoadCDData(const std::filesystem::path &file_path, SDL::IOStream &&file_stream, const QByteArray *file_contents = nullptr);
 	void UnloadCDData();
 
 public:

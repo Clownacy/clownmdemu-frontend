@@ -30,8 +30,7 @@ void MainWindow::DoActionEnablement(const bool enabled)
 
 void MainWindow::CreateEmulator()
 {
-	SDL::IOStream cd_stream = cd_buffer ? SDL::IOStream(SDL_IOFromConstMem(cd_buffer->data(), cd_buffer->size())) : SDL::IOFromFile(cd_file_path, "rb");
-	emulator.emplace(options, cartridge_rom_buffer, cartridge_file_path, std::move(cd_stream), cd_file_path, this);
+	emulator.emplace(options, cartridge_rom_buffer, cartridge_file_path, cd_stream, cd_file_path, this);
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
@@ -143,11 +142,23 @@ void MainWindow::UnloadCartridgeData()
 		CreateEmulator();
 }
 
-void MainWindow::LoadCDData(const std::filesystem::path &file_path, const QByteArray *file_contents = nullptr)
+bool MainWindow::LoadCDData(const std::filesystem::path &file_path)
+{
+	auto file_stream = SDL::IOFromFile(file_path, "rb");
+
+	if (!file_stream)
+		return false;
+
+	LoadCDData(file_path, std::move(file_stream));
+	return true;
+}
+
+void MainWindow::LoadCDData(const std::filesystem::path &file_path, SDL::IOStream &&file_stream, const QByteArray *file_contents)
 {
 	cd_buffer = std::nullopt;
 	if (file_contents != nullptr)
 		cd_buffer = *file_contents;
+	cd_stream = std::move(file_stream);
 	cd_file_path = file_path;
 
 	ui.actionUnload_CD_File->setEnabled(true);
@@ -159,6 +170,7 @@ void MainWindow::UnloadCDData()
 	DestroyEmulator();
 
 	cd_buffer = std::nullopt;
+	cd_stream.reset();
 	cd_file_path.clear();
 
 	ui.actionUnload_CD_File->setEnabled(false);
@@ -195,7 +207,7 @@ MainWindow::MainWindow(QWidget* const parent)
 			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue *.iso)",
 				[this](const QString &file_name, const QByteArray &file_contents)
 				{
-					LoadCDData(QtExtensions::toStdPath(file_name), &file_contents);
+					LoadCDData(QtExtensions::toStdPath(file_name), SDL::IOStream(SDL_IOFromConstMem(file_contents.data(), file_contents.size())), &file_contents);
 				},
 				this
 			);
@@ -261,7 +273,8 @@ void MainWindow::dropEvent(QDropEvent* const event)
 
 	if (CDReader::IsMegaCDGame(file_path))
 	{
-		LoadCDData(file_path);
+		if (!LoadCDData(file_path))
+			return;
 	}
 	else
 	{

@@ -72,7 +72,7 @@ namespace Widgets
 		void Advance();
 
 	public:
-		explicit Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, const std::filesystem::path &cartridge_path, SDL::IOStream &&cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+		explicit Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, const std::filesystem::path &cartridge_path, SDL::IOStream &cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 		~Emulator()
 		{

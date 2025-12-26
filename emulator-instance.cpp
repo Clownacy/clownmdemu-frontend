@@ -74,7 +74,9 @@ void EmulatorInstance::UnloadCartridgeFile()
 
 bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
 {
-	if (!InsertCD(std::move(stream), path))
+	cd_stream = std::move(stream);
+
+	if (!InsertCD(cd_stream, path))
 		return false;
 
 	Reset();
@@ -84,6 +86,8 @@ bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem:
 void EmulatorInstance::UnloadCDFile()
 {
 	EjectCD();
+
+	cd_stream.reset();
 }
 
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State

@@ -55,11 +55,6 @@ public:
 	{
 		CDReader_Open(&state, stream, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
 	}
-	void Open(SDL::IOStream &&stream, const std::filesystem::path &path)
-	{
-		// Transfer ownership of the stream to ClownCD.
-		Open(stream.release(), path);
-	}
 	void Close()
 	{
 		CDReader_Close(&state);
