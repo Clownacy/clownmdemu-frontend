@@ -30,7 +30,8 @@ void MainWindow::DoActionEnablement(const bool enabled)
 
 void MainWindow::CreateEmulator()
 {
-	emulator.emplace(options, cartridge_rom_buffer, cartridge_file_path, SDL::IOStream(SDL_IOFromConstMem(std::data(cd_buffer), std::size(cd_buffer))), cd_file_path, this);
+	SDL::IOStream cd_stream = cd_buffer ? SDL::IOStream(SDL_IOFromConstMem(cd_buffer->data(), cd_buffer->size())) : SDL::IOFromFile(cd_file_path, "rb");
+	emulator.emplace(options, cartridge_rom_buffer, cartridge_file_path, std::move(cd_stream), cd_file_path, this);
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
@@ -103,16 +104,6 @@ void MainWindow::DestroyEmulator()
 	central_widget = nullptr;
 }
 
-static std::optional<QByteArray> ReadFileToBuffer(const QString &file_path)
-{
-	QFile file(file_path);
-
-	if (!file.open(QIODevice::ReadOnly))
-		return std::nullopt;
-
-	return file.readAll();
-}
-
 bool MainWindow::LoadCartridgeData(const std::filesystem::path &file_path)
 {
 	auto stream = SDL::IOFromFile(file_path, "rb");
@@ -120,11 +111,11 @@ bool MainWindow::LoadCartridgeData(const std::filesystem::path &file_path)
 	if (!stream)
 		return false;
 
-	LoadCartridgeData(std::move(stream), file_path);
+	LoadCartridgeData(file_path, std::move(stream));
 	return true;
 }
 
-void MainWindow::LoadCartridgeData(SDL::IOStream &&stream, const std::filesystem::path &file_path)
+void MainWindow::LoadCartridgeData(const std::filesystem::path &file_path, SDL::IOStream &&stream)
 {
 	// Convert the ROM buffer to 16-bit.
 	cartridge_rom_buffer.resize(SDL_GetIOSize(stream) / sizeof(cc_u16l));
@@ -148,25 +139,16 @@ void MainWindow::UnloadCartridgeData()
 
 	ui.actionUnload_Cartridge_File->setEnabled(false);
 
-	if (!cd_buffer.isEmpty())
+	if (!cd_file_path.empty())
 		CreateEmulator();
 }
 
-bool MainWindow::LoadCDData(const QString &file_path)
+void MainWindow::LoadCDData(const std::filesystem::path &file_path, const QByteArray *file_contents = nullptr)
 {
-	const auto &buffer = ReadFileToBuffer(file_path);
-
-	if (!buffer)
-		return false;
-
-	LoadCDData(*buffer, file_path);
-	return true;
-}
-
-void MainWindow::LoadCDData(const QByteArray &file_contents, const QString &file_path)
-{
-	cd_buffer = file_contents;
-	cd_file_path = QtExtensions::toStdPath(file_path);
+	cd_buffer = std::nullopt;
+	if (file_contents != nullptr)
+		cd_buffer = *file_contents;
+	cd_file_path = file_path;
 
 	ui.actionUnload_CD_File->setEnabled(true);
 	CreateEmulator();
@@ -176,8 +158,7 @@ void MainWindow::UnloadCDData()
 {
 	DestroyEmulator();
 
-	cd_buffer.clear();
-	cd_buffer.squeeze();
+	cd_buffer = std::nullopt;
 	cd_file_path.clear();
 
 	ui.actionUnload_CD_File->setEnabled(false);
@@ -199,7 +180,7 @@ MainWindow::MainWindow(QWidget* const parent)
 			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
 				[this](const QString &file_name, const QByteArray &file_contents)
 				{
-					LoadCartridgeData(SDL::IOStream(SDL_IOFromConstMem(file_contents, file_contents.size())), QtExtensions::toStdPath(file_name));
+					LoadCartridgeData(QtExtensions::toStdPath(file_name), SDL::IOStream(SDL_IOFromConstMem(file_contents, file_contents.size())));
 				},
 				this
 			);
@@ -214,7 +195,7 @@ MainWindow::MainWindow(QWidget* const parent)
 			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue *.iso)",
 				[this](const QString &file_name, const QByteArray &file_contents)
 				{
-					LoadCDData(file_contents, file_name);
+					LoadCDData(QtExtensions::toStdPath(file_name), &file_contents);
 				},
 				this
 			);
@@ -276,13 +257,11 @@ void MainWindow::dropEvent(QDropEvent* const event)
 	if (!url.isLocalFile())
 		return;
 
-	const auto &qt_file_path = url.toLocalFile();
-	const auto &file_path = QtExtensions::toStdPath(qt_file_path);
+	const auto &file_path = QtExtensions::toStdPath(url.toLocalFile());
 
 	if (CDReader::IsMegaCDGame(file_path))
 	{
-		if (!LoadCDData(qt_file_path))
-			return;
+		LoadCDData(file_path);
 	}
 	else
 	{
