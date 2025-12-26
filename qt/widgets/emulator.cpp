@@ -92,14 +92,14 @@ void Widgets::Emulator::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
-	const bool squashed = GetState().vdp.double_resolution_enabled && !options.TallInterlaceMode2Enabled();
+	const bool squashed = GetState().vdp.double_resolution_enabled && !options.GetTallInterlaceMode2Enabled();
 
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();
 
 	cc_u16f aspect_correct_width = 0, aspect_correct_height = 0;
 
-	if (options.IntegerScreenScalingEnabled())
+	if (options.GetIntegerScreenScalingEnabled())
 	{
 		cc_u16f scale_factor_x, scale_factor_y;
 
@@ -187,7 +187,7 @@ static std::filesystem::path GetSaveDataDirectoryPath()
 
 Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, const std::filesystem::path &cartridge_path, SDL::IOStream &cd_stream, const std::filesystem::path &cd_path, QWidget* const parent, const Qt::WindowFlags f)
 	: Base(parent, f)
-	, EmulatorExtended(options.GetEmulatorConfiguration(), options.RewindingEnabled(), GetSaveDataDirectoryPath())
+	, EmulatorExtended(options.GetEmulatorConfiguration(), options.GetRewindingEnabled(), GetSaveDataDirectoryPath())
 	, options(options)
 {
 	// Enable keyboard input.
@@ -206,13 +206,13 @@ void Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* c
 
 	screen_properties.width = screen_width;
 	screen_properties.height = screen_height;
-	screen_properties.is_widescreen = options.WidescreenEnabled();
+	screen_properties.is_widescreen = options.GetWidescreenEnabled();
 }
 
 cc_bool Widgets::Emulator::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
 	// TODO: Player 2.
-	if (player_id != options.KeyboardControlPad())
+	if (player_id != options.GetKeyboardControlPad())
 		return cc_false;
 
 	return buttons[button_id];

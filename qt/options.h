@@ -32,26 +32,27 @@ public:
 	}
 
 #define DEFINE_SAVED_OPTION_SETTER(IDENTIFIER) \
-	void IDENTIFIER(const auto value) \
+	void Set##IDENTIFIER(const auto value) \
 	{ \
-		OptionsPlain::IDENTIFIER(value); \
+		OptionsPlain::Set##IDENTIFIER(value); \
  \
 		QSettings settings; \
-		settings.setValue(STRINGIFY(IDENTIFIER), OptionsPlain::IDENTIFIER()); \
+		settings.setValue(STRINGIFY(IDENTIFIER), OptionsPlain::Get##IDENTIFIER()); \
 	}
 
 #define DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
-	using OptionsPlain::IDENTIFIER;
+	using OptionsPlain::Get##IDENTIFIER; \
+	using OptionsPlain::Set##IDENTIFIER;
 
 #define DEFINE_SAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
-	using OptionsPlain::IDENTIFIER; \
+	using OptionsPlain::Get##IDENTIFIER; \
 	DEFINE_SAVED_OPTION_SETTER(IDENTIFIER)
 
 #define DEFINE_UNSAVED_OPTIONS(...) \
 	PASTE(DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__)
 
 #define DEFINE_SAVED_OPTION_LOAD(IDENTIFIER) \
-	IDENTIFIER(settings.value(STRINGIFY(IDENTIFIER)).value<decltype(IDENTIFIER())>());
+	Set##IDENTIFIER(settings.value(STRINGIFY(IDENTIFIER)).value<decltype(Get##IDENTIFIER())>());
 
 #define DEFINE_SAVED_OPTIONS(...) \
 	PASTE(DEFINE_SAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__) \

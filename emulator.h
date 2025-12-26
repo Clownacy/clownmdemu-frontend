@@ -39,8 +39,8 @@ public:
 #define EMULATOR_CONFIGURATION_NOT(VALUE) !VALUE
 
 #define EMULATOR_CONFIGURATION_GETTER_SETTER(IDENTIFIER, VALUE, OPERATION) \
-	std::remove_cvref_t<decltype(VALUE)> IDENTIFIER() const { return OPERATION(VALUE); } \
-	void IDENTIFIER(const std::remove_cvref_t<decltype(VALUE)> value){ VALUE = OPERATION(value); }
+	std::remove_cvref_t<decltype(VALUE)> Get##IDENTIFIER() const { return OPERATION(VALUE); } \
+	void Set##IDENTIFIER(const std::remove_cvref_t<decltype(VALUE)> value){ VALUE = OPERATION(value); }
 
 #define EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(IDENTIFIER, VALUE) \
 	EMULATOR_CONFIGURATION_GETTER_SETTER(IDENTIFIER, VALUE, EMULATOR_CONFIGURATION_AS_IS)
