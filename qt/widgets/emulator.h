@@ -30,14 +30,12 @@ namespace Widgets
 	protected:
 		using Base = QOpenGLWidget;
 
-		static constexpr auto texture_buffer_width = VDP_MAX_SCANLINE_WIDTH;
-		static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
-
-	public:
 		// Ensure that this is safe to save to (and read from) a file.
 		static_assert(std::is_trivially_copyable_v<State>);
 
-	protected:
+		static constexpr auto texture_buffer_width = VDP_MAX_SCANLINE_WIDTH;
+		static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
+
 		QBasicTimer timer;
 
 		std::optional<QOpenGLShaderProgram> shader_program;
