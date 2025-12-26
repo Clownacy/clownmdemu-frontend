@@ -14,7 +14,7 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	DIALOGS_COMMON_BIND_RADIO_BUTTON(ui.japan, options, Region, CLOWNMDEMU_REGION_DOMESTIC);
 	DIALOGS_COMMON_BIND_RADIO_BUTTON(ui.elsewhere, options, Region, CLOWNMDEMU_REGION_OVERSEAS);
 
-	DIALOGS_COMMON_BIND_CHECK_BOX(ui.cdAddon, options, CDAddonEnabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.cdAddon, options, CDAddOnEnabled);
 
 	// Video
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.integerScreenScaling, options, IntegerScreenScalingEnabled);
@@ -24,8 +24,8 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.widescreenHack, options, WidescreenEnabled);
 
 	// Audio
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.lowPassFilter, options, LowPassFilterDisabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.lowVolumeDistortion, options, LowVolumeDistortionDisabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.lowPassFilter, options, LowPassFilterEnabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.lowVolumeDistortion, options, LadderEffectEnabled);
 
 	// Miscellaneous
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.rewinding, options, RewindingEnabled);

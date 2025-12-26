@@ -203,7 +203,7 @@ private:
 public:
 	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
-		, audio_output(configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL)
+		, audio_output(configuration.TVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
 	{

@@ -9,109 +9,103 @@
 #define STRINGIFY(STRING) STRINGIFY_INTERNAL(STRING)
 #define STRINGIFY_INTERNAL(STRING) #STRING
 
-class Options
+class OptionsPlain : public Emulator::Configuration
 {
-private:
-	Emulator::Configuration emulator_configuration = {};
+public:
 	bool integer_screen_scaling = false;
 	bool tall_interlace_mode_2 = false;
 	bool rewinding = false;
 	unsigned int keyboard_control_pad = 0;
 
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(IntegerScreenScalingEnabled, integer_screen_scaling)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(TallInterlaceMode2Enabled, tall_interlace_mode_2)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(RewindingEnabled, rewinding)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(KeyboardControlPad, keyboard_control_pad)
+};
+
+class Options : private OptionsPlain
+{
 public:
-	const auto& GetEmulatorConfiguration() const
+	const Emulator::Configuration& GetEmulatorConfiguration() const
 	{
-		return emulator_configuration;
+		return *this;
 	}
 
-#define DEFINE_OPTION_GETTER(IDENTIFIER, VARIABLE) \
-	auto IDENTIFIER() const \
-	{ \
-		return VARIABLE; \
-	}
-
-#define DEFINE_UNSAVED_OPTION_SETTER(IDENTIFIER, VARIABLE) \
+#define DEFINE_SAVED_OPTION_SETTER(IDENTIFIER) \
 	void IDENTIFIER(const auto value) \
 	{ \
-		VARIABLE = value; \
-	}
-
-#define DEFINE_SAVED_OPTION_SETTER(IDENTIFIER, VARIABLE) \
-	void IDENTIFIER(const auto value) \
-	{ \
-		VARIABLE = value; \
+		OptionsPlain::IDENTIFIER(value); \
  \
 		QSettings settings; \
-		settings.setValue(STRINGIFY(IDENTIFIER), VARIABLE); \
+		settings.setValue(STRINGIFY(IDENTIFIER), OptionsPlain::IDENTIFIER()); \
 	}
 
-#define DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER, VARIABLE) \
-	DEFINE_OPTION_GETTER(IDENTIFIER, VARIABLE) \
-	DEFINE_UNSAVED_OPTION_SETTER(IDENTIFIER, VARIABLE)
+#define DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
+	using OptionsPlain::IDENTIFIER;
 
-#define DEFINE_SAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER, VARIABLE) \
-	DEFINE_OPTION_GETTER(IDENTIFIER, VARIABLE) \
-	DEFINE_SAVED_OPTION_SETTER(IDENTIFIER, VARIABLE)
+#define DEFINE_SAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
+	using OptionsPlain::IDENTIFIER; \
+	DEFINE_SAVED_OPTION_SETTER(IDENTIFIER)
 
 #define DEFINE_UNSAVED_OPTIONS(...) \
-	PASTE2(DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__)
+	PASTE(DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__)
 
-#define DEFINE_SAVED_OPTION_LOAD(IDENTIFIER, VARIABLE) \
-	VARIABLE = settings.value(STRINGIFY(IDENTIFIER)).value<decltype(VARIABLE)>();
+#define DEFINE_SAVED_OPTION_LOAD(IDENTIFIER) \
+	IDENTIFIER(settings.value(STRINGIFY(IDENTIFIER)).value<decltype(IDENTIFIER())>());
 
 #define DEFINE_SAVED_OPTIONS(...) \
-	PASTE2(DEFINE_SAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__) \
+	PASTE(DEFINE_SAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__) \
  \
 	Options() \
 	{ \
 		QSettings settings; \
-		PASTE2(DEFINE_SAVED_OPTION_LOAD, __VA_ARGS__) \
+		PASTE(DEFINE_SAVED_OPTION_LOAD, __VA_ARGS__) \
 	}
 
 	DEFINE_SAVED_OPTIONS(
-		TVStandard, emulator_configuration.general.tv_standard,
-		Region, emulator_configuration.general.region,
-		CDAddonEnabled, emulator_configuration.general.cd_add_on_enabled,
+		TVStandard,
+		Region,
+		CDAddOnEnabled,
 
-		IntegerScreenScalingEnabled, integer_screen_scaling,
-		TallInterlaceMode2Enabled, tall_interlace_mode_2,
-		WidescreenEnabled, emulator_configuration.vdp.widescreen_enabled,
+		IntegerScreenScalingEnabled,
+		TallInterlaceMode2Enabled,
+		WidescreenEnabled,
 
-		LowPassFilterDisabled, emulator_configuration.general.low_pass_filter_disabled,
-		LowVolumeDistortionDisabled, emulator_configuration.fm.ladder_effect_disabled,
+		LowPassFilterEnabled,
+		LadderEffectEnabled,
 
-		RewindingEnabled, rewinding,
+		RewindingEnabled,
 
-		KeyboardControlPad, keyboard_control_pad
+		KeyboardControlPad
 	)
 
 	DEFINE_UNSAVED_OPTIONS(
-		SpritesDisabled, emulator_configuration.vdp.sprites_disabled,
-		WindowPlaneDisabled, emulator_configuration.vdp.window_disabled,
-		ScrollPlaneADisabled, emulator_configuration.vdp.planes_disabled[0],
-		ScrollPlaneBDisabled, emulator_configuration.vdp.planes_disabled[1],
+		SpritePlaneEnabled,
+		WindowPlaneEnabled,
+		ScrollPlaneAEnabled,
+		ScrollPlaneBEnabled,
 
-		FM1Disabled, emulator_configuration.fm.fm_channels_disabled[0],
-		FM2Disabled, emulator_configuration.fm.fm_channels_disabled[1],
-		FM3Disabled, emulator_configuration.fm.fm_channels_disabled[2],
-		FM4Disabled, emulator_configuration.fm.fm_channels_disabled[3],
-		FM5Disabled, emulator_configuration.fm.fm_channels_disabled[4],
-		FM6Disabled, emulator_configuration.fm.fm_channels_disabled[5],
-		DACDisabled, emulator_configuration.fm.dac_channel_disabled,
+		FM1Enabled,
+		FM2Enabled,
+		FM3Enabled,
+		FM4Enabled,
+		FM5Enabled,
+		FM6Enabled,
+		DACEnabled,
 
-		PSG1Disabled, emulator_configuration.psg.tone_disabled[0],
-		PSG2Disabled, emulator_configuration.psg.tone_disabled[1],
-		PSG3Disabled, emulator_configuration.psg.tone_disabled[2],
-		PSGNoiseDisabled, emulator_configuration.psg.noise_disabled,
+		PSG1Enabled,
+		PSG2Enabled,
+		PSG3Enabled,
+		PSGNoiseEnabled,
 
-		PCM1Disabled, emulator_configuration.pcm.channels_disabled[0],
-		PCM2Disabled, emulator_configuration.pcm.channels_disabled[1],
-		PCM3Disabled, emulator_configuration.pcm.channels_disabled[2],
-		PCM4Disabled, emulator_configuration.pcm.channels_disabled[3],
-		PCM5Disabled, emulator_configuration.pcm.channels_disabled[4],
-		PCM6Disabled, emulator_configuration.pcm.channels_disabled[5],
-		PCM7Disabled, emulator_configuration.pcm.channels_disabled[6],
-		PCM8Disabled, emulator_configuration.pcm.channels_disabled[7]
+		PCM1Enabled,
+		PCM2Enabled,
+		PCM3Enabled,
+		PCM4Enabled,
+		PCM5Enabled,
+		PCM6Enabled,
+		PCM7Enabled,
+		PCM8Enabled
 	)
 };
 

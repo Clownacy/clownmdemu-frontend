@@ -8,33 +8,33 @@ Dialogs::Debug::Toggles::Toggles(Options &options, QWidget *parent) :
 	ui.setupUi(this);
 
 	// VDP
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.spritePlane, options, SpritesDisabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.windowPlane, options, WindowPlaneDisabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.scrollPlaneA, options, ScrollPlaneADisabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.scrollPlaneB, options, ScrollPlaneBDisabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.spritePlane, options, SpritePlaneEnabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.windowPlane, options, WindowPlaneEnabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.scrollPlaneA, options, ScrollPlaneAEnabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.scrollPlaneB, options, ScrollPlaneBEnabled);
 
 	// FM
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm1, options, FM1Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm2, options, FM2Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm3, options, FM3Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm4, options, FM4Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm5, options, FM5Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.fm6, options, FM6Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.dac, options, DACDisabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.fm1, options, FM1Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.fm2, options, FM2Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.fm3, options, FM3Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.fm4, options, FM4Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.fm5, options, FM5Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.fm6, options, FM6Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.dac, options, DACEnabled);
 
 	// PSG
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psg1, options, PSG1Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psg2, options, PSG1Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psg3, options, PSG1Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.psgNoise, options, PSGNoiseDisabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.psg1, options, PSG1Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.psg2, options, PSG1Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.psg3, options, PSG1Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.psgNoise, options, PSGNoiseEnabled);
 
 	// PCM
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm1, options, PCM1Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm2, options, PCM2Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm3, options, PCM3Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm4, options, PCM4Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm5, options, PCM5Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm6, options, PCM6Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm7, options, PCM7Disabled);
-	DIALOGS_COMMON_BIND_INVERSE_CHECK_BOX(ui.pcm8, options, PCM8Disabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm1, options, PCM1Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm2, options, PCM2Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm3, options, PCM3Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm4, options, PCM4Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm5, options, PCM5Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm6, options, PCM6Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm7, options, PCM7Enabled);
+	DIALOGS_COMMON_BIND_CHECK_BOX(ui.pcm8, options, PCM8Enabled);
 }

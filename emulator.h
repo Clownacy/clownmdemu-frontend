@@ -26,8 +26,10 @@ private:
 	static Constant constant;
 
 public:
-	class Configuration : public ClownMDEmu_Configuration
+	class Configuration : private ClownMDEmu_Configuration
 	{
+		friend Emulator;
+
 	public:
 		Configuration()
 			: ClownMDEmu_Configuration({})
