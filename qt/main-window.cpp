@@ -34,7 +34,10 @@ void MainWindow::CreateEmulator()
 	emulator->Pause(ui.actionPause->isChecked());
 
 	if (central_widget == nullptr)
+	{
 		central_widget = takeCentralWidget();
+		central_widget->hide();
+	}
 	setCentralWidget(&*emulator);
 
 	connect(ui.actionPause, &QAction::triggered, &*emulator, &Widgets::Emulator::Pause);
@@ -100,6 +103,7 @@ void MainWindow::DestroyEmulator()
 	DoActionEnablement(false);
 
 	setCentralWidget(central_widget);
+	central_widget->show();
 	central_widget = nullptr;
 }
 
