@@ -22,9 +22,11 @@ static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 	return samples;
 }
 
-AudioOutput::AudioOutput()
-	: device(MIXER_CHANNEL_COUNT, MIXER_OUTPUT_SAMPLE_RATE)
-	, total_buffer_frames(BufferSizeFromSampleRate(MIXER_OUTPUT_SAMPLE_RATE))
+AudioOutput::AudioOutput(const bool pal_mode)
+	: sample_rate(pal_mode ? MIXER_OUTPUT_SAMPLE_RATE_PAL : MIXER_OUTPUT_SAMPLE_RATE_NTSC)
+	, total_buffer_frames(BufferSizeFromSampleRate(sample_rate))
+	, device(MIXER_CHANNEL_COUNT, sample_rate)
+	, mixer(pal_mode)
 {}
 
 void AudioOutput::MixerBegin()
@@ -80,10 +82,4 @@ cc_s16l* AudioOutput::MixerAllocateCDDASamples(const std::size_t total_frames)
 cc_u32f AudioOutput::GetAverageFrames() const
 {
 	return std::accumulate(rolling_average_buffer.cbegin(), rolling_average_buffer.cend(), cc_u32f(0)) / rolling_average_buffer.size();
-}
-
-void AudioOutput::SetPALMode(const bool enabled)
-{
-	pal_mode = enabled;
-	mixer.SetPALMode(pal_mode);
 }

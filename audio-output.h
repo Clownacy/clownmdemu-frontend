@@ -14,17 +14,15 @@
 class AudioOutput
 {
 private:
+	cc_u32f sample_rate, total_buffer_frames;
 	AudioDevice device;
-	cc_u32f total_buffer_frames;
+	Mixer mixer;
 
-	bool pal_mode = false;
 	std::array<cc_u32f, 0x10> rolling_average_buffer = {0};
 	cc_u8f rolling_average_buffer_index = 0;
 
-	Mixer mixer = Mixer(pal_mode);
-
 public:
-	AudioOutput();
+	AudioOutput(bool pal_mode);
 	void MixerBegin();
 	void MixerEnd();
 	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);
@@ -32,12 +30,9 @@ public:
 	cc_s16l* MixerAllocatePCMSamples(std::size_t total_frames);
 	cc_s16l* MixerAllocateCDDASamples(std::size_t total_frames);
 	cc_u32f GetAverageFrames() const;
-	cc_u32f GetTargetFrames() const { return std::max<cc_u32f>(total_buffer_frames * 2, MIXER_OUTPUT_SAMPLE_RATE / 20); } // 50ms
+	cc_u32f GetTargetFrames() const { return std::max<cc_u32f>(total_buffer_frames * 2, sample_rate / 20); } // 50ms
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
-	cc_u32f GetSampleRate() const { return MIXER_OUTPUT_SAMPLE_RATE; }
-
-	void SetPALMode(bool enabled);
-	bool GetPALMode() const { return pal_mode; }
+	cc_u32f GetSampleRate() const { return sample_rate; }
 };
 
 #endif /* AUDIO_OUTPUT_H */

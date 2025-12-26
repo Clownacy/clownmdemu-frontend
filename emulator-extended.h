@@ -203,6 +203,7 @@ private:
 public:
 	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
+		, audio_output(configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
 	{
@@ -327,12 +328,6 @@ public:
 	///////////
 	// Audio //
 	///////////
-
-	// TODO: Make Qt frontend use this!!!
-	void SetAudioPALMode(const bool enabled)
-	{
-		audio_output.SetPALMode(enabled);
-	}
 
 	[[nodiscard]] cc_u32f GetAudioAverageFrames() const { return audio_output.GetAverageFrames(); }
 	[[nodiscard]] cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
