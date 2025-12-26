@@ -86,6 +86,37 @@ void MainWindow::CreateEmulator()
 		}
 	);
 
+	// Options
+	connect(&options, &Options::TVStandardChanged, &*emulator, &Widgets::Emulator::SetTVStandard);
+	connect(&options, &Options::RegionChanged, &*emulator, &Widgets::Emulator::SetRegion);
+	connect(&options, &Options::CDAddOnEnabledChanged, &*emulator, &Widgets::Emulator::SetCDAddOnEnabled);
+	connect(&options, &Options::WidescreenEnabledChanged, &*emulator, &Widgets::Emulator::SetWidescreenEnabled);
+	connect(&options, &Options::LowPassFilterEnabledChanged, &*emulator, &Widgets::Emulator::SetLowPassFilterEnabled);
+	connect(&options, &Options::LadderEffectEnabledChanged, &*emulator, &Widgets::Emulator::SetLadderEffectEnabled);
+	connect(&options, &Options::SpritePlaneEnabledChanged, &*emulator, &Widgets::Emulator::SetSpritePlaneEnabled);
+	connect(&options, &Options::WindowPlaneEnabledChanged, &*emulator, &Widgets::Emulator::SetWindowPlaneEnabled);
+	connect(&options, &Options::ScrollPlaneAEnabledChanged, &*emulator, &Widgets::Emulator::SetScrollPlaneAEnabled);
+	connect(&options, &Options::ScrollPlaneBEnabledChanged, &*emulator, &Widgets::Emulator::SetScrollPlaneBEnabled);
+	connect(&options, &Options::FM1EnabledChanged, &*emulator, &Widgets::Emulator::SetFM1Enabled);
+	connect(&options, &Options::FM2EnabledChanged, &*emulator, &Widgets::Emulator::SetFM2Enabled);
+	connect(&options, &Options::FM3EnabledChanged, &*emulator, &Widgets::Emulator::SetFM3Enabled);
+	connect(&options, &Options::FM4EnabledChanged, &*emulator, &Widgets::Emulator::SetFM4Enabled);
+	connect(&options, &Options::FM5EnabledChanged, &*emulator, &Widgets::Emulator::SetFM5Enabled);
+	connect(&options, &Options::FM6EnabledChanged, &*emulator, &Widgets::Emulator::SetFM6Enabled);
+	connect(&options, &Options::DACEnabledChanged, &*emulator, &Widgets::Emulator::SetDACEnabled);
+	connect(&options, &Options::PSG1EnabledChanged, &*emulator, &Widgets::Emulator::SetPSG1Enabled);
+	connect(&options, &Options::PSG2EnabledChanged, &*emulator, &Widgets::Emulator::SetPSG2Enabled);
+	connect(&options, &Options::PSG3EnabledChanged, &*emulator, &Widgets::Emulator::SetPSG3Enabled);
+	connect(&options, &Options::PSGNoiseEnabledChanged, &*emulator, &Widgets::Emulator::SetPSGNoiseEnabled);
+	connect(&options, &Options::PCM1EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM1Enabled);
+	connect(&options, &Options::PCM2EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM2Enabled);
+	connect(&options, &Options::PCM3EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM3Enabled);
+	connect(&options, &Options::PCM4EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM4Enabled);
+	connect(&options, &Options::PCM5EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM5Enabled);
+	connect(&options, &Options::PCM6EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM6Enabled);
+	connect(&options, &Options::PCM7EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM7Enabled);
+	connect(&options, &Options::PCM8EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM8Enabled);
+
 	DoActionEnablement(true);
 
 	emulator->SetLogCallback(

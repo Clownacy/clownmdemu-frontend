@@ -89,6 +89,8 @@ namespace Widgets
 		}
 
 		void Reset(){ EmulatorExtended::Reset(); }
+		void SetRewindEnabled(const bool enabled){ EmulatorExtended::SetRewindEnabled(enabled); }
+
 		void SetTVStandard(const ClownMDEmu_TVStandard tv_standard){ EmulatorExtended::SetTVStandard(tv_standard); }
 		void SetRegion(const ClownMDEmu_Region region){ EmulatorExtended::SetRegion(region); }
 		void SetCDAddOnEnabled(const cc_bool enabled){ EmulatorExtended::SetCDAddOnEnabled(enabled); }
