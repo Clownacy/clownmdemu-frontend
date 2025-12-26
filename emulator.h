@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <functional>
 #include <string>
+#include <type_traits>
 
 #include "common/core/clownmdemu.h"
 
@@ -31,6 +32,53 @@ public:
 		Configuration()
 			: ClownMDEmu_Configuration({})
 		{}
+
+#define EMULATOR_CONFIGURATION_AS_IS(VALUE) VALUE
+#define EMULATOR_CONFIGURATION_NOT(VALUE) !VALUE
+
+#define EMULATOR_CONFIGURATION_GETTER_SETTER(IDENTIFIER, VALUE, OPERATION) \
+	std::remove_cvref_t<decltype(VALUE)> IDENTIFIER() const { return OPERATION(VALUE); } \
+	void IDENTIFIER(const std::remove_cvref_t<decltype(VALUE)> value){ VALUE = OPERATION(value); }
+
+#define EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(IDENTIFIER, VALUE) \
+	EMULATOR_CONFIGURATION_GETTER_SETTER(IDENTIFIER, VALUE, EMULATOR_CONFIGURATION_AS_IS)
+
+#define EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(IDENTIFIER, VALUE) \
+	EMULATOR_CONFIGURATION_GETTER_SETTER(IDENTIFIER, VALUE, EMULATOR_CONFIGURATION_NOT)
+
+		EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(TVStandard, general.tv_standard)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(Region, general.region)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LowPassFilterEnabled, general.low_pass_filter_disabled)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(CDAddOnEnabled, general.cd_add_on_enabled)
+
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(SpritePlaneEnabled, vdp.sprites_disabled)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(WindowPlaneEnabled, vdp.window_disabled)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneAEnabled, vdp.planes_disabled[0])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneBEnabled, vdp.planes_disabled[1])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(WidescreenEnabled, vdp.widescreen_enabled)
+
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM1Enabled, fm.fm_channels_disabled[0])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM2Enabled, fm.fm_channels_disabled[1])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM3Enabled, fm.fm_channels_disabled[2])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM4Enabled, fm.fm_channels_disabled[3])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM5Enabled, fm.fm_channels_disabled[4])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM6Enabled, fm.fm_channels_disabled[5])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(DACEnabled, fm.dac_channel_disabled)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LadderEffectEnabled, fm.ladder_effect_disabled)
+
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG1Enabled, psg.tone_disabled[0])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG2Enabled, psg.tone_disabled[1])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG3Enabled, psg.tone_disabled[2])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSGNoiseEnabled, psg.noise_disabled)
+
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM1Enabled, pcm.channels_disabled[0])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM2Enabled, pcm.channels_disabled[1])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM3Enabled, pcm.channels_disabled[2])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM4Enabled, pcm.channels_disabled[3])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM5Enabled, pcm.channels_disabled[4])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM6Enabled, pcm.channels_disabled[5])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM7Enabled, pcm.channels_disabled[6])
+		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM8Enabled, pcm.channels_disabled[7])
 	};
 
 	class State : public ClownMDEmu_State
