@@ -78,7 +78,7 @@ void Widgets::Emulator::initializeGL()
 
 #undef DisplayError
 
-	timer.start(std::chrono::nanoseconds(CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count())), Qt::TimerType::PreciseTimer, this);
+	SetTimer(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL);
 }
 
 void Widgets::Emulator::paintGL()
@@ -280,4 +280,11 @@ void Widgets::Emulator::Advance()
 	update();
 
 	emit NewFrame();
+}
+
+void Widgets::Emulator::SetTimer(const bool pal_mode)
+{
+	const auto time_ntsc = CLOWNMDEMU_DIVIDE_BY_NTSC_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count());
+	const auto time_pal = CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(std::chrono::nanoseconds(std::chrono::seconds(1)).count());
+	timer.start(std::chrono::nanoseconds(pal_mode ? time_pal : time_ntsc), Qt::TimerType::PreciseTimer, this);
 }

@@ -69,6 +69,9 @@ namespace Widgets
 		[[nodiscard]] bool DoButton(QKeyEvent *event, bool pressed);
 		void Advance();
 
+	private:
+		void SetTimer(const bool pal_mode);
+
 	public:
 		explicit Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, const std::filesystem::path &cartridge_path, SDL::IOStream &cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
@@ -89,7 +92,11 @@ namespace Widgets
 		void Reset(){ EmulatorExtended::Reset(); }
 		void SetRewindEnabled(const bool enabled){ EmulatorExtended::SetRewindEnabled(enabled); }
 
-		void SetTVStandard(const ClownMDEmu_TVStandard tv_standard){ EmulatorExtended::SetTVStandard(tv_standard); }
+		void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
+		{
+				EmulatorExtended::SetTVStandard(tv_standard);
+				SetTimer(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+		}
 		void SetRegion(const ClownMDEmu_Region region){ EmulatorExtended::SetRegion(region); }
 		void SetCDAddOnEnabled(const cc_bool enabled){ EmulatorExtended::SetCDAddOnEnabled(enabled); }
 		void SetWidescreenEnabled(const cc_bool enabled){ EmulatorExtended::SetWidescreenEnabled(enabled); }
