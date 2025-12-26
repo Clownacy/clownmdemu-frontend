@@ -4,8 +4,10 @@
 #include <filesystem>
 #include <optional>
 
+#include <QDataStream>
 #include <QMainWindow>
 
+#include "../sdl-wrapper-inner.h"
 #include "dialogs/about.h"
 #include "dialogs/debug-cpu.h"
 #include "dialogs/debug-toggles.h"
@@ -43,8 +45,8 @@ private:
 	void DoActionEnablement(bool enabled);
 	void CreateEmulator();
 	void DestroyEmulator();
-	[[nodiscard]] bool LoadCartridgeData(const QString &file_path);
-	void LoadCartridgeData(const QByteArray &file_contents, const QString &file_path);
+	[[nodiscard]] bool LoadCartridgeData(const std::filesystem::path &file_path);
+	void LoadCartridgeData(SDL::IOStream &&stream, const std::filesystem::path &file_path);
 	void UnloadCartridgeData();
 	[[nodiscard]] bool LoadCDData(const QString &file_path);
 	void LoadCDData(const QByteArray &file_contents, const QString &file_path);

@@ -113,32 +113,26 @@ static std::optional<QByteArray> ReadFileToBuffer(const QString &file_path)
 	return file.readAll();
 }
 
-bool MainWindow::LoadCartridgeData(const QString &file_path)
+bool MainWindow::LoadCartridgeData(const std::filesystem::path &file_path)
 {
-	const auto &buffer = ReadFileToBuffer(file_path);
+	auto stream = SDL::IOFromFile(file_path, "rb");
 
-	if (!buffer)
+	if (!stream)
 		return false;
 
-	LoadCartridgeData(*buffer, file_path);
+	LoadCartridgeData(std::move(stream), file_path);
 	return true;
 }
 
-void MainWindow::LoadCartridgeData(const QByteArray &file_contents, const QString &file_path)
+void MainWindow::LoadCartridgeData(SDL::IOStream &&stream, const std::filesystem::path &file_path)
 {
 	// Convert the ROM buffer to 16-bit.
-	cartridge_rom_buffer.resize(file_contents.size() / sizeof(cc_u16l));
+	cartridge_rom_buffer.resize(SDL_GetIOSize(stream) / sizeof(cc_u16l));
 
-	const auto &GetByte = [&](const auto index) { return static_cast<cc_u16f>(file_contents[index]) & 0xFF; };
+	for (auto &word : cartridge_rom_buffer)
+		SDL_ReadU16BE(stream, &word);
 
-	for (qsizetype i = 0; i < std::size(cartridge_rom_buffer); ++i)
-	{
-		cartridge_rom_buffer[i]
-			= (GetByte(i * 2 + 0) << 8)
-			| (GetByte(i * 2 + 1) << 0);
-	}
-
-	cartridge_file_path = QtExtensions::toStdPath(file_path);
+	cartridge_file_path = file_path;
 
 	ui.actionUnload_Cartridge_File->setEnabled(true);
 	CreateEmulator();
@@ -205,7 +199,7 @@ MainWindow::MainWindow(QWidget* const parent)
 			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
 				[this](const QString &file_name, const QByteArray &file_contents)
 				{
-					LoadCartridgeData(file_contents, file_name);
+					LoadCartridgeData(SDL::IOStream(SDL_IOFromConstMem(file_contents, file_contents.size())), QtExtensions::toStdPath(file_name));
 				},
 				this
 			);
@@ -282,11 +276,12 @@ void MainWindow::dropEvent(QDropEvent* const event)
 	if (!url.isLocalFile())
 		return;
 
-	const auto &file_path = url.toLocalFile();
+	const auto &qt_file_path = url.toLocalFile();
+	const auto &file_path = QtExtensions::toStdPath(qt_file_path);
 
-	if (CDReader::IsMegaCDGame(QtExtensions::toStdPath(file_path)))
+	if (CDReader::IsMegaCDGame(file_path))
 	{
-		if (!LoadCDData(file_path))
+		if (!LoadCDData(qt_file_path))
 			return;
 	}
 	else
