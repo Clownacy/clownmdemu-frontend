@@ -14,7 +14,7 @@
 #include "state-ring-buffer.h"
 
 template<typename Colour>
-class EmulatorExtended : public Emulator
+class EmulatorExtended : public Emulator::Configuration, public Emulator
 {
 protected:
 	struct Palette
@@ -202,8 +202,9 @@ private:
 
 public:
 	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
-		: Emulator(configuration)
-		, audio_output(configuration.GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
+		: Emulator::Configuration(configuration)
+		, Emulator(*static_cast<Emulator::Configuration*>(this))
+		, audio_output(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
 	{
