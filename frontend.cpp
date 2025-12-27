@@ -1618,8 +1618,6 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 	{
 		IMGUI_CHECKVERSION();
 
-		ClownMDEmu_Constant_Initialise();
-
 		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true);
 		emulator.emplace(window->framebuffer_texture, ReadInputCallback);
 
