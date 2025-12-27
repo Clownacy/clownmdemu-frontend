@@ -6,6 +6,12 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
+#include "../sdl-wrapper-inner.h"
+
+#ifndef __EMSCRIPTEN__
+#define QTEXTENSION_FILE_PATH_SUPPORT
+#endif
+
 namespace QtExtensions
 {
 	namespace MessageBox
@@ -36,6 +42,16 @@ namespace QtExtensions
 
 	inline void getOpenFileContent(const QString &nameFilter, const std::function<void (const std::filesystem::path &file_path, SDL::IOStream &&file_stream, const QByteArray *file_contents)> &fileOpenCompleted, QWidget *parent = nullptr)
 	{
+#ifdef QTEXTENSION_FILE_PATH_SUPPORT
+		const auto &qt_file_path = QFileDialog::getOpenFileName(parent, QString(), QString(), nameFilter);
+
+		if (qt_file_path.isNull())
+			return;
+
+		const auto &file_path = QtExtensions::toStdPath(qt_file_path);
+
+		fileOpenCompleted(file_path, SDL::IOFromFile(file_path, "rb"), nullptr);
+#else
 		QFileDialog::getOpenFileContent(nameFilter,
 			[fileOpenCompleted](const QString &file_name, const QByteArray &file_contents)
 			{
@@ -43,6 +59,7 @@ namespace QtExtensions
 			},
 			parent
 		);
+#endif
 	}
 }
 
