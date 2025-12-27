@@ -370,6 +370,16 @@ public:
 	{
 		return state_rewind_buffer.Exhausted();
 	}
+
+	/////////////////////////////
+	// Option Setter Overrides //
+	/////////////////////////////
+
+	void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
+	{
+		Emulator::Configuration::SetTVStandard(tv_standard);
+		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+	}
 };
 
 #endif // EMULATOR_EXTENDED_H
