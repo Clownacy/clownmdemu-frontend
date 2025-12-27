@@ -29,19 +29,19 @@ namespace SDL
 	auto PathFunction(const char* const path, Args &&...args)
 	{
 		return Function(path, std::forward<Args>(args)...);
-	};
+	}
 
 	template<auto Function, typename... Args>
 	auto PathFunction(const std::string &path, Args &&...args)
 	{
 		return Function(path.c_str(), std::forward<Args>(args)...);
-	};
+	}
 
 	template<auto Function, typename... Args>
 	auto PathFunction(const std::filesystem::path &path, Args &&...args)
 	{
 		return Function(reinterpret_cast<const char*>(path.u8string().c_str()), std::forward<Args>(args)...);
-	};
+	}
 
 	template<typename T>
 	IOStream IOFromFile(const T &path, const char* const mode) { return IOStream(PathFunction<SDL_IOFromFile>(path, mode)); }
