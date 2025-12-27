@@ -56,25 +56,6 @@ public:
 
 	const auto& GetROMBuffer() const { return rom_file_buffer; }
 
-	bool GetPALMode() const { return emulator_configuration.general.tv_standard == CLOWNMDEMU_TV_STANDARD_PAL; }
-
-	void SetPALMode(const bool enabled)
-	{
-		emulator_configuration.general.tv_standard = enabled ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC;
-		SetAudioPALMode(enabled);
-	}
-
-	bool GetDomestic() const { return emulator_configuration.general.region == CLOWNMDEMU_REGION_DOMESTIC; }
-	void SetDomestic(const bool enabled) { emulator_configuration.general.region = enabled ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS; }
-	bool GetLowPassFilter() const { return !emulator_configuration.general.low_pass_filter_disabled; }
-	void SetLowPassFilter(const bool enabled) { emulator_configuration.general.low_pass_filter_disabled = !enabled; }
-	bool GetCDAddOnEnabled() const { return emulator_configuration.general.cd_add_on_enabled; }
-	void SetCDAddOnEnabled(const bool enabled) { emulator_configuration.general.cd_add_on_enabled = enabled; }
-	VDP_Configuration& GetConfigurationVDP() { return emulator_configuration.vdp; }
-	FM_Configuration& GetConfigurationFM() { return emulator_configuration.fm; }
-	PSG_Configuration& GetConfigurationPSG() { return emulator_configuration.psg; }
-	PCM_Configuration& GetConfigurationPCM() { return emulator_configuration.pcm; }
-
 	std::string GetSoftwareName();
 };
 

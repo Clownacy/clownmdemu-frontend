@@ -371,25 +371,22 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto DoButton = [](cc_bool &disabled, const char* const label)
-		{
-			ImGui::TableNextColumn();
-			bool temp = !disabled;
-			if (ImGui::Checkbox(label, &temp))
-				disabled = !disabled;
-		};
+		#define DO_BUTTON(IDENTIFIER, LABEL) \
+		do { \
+			ImGui::TableNextColumn(); \
+			bool temp = Frontend::emulator->Get##IDENTIFIER(); \
+			if (ImGui::Checkbox(LABEL, &temp)) \
+				Frontend::emulator->Set##IDENTIFIER(temp); \
+		} while (false)
 
 		ImGui::SeparatorText("VDP");
 
 		if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
 		{
-			VDP_Configuration &vdp = Frontend::emulator->GetConfigurationVDP();
-
-			DoButton(vdp.sprites_disabled, "Sprite Plane");
-			DoButton(vdp.window_disabled, "Window Plane");
-			DoButton(vdp.planes_disabled[0], "Plane A");
-			DoButton(vdp.planes_disabled[1], "Plane B");
-
+			DO_BUTTON(SpritePlaneEnabled, "Sprite Plane");
+			DO_BUTTON(WindowPlaneEnabled, "Window Plane");
+			DO_BUTTON(ScrollPlaneAEnabled, "Plane A");
+			DO_BUTTON(ScrollPlaneBEnabled, "Plane B");
 			ImGui::EndTable();
 		}
 
@@ -397,18 +394,13 @@ private:
 
 		if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
 		{
-			FM_Configuration &fm = Frontend::emulator->GetConfigurationFM();
-
-			char buffer[] = "FM1";
-
-			for (std::size_t i = 0; i != std::size(fm.fm_channels_disabled); ++i)
-			{
-				buffer[2] = '1' + i;
-				DoButton(fm.fm_channels_disabled[i], buffer);
-			}
-
-			DoButton(fm.dac_channel_disabled, "DAC");
-
+			DO_BUTTON(FM1Enabled, "FM1");
+			DO_BUTTON(FM2Enabled, "FM2");
+			DO_BUTTON(FM3Enabled, "FM3");
+			DO_BUTTON(FM4Enabled, "FM4");
+			DO_BUTTON(FM5Enabled, "FM5");
+			DO_BUTTON(FM6Enabled, "FM6");
+			DO_BUTTON(DACEnabled, "DAC");
 			ImGui::EndTable();
 		}
 
@@ -416,18 +408,10 @@ private:
 
 		if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
 		{
-			PSG_Configuration &psg = Frontend::emulator->GetConfigurationPSG();
-
-			char buffer[] = "PSG1";
-
-			for (std::size_t i = 0; i != std::size(psg.tone_disabled); ++i)
-			{
-				buffer[3] = '1' + i;
-				DoButton(psg.tone_disabled[i], buffer);
-			}
-
-			DoButton(psg.noise_disabled, "PSG Noise");
-
+			DO_BUTTON(PSG1Enabled, "PSG1");
+			DO_BUTTON(PSG2Enabled, "PSG2");
+			DO_BUTTON(PSG3Enabled, "PSG3");
+			DO_BUTTON(PSGNoiseEnabled, "PSG Noise");
 			ImGui::EndTable();
 		}
 
@@ -435,18 +419,18 @@ private:
 
 		if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
 		{
-			PCM_Configuration &pcm = Frontend::emulator->GetConfigurationPCM();
-
-			char buffer[] = "PCM1";
-
-			for (std::size_t i = 0; i != std::size(pcm.channels_disabled); ++i)
-			{
-				buffer[3] = '1' + i;
-				DoButton(pcm.channels_disabled[i], buffer);
-			}
-
+			DO_BUTTON(PCM1Enabled, "PCM1");
+			DO_BUTTON(PCM2Enabled, "PCM2");
+			DO_BUTTON(PCM3Enabled, "PCM3");
+			DO_BUTTON(PCM4Enabled, "PCM4");
+			DO_BUTTON(PCM5Enabled, "PCM5");
+			DO_BUTTON(PCM6Enabled, "PCM6");
+			DO_BUTTON(PCM7Enabled, "PCM7");
+			DO_BUTTON(PCM8Enabled, "PCM8");
 			ImGui::EndTable();
 		}
+
+		#undef DO_BUTTON
 	}
 
 public:
@@ -472,26 +456,24 @@ private:
 			ImGui::TextUnformatted("TV Standard:");
 			DoToolTip("Some games only work with a certain TV standard.");
 			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("NTSC", !Frontend::emulator->GetPALMode()))
-				if (Frontend::emulator->GetPALMode())
-					Frontend::SetAudioPALMode(false);
+			if (ImGui::RadioButton("NTSC", Frontend::emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_NTSC))
+				Frontend::SetTVStandard(CLOWNMDEMU_TV_STANDARD_NTSC);
 			DoToolTip("59.94Hz");
 			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("PAL", Frontend::emulator->GetPALMode()))
-				if (!Frontend::emulator->GetPALMode())
-					Frontend::SetAudioPALMode(true);
+			if (ImGui::RadioButton("PAL", Frontend::emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL))
+				Frontend::SetTVStandard(CLOWNMDEMU_TV_STANDARD_PAL);
 			DoToolTip("50Hz");
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Region:");
 			DoToolTip("Some games only work with a certain region.");
 			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Japan", Frontend::emulator->GetDomestic()))
-				Frontend::emulator->SetDomestic(true);
+			if (ImGui::RadioButton("Japan", Frontend::emulator->GetRegion() == CLOWNMDEMU_REGION_DOMESTIC))
+				Frontend::emulator->SetRegion(CLOWNMDEMU_REGION_DOMESTIC);
 			DoToolTip("Games may show Japanese text.");
 			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Elsewhere", !Frontend::emulator->GetDomestic()))
-				Frontend::emulator->SetDomestic(false);
+			if (ImGui::RadioButton("Elsewhere", Frontend::emulator->GetRegion() == CLOWNMDEMU_REGION_OVERSEAS))
+				Frontend::emulator->SetRegion(CLOWNMDEMU_REGION_OVERSEAS);
 			DoToolTip("Games may show English text.");
 
 			ImGui::TableNextColumn();
@@ -529,9 +511,9 @@ private:
 				"for split-screen not appear squashed.");
 
 			ImGui::TableNextColumn();
-			bool widescreen_enabled = Frontend::emulator->GetConfigurationVDP().widescreen_enabled;
+			bool widescreen_enabled = Frontend::emulator->GetWidescreenEnabled();
 			if (ImGui::Checkbox("Widescreen Hack", &widescreen_enabled))
-				Frontend::emulator->GetConfigurationVDP().widescreen_enabled = widescreen_enabled;
+				Frontend::emulator->SetWidescreenEnabled(widescreen_enabled);
 			DoToolTip(
 				"Widens the display. Works well\n"
 				"with some games, badly with others."
@@ -545,9 +527,9 @@ private:
 		if (ImGui::BeginTable("Audio Options", 2))
 		{
 			ImGui::TableNextColumn();
-			bool low_pass_filter = Frontend::emulator->GetLowPassFilter();
+			bool low_pass_filter = Frontend::emulator->GetLowPassFilterEnabled();
 			if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
-				Frontend::emulator->SetLowPassFilter(low_pass_filter);
+				Frontend::emulator->SetLowPassFilterEnabled(low_pass_filter);
 			DoToolTip(
 				"Lowers the volume of high frequencies to make\n"
 				"the audio 'softer', like a real Mega Drive does.\n"
@@ -556,9 +538,9 @@ private:
 				"differences in volume balancing.");
 
 			ImGui::TableNextColumn();
-			bool ladder_effect = !Frontend::emulator->GetConfigurationFM().ladder_effect_disabled;
+			bool ladder_effect = Frontend::emulator->GetLadderEffectEnabled();
 			if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
-				Frontend::emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
+				Frontend::emulator->SetLadderEffectEnabled(ladder_effect);
 			DoToolTip(
 				"Enables the so-called 'ladder effect' that\n"
 				"is present in early Mega Drives.\n"
@@ -1136,10 +1118,10 @@ static bool SaveState(const std::filesystem::path &path)
 }
 #endif
 
-void Frontend::SetAudioPALMode(const bool enabled)
+void Frontend::SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 {
-	frame_rate_callback(enabled);
-	emulator->SetPALMode(enabled);
+	frame_rate_callback(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+	emulator->SetTVStandard(tv_standard);
 }
 
 
@@ -1428,14 +1410,14 @@ static void LoadConfiguration()
 
 	// Apply settings now that they have been decided.
 	window->SetVSync(vsync);
-	emulator->GetConfigurationVDP().widescreen_enabled = widescreen;
+	emulator->SetWidescreenEnabled(widescreen);
 	emulator->SetRewindEnabled(rewinding);
-	emulator->SetLowPassFilter(low_pass_filter);
+	emulator->SetLowPassFilterEnabled(low_pass_filter);
 	emulator->SetCDAddOnEnabled(cd_add_on);
-	emulator->GetConfigurationFM().ladder_effect_disabled = !ladder_effect;
+	emulator->SetLadderEffectEnabled(ladder_effect);
 
-	SetAudioPALMode(pal_mode);
-	emulator->SetDomestic(domestic);
+	SetTVStandard(pal_mode ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC);
+	emulator->SetRegion(domestic ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS);
 }
 
 static void SaveConfiguration()
@@ -1476,16 +1458,16 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "widescreen", emulator->GetConfigurationVDP().widescreen_enabled);
+		PRINT_BOOLEAN_OPTION(file, "widescreen", emulator->GetWidescreenEnabled());
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->GetRewindEnabled());
-		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilter());
+		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilterEnabled());
 		PRINT_BOOLEAN_OPTION(file, "cd-add-on", emulator->GetCDAddOnEnabled());
-		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", !emulator->GetConfigurationFM().ladder_effect_disabled);
-		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetPALMode());
-		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetDomestic());
+		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", emulator->GetLadderEffectEnabled());
+		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL);
+		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetRegion() == CLOWNMDEMU_REGION_DOMESTIC);
 		PRINT_NEWLINE(file);
 
 		// Save keyboard bindings.
@@ -1656,7 +1638,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		{
 			// Resize the window so that there's room for the menu bar.
 			// Also adjust for widescreen if the user has the option enabled.
-			const auto desired_width = emulator->GetConfigurationVDP().widescreen_enabled ? 400 * 2 : INITIAL_WINDOW_WIDTH;
+			const auto desired_width = emulator->GetWidescreenEnabled() ? 400 * 2 : INITIAL_WINDOW_WIDTH;
 
 			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
@@ -2574,7 +2556,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			destination_width = emulator->GetConfigurationVDP().widescreen_enabled ? 400 : 320; // TODO: STOP HARDCODING THIS!!!
+			destination_width = emulator->GetWidescreenEnabled() ? 400 : 320; // TODO: STOP HARDCODING THIS!!!
 			destination_height = emulator->GetCurrentScreenHeight();
 
 			switch (destination_height)

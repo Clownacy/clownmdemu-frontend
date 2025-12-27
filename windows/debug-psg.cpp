@@ -32,7 +32,7 @@ void DebugPSG::Registers::DisplayInternal()
 	}
 
 	// Channels.
-	const cc_u32f psg_clock = Frontend::emulator->GetPALMode() ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
+	const cc_u32f psg_clock = Frontend::emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
 
 	// Tone channels.
 	ImGui::SeparatorText("Tone Channels");

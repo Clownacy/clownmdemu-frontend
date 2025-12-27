@@ -140,7 +140,7 @@ std::string EmulatorInstance::GetSoftwareName()
 
 		std::array<unsigned char, name_buffer_size> in_buffer;
 		// Choose the proper name based on the current region.
-		const auto header_offset = GetDomestic() ? 0x120 : 0x150;
+		const auto header_offset = GetRegion() == CLOWNMDEMU_REGION_DOMESTIC ? 0x120 : 0x150;
 
 		if (IsCartridgeInserted())
 		{

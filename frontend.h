@@ -77,7 +77,7 @@ namespace Frontend
 
 	std::filesystem::path GetConfigurationDirectoryPath();
 	std::filesystem::path GetSaveDataDirectoryPath();
-	void SetAudioPALMode(bool enabled);
+	void SetTVStandard(ClownMDEmu_TVStandard tv_standard);
 	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
 	void HandleEvent(const SDL_Event &event);
 	void Update();
