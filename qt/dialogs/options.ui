@@ -174,7 +174,7 @@
       <item row="0" column="0">
        <widget class="QCheckBox" name="rewinding">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows the emulated console to be played in reverse for up to 10 seconds.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This uses a lot of RAM and increases CPU usage, so disable this if there is lag.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows the emulated console to be played in reverse for up to 10 seconds.&lt;/p&gt;&lt;p&gt;This uses a lot of RAM and increases CPU usage, so disable this if there is lag.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Rewinding</string>
