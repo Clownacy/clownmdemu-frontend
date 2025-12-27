@@ -3,6 +3,7 @@
 
 #include <filesystem>
 
+#include <QFileDialog>
 #include <QMessageBox>
 
 namespace QtExtensions
@@ -31,6 +32,17 @@ namespace QtExtensions
 	inline std::filesystem::path toStdPath(const QString &string)
 	{
 		return reinterpret_cast<const char8_t*>(string.toStdString().c_str());
+	}
+
+	inline void getOpenFileContent(const QString &nameFilter, const std::function<void (const std::filesystem::path &file_path, SDL::IOStream &&file_stream, const QByteArray *file_contents)> &fileOpenCompleted, QWidget *parent = nullptr)
+	{
+		QFileDialog::getOpenFileContent(nameFilter,
+			[fileOpenCompleted](const QString &file_name, const QByteArray &file_contents)
+			{
+				fileOpenCompleted(QtExtensions::toStdPath(file_name), SDL::IOStream(SDL_IOFromConstMem(file_contents.data(), file_contents.size())), &file_contents);
+			},
+			parent
+		);
 	}
 }
 

@@ -228,10 +228,10 @@ MainWindow::MainWindow(QWidget* const parent)
 	connect(ui.actionLoad_Cartridge_File, &QAction::triggered, this,
 		[this]()
 		{
-			QFileDialog::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
-				[this](const QString &file_name, const QByteArray &file_contents)
+			QtExtensions::getOpenFileContent("Mega Drive Cartridge Software (*.bin *.md *.gen)",
+				[this](const std::filesystem::path &file_path, SDL::IOStream &&file_stream, [[maybe_unused]] const QByteArray *file_contents)
 				{
-					LoadCartridgeData(QtExtensions::toStdPath(file_name), SDL::IOStream(SDL_IOFromConstMem(file_contents, file_contents.size())));
+					LoadCartridgeData(file_path, std::move(file_stream));
 				},
 				this
 			);
@@ -243,10 +243,10 @@ MainWindow::MainWindow(QWidget* const parent)
 	connect(ui.actionLoad_CD_File, &QAction::triggered, this,
 		[this]()
 		{
-			QFileDialog::getOpenFileContent("Mega CD Disc Software (*.bin *.cue *.iso)",
-				[this](const QString &file_name, const QByteArray &file_contents)
+			QtExtensions::getOpenFileContent("Mega CD Disc Software (*.bin *.cue *.iso)",
+				[this](const std::filesystem::path &file_path, SDL::IOStream &&file_stream, const QByteArray *file_contents)
 				{
-					LoadCDData(QtExtensions::toStdPath(file_name), SDL::IOStream(SDL_IOFromConstMem(file_contents.data(), file_contents.size())), &file_contents);
+					LoadCDData(file_path, std::move(file_stream), file_contents);
 				},
 				this
 			);
