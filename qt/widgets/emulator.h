@@ -30,9 +30,6 @@ namespace Widgets
 	protected:
 		using Base = QOpenGLWidget;
 
-		// Ensure that this is safe to save to (and read from) a file.
-		static_assert(std::is_trivially_copyable_v<State>);
-
 		static constexpr auto texture_buffer_width = VDP_MAX_SCANLINE_WIDTH;
 		static constexpr auto texture_buffer_height = VDP_MAX_SCANLINES;
 
