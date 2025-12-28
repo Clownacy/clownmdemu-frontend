@@ -46,17 +46,18 @@ void MainWindow::CreateEmulator()
 	connect(ui.actionQuick_Save, &QAction::triggered, this,
 		[this]()
 		{
-			quick_save_state = emulator->SaveState();
+			quick_save_state.emplace(*emulator);
 			ui.actionQuick_Load->setEnabled(true);
 		}
 	);
-	connect(ui.actionQuick_Load, &QAction::triggered, this, [this](){ emulator->LoadState(quick_save_state); });
+	connect(ui.actionQuick_Load, &QAction::triggered, this, [this](){ quick_save_state->Apply(*emulator); });
 
 	connect(ui.actionSave_to_File, &QAction::triggered, this,
 		[this]()
 		{
-			const EmulatorStuff::State &save_state = emulator->SaveState();
-			QFileDialog::saveFileContent(QByteArray(reinterpret_cast<const char*>(&save_state), sizeof(save_state)), "Save State.bin", this);
+			// Allocate on the heap to prevent stack exhaustion.
+			const auto &save_state = std::make_unique<EmulatorStuff::State>(*emulator);
+			QFileDialog::saveFileContent(QByteArray(reinterpret_cast<const char*>(&*save_state), sizeof(*save_state)), "Save State.bin", this);
 		}
 	);
 	connect(ui.actionLoad_from_File, &QAction::triggered, this,
@@ -71,7 +72,7 @@ void MainWindow::CreateEmulator()
 						return;
 					}
 
-					emulator->LoadState(*reinterpret_cast<const EmulatorStuff::State*>(std::data(file_contents)));
+					reinterpret_cast<const EmulatorStuff::State*>(std::data(file_contents))->Apply(*emulator);
 				},
 				this
 			);

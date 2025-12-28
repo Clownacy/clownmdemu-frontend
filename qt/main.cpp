@@ -1,5 +1,7 @@
 #include "main-window.h"
 
+#include <memory>
+
 #include <QApplication>
 #include <QSurfaceFormat>
 
@@ -29,8 +31,9 @@ int main(int argc, char *argv[])
 		QSurfaceFormat::setDefaultFormat(format);
 
 		QApplication a(argc, argv);
-		MainWindow w;
-		w.show();
+		// Allocate this on the heap to avoid stack exhaustion.
+		auto w = std::make_unique<MainWindow>();
+		w->show();
 		return a.exec();
 	}();
 

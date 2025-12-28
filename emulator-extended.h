@@ -27,11 +27,26 @@ protected:
 	};
 
 public:
-	struct State
+	class State
 	{
+	private:
 		Emulator::State emulator;
 		CDReader::State cd_reader;
 		Palette palette;
+
+	public:
+		State(const EmulatorExtended<Colour> &emulator)
+			: emulator(emulator.GetState())
+			, cd_reader(emulator.cd_reader.SaveState())
+			, palette(emulator.palette)
+		{}
+
+		void Apply(EmulatorExtended<Colour> &emulator) const
+		{
+			emulator.SetState(this->emulator);
+			emulator.cd_reader.LoadState(cd_reader);
+			emulator.palette = palette;
+		}
 	};
 
 	// Ensure that this is safe to save to (and read from) a file.
@@ -44,7 +59,7 @@ private:
 	CDReader cd_reader;
 	AudioOutput audio_output;
 	Palette palette;
-	StateRingBuffer<State> state_rewind_buffer;
+	StateRingBuffer<EmulatorExtended<Colour>> state_rewind_buffer;
 	std::fstream save_data_stream;
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;
@@ -263,22 +278,6 @@ public:
 		return cd_reader.IsOpen();
 	}
 
-	///////////
-	// State //
-	///////////
-
-	[[nodiscard]] State SaveState() const
-	{
-		return {Emulator::GetState(), cd_reader.SaveState(), palette};
-	}
-
-	void LoadState(const State &state)
-	{
-		Emulator::SetState(state.emulator);
-		cd_reader.LoadState(state.cd_reader);
-		palette = state.palette;
-	}
-
 	///////////////////
 	// Miscellaneous //
 	///////////////////
@@ -306,11 +305,11 @@ public:
 					if (state_rewind_buffer.Exhausted())
 						return i != 0;
 
-					LoadState(state_rewind_buffer.GetBackward());
+					state_rewind_buffer.Pop(*this);
 				}
 				else
 				{
-					state_rewind_buffer.GetForward() = SaveState();
+					state_rewind_buffer.Push(*this);
 				}
 			}
 

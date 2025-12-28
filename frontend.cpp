@@ -1768,14 +1768,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 					case INPUT_BINDING_QUICK_SAVE_STATE:
 						// Save save state
-						quick_save_state = emulator->SaveState();
+						quick_save_state.emplace(*emulator);
 						break;
 
 					case INPUT_BINDING_QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_state)
 						{
-							emulator->LoadState(*quick_save_state);
+							quick_save_state->Apply(*emulator);
 							emulator_paused = false;
 						}
 
@@ -2353,12 +2353,12 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Quick Save", nullptr, false, emulator_on))
 				{
-					quick_save_state = emulator->SaveState();
+					quick_save_state.emplace(*emulator);
 				}
 
 				if (ImGui::MenuItem("Quick Load", nullptr, false, emulator_on && quick_save_state))
 				{
-					emulator->LoadState(*quick_save_state);
+					quick_save_state->Apply(*emulator);
 
 					emulator_paused = false;
 				}

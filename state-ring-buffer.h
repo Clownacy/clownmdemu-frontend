@@ -1,14 +1,15 @@
 #ifndef STATE_RING_BUFFER_H
 #define STATE_RING_BUFFER_H
 
+#include <array>
 #include <cassert>
 #include <vector>
 
-template<typename State>
+template<typename Emulator>
 class StateRingBuffer
 {
 protected:
-	std::vector<State> state_buffer;
+	std::vector<std::array<std::byte, sizeof(typename Emulator::State)>> state_buffer;
 	std::size_t state_buffer_index = 0;
 	std::size_t state_buffer_remaining = 0;
 
@@ -48,7 +49,7 @@ public:
 		return state_buffer_remaining < 2;
 	}
 
-	[[nodiscard]] State& GetForward()
+	void Push(Emulator &emulator)
 	{
 		assert(Exists());
 
@@ -56,17 +57,19 @@ public:
 
 		const auto old_index = state_buffer_index;
 		state_buffer_index = NextIndex(state_buffer_index);
-		return state_buffer[old_index];
+		new(&state_buffer[old_index]) Emulator::State(emulator);
 	}
 
-	[[nodiscard]] const State& GetBackward()
+	void Pop(Emulator &emulator)
 	{
 		assert(Exists());
 		assert(!Exhausted());
 		--state_buffer_remaining;
 
 		state_buffer_index = PreviousIndex(state_buffer_index);
-		return state_buffer[PreviousIndex(state_buffer_index)];
+		auto &state = *reinterpret_cast<Emulator::State*>(&state_buffer[PreviousIndex(state_buffer_index)]);
+		state.Apply(emulator);
+		state.~State();
 	}
 
 	[[nodiscard]] bool Exists() const

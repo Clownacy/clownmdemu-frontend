@@ -37,7 +37,7 @@ private:
 	SDL::IOStream cd_stream;
 	std::filesystem::path cd_file_path;
 	std::optional<EmulatorStuff> emulator;
-	EmulatorStuff::State quick_save_state;
+	std::optional<EmulatorStuff::State> quick_save_state;
 	AllocatedDialog<Dialogs::Debug::Toggles> debug_toggles;
 	AllocatedDialog<Dialogs::Options> options_menu;
 	AllocatedDialog<Dialogs::About> about_menu;

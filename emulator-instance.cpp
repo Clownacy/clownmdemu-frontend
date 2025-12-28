@@ -103,7 +103,7 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 
 	if (ValidateSaveStateFile(file_buffer))
 	{
-		LoadState(*reinterpret_cast<const State*>(&file_buffer[save_state_magic.size()]));
+		reinterpret_cast<const State*>(&file_buffer[save_state_magic.size()])->Apply(*this);
 
 		success = true;
 	}
@@ -120,9 +120,10 @@ bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
 	bool success = false;
 
-	const auto &save_state = SaveState();
+	// Allocate on the heap to prevent stack exhaustion.
+	const auto &save_state = std::make_unique<State>(*this);
 
-	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &save_state, sizeof(save_state)) == sizeof(save_state))
+	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &*save_state, sizeof(*save_state)) == sizeof(*save_state))
 		success = true;
 
 	return success;
