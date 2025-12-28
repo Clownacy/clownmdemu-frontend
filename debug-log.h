@@ -6,6 +6,7 @@
 #include <format>
 #include <functional>
 #include <string>
+#include <string_view>
 
 #include <SDL3/SDL.h>
 
@@ -34,16 +35,18 @@ public:
 	void Log(const char *format, std::va_list args);
 
 	template <typename... Ts>
-	void Log(std::format_string<Ts...> format, Ts &&...args)
+	void Log(const std::string_view &format, Ts &&...args)
 	{
+		const auto &string = std::vformat(format, std::make_format_args(args...));
+
 		const auto GetSize = [&]()
 		{
-			return std::formatted_size(format, std::forward<Ts>(args)...);
+			return std::size(string);
 		};
 
 		const auto WriteBuffer = [&](char* const message_buffer, const std::size_t message_buffer_size)
 		{
-			std::format_to_n(message_buffer, message_buffer_size, format, std::forward<Ts>(args)...);
+			string.copy(message_buffer, message_buffer_size);
 		};
 
 		Log(GetSize, WriteBuffer);
