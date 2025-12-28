@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <filesystem>
 
-#include "sdl-wrapper-inner.h"
+#include <SDL3/SDL.h>
 
 #include "common/cd-reader.h"
 
@@ -42,6 +42,11 @@ public:
 	CDReader()
 	{
 		CDReader_Initialise(&state);
+	}
+	CDReader(const std::filesystem::path &path, SDL_IOStream* const stream = nullptr)
+		: CDReader()
+	{
+		Open(path, stream);
 	}
 	~CDReader()
 	{
@@ -105,11 +110,7 @@ public:
 	}
 	static bool IsMegaCDGame(const std::filesystem::path &path)
 	{
-		CDReader cd_reader;
-		cd_reader.Open(path);
-		const bool is_mega_cd_game = cd_reader.IsMegaCDGame();
-		cd_reader.Close();
-		return is_mega_cd_game;
+		return CDReader(path).IsMegaCDGame();
 	}
 };
 
