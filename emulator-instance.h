@@ -14,7 +14,7 @@
 #include "emulator-extended.h"
 #include "sdl-wrapper.h"
 
-class EmulatorInstance : public EmulatorExtended<Colour>
+class EmulatorInstance final : public EmulatorExtended<Colour>
 {
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
