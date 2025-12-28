@@ -118,7 +118,7 @@ void Disassembler::PrintCallbackZ80(void* const user_data, const char* const for
 {
 	auto &disassembler = *static_cast<Disassembler*>(user_data);
 
-	va_list args;
+	std::va_list args;
 	char *string;
 
 	va_start(args, format);

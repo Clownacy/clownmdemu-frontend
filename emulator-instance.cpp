@@ -39,7 +39,7 @@ EmulatorInstance::EmulatorInstance(
 	ClownCD_SetErrorCallback([]([[maybe_unused]] void* const user_data, const char* const message) { Frontend::debug_log.Log("ClownCD: {}", message); }, nullptr);
 
 	// This should be called before any other clownmdemu functions are called!
-	SetLogCallback([](const char* const format, va_list args) { Frontend::debug_log.Log(format, args); });
+	SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
 }
 
 void EmulatorInstance::Update()
