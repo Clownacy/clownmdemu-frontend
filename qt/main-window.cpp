@@ -292,7 +292,7 @@ void MainWindow::dropEvent(QDropEvent* const event)
 
 	const auto &file_path = QtExtensions::toStdPath(url.toLocalFile());
 
-	if (CDReader::IsMegaCDGame(file_path))
+	if (CDReader::IsDefinitelyACD(file_path))
 	{
 		if (!LoadCDData(file_path))
 			return;

@@ -108,9 +108,17 @@ public:
 	{
 		return CDReader_IsMegaCDGame(&state);
 	}
+	bool IsDefinitelyACD()
+	{
+		return CDReader_IsDefinitelyACD(&state);
+	}
 	static bool IsMegaCDGame(const std::filesystem::path &path)
 	{
 		return CDReader(path).IsMegaCDGame();
+	}
+	static bool IsDefinitelyACD(const std::filesystem::path &path)
+	{
+		return CDReader(path).IsDefinitelyACD();
 	}
 };
 

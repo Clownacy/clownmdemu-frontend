@@ -1645,7 +1645,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		if (argc > 1)
 		{
 			const auto path = reinterpret_cast<const char8_t*>(argv[1]);
-			LoadSoftwareFile(CDReader::IsMegaCDGame(path), path);
+			LoadSoftwareFile(CDReader::IsDefinitelyACD(path), path);
 		}
 #endif
 		// We are now ready to show the window
@@ -2166,7 +2166,7 @@ void Frontend::Update()
 	// Handle drag-and-drop event.
 	if (!file_utilities.IsDialogOpen() && !drag_and_drop_filename.empty())
 	{
-		if (CDReader::IsMegaCDGame(drag_and_drop_filename))
+		if (CDReader::IsDefinitelyACD(drag_and_drop_filename))
 		{
 			LoadCDFile(drag_and_drop_filename, SDL::IOFromFile(drag_and_drop_filename, "rb"));
 			emulator_paused = false;
