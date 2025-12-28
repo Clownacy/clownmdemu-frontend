@@ -280,27 +280,23 @@ void MainWindow::dropEvent(QDropEvent* const event)
 	if (!mime_data->hasUrls())
 		return;
 
-	const auto &urls = mime_data->urls();
-
-	if (urls.count() != 1)
-		return;
-
-	const auto &url = urls[0];
-
-	if (!url.isLocalFile())
-		return;
-
-	const auto &file_path = QtExtensions::toStdPath(url.toLocalFile());
-
-	if (CDReader::IsDefinitelyACD(file_path))
+	for (const auto &url : mime_data->urls())
 	{
-		if (!LoadCDData(file_path))
-			return;
-	}
-	else
-	{
-		if (!LoadCartridgeData(file_path))
-			return;
+		if (!url.isLocalFile())
+			continue;
+
+		const auto &file_path = QtExtensions::toStdPath(url.toLocalFile());
+
+		if (CDReader::IsDefinitelyACD(file_path))
+		{
+			if (!LoadCDData(file_path))
+				continue;
+		}
+		else
+		{
+			if (!LoadCartridgeData(file_path))
+				continue;
+		}
 	}
 
 	event->acceptProposedAction();
