@@ -194,8 +194,12 @@ Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cart
 	setFocusPolicy(Qt::StrongFocus);
 
 	// TODO: Merge this with 'SetParameters'?
-	InsertCartridge(cartridge_path, std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
-	InsertCD(cd_stream, cd_path);
+	if (!cartridge_rom_buffer.isEmpty())
+		InsertCartridge(cartridge_path, std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
+
+	if (cd_stream != nullptr)
+		InsertCD(cd_stream, cd_path);
+
 	Reset();
 }
 
