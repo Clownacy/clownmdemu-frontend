@@ -11,7 +11,6 @@
 #include "debug-log.h"
 #include "emulator.h"
 #include "sdl-wrapper-inner.h"
-#include "state-ring-buffer.h"
 
 template<typename Colour>
 class EmulatorExtended : public Emulator::Configuration, public Emulator
@@ -56,10 +55,82 @@ public:
 	bool rewinding = false, fastforwarding = false;
 
 private:
+	class StateRingBuffer
+	{
+	protected:
+		std::vector<std::array<std::byte, sizeof(State)>> state_buffer;
+		std::size_t state_buffer_index = 0;
+		std::size_t state_buffer_remaining = 0;
+
+		std::size_t NextIndex(std::size_t index) const
+		{
+			++index;
+
+			if (index == std::size(state_buffer))
+				index = 0;
+
+			return index;
+		}
+
+		std::size_t PreviousIndex(std::size_t index) const
+		{
+			if (index == 0)
+				index = std::size(state_buffer);
+
+			--index;
+
+			return index;
+		}
+
+	public:
+		StateRingBuffer(const bool enabled)
+			: state_buffer(enabled ? 10 * 60 : 0) // 10 seconds
+		{}
+
+		void Clear()
+		{
+			state_buffer_index = state_buffer_remaining = 0;
+		}
+
+		[[nodiscard]] bool Exhausted() const
+		{
+			// We need at least two frames, because rewinding pops one frame and then samples the frame below the head.
+			return state_buffer_remaining < 2;
+		}
+
+		void Push(EmulatorExtended &emulator)
+		{
+			assert(Exists());
+
+			state_buffer_remaining = std::min(state_buffer_remaining + 1, std::size(state_buffer) - 2);
+
+			const auto old_index = state_buffer_index;
+			state_buffer_index = NextIndex(state_buffer_index);
+			new(&state_buffer[old_index]) State(emulator);
+		}
+
+		void Pop(EmulatorExtended &emulator)
+		{
+			assert(Exists());
+			assert(!Exhausted());
+			--state_buffer_remaining;
+
+			state_buffer_index = PreviousIndex(state_buffer_index);
+			auto &state = *reinterpret_cast<State*>(&state_buffer[PreviousIndex(state_buffer_index)]);
+			state.Apply(emulator);
+			state.~State();
+		}
+
+		[[nodiscard]] bool Exists() const
+		{
+			return !state_buffer.empty();
+		}
+	};
+
 	CDReader cd_reader;
 	AudioOutput audio_output;
 	Palette palette;
-	StateRingBuffer<EmulatorExtended<Colour>> state_rewind_buffer;
+	StateRingBuffer state_rewind_buffer;
 	std::fstream save_data_stream;
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;

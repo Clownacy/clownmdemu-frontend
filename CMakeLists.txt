@@ -31,7 +31,6 @@ add_executable(clownmdemu WIN32
 	"raii-wrapper.h"
 	"sdl-wrapper.h"
 	"sdl-wrapper-inner.h"
-	"state-ring-buffer.h"
 	"text-encoding.cpp"
 	"text-encoding.h"
 	"libraries/imgui/imconfig.h"
