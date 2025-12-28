@@ -23,8 +23,6 @@ private:
 	SDL::Texture &texture;
 	const InputCallback input_callback;
 
-	Emulator::Configuration emulator_configuration;
-
 	std::vector<cc_u16l> rom_file_buffer;
 	SDL::IOStream cd_stream;
 

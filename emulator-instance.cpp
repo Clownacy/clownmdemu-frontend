@@ -32,7 +32,7 @@ EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback
 )
-	: EmulatorExtended(emulator_configuration, false, Frontend::GetSaveDataDirectoryPath())
+	: EmulatorExtended({}, false, Frontend::GetSaveDataDirectoryPath())
 	, texture(texture)
 	, input_callback(input_callback)
 {
