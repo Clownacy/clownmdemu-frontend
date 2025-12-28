@@ -51,7 +51,7 @@ public:
 	CDReader(CDReader &&other) = delete;
 	CDReader& operator=(const CDReader &other) = delete;
 	CDReader& operator=(CDReader &&other) = delete;
-	void Open(SDL_IOStream* const stream, const std::filesystem::path &path)
+	void Open(const std::filesystem::path &path, SDL_IOStream* const stream = nullptr)
 	{
 		CDReader_Open(&state, stream, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
 	}
@@ -106,7 +106,7 @@ public:
 	static bool IsMegaCDGame(const std::filesystem::path &path)
 	{
 		CDReader cd_reader;
-		cd_reader.Open(nullptr, path);
+		cd_reader.Open(path);
 		const bool is_mega_cd_game = cd_reader.IsMegaCDGame();
 		cd_reader.Close();
 		return is_mega_cd_game;

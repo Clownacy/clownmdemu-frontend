@@ -333,7 +333,7 @@ public:
 	{
 		state_rewind_buffer.Clear();
 
-		cd_reader.Open(stream, path);
+		cd_reader.Open(path, stream);
 		return cd_reader.IsOpen();
 	}
 
