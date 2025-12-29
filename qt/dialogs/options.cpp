@@ -19,7 +19,7 @@ Dialogs::Options::Options(::Options &options, QWidget* const parent)
 	// Video
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.integerScreenScaling, options, IntegerScreenScalingEnabled);
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.tallInterlaceMode2, options, TallInterlaceMode2Enabled);
-	DIALOGS_COMMON_BIND_CHECK_BOX(ui.widescreenHack, options, WidescreenEnabled);
+	DIALOGS_COMMON_BIND_SLIDER(ui.widescreenSlider, options, WidescreenTilePairs);
 
 	// Audio
 	DIALOGS_COMMON_BIND_CHECK_BOX(ui.lowPassFilter, options, LowPassFilterEnabled);

@@ -57,7 +57,7 @@ public:
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(WindowPlaneEnabled, vdp.window_disabled)
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneAEnabled, vdp.planes_disabled[0])
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneBEnabled, vdp.planes_disabled[1])
-		EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(WidescreenEnabled, vdp.widescreen_enabled)
+		EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(WidescreenTilePairs, vdp.widescreen_tile_pairs)
 
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM1Enabled, fm.fm_channels_disabled[0])
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM2Enabled, fm.fm_channels_disabled[1])

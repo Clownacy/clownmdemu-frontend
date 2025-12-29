@@ -493,6 +493,19 @@ private:
 		if (ImGui::BeginTable("Video Options", 2))
 		{
 			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Widescreen Hack:");
+			DoToolTip(
+				"Widens the display. Works well\n"
+				"with some games, badly with others."
+			);
+
+			ImGui::TableNextColumn();
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			int current_widescreen_setting = Frontend::emulator->GetWidescreenTilePairs();
+			if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILE_PAIRS, "%d Extra Columns", ImGuiSliderFlags_AlwaysClamp))
+				Frontend::emulator->SetWidescreenTilePairs(current_widescreen_setting);
+
+			ImGui::TableNextColumn();
 			auto vsync = Frontend::window->GetVSync();
 			if (ImGui::Checkbox("V-Sync", &vsync))
 				Frontend::window->SetVSync(vsync);
@@ -509,15 +522,6 @@ private:
 			DoToolTip(
 				"Makes games that use Interlace Mode 2\n"
 				"for split-screen not appear squashed.");
-
-			ImGui::TableNextColumn();
-			bool widescreen_enabled = Frontend::emulator->GetWidescreenEnabled();
-			if (ImGui::Checkbox("Widescreen Hack", &widescreen_enabled))
-				Frontend::emulator->SetWidescreenEnabled(widescreen_enabled);
-			DoToolTip(
-				"Widens the display. Works well\n"
-				"with some games, badly with others."
-			);
 
 			ImGui::EndTable();
 		}
@@ -1192,7 +1196,7 @@ static void LoadConfiguration()
 	bool vsync = false;
 	bool integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
-	bool widescreen = false;
+	unsigned int widescreen_tile_pairs = 0;
 #ifdef __EMSCRIPTEN__
 	native_windows = false;
 #else
@@ -1261,7 +1265,19 @@ static void LoadConfiguration()
 	{
 		static const auto Callback = [&](const std::string_view &section, const std::string_view &name, const std::string_view &value)
 		{
+			static constexpr auto StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
+			{
+				unsigned int integer;
+				const auto result = std::from_chars(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1, integer, 10);
+
+				if (result.ec != std::errc{} || result.ptr != reinterpret_cast<const char*>(&string.back()) + 1)
+					return std::nullopt;
+
+				return integer;
+			};
+
 			const bool value_boolean = value == "on" || value == "true";
+			const auto &value_integer = StringToInteger(value);
 
 			if (section == "Miscellaneous")
 			{
@@ -1271,8 +1287,8 @@ static void LoadConfiguration()
 					integer_screen_scaling = value_boolean;
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
-				else if (name == "widescreen")
-					widescreen = value_boolean;
+				else if (name == "widescreen-tile-pairs")
+					widescreen_tile_pairs = value_integer ? *value_integer : 0;
 			#ifndef __EMSCRIPTEN__
 				else if (name == "native-windows")
 					native_windows = value_boolean;
@@ -1292,17 +1308,6 @@ static void LoadConfiguration()
 			}
 			else if (section == "Keyboard Bindings")
 			{
-				static constexpr auto StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
-				{
-					unsigned int integer;
-					const auto result = std::from_chars(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1, integer, 10);
-
-					if (result.ec != std::errc{} || result.ptr != reinterpret_cast<const char*>(&string.back()) + 1)
-						return std::nullopt;
-
-					return integer;
-				};
-
 				const auto scancode_integer = StringToInteger(name);
 
 				if (scancode_integer.has_value() && *scancode_integer < SDL_SCANCODE_COUNT)
@@ -1410,7 +1415,7 @@ static void LoadConfiguration()
 
 	// Apply settings now that they have been decided.
 	window->SetVSync(vsync);
-	emulator->SetWidescreenEnabled(widescreen);
+	emulator->SetWidescreenTilePairs(widescreen_tile_pairs);
 	emulator->SetRewindEnabled(rewinding);
 	emulator->SetLowPassFilterEnabled(low_pass_filter);
 	emulator->SetCDAddOnEnabled(cd_add_on);
@@ -1448,9 +1453,13 @@ static void SaveConfiguration()
 			else
 				PRINT_LINE(file, "off");
 		};
+	#define PRINT_INTEGER_VALUE(FILE, VARIABLE) SDL_IOprintf(FILE, "%d\n", VARIABLE)
 	#define PRINT_BOOLEAN_OPTION(FILE, NAME, VARIABLE) \
 		PRINT_KEY(FILE, NAME); \
 		PRINT_BOOLEAN_VALUE(FILE, VARIABLE)
+	#define PRINT_INTEGER_OPTION(FILE, NAME, VARIABLE) \
+		PRINT_KEY(FILE, NAME); \
+		PRINT_INTEGER_VALUE(FILE, VARIABLE)
 
 		// Save settings.
 		PRINT_HEADER(file, "Miscellaneous");
@@ -1458,7 +1467,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_BOOLEAN_OPTION(file, "widescreen", emulator->GetWidescreenEnabled());
+		PRINT_INTEGER_OPTION(file, "widescreen-tile-pairs", emulator->GetWidescreenTilePairs());
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
@@ -1636,7 +1645,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		{
 			// Resize the window so that there's room for the menu bar.
 			// Also adjust for widescreen if the user has the option enabled.
-			const auto desired_width = emulator->GetWidescreenEnabled() ? 400 * 2 : INITIAL_WINDOW_WIDTH;
+			const auto desired_width = (320 + emulator->GetWidescreenTilePairs() * VDP_TILE_PAIR_WIDTH * 2) * 2;
 
 			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
@@ -2554,7 +2563,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			destination_width = emulator->GetWidescreenEnabled() ? 400 : 320; // TODO: STOP HARDCODING THIS!!!
+			destination_width = 320 + emulator->GetWidescreenTilePairs() * VDP_TILE_PAIR_WIDTH * 2; // TODO: STOP HARDCODING THIS!!!
 			destination_height = emulator->GetCurrentScreenHeight();
 
 			switch (destination_height)
