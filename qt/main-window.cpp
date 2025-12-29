@@ -224,6 +224,9 @@ MainWindow::MainWindow(QWidget* const parent)
 {
 	ui.setupUi(this);
 
+	// Enable keyboard input.
+	setFocusPolicy(Qt::StrongFocus);
+
 	setAcceptDrops(true);
 
 	connect(ui.actionLoad_Cartridge_File, &QAction::triggered, this,
@@ -259,21 +262,7 @@ MainWindow::MainWindow(QWidget* const parent)
 	connect(ui.actionToggles, &QAction::triggered, this, [&](){ debug_toggles.Open(this, options); });
 
 	// TODO: Full-screen the OpenGL widget only!
-	connect(ui.actionFullscreen, &QAction::triggered, this,
-		[this](const bool enabled)
-		{
-			if (enabled)
-			{
-				showFullScreen();
-				menuBar()->hide();
-			}
-			else
-			{
-				showNormal();
-				menuBar()->show();
-			}
-		}
-	);
+	connect(ui.actionFullscreen, &QAction::triggered, this, &MainWindow::SetFullscreen);
 	connect(ui.actionOptions, &QAction::triggered, this, [&](){ options_menu.Open(this, options); });
 	connect(ui.actionAbout, &QAction::triggered, this, [&](){ about_menu.Open(this); });
 	connect(ui.actionExit, &QAction::triggered, this, &MainWindow::close);
@@ -314,4 +303,35 @@ void MainWindow::dropEvent(QDropEvent* const event)
 	}
 
 	event->acceptProposedAction();
+}
+
+void MainWindow::keyPressEvent(QKeyEvent* const event)
+{
+	if (!event->isAutoRepeat())
+	{
+		// Exit fullscreen by pressing the escape key.
+		if (event->key() == Qt::Key_Escape && isFullScreen())
+		{
+			SetFullscreen(false);
+			return;
+		}
+	}
+
+	QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::SetFullscreen(const bool enabled)
+{
+	if (enabled)
+	{
+		showFullScreen();
+		menuBar()->hide();
+	}
+	else
+	{
+		showNormal();
+		menuBar()->show();
+	}
+
+	ui.actionFullscreen->setChecked(enabled);
 }
