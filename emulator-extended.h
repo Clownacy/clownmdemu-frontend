@@ -29,20 +29,20 @@ public:
 	class State
 	{
 	private:
-		Emulator::State emulator;
+		Emulator::StateBackup emulator;
 		CDReader::State cd_reader;
 		Palette palette;
 
 	public:
 		State(const EmulatorExtended<Colour> &emulator)
-			: emulator(emulator.GetState())
+			: emulator(emulator)
 			, cd_reader(emulator.cd_reader.SaveState())
 			, palette(emulator.palette)
 		{}
 
 		void Apply(EmulatorExtended<Colour> &emulator) const
 		{
-			emulator.SetState(this->emulator);
+			this->emulator.Apply(emulator);
 			emulator.cd_reader.LoadState(cd_reader);
 			emulator.palette = palette;
 		}

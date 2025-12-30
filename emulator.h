@@ -83,6 +83,20 @@ public:
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM8Enabled, pcm.channels_disabled[7])
 	};
 
+	class StateBackup : private ClownMDEmu_StateBackup
+	{
+	public:
+		StateBackup(const Emulator &emulator)
+		{
+			ClownMDEmu_SaveState(&emulator, this);
+		}
+
+		void Apply(Emulator &emulator) const
+		{
+			ClownMDEmu_LoadState(&emulator, this);
+		}
+	};
+
 	using State = ClownMDEmu_State;
 
 	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
@@ -268,11 +282,6 @@ public:
 	[[nodiscard]] const auto& GetPCMState() const
 	{
 		return mega_cd.pcm.state;
-	}
-
-	void SetState(const State &state)
-	{
-		this->state = state;
 	}
 
 	[[nodiscard]] auto& GetExternalRAM()
