@@ -35,7 +35,19 @@ private:
 	static constexpr ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
 
 public:
-	using State = CDReader_StateBackup;
+	class StateBackup : private CDReader_StateBackup
+	{
+	public:
+		StateBackup(const CDReader &cd_reader)
+		{
+			CDReader_GetStateBackup(&cd_reader.state, this);
+		}
+
+		void Apply(CDReader &cd_reader) const
+		{
+			CDReader_SetStateBackup(&cd_reader.state, this);
+		}
+	};
 
 	static constexpr cc_u16f SECTOR_SIZE = CDREADER_SECTOR_SIZE;
 
@@ -87,17 +99,6 @@ public:
 	cc_u32f ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
 	{
 		return CDReader_ReadAudio(&state, sample_buffer, total_frames);
-	}
-
-	State SaveState() const
-	{
-		CDReader_StateBackup backup;
-		CDReader_GetStateBackup(&state, &backup);
-		return backup;
-	}
-	bool LoadState(const State &state)
-	{
-		return CDReader_SetStateBackup(&this->state, &state);
 	}
 
 	bool ReadMegaCDHeaderSector(unsigned char* const buffer)
