@@ -29,7 +29,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	../debug-log.cpp ../debug-log.h
 	../emulator.h
 	../emulator-extended.h
-	../raii-wrapper.h ../sdl-wrapper-inner.h
+	../raii-wrapper.h ../sdl-wrapper.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES

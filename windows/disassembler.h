@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "../common/core/clowncommon/clowncommon.h"
+
 #include "common/window-popup.h"
 
 class Disassembler : public WindowPopup<Disassembler>

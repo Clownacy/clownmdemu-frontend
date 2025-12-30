@@ -1,7 +1,7 @@
 #ifndef COLOUR_H
 #define COLOUR_H
 
-#include "sdl-wrapper.h"
+#include "sdl-wrapper-extra.h"
 
 class Colour
 {

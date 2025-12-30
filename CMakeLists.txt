@@ -29,7 +29,7 @@ add_executable(clownmdemu WIN32
 	"frontend.h"
 	"raii-wrapper.h"
 	"sdl-wrapper.h"
-	"sdl-wrapper-inner.h"
+	"sdl-wrapper-extra.h"
 	"text-encoding.cpp"
 	"text-encoding.h"
 	"libraries/imgui/imconfig.h"

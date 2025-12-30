@@ -10,7 +10,7 @@
 #include "cd-reader.h"
 #include "debug-log.h"
 #include "emulator.h"
-#include "sdl-wrapper-inner.h"
+#include "sdl-wrapper.h"
 
 template<typename Colour>
 class EmulatorExtended : public Emulator

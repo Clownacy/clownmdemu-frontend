@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-#include "sdl-wrapper-inner.h"
+#include "sdl-wrapper.h"
 
 #include "common/core/clowncommon/clowncommon.h"
 

@@ -17,7 +17,7 @@
 #include <QVector>
 
 #include "../../emulator-extended.h"
-#include "../../sdl-wrapper-inner.h"
+#include "../../sdl-wrapper.h"
 #include "../colour.h"
 #include "../options.h"
 

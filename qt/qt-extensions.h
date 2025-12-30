@@ -6,7 +6,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
-#include "../sdl-wrapper-inner.h"
+#include "../sdl-wrapper.h"
 
 #ifndef __EMSCRIPTEN__
 #define QTEXTENSION_FILE_PATH_SUPPORT

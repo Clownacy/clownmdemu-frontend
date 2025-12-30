@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <functional>
 
-#include "../sdl-wrapper.h"
+#include "../sdl-wrapper-extra.h"
 
 #include "../common/core/clowncommon/clowncommon.h"
 #include "../common/core/vdp.h"
