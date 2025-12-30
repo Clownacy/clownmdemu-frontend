@@ -92,7 +92,7 @@ void EmulatorInstance::UnloadCDFile()
 
 static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
 
-bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer)
+bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer) const
 {
 	return file_buffer.size() == save_state_magic.size() + sizeof(StateBackup) && std::equal(save_state_magic.cbegin(), save_state_magic.cend(), file_buffer.cbegin());
 }
@@ -111,7 +111,7 @@ bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_
 	return success;
 }
 
-std::size_t EmulatorInstance::GetSaveStateFileSize()
+std::size_t EmulatorInstance::GetSaveStateFileSize() const
 {
 	return save_state_magic.size() + sizeof(StateBackup);
 }

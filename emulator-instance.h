@@ -44,9 +44,9 @@ public:
 	bool LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();
 
-	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer);
+	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer) const;
 	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
-	std::size_t GetSaveStateFileSize();
+	std::size_t GetSaveStateFileSize() const;
 	bool WriteSaveStateFile(SDL::IOStream &file);
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
