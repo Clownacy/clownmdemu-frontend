@@ -2572,12 +2572,12 @@ void Frontend::Update()
 				default:
 					assert(false);
 					[[fallthrough]];
-				case 224:
-				case 240:
+				case VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT:
+				case VDP_V30_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT:
 					break;
 
-				case 448:
-				case 480:
+				case VDP_V28_SCANLINES_IN_TILES * VDP_INTERLACE_MODE_2_TILE_HEIGHT:
+				case VDP_V30_SCANLINES_IN_TILES * VDP_INTERLACE_MODE_2_TILE_HEIGHT:
 					destination_width <<= tall_double_resolution_mode ? 0 : 1;
 					break;
 			}
