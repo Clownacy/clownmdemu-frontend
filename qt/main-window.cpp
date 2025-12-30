@@ -56,7 +56,7 @@ void MainWindow::CreateEmulator()
 		[this]()
 		{
 			// Allocate on the heap to prevent stack exhaustion.
-			const auto &save_state = std::make_unique<EmulatorStuff::State>(*emulator);
+			const auto &save_state = std::make_unique<EmulatorStuff::StateBackup>(*emulator);
 			QFileDialog::saveFileContent(QByteArray(reinterpret_cast<const char*>(&*save_state), sizeof(*save_state)), "Save State.bin", this);
 		}
 	);
@@ -66,13 +66,13 @@ void MainWindow::CreateEmulator()
 			QFileDialog::getOpenFileContent("Save State (*.*)",
 				[this]([[maybe_unused]] const QString &file_name, const QByteArray &file_contents)
 				{
-					if (std::size(file_contents) != sizeof(EmulatorStuff::State))
+					if (std::size(file_contents) != sizeof(EmulatorStuff::StateBackup))
 					{
 						QtExtensions::MessageBox::critical(this, "Load State", "Unable to load save-state file.", "Size was incorrect.");
 						return;
 					}
 
-					reinterpret_cast<const EmulatorStuff::State*>(std::data(file_contents))->Apply(*emulator);
+					reinterpret_cast<const EmulatorStuff::StateBackup*>(std::data(file_contents))->Apply(*emulator);
 				},
 				this
 			);

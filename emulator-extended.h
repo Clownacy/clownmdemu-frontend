@@ -26,7 +26,7 @@ protected:
 	};
 
 public:
-	class State
+	class StateBackup
 	{
 	private:
 		Emulator::StateBackup emulator;
@@ -34,7 +34,7 @@ public:
 		Palette palette;
 
 	public:
-		State(const EmulatorExtended<Colour> &emulator)
+		StateBackup(const EmulatorExtended<Colour> &emulator)
 			: emulator(emulator)
 			, cd_reader(emulator.cd_reader)
 			, palette(emulator.palette)
@@ -49,7 +49,7 @@ public:
 	};
 
 	// Ensure that this is safe to save to (and read from) a file.
-	static_assert(std::is_trivially_copyable_v<State>);
+	static_assert(std::is_trivially_copyable_v<StateBackup>);
 
 	// TODO: Make this private and use getters and setters instead, for consistency?
 	bool rewinding = false, fastforwarding = false;
@@ -58,7 +58,7 @@ private:
 	class StateRingBuffer
 	{
 	protected:
-		std::vector<std::array<std::byte, sizeof(State)>> state_buffer;
+		std::vector<std::array<std::byte, sizeof(StateBackup)>> state_buffer;
 		std::size_t state_buffer_index = 0;
 		std::size_t state_buffer_remaining = 0;
 
@@ -106,7 +106,7 @@ private:
 
 			const auto old_index = state_buffer_index;
 			state_buffer_index = NextIndex(state_buffer_index);
-			new(&state_buffer[old_index]) State(emulator);
+			new(&state_buffer[old_index]) StateBackup(emulator);
 		}
 
 		void Pop(EmulatorExtended &emulator)
@@ -116,9 +116,9 @@ private:
 			--state_buffer_remaining;
 
 			state_buffer_index = PreviousIndex(state_buffer_index);
-			auto &state = *reinterpret_cast<State*>(&state_buffer[PreviousIndex(state_buffer_index)]);
+			auto &state = *reinterpret_cast<StateBackup*>(&state_buffer[PreviousIndex(state_buffer_index)]);
 			state.Apply(emulator);
-			state.~State();
+			state.~StateBackup();
 		}
 
 		[[nodiscard]] bool Exists() const
