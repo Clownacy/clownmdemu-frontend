@@ -52,8 +52,9 @@
 
 using namespace Frontend;
 
-static constexpr unsigned int INITIAL_WINDOW_WIDTH = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH * 2;
-static constexpr unsigned int INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILE_PAIRS * VDP_STANDARD_TILE_PAIR_HEIGHT * 2;
+static constexpr unsigned int INITIAL_WINDOW_SCALE = 2;
+static constexpr unsigned int INITIAL_WINDOW_WIDTH = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH * INITIAL_WINDOW_SCALE;
+static constexpr unsigned int INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILE_PAIRS * VDP_STANDARD_TILE_PAIR_HEIGHT * INITIAL_WINDOW_SCALE;
 
 static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
@@ -1645,7 +1646,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		{
 			// Resize the window so that there's room for the menu bar.
 			// Also adjust for widescreen if the user has the option enabled.
-			const auto desired_width = ((VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + emulator->GetWidescreenTilePairs() * 2) * VDP_TILE_PAIR_WIDTH) * 2;
+			const auto desired_width = ((VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + emulator->GetWidescreenTilePairs() * 2) * VDP_TILE_PAIR_WIDTH) * INITIAL_WINDOW_SCALE;
 
 			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
