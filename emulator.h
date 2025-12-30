@@ -26,13 +26,13 @@ private:
 	static Constant constant;
 
 public:
-	class Configuration : private ClownMDEmu_Configuration
+	class Configuration : private ClownMDEmu_InitialConfiguration
 	{
 		friend Emulator;
 
 	public:
 		Configuration()
-			: ClownMDEmu_Configuration({})
+			: ClownMDEmu_InitialConfiguration({})
 		{}
 
 #define EMULATOR_CONFIGURATION_AS_IS(VALUE) VALUE
@@ -83,14 +83,7 @@ public:
 		EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM8Enabled, pcm.channels_disabled[7])
 	};
 
-	class State : public ClownMDEmu_State
-	{
-	public:
-		State(const Configuration &configuration)
-		{
-			ClownMDEmu_State_Initialise(this, &configuration);
-		}
-	};
+	using State = ClownMDEmu_State;
 
 	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
 	using LogCallbackPlain = std::function<void(const std::string &message)>;
@@ -102,9 +95,10 @@ protected:
 		ClownMDEmu clownmdemu;
 
 	public:
-		Parameters(const ClownMDEmu_Configuration &configuration, ClownMDEmu_State &state, const ClownMDEmu_Callbacks &callbacks)
-			: clownmdemu(CLOWNMDEMU_PARAMETERS_INITIALISE(&configuration, &state, &callbacks))
-		{}
+		Parameters(const ClownMDEmu_InitialConfiguration &configuration, const ClownMDEmu_Callbacks &callbacks)
+		{
+			ClownMDEmu_Initialise(&clownmdemu, &configuration, &callbacks);
+		}
 
 		const ClownMDEmu& operator*() const
 		{
@@ -149,9 +143,6 @@ protected:
 		Callback_SaveFileSizeObtained
 	};
 
-private:
-	State state;
-
 protected:
 	Parameters parameters;
 	LogCallbackFormatted log_callback;
@@ -163,10 +154,10 @@ private:
 	static void Callback_ScanlineRendered(void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
 	static cc_bool Callback_InputRequested(void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
 
-	static void Callback_FMAudioToBeGenerated(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void Callback_PSGAudioToBeGenerated(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void Callback_PCMAudioToBeGenerated(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void Callback_CDDAAudioToBeGenerated(void *user_data, const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void Callback_FMAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void Callback_PSGAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void Callback_PCMAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void Callback_CDDAAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
 
 	static void Callback_CDSeeked(void *user_data, cc_u32f sector_index);
 	static void Callback_CDSectorRead(void *user_data, cc_u16l *buffer);
@@ -185,10 +176,10 @@ private:
 	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) = 0;
 	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) = 0;
 
-	virtual void FMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
-	virtual void PSGAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
-	virtual void PCMAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
-	virtual void CDDAAudioToBeGenerated(const ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(const ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
+	virtual void FMAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
+	virtual void PSGAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
+	virtual void PCMAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
+	virtual void CDDAAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) = 0;
 
 	virtual void CDSeeked(cc_u32f sector_index) = 0;
 	virtual void CDSectorRead(cc_u16l *buffer) = 0;
@@ -210,8 +201,7 @@ private:
 
 public:
 	Emulator(const Configuration &configuration)
-		: state(configuration)
-		, parameters(configuration, state, callbacks)
+		: parameters(configuration, callbacks)
 	{}
 
 	void InsertCartridge(const cc_u16l* const buffer, const cc_u32f buffer_length)
@@ -264,17 +254,17 @@ public:
 
 	[[nodiscard]] const auto& GetState() const
 	{
-		return state;
+		return parameters->state;
 	}
 
 	void SetState(const State &state)
 	{
-		this->state = state;
+		parameters->state = state;
 	}
 
 	[[nodiscard]] auto& GetExternalRAM()
 	{
-		return state.external_ram.buffer;
+		return parameters->state.external_ram.buffer;
 	}
 };
 
