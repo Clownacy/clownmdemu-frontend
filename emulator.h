@@ -11,7 +11,7 @@
 
 #include "common/core/clownmdemu.h"
 
-class Emulator
+class Emulator : protected ClownMDEmu
 {
 private:
 	class Constant
@@ -89,38 +89,6 @@ public:
 	using LogCallbackPlain = std::function<void(const std::string &message)>;
 
 protected:
-	class Parameters
-	{
-	protected:
-		ClownMDEmu clownmdemu;
-
-	public:
-		Parameters(const ClownMDEmu_InitialConfiguration &configuration, const ClownMDEmu_Callbacks &callbacks)
-		{
-			ClownMDEmu_Initialise(&clownmdemu, &configuration, &callbacks);
-		}
-
-		const ClownMDEmu& operator*() const
-		{
-			return clownmdemu;
-		}
-
-		ClownMDEmu& operator*()
-		{
-			return clownmdemu;
-		}
-
-		const ClownMDEmu* operator->() const
-		{
-			return &**this;
-		}
-
-		ClownMDEmu* operator->()
-		{
-			return &**this;
-		}
-	};
-
 	const ClownMDEmu_Callbacks callbacks = {
 		this,
 		Callback_ColourUpdated,
@@ -144,7 +112,6 @@ protected:
 	};
 
 protected:
-	Parameters parameters;
 	LogCallbackFormatted log_callback;
 
 private:
@@ -201,32 +168,33 @@ private:
 
 public:
 	Emulator(const Configuration &configuration)
-		: parameters(configuration, callbacks)
-	{}
+	{
+		ClownMDEmu_Initialise(this, &configuration, &callbacks);
+	}
 
 	void InsertCartridge(const cc_u16l* const buffer, const cc_u32f buffer_length)
 	{
-		ClownMDEmu_SetCartridge(&*parameters, buffer, buffer_length);
+		ClownMDEmu_SetCartridge(this, buffer, buffer_length);
 	}
 
 	void EjectCartridge()
 	{
-		ClownMDEmu_SetCartridge(&*parameters, nullptr, 0);
+		ClownMDEmu_SetCartridge(this, nullptr, 0);
 	}
 
 	[[nodiscard]] bool IsCartridgeInserted() const
 	{
-		return parameters->cartridge_buffer_length != 0;
+		return cartridge_buffer_length != 0;
 	}
 
 	void Reset(const cc_bool cd_inserted)
 	{
-		ClownMDEmu_Reset(&*parameters, IsCartridgeInserted(), cd_inserted);
+		ClownMDEmu_Reset(this, IsCartridgeInserted(), cd_inserted);
 	}
 
 	void Iterate()
 	{
-		ClownMDEmu_Iterate(&*parameters);
+		ClownMDEmu_Iterate(this);
 	}
 
 	void SetLogCallback(const LogCallbackFormatted &callback)
@@ -254,17 +222,17 @@ public:
 
 	[[nodiscard]] const auto& GetState() const
 	{
-		return parameters->state;
+		return state;
 	}
 
 	void SetState(const State &state)
 	{
-		parameters->state = state;
+		this->state = state;
 	}
 
 	[[nodiscard]] auto& GetExternalRAM()
 	{
-		return parameters->state.external_ram.buffer;
+		return state.external_ram.buffer;
 	}
 };
 
