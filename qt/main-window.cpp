@@ -229,6 +229,12 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	setAcceptDrops(true);
 
+	// Widen the window to account for the widescreen hack.
+	constexpr int initial_window_scale = 2;
+	const int initial_window_width = (VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + options.GetWidescreenTilePairs() * 2) * VDP_TILE_PAIR_WIDTH * initial_window_scale;
+	const int initial_window_height = menuBar()->heightForWidth(initial_window_width) + VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT * initial_window_scale;
+	resize(initial_window_width, initial_window_height);
+
 	connect(ui.actionLoad_Cartridge_File, &QAction::triggered, this,
 		[this]()
 		{
