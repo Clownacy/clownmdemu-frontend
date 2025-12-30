@@ -8,7 +8,7 @@
 
 #include "common/cd-reader.h"
 
-class CDReader
+class CDReader : private CDReader_State
 {
 public:
 	enum class PlaybackSetting
@@ -23,8 +23,6 @@ public:
 	using FrameIndex  = CDReader_FrameIndex;
 
 private:
-	CDReader_State state;
-
 	static void* FileOpenCallback(const char *filename, ClownCD_FileMode mode);
 	static int FileCloseCallback(void *stream);
 	static std::size_t FileReadCallback(void *buffer, std::size_t size, std::size_t count, void *stream);
@@ -40,12 +38,12 @@ public:
 	public:
 		StateBackup(const CDReader &cd_reader)
 		{
-			CDReader_GetStateBackup(&cd_reader.state, this);
+			CDReader_GetStateBackup(&cd_reader, this);
 		}
 
 		void Apply(CDReader &cd_reader) const
 		{
-			CDReader_SetStateBackup(&cd_reader.state, this);
+			CDReader_SetStateBackup(&cd_reader, this);
 		}
 	};
 
@@ -53,7 +51,7 @@ public:
 
 	CDReader()
 	{
-		CDReader_Initialise(&state);
+		CDReader_Initialise(this);
 	}
 	CDReader(const std::filesystem::path &path, SDL_IOStream* const stream = nullptr)
 		: CDReader()
@@ -62,7 +60,7 @@ public:
 	}
 	~CDReader()
 	{
-		CDReader_Deinitialise(&state);
+		CDReader_Deinitialise(this);
 	}
 	CDReader(const CDReader &other) = delete;
 	CDReader(CDReader &&other) = delete;
@@ -70,48 +68,48 @@ public:
 	CDReader& operator=(CDReader &&other) = delete;
 	void Open(const std::filesystem::path &path, SDL_IOStream* const stream = nullptr)
 	{
-		CDReader_Open(&state, stream, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
+		CDReader_Open(this, stream, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
 	}
 	void Close()
 	{
-		CDReader_Close(&state);
+		CDReader_Close(this);
 	}
 	bool IsOpen() const
 	{
-		return CDReader_IsOpen(&state);
+		return CDReader_IsOpen(this);
 	}
 	bool SeekToSector(const SectorIndex sector_index)
 	{
-		return CDReader_SeekToSector(&state, sector_index);
+		return CDReader_SeekToSector(this, sector_index);
 	}
 	bool SeekToFrame(const FrameIndex frame_index)
 	{
-		return CDReader_SeekToFrame(&state, frame_index);
+		return CDReader_SeekToFrame(this, frame_index);
 	}
 	void ReadSector(cc_u16l* const buffer)
 	{
-		CDReader_ReadSector(&state, buffer);
+		CDReader_ReadSector(this, buffer);
 	}
 	bool PlayAudio(const TrackIndex track_index, const PlaybackSetting setting)
 	{
-		return CDReader_PlayAudio(&state, track_index, static_cast<CDReader_PlaybackSetting>(setting));
+		return CDReader_PlayAudio(this, track_index, static_cast<CDReader_PlaybackSetting>(setting));
 	}
 	cc_u32f ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
 	{
-		return CDReader_ReadAudio(&state, sample_buffer, total_frames);
+		return CDReader_ReadAudio(this, sample_buffer, total_frames);
 	}
 
 	bool ReadMegaCDHeaderSector(unsigned char* const buffer)
 	{
-		return CDReader_ReadMegaCDHeaderSector(&state, buffer);
+		return CDReader_ReadMegaCDHeaderSector(this, buffer);
 	}
 	bool IsMegaCDGame()
 	{
-		return CDReader_IsMegaCDGame(&state);
+		return CDReader_IsMegaCDGame(this);
 	}
 	bool IsDefinitelyACD()
 	{
-		return CDReader_IsDefinitelyACD(&state);
+		return CDReader_IsDefinitelyACD(this);
 	}
 	static bool IsMegaCDGame(const std::filesystem::path &path)
 	{
