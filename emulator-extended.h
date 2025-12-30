@@ -13,7 +13,7 @@
 #include "sdl-wrapper-inner.h"
 
 template<typename Colour>
-class EmulatorExtended : public Emulator::Configuration, public Emulator
+class EmulatorExtended : public Emulator
 {
 protected:
 	struct Palette
@@ -288,8 +288,7 @@ private:
 
 public:
 	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
-		: Emulator::Configuration(configuration)
-		, Emulator(*static_cast<Emulator::Configuration*>(this))
+		: Emulator(configuration)
 		, audio_output(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
@@ -447,7 +446,7 @@ public:
 
 	void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 	{
-		Emulator::Configuration::SetTVStandard(tv_standard);
+		Emulator::SetTVStandard(tv_standard);
 		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 	}
 };

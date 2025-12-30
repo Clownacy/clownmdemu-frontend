@@ -234,6 +234,40 @@ public:
 	{
 		return state.external_ram.buffer;
 	}
+
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(TVStandard, configuration.tv_standard)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(Region, configuration.region)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LowPassFilterEnabled, configuration.low_pass_filter_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(CDAddOnEnabled, configuration.cd_add_on_enabled)
+
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(SpritePlaneEnabled, state.vdp.configuration.sprites_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(WindowPlaneEnabled, state.vdp.configuration.window_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneAEnabled, state.vdp.configuration.planes_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneBEnabled, state.vdp.configuration.planes_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(WidescreenTilePairs, state.vdp.configuration.widescreen_tile_pairs)
+
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM1Enabled, state.fm.configuration.fm_channels_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM2Enabled, state.fm.configuration.fm_channels_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM3Enabled, state.fm.configuration.fm_channels_disabled[2])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM4Enabled, state.fm.configuration.fm_channels_disabled[3])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM5Enabled, state.fm.configuration.fm_channels_disabled[4])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM6Enabled, state.fm.configuration.fm_channels_disabled[5])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(DACEnabled, state.fm.configuration.dac_channel_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LadderEffectEnabled, state.fm.configuration.ladder_effect_disabled)
+
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG1Enabled, state.psg.configuration.tone_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG2Enabled, state.psg.configuration.tone_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG3Enabled, state.psg.configuration.tone_disabled[2])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSGNoiseEnabled, state.psg.configuration.noise_disabled)
+
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM1Enabled, state.mega_cd.pcm.configuration.channels_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM2Enabled, state.mega_cd.pcm.configuration.channels_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM3Enabled, state.mega_cd.pcm.configuration.channels_disabled[2])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM4Enabled, state.mega_cd.pcm.configuration.channels_disabled[3])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM5Enabled, state.mega_cd.pcm.configuration.channels_disabled[4])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM6Enabled, state.mega_cd.pcm.configuration.channels_disabled[5])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM7Enabled, state.mega_cd.pcm.configuration.channels_disabled[6])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM8Enabled, state.mega_cd.pcm.configuration.channels_disabled[7])
 };
 
 #endif // EMULATOR_H
