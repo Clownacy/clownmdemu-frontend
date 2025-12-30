@@ -92,7 +92,7 @@ void Widgets::Emulator::paintGL()
 	shader_program->enableAttributeArray(attribute_name_vertex_position);
 	shader_program->enableAttributeArray(attribute_name_vertex_texture_coordinate);
 
-	const bool squashed = GetState().vdp.double_resolution_enabled && !options.GetTallInterlaceMode2Enabled();
+	const bool squashed = GetState().vdp.state.double_resolution_enabled && !options.GetTallInterlaceMode2Enabled();
 
 	const cc_u16f output_width = width() * devicePixelRatio();
 	const cc_u16f output_height = height() * devicePixelRatio();

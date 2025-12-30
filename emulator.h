@@ -86,9 +86,9 @@ public:
 	class State : public ClownMDEmu_State
 	{
 	public:
-		State()
+		State(const Configuration &configuration)
 		{
-			ClownMDEmu_State_Initialise(this);
+			ClownMDEmu_State_Initialise(this, &configuration);
 		}
 	};
 
@@ -210,7 +210,8 @@ private:
 
 public:
 	Emulator(const Configuration &configuration)
-		: parameters(configuration, state, callbacks)
+		: state(configuration)
+		, parameters(configuration, state, callbacks)
 	{}
 
 	void InsertCartridge(const cc_u16l* const buffer, const cc_u32f buffer_length)
