@@ -216,7 +216,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdc = Frontend::emulator->GetState().mega_cd.cdc;
+		const auto &cdc = Frontend::emulator->GetCDCState();
 
 		DoTable("Sector Buffer", [&]()
 			{
@@ -256,7 +256,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdda = Frontend::emulator->GetState().mega_cd.cdda;
+		const auto &cdda = Frontend::emulator->GetCDDAState();
 
 		DoTable("Volume", [&]()
 			{
@@ -786,7 +786,7 @@ static bool emulator_has_focus; // Used for deciding when to pass inputs to the 
 static bool emulator_paused;
 static bool emulator_frame_advance;
 
-static std::optional<EmulatorInstance::State> quick_save_state;
+static std::optional<EmulatorInstance::StateBackup> quick_save_state;
 
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
@@ -2622,6 +2622,7 @@ void Frontend::Update()
 	ImGui::End();
 
 	const auto &clownmdemu = emulator->GetState();
+	const auto &vdp = emulator->GetVDPState();
 
 	const auto DisplayWindow = []<typename T, typename... Ts>(std::optional<T> &window, Ts&&... arguments)
 	{
@@ -2634,31 +2635,31 @@ void Frontend::Update()
 	DisplayWindow(debugging_toggles_window);
 	DisplayWindow(disassembler_window);
 	DisplayWindow(debug_frontend_window);
-	DisplayWindow(m68k_status_window, clownmdemu.m68k.state);
-	DisplayWindow(mcd_m68k_status_window, clownmdemu.mega_cd.m68k.state);
+	DisplayWindow(m68k_status_window, emulator->GetM68kState());
+	DisplayWindow(mcd_m68k_status_window, emulator->GetSubM68kState());
 	DisplayWindow(z80_status_window);
 	DisplayWindow(m68k_ram_viewer_window, clownmdemu.m68k.ram);
 	DisplayWindow(external_ram_viewer_window, clownmdemu.external_ram.buffer);
 	DisplayWindow(z80_ram_viewer_window, clownmdemu.z80.ram);
 	DisplayWindow(prg_ram_viewer_window, clownmdemu.mega_cd.prg_ram.buffer);
 	DisplayWindow(word_ram_viewer_window, clownmdemu.mega_cd.word_ram.buffer);
-	DisplayWindow(wave_ram_viewer_window, clownmdemu.mega_cd.pcm.wave_ram);
+	DisplayWindow(wave_ram_viewer_window, emulator->GetPCMState().wave_ram);
 	DisplayWindow(vdp_registers_window);
 	DisplayWindow(sprite_list_window);
-	DisplayWindow(vram_viewer_window, clownmdemu.vdp.vram);
-	DisplayWindow(cram_viewer_window, clownmdemu.vdp.cram);
-	DisplayWindow(vsram_viewer_window, clownmdemu.vdp.vsram);
+	DisplayWindow(vram_viewer_window, vdp.vram);
+	DisplayWindow(cram_viewer_window, vdp.cram);
+	DisplayWindow(vsram_viewer_window, vdp.vsram);
 	DisplayWindow(sprite_plane_visualiser_window);
 	{
-		const auto window_plane_width = clownmdemu.vdp.h40_enabled ? 64 : 32;
+		const auto window_plane_width = vdp.h40_enabled ? 64 : 32;
 		const auto window_plane_height = 32;
-		DisplayWindow(window_plane_visualiser_window, clownmdemu.vdp.window_address, window_plane_width, window_plane_height);
+		DisplayWindow(window_plane_visualiser_window, vdp.window_address, window_plane_width, window_plane_height);
 	}
 	{
-		const auto scrolling_plane_width = 1 << clownmdemu.vdp.plane_width_shift;
-		const auto scrolling_plane_height = clownmdemu.vdp.plane_height_bitmask + 1;
-		DisplayWindow(plane_a_visualiser_window, clownmdemu.vdp.plane_a_address, scrolling_plane_width, scrolling_plane_height);
-		DisplayWindow(plane_b_visualiser_window, clownmdemu.vdp.plane_b_address, scrolling_plane_width, scrolling_plane_height);
+		const auto scrolling_plane_width = 1 << vdp.plane_width_shift;
+		const auto scrolling_plane_height = vdp.plane_height_bitmask + 1;
+		DisplayWindow(plane_a_visualiser_window, vdp.plane_a_address, scrolling_plane_width, scrolling_plane_height);
+		DisplayWindow(plane_b_visualiser_window, vdp.plane_b_address, scrolling_plane_width, scrolling_plane_height);
 	}
 	DisplayWindow(tile_visualiser_window);
 	DisplayWindow(colour_visualiser_window);

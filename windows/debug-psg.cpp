@@ -6,7 +6,7 @@
 
 void DebugPSG::Registers::DisplayInternal()
 {
-	const PSG_State &psg = Frontend::emulator->GetState().psg;
+	const auto &psg = Frontend::emulator->GetPSGState();
 	const auto monospace_font = GetMonospaceFont();
 
 	// Latched command.

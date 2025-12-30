@@ -140,7 +140,7 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-	const auto &vdp = Frontend::emulator->GetState().vdp;
+	const auto &vdp = Frontend::emulator->GetVDPState();
 	const auto &background_colour = Frontend::emulator->GetColour(vdp.background_colour);
 	const auto &palette_line = Frontend::emulator->GetPaletteLine(brightness, tile_metadata.palette_line);
 
@@ -185,7 +185,7 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 
 static void DrawTileFromVRAM(const VDP_TileMetadata tile_metadata, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
-	const auto &vdp = Frontend::emulator->GetState().vdp;
+	const auto &vdp = Frontend::emulator->GetVDPState();
 
 	DrawTile(tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
 }
@@ -442,8 +442,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const std::size_t plane_width, const std::size_t plane_height)
 {
-	const auto &state = Frontend::emulator->GetState();
-	const VDP_State &vdp = state.vdp;
+	const auto &vdp = Frontend::emulator->GetVDPState();
 
 	const auto maximum_plane_width_in_pixels = 128 * tile_width; // 128 is the maximum plane size
 	const auto maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
@@ -465,7 +464,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const s
 		{
 			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
 			const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
-			const cc_u8f brightness = state.vdp.shadow_highlight_enabled && !tile_metadata.priority;
+			const cc_u8f brightness = vdp.shadow_highlight_enabled && !tile_metadata.priority;
 			regenerating_pieces.Draw(renderer, tile_metadata, TileWidth(), TileHeight(vdp), tile_buffer_size_in_pixels, x, y, brightness, false);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
@@ -568,7 +567,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 
 void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 {
-	const VDP_State &vdp = Frontend::emulator->GetState().vdp;
+	const VDP_State &vdp = Frontend::emulator->GetVDPState();
 
 	if (textures.empty())
 	{
@@ -595,7 +594,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	DisplaySpriteCommon(GetWindow());
 
 	SDL::Renderer &renderer = GetWindow().GetRenderer();
-	const VDP_State &vdp = Frontend::emulator->GetState().vdp;
+	const VDP_State &vdp = Frontend::emulator->GetVDPState();
 
 	constexpr cc_u16f plane_texture_width = 512;
 	constexpr cc_u16f plane_texture_height = 1024;
@@ -680,7 +679,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 {
 	DisplaySpriteCommon(GetWindow());
 
-	const VDP_State &vdp = Frontend::emulator->GetState().vdp;
+	const VDP_State &vdp = Frontend::emulator->GetVDPState();
 
 	if (ImGui::BeginTable("Sprite Table", 1 + TOTAL_SPRITES, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX))
 	{
@@ -877,7 +876,7 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 
 void DebugVDP::VRAMViewer::DisplayInternal()
 {
-	const VDP_State &vdp = Frontend::emulator->GetState().vdp;
+	const VDP_State &vdp = Frontend::emulator->GetVDPState();
 
 	constexpr cc_u16f piece_width = TileWidth();
 	const cc_u16f piece_height = TileHeight(vdp);
@@ -921,7 +920,7 @@ void DebugVDP::StampViewer::DisplayInternal()
 
 void DebugVDP::CRAMViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->GetState();
+	const auto &vdp = Frontend::emulator->GetVDPState();
 
 	ImGui::SeparatorText("Brightness");
 	ImGui::RadioButton("Shadow", &brightness, 0);
@@ -932,7 +931,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 
 	ImGui::SeparatorText("Colours");
 
-	for (std::size_t cram_index = 0; cram_index != std::size(state.vdp.cram); ++cram_index)
+	for (std::size_t cram_index = 0; cram_index != std::size(vdp.cram); ++cram_index)
 	{
 		constexpr cc_u16f length_of_palette_line = 16;
 		const cc_u16f palette_line_option_index = cram_index / length_of_palette_line;
@@ -940,7 +939,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 
 		ImGui::PushID(cram_index);
 
-		const cc_u16f value = state.vdp.cram[cram_index];
+		const cc_u16f value = vdp.cram[cram_index];
 		const cc_u16f blue = (value >> 9) & 7;
 		const cc_u16f green = (value >> 5) & 7;
 		const cc_u16f red = (value >> 1) & 7;
@@ -998,8 +997,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 void DebugVDP::Registers::DisplayInternal()
 {
 	const auto monospace_font = GetMonospaceFont();
-	const auto &state = Frontend::emulator->GetState();
-	const VDP_State &vdp = state.vdp;
+	const auto &vdp= Frontend::emulator->GetVDPState();
 
 	static const auto tab_names = std::to_array<std::string>({
 		"Miscellaneous",
