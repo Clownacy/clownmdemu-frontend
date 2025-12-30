@@ -287,7 +287,7 @@ private:
 	}
 
 public:
-	EmulatorExtended(const Emulator::Configuration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
+	EmulatorExtended(const Emulator::InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
 		, audio_output(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)

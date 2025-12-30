@@ -7,7 +7,7 @@
 #include "../emulator.h"
 #include "paste.h"
 
-class OptionsPlain : public Emulator::Configuration
+class OptionsPlain : public Emulator::InitialConfiguration
 {
 public:
 	bool integer_screen_scaling = false;
@@ -26,7 +26,7 @@ class Options : public QObject, private OptionsPlain
 	Q_OBJECT
 
 public:
-	const Emulator::Configuration& GetEmulatorConfiguration() const
+	const Emulator::InitialConfiguration& GetEmulatorConfiguration() const
 	{
 		return *this;
 	}

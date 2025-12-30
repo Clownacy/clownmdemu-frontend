@@ -26,13 +26,13 @@ private:
 	static Constant constant;
 
 public:
-	class Configuration : private ClownMDEmu_InitialConfiguration
+	class InitialConfiguration : private ClownMDEmu_InitialConfiguration
 	{
 		friend Emulator;
 
 	public:
-		Configuration()
-			: ClownMDEmu_InitialConfiguration({})
+		InitialConfiguration()
+			: ClownMDEmu_InitialConfiguration()
 		{}
 
 #define EMULATOR_CONFIGURATION_AS_IS(VALUE) VALUE
@@ -96,8 +96,6 @@ public:
 			ClownMDEmu_LoadState(&emulator, this);
 		}
 	};
-
-	using State = ClownMDEmu_State;
 
 	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
 	using LogCallbackPlain = std::function<void(const std::string &message)>;
@@ -181,7 +179,7 @@ private:
 	}
 
 public:
-	Emulator(const Configuration &configuration)
+	Emulator(const InitialConfiguration &configuration)
 	{
 		ClownMDEmu_Initialise(this, &configuration, &callbacks);
 	}
