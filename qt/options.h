@@ -7,9 +7,6 @@
 #include "../emulator.h"
 #include "paste.h"
 
-#define STRINGIFY(STRING) STRINGIFY_INTERNAL(STRING)
-#define STRINGIFY_INTERNAL(STRING) #STRING
-
 class OptionsPlain : public Emulator::Configuration
 {
 public:
@@ -50,7 +47,7 @@ public:
 		emit IDENTIFIER##Changed(Get##IDENTIFIER()); \
  \
 		QSettings settings; \
-		settings.setValue(STRINGIFY(IDENTIFIER), OptionsPlain::Get##IDENTIFIER()); \
+		settings.setValue(CC_STRINGIFY(IDENTIFIER), OptionsPlain::Get##IDENTIFIER()); \
 	}
 
 #define DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER(IDENTIFIER) \
@@ -65,8 +62,8 @@ public:
 	PASTE(DEFINE_UNSAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__)
 
 #define DEFINE_SAVED_OPTION_LOAD(IDENTIFIER) \
-	if (settings.contains(STRINGIFY(IDENTIFIER))) \
-		Set##IDENTIFIER(settings.value(STRINGIFY(IDENTIFIER)).value<decltype(Get##IDENTIFIER())>());
+	if (settings.contains(CC_STRINGIFY(IDENTIFIER))) \
+		Set##IDENTIFIER(settings.value(CC_STRINGIFY(IDENTIFIER)).value<decltype(Get##IDENTIFIER())>());
 
 #define DEFINE_SAVED_OPTIONS(...) \
 	PASTE(DEFINE_SAVED_OPTION_GETTER_AND_SETTER, __VA_ARGS__) \
