@@ -23,7 +23,7 @@ private:
 		}
 	};
 
-	static Constant constant;
+	static inline Constant constant;
 
 public:
 	class InitialConfiguration : private ClownMDEmu_InitialConfiguration
@@ -127,27 +127,81 @@ protected:
 	LogCallbackFormatted log_callback;
 
 private:
-	static void Callback_ColourUpdated(void *user_data, cc_u16f index, cc_u16f colour);
-	static void Callback_ScanlineRendered(void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
-	static cc_bool Callback_InputRequested(void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
+	static void Callback_ColourUpdated(void* const user_data, const cc_u16f index, const cc_u16f colour)
+	{
+		static_cast<Emulator*>(user_data)->ColourUpdated(index, colour);
+	}
+	static void Callback_ScanlineRendered(void* const user_data, const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)
+	{
+		static_cast<Emulator*>(user_data)->ScanlineRendered(scanline, pixels, left_boundary, right_boundary, screen_width, screen_height);
+	}
+	static cc_bool Callback_InputRequested(void* const user_data, const cc_u8f player_id, const ClownMDEmu_Button button_id)
+	{
+		return static_cast<Emulator*>(user_data)->InputRequested(player_id, button_id);
+	}
 
-	static void Callback_FMAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void Callback_PSGAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void Callback_PCMAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
-	static void Callback_CDDAAudioToBeGenerated(void *user_data, ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames));
+	static void Callback_FMAudioToBeGenerated(void* const user_data, ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_fm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+	{
+		static_cast<Emulator*>(user_data)->FMAudioToBeGenerated(clownmdemu, total_frames, generate_fm_audio);
+	}
+	static void Callback_PSGAudioToBeGenerated(void* const user_data, ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_psg_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+	{
+		static_cast<Emulator*>(user_data)->PSGAudioToBeGenerated(clownmdemu, total_frames, generate_psg_audio);
+	}
+	static void Callback_PCMAudioToBeGenerated(void* const user_data, ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_pcm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+	{
+		static_cast<Emulator*>(user_data)->PCMAudioToBeGenerated(clownmdemu, total_frames, generate_pcm_audio);
+	}
+	static void Callback_CDDAAudioToBeGenerated(void* const user_data, ClownMDEmu* const clownmdemu, const std::size_t total_frames, void (* const generate_cdda_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
+	{
+		static_cast<Emulator*>(user_data)->CDDAAudioToBeGenerated(clownmdemu, total_frames, generate_cdda_audio);
+	}
 
-	static void Callback_CDSeeked(void *user_data, cc_u32f sector_index);
-	static void Callback_CDSectorRead(void *user_data, cc_u16l *buffer);
-	static cc_bool Callback_CDTrackSeeked(void *user_data, cc_u16f track_index, ClownMDEmu_CDDAMode mode);
-	static std::size_t Callback_CDAudioRead(void *user_data, cc_s16l *sample_buffer, std::size_t total_frames);
+	static void Callback_CDSeeked(void* const user_data, const cc_u32f sector_index)
+	{
+		static_cast<Emulator*>(user_data)->CDSeeked(sector_index);
+	}
+	static void Callback_CDSectorRead(void* const user_data, cc_u16l* const buffer)
+	{
+		static_cast<Emulator*>(user_data)->CDSectorRead(buffer);
+	}
+	static cc_bool Callback_CDTrackSeeked(void* const user_data, const cc_u16f track_index, const ClownMDEmu_CDDAMode mode)
+	{
+		return static_cast<Emulator*>(user_data)->CDTrackSeeked(track_index, mode);
+	}
+	static std::size_t Callback_CDAudioRead(void* const user_data, cc_s16l* const sample_buffer, const std::size_t total_frames)
+	{
+		return static_cast<Emulator*>(user_data)->CDAudioRead(sample_buffer, total_frames);
+	}
 
-	static cc_bool Callback_SaveFileOpenedForReading(void *user_data, const char *filename);
-	static cc_s16f Callback_SaveFileRead(void *user_data);
-	static cc_bool Callback_SaveFileOpenedForWriting(void *user_data, const char *filename);
-	static void Callback_SaveFileWritten(void *user_data, cc_u8f byte);
-	static void Callback_SaveFileClosed(void *user_data);
-	static cc_bool Callback_SaveFileRemoved(void *user_data, const char *filename);
-	static cc_bool Callback_SaveFileSizeObtained(void *user_data, const char *filename, std::size_t *size);
+	static cc_bool Callback_SaveFileOpenedForReading(void* const user_data, const char* const filename)
+	{
+		return static_cast<Emulator*>(user_data)->SaveFileOpenedForReading(filename);
+	}
+	static cc_s16f Callback_SaveFileRead(void* const user_data)
+	{
+		return static_cast<Emulator*>(user_data)->SaveFileRead();
+	}
+	static cc_bool Callback_SaveFileOpenedForWriting(void* const user_data, const char* const filename)
+	{
+		return static_cast<Emulator*>(user_data)->SaveFileOpenedForWriting(filename);
+	}
+	static void Callback_SaveFileWritten(void* const user_data, const cc_u8f byte)
+	{
+		static_cast<Emulator*>(user_data)->SaveFileWritten(byte);
+	}
+	static void Callback_SaveFileClosed(void* const user_data)
+	{
+		static_cast<Emulator*>(user_data)->SaveFileClosed();
+	}
+	static cc_bool Callback_SaveFileRemoved(void* const user_data, const char* const filename)
+	{
+		return static_cast<Emulator*>(user_data)->SaveFileRemoved(filename);
+	}
+	static cc_bool Callback_SaveFileSizeObtained(void* const user_data, const char* const filename, std::size_t* const size)
+	{
+		return static_cast<Emulator*>(user_data)->SaveFileSizeObtained(filename, size);
+	}
 
 	virtual void ColourUpdated(cc_u16f index, cc_u16f colour) = 0;
 	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) = 0;

@@ -19,7 +19,6 @@ add_executable(clownmdemu WIN32
 	"colour.h"
 	"debug-log.cpp"
 	"debug-log.h"
-	"emulator.cpp"
 	"emulator.h"
 	"emulator-extended.h"
 	"emulator-instance.cpp"

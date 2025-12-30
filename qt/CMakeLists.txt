@@ -27,7 +27,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	../audio-output.cpp ../audio-output.h
 	../cd-reader.cpp ../cd-reader.h
 	../debug-log.cpp ../debug-log.h
-	../emulator.cpp ../emulator.h
+	../emulator.h
 	../emulator-extended.h
 	../raii-wrapper.h ../sdl-wrapper-inner.h
 )
