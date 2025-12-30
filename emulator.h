@@ -127,8 +127,6 @@ protected:
 	LogCallbackFormatted log_callback;
 
 private:
-	static cc_u8f Callback_CartridgeRead(void *user_data, cc_u32f address);
-	static void Callback_CartridgeWritten(void *user_data, cc_u32f address, cc_u8f value);
 	static void Callback_ColourUpdated(void *user_data, cc_u16f index, cc_u16f colour);
 	static void Callback_ScanlineRendered(void *user_data, cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
 	static cc_bool Callback_InputRequested(void *user_data, cc_u8f player_id, ClownMDEmu_Button button_id);
