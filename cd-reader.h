@@ -38,12 +38,12 @@ public:
 	public:
 		StateBackup(const CDReader &cd_reader)
 		{
-			CDReader_GetStateBackup(&cd_reader, this);
+			CDReader_SaveState(&cd_reader, this);
 		}
 
 		void Apply(CDReader &cd_reader) const
 		{
-			CDReader_SetStateBackup(&cd_reader, this);
+			CDReader_LoadState(&cd_reader, this);
 		}
 	};
 
