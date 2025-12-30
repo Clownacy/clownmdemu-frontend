@@ -3,9 +3,9 @@
 Dialogs::Debug::CPU::CPU(const Emulator &emulator, QWidget* const parent)
 	: Base(parent)
 	, emulator(emulator)
-	, main_cpu(emulator.GetState().m68k.state)
-	, sub_cpu(emulator.GetState().mega_cd.m68k.state)
-	, sound_cpu(emulator.GetState().z80.state)
+	, main_cpu(emulator.GetM68kState())
+	, sub_cpu(emulator.GetSubM68kState())
+	, sound_cpu(emulator.GetZ80State())
 {
 	ui.setupUi(this);
 
@@ -18,7 +18,7 @@ Dialogs::Debug::CPU::CPU(const Emulator &emulator, QWidget* const parent)
 
 void Dialogs::Debug::CPU::StateChanged()
 {
-	main_cpu.StateChanged(emulator.GetState().m68k.state);
-	sub_cpu.StateChanged(emulator.GetState().mega_cd.m68k.state);
-	sound_cpu.StateChanged(emulator.GetState().z80.state);
+	main_cpu.StateChanged(emulator.GetM68kState());
+	sub_cpu.StateChanged(emulator.GetSubM68kState());
+	sound_cpu.StateChanged(emulator.GetZ80State());
 }

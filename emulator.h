@@ -225,6 +225,51 @@ public:
 		return state;
 	}
 
+	[[nodiscard]] const auto& GetM68kState() const
+	{
+		return m68k;
+	}
+
+	[[nodiscard]] const auto& GetZ80State() const
+	{
+		return z80;
+	}
+
+	[[nodiscard]] const auto& GetVDPState() const
+	{
+		return vdp.state;
+	}
+
+	[[nodiscard]] const auto& GetFMState() const
+	{
+		return fm.state;
+	}
+
+	[[nodiscard]] const auto& GetPSGState() const
+	{
+		return psg.state;
+	}
+
+	[[nodiscard]] const auto& GetSubM68kState() const
+	{
+		return mega_cd.m68k;
+	}
+
+	[[nodiscard]] const auto& GetCDCState() const
+	{
+		return mega_cd.cdc;
+	}
+
+	[[nodiscard]] const auto& GetCDDAState() const
+	{
+		return mega_cd.cdda;
+	}
+
+	[[nodiscard]] const auto& GetPCMState() const
+	{
+		return mega_cd.pcm.state;
+	}
+
 	void SetState(const State &state)
 	{
 		this->state = state;
@@ -240,34 +285,34 @@ public:
 	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LowPassFilterEnabled, configuration.low_pass_filter_disabled)
 	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(CDAddOnEnabled, configuration.cd_add_on_enabled)
 
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(SpritePlaneEnabled, state.vdp.configuration.sprites_disabled)
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(WindowPlaneEnabled, state.vdp.configuration.window_disabled)
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneAEnabled, state.vdp.configuration.planes_disabled[0])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneBEnabled, state.vdp.configuration.planes_disabled[1])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(WidescreenTilePairs, state.vdp.configuration.widescreen_tile_pairs)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(SpritePlaneEnabled, vdp.configuration.sprites_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(WindowPlaneEnabled, vdp.configuration.window_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneAEnabled, vdp.configuration.planes_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(ScrollPlaneBEnabled, vdp.configuration.planes_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(WidescreenTilePairs, vdp.configuration.widescreen_tile_pairs)
 
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM1Enabled, state.fm.configuration.fm_channels_disabled[0])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM2Enabled, state.fm.configuration.fm_channels_disabled[1])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM3Enabled, state.fm.configuration.fm_channels_disabled[2])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM4Enabled, state.fm.configuration.fm_channels_disabled[3])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM5Enabled, state.fm.configuration.fm_channels_disabled[4])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM6Enabled, state.fm.configuration.fm_channels_disabled[5])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(DACEnabled, state.fm.configuration.dac_channel_disabled)
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LadderEffectEnabled, state.fm.configuration.ladder_effect_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM1Enabled, fm.configuration.fm_channels_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM2Enabled, fm.configuration.fm_channels_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM3Enabled, fm.configuration.fm_channels_disabled[2])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM4Enabled, fm.configuration.fm_channels_disabled[3])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM5Enabled, fm.configuration.fm_channels_disabled[4])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(FM6Enabled, fm.configuration.fm_channels_disabled[5])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(DACEnabled, fm.configuration.dac_channel_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LadderEffectEnabled, fm.configuration.ladder_effect_disabled)
 
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG1Enabled, state.psg.configuration.tone_disabled[0])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG2Enabled, state.psg.configuration.tone_disabled[1])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG3Enabled, state.psg.configuration.tone_disabled[2])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSGNoiseEnabled, state.psg.configuration.noise_disabled)
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG1Enabled, psg.configuration.tone_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG2Enabled, psg.configuration.tone_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSG3Enabled, psg.configuration.tone_disabled[2])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PSGNoiseEnabled, psg.configuration.noise_disabled)
 
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM1Enabled, state.mega_cd.pcm.configuration.channels_disabled[0])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM2Enabled, state.mega_cd.pcm.configuration.channels_disabled[1])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM3Enabled, state.mega_cd.pcm.configuration.channels_disabled[2])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM4Enabled, state.mega_cd.pcm.configuration.channels_disabled[3])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM5Enabled, state.mega_cd.pcm.configuration.channels_disabled[4])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM6Enabled, state.mega_cd.pcm.configuration.channels_disabled[5])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM7Enabled, state.mega_cd.pcm.configuration.channels_disabled[6])
-	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM8Enabled, state.mega_cd.pcm.configuration.channels_disabled[7])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM1Enabled, mega_cd.pcm.configuration.channels_disabled[0])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM2Enabled, mega_cd.pcm.configuration.channels_disabled[1])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM3Enabled, mega_cd.pcm.configuration.channels_disabled[2])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM4Enabled, mega_cd.pcm.configuration.channels_disabled[3])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM5Enabled, mega_cd.pcm.configuration.channels_disabled[4])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM6Enabled, mega_cd.pcm.configuration.channels_disabled[5])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM7Enabled, mega_cd.pcm.configuration.channels_disabled[6])
+	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(PCM8Enabled, mega_cd.pcm.configuration.channels_disabled[7])
 };
 
 #endif // EMULATOR_H
