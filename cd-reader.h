@@ -126,10 +126,13 @@ public:
 	// Error Callback //
 	////////////////////
 
+public:
 	using ErrorCallback = std::function<void(const std::string_view &message)>;
 
+private:
 	static ErrorCallback error_callback;
 
+public:
 	static void SetErrorCallback(const ErrorCallback &callback)
 	{
 		error_callback = callback;

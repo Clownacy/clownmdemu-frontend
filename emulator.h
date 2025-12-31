@@ -97,9 +97,6 @@ public:
 		}
 	};
 
-	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
-	using LogCallbackPlain = std::function<void(const std::string &message)>;
-
 protected:
 	const ClownMDEmu_Callbacks callbacks = {
 		this,
@@ -122,9 +119,6 @@ protected:
 		Callback_SaveFileRemoved,
 		Callback_SaveFileSizeObtained
 	};
-
-protected:
-	LogCallbackFormatted log_callback;
 
 private:
 	static void Callback_ColourUpdated(void* const user_data, const cc_u16f index, const cc_u16f colour)
@@ -225,11 +219,6 @@ private:
 	virtual cc_bool SaveFileRemoved(const char *filename) = 0;
 	virtual cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) = 0;
 
-	static void LogCallbackWrapper(void* const user_data, const char *format, std::va_list arg)
-	{
-		(*static_cast<const LogCallbackFormatted*>(user_data))(format, arg);
-	}
-
 public:
 	Emulator(const InitialConfiguration &configuration)
 	{
@@ -261,13 +250,30 @@ public:
 		ClownMDEmu_Iterate(this);
 	}
 
-	void SetLogCallback(const LogCallbackFormatted &callback)
+	//////////////////
+	// Log Callback //
+	//////////////////
+
+public:
+	using LogCallbackFormatted = std::function<void(const char *format, std::va_list arg)>;
+	using LogCallbackPlain = std::function<void(const std::string &message)>;
+
+private:
+	static inline LogCallbackFormatted log_callback;
+
+public:
+	static void SetLogCallback(const LogCallbackFormatted &callback)
 	{
 		log_callback = callback;
-		ClownMDEmu_SetLogCallback(&LogCallbackWrapper, &log_callback);
+		ClownMDEmu_SetLogCallback(
+			[](void* const user_data, const char *format, std::va_list arg)
+			{
+				(*static_cast<const LogCallbackFormatted*>(user_data))(format, arg);
+			}, &log_callback
+		);
 	}
 
-	void SetLogCallback(const LogCallbackPlain &callback)
+	static void SetLogCallback(const LogCallbackPlain &callback)
 	{
 		SetLogCallback(
 			[=](const char* const format, std::va_list arg)
