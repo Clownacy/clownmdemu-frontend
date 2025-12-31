@@ -611,6 +611,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 	if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 	{
+		const auto previous_render_target = SDL_GetRenderTarget(renderer);
 		SDL_SetRenderTarget(renderer, texture);
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
 		SDL_RenderClear(renderer);
@@ -648,7 +649,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
 		}
 
-		SDL_SetRenderTarget(renderer, nullptr);
+		SDL_SetRenderTarget(renderer, previous_render_target);
 
 		const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
 		const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
