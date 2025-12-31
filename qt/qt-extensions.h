@@ -5,6 +5,7 @@
 
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSettings>
 
 #include "../sdl-wrapper.h"
 
@@ -40,15 +41,26 @@ namespace QtExtensions
 		return reinterpret_cast<const char8_t*>(string.toStdString().c_str());
 	}
 
+	inline QString fromStdPath(const std::filesystem::path &file_path)
+	{
+		return reinterpret_cast<const char*>(file_path.u8string().c_str());
+	}
+
 	inline void getOpenFileContent(const QString &nameFilter, const std::function<void (const std::filesystem::path &file_path, SDL::IOStream &&file_stream, const QByteArray *file_contents)> &fileOpenCompleted, QWidget *parent = nullptr)
 	{
 #ifdef QTEXTENSION_FILE_PATH_SUPPORT
-		const auto &qt_file_path = QFileDialog::getOpenFileName(parent, QString(), QString(), nameFilter);
+		QSettings settings;
+		const QString last_directory_key = QStringLiteral("LastDirectory");
+
+		const auto &qt_file_path = QFileDialog::getOpenFileName(parent, QString(), settings.value(last_directory_key).toString(), nameFilter);
 
 		if (qt_file_path.isNull())
 			return;
 
 		const auto &file_path = QtExtensions::toStdPath(qt_file_path);
+
+		// Save the directory so that future file-open operations continue from there.
+		settings.setValue(last_directory_key, fromStdPath(file_path.parent_path()));
 
 		fileOpenCompleted(file_path, SDL::IOFromFile(file_path, "rb"), nullptr);
 #else
