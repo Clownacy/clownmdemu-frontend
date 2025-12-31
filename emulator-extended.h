@@ -294,6 +294,10 @@ public:
 		, save_file_directory(save_file_directory)
 	{
 		std::filesystem::create_directories(save_file_directory);
+
+		// This should be called before any other ClownMDEmu functions are called!
+		SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
+		cd_reader.SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
 	}
 
 	~EmulatorExtended()
