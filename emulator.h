@@ -13,6 +13,10 @@
 
 class Emulator : protected ClownMDEmu
 {
+	////////////////
+	// Subclasses //
+	////////////////
+
 private:
 	class Constant
 	{
@@ -97,7 +101,11 @@ public:
 		}
 	};
 
-protected:
+	///////////////
+	// Callbacks //
+	///////////////
+
+private:
 	const ClownMDEmu_Callbacks callbacks = {
 		this,
 		Callback_ColourUpdated,
@@ -120,7 +128,6 @@ protected:
 		Callback_SaveFileSizeObtained
 	};
 
-private:
 	static void Callback_ColourUpdated(void* const user_data, const cc_u16f index, const cc_u16f colour)
 	{
 		static_cast<Emulator*>(user_data)->ColourUpdated(index, colour);
@@ -219,6 +226,10 @@ private:
 	virtual cc_bool SaveFileRemoved(const char *filename) = 0;
 	virtual cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) = 0;
 
+	///////////////
+	// Interface //
+	///////////////
+
 public:
 	Emulator(const InitialConfiguration &configuration)
 	{
@@ -276,7 +287,7 @@ public:
 	static void SetLogCallback(const LogCallbackPlain &callback)
 	{
 		SetLogCallback(
-			[=](const char* const format, std::va_list arg)
+			[callback](const char* const format, std::va_list arg)
 			{
 				// TODO: Use 'std::string::resize_and_overwrite' here when C++23 becomes the norm.
 				std::va_list arg_copy;
@@ -290,6 +301,11 @@ public:
 		);
 	}
 
+	//////////////////
+	// State Access //
+	//////////////////
+
+public:
 	[[nodiscard]] const auto& GetState() const
 	{
 		return state;
@@ -345,6 +361,11 @@ public:
 		return state.external_ram.buffer;
 	}
 
+	///////////////////
+	// Configuration //
+	///////////////////
+
+public:
 	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(TVStandard, configuration.tv_standard)
 	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(Region, configuration.region)
 	EMULATOR_CONFIGURATION_GETTER_SETTER_NOT(LowPassFilterEnabled, configuration.low_pass_filter_disabled)
