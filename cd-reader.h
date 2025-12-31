@@ -76,7 +76,7 @@ public:
 	{
 		CDReader_Close(this);
 	}
-	bool IsOpen() const
+	[[nodiscard]] bool IsOpen() const
 	{
 		return CDReader_IsOpen(this);
 	}
@@ -92,32 +92,32 @@ public:
 	{
 		CDReader_ReadSector(this, buffer);
 	}
-	bool PlayAudio(const TrackIndex track_index, const PlaybackSetting setting)
+	[[nodiscard]] bool PlayAudio(const TrackIndex track_index, const PlaybackSetting setting)
 	{
 		return CDReader_PlayAudio(this, track_index, static_cast<CDReader_PlaybackSetting>(setting));
 	}
-	cc_u32f ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
+	[[nodiscard]] cc_u32f ReadAudio(cc_s16l* const sample_buffer, const cc_u32f total_frames)
 	{
 		return CDReader_ReadAudio(this, sample_buffer, total_frames);
 	}
 
-	bool ReadMegaCDHeaderSector(unsigned char* const buffer)
+	[[nodiscard]] bool ReadMegaCDHeaderSector(unsigned char* const buffer)
 	{
 		return CDReader_ReadMegaCDHeaderSector(this, buffer);
 	}
-	bool IsMegaCDGame()
+	[[nodiscard]] bool IsMegaCDGame()
 	{
 		return CDReader_IsMegaCDGame(this);
 	}
-	bool IsDefinitelyACD()
+	[[nodiscard]] bool IsDefinitelyACD()
 	{
 		return CDReader_IsDefinitelyACD(this);
 	}
-	static bool IsMegaCDGame(const std::filesystem::path &path)
+	[[nodiscard]] static bool IsMegaCDGame(const std::filesystem::path &path)
 	{
 		return CDReader(path).IsMegaCDGame();
 	}
-	static bool IsDefinitelyACD(const std::filesystem::path &path)
+	[[nodiscard]] static bool IsDefinitelyACD(const std::filesystem::path &path)
 	{
 		return CDReader(path).IsDefinitelyACD();
 	}
