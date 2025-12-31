@@ -36,7 +36,7 @@ EmulatorInstance::EmulatorInstance(
 	, texture(texture)
 	, input_callback(input_callback)
 {
-	ClownCD_SetErrorCallback([]([[maybe_unused]] void* const user_data, const char* const message) { Frontend::debug_log.Log("ClownCD: {}", message); }, nullptr);
+	CDReader::SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
 
 	// This should be called before any other clownmdemu functions are called!
 	SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });

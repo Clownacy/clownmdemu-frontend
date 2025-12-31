@@ -2,6 +2,8 @@
 
 #include <climits>
 
+CDReader::ErrorCallback CDReader::error_callback;
+
 void* CDReader::FileOpenCallback(const char* const filename, const ClownCD_FileMode mode)
 {
 	const char *mode_string;

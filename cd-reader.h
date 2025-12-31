@@ -3,6 +3,8 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <functional>
+#include <string_view>
 
 #include <SDL3/SDL.h>
 
@@ -118,6 +120,25 @@ public:
 	static bool IsDefinitelyACD(const std::filesystem::path &path)
 	{
 		return CDReader(path).IsDefinitelyACD();
+	}
+
+	////////////////////
+	// Error Callback //
+	////////////////////
+
+	using ErrorCallback = std::function<void(const std::string_view &message)>;
+
+	static ErrorCallback error_callback;
+
+	static void SetErrorCallback(const ErrorCallback &callback)
+	{
+		error_callback = callback;
+		CDReader_SetErrorCallback(
+			[](void* const user_data, const char *message)
+			{
+				(*static_cast<const ErrorCallback*>(user_data))(message);
+			}, &error_callback
+		);
 	}
 };
 
