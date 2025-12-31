@@ -8,7 +8,7 @@ You can try ClownMDEmu in your web browser at [clownmdemu.clownacy.com](http://c
 
 This is ClownMDEmu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
 
-Some standard features of the Mega Drive are currently unemulated (see
+Some features of the Mega Drive are currently unemulated (see
 `common/core/TODO.md` for more information).
 
 ![Minimal](/assets/screenshot-minimal.png)
