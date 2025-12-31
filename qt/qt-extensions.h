@@ -62,12 +62,12 @@ namespace QtExtensions
 		// Save the directory so that future file-open operations continue from there.
 		settings.setValue(last_directory_key, fromStdPath(file_path.parent_path()));
 
-		fileOpenCompleted(file_path, SDL::IOFromFile(file_path, "rb"), nullptr);
+		fileOpenCompleted(file_path, SDL::IOStream(file_path, "rb"), nullptr);
 #else
 		QFileDialog::getOpenFileContent(nameFilter,
 			[fileOpenCompleted](const QString &file_name, const QByteArray &file_contents)
 			{
-				fileOpenCompleted(QtExtensions::toStdPath(file_name), SDL::IOStream(SDL_IOFromConstMem(file_contents.data(), file_contents.size())), &file_contents);
+				fileOpenCompleted(QtExtensions::toStdPath(file_name), SDL::IOStream(file_contents.data(), file_contents.size()), &file_contents);
 			},
 			parent
 		);

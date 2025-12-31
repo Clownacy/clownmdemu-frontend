@@ -145,7 +145,7 @@ void MainWindow::DestroyEmulator()
 
 bool MainWindow::LoadCartridgeData(const std::filesystem::path &file_path)
 {
-	auto stream = SDL::IOFromFile(file_path, "rb");
+	auto stream = SDL::IOStream(file_path, "rb");
 
 	if (!stream)
 		return false;
@@ -184,7 +184,7 @@ void MainWindow::UnloadCartridgeData()
 
 bool MainWindow::LoadCDData(const std::filesystem::path &file_path)
 {
-	auto file_stream = SDL::IOFromFile(file_path, "rb");
+	auto file_stream = SDL::IOStream(file_path, "rb");
 
 	if (!file_stream)
 		return false;
