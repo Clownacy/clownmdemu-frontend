@@ -59,6 +59,10 @@ namespace SDL
 			: IOStreamBase(PathFunction<SDL_IOFromFile>(path, mode))
 		{}
 
+		IOStream(void* const mem, const std::size_t size)
+			: IOStreamBase(SDL_IOFromMem(mem, size))
+		{}
+
 		IOStream(const void* const mem, const std::size_t size)
 			: IOStreamBase(SDL_IOFromConstMem(mem, size))
 		{}

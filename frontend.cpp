@@ -1026,7 +1026,7 @@ static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
-	SDL::IOStream file = SDL::IOFromFile(path, "rb");
+	SDL::IOStream file(path, "rb");
 
 	if (!file)
 	{
@@ -1056,7 +1056,7 @@ static bool LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
 #ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const std::filesystem::path &path)
 {
-	SDL::IOStream file = SDL::IOFromFile(path, "rb");
+	SDL::IOStream file(path, "rb");
 
 	if (!file)
 	{
@@ -1110,7 +1110,7 @@ static bool SaveState(const std::filesystem::path &path)
 {
 	bool success = true;
 
-	SDL::IOStream file = SDL::IOFromFile(path, "wb");
+	SDL::IOStream file(path, "wb");
 
 	if (!file || !emulator->WriteSaveStateFile(file))
 	{
@@ -1234,7 +1234,7 @@ static void LoadConfiguration()
 	}
 
 	// Load the configuration file, overwriting the above settings.
-	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "r");
+	SDL::IOStream file(GetConfigurationFilePath(), "r");
 
 	if (!file)
 	{
@@ -1434,7 +1434,7 @@ static void SaveConfiguration()
 #define ENDL "\n"
 #endif
 	// Save configuration file:
-	SDL::IOStream file = SDL::IOFromFile(GetConfigurationFilePath(), "w");
+	SDL::IOStream file(GetConfigurationFilePath(), "w");
 
 	if (!file)
 	{
@@ -2178,7 +2178,7 @@ void Frontend::Update()
 	{
 		if (CDReader::IsDefinitelyACD(drag_and_drop_filename))
 		{
-			LoadCDFile(drag_and_drop_filename, SDL::IOFromFile(drag_and_drop_filename, "rb"));
+			LoadCDFile(drag_and_drop_filename, SDL::IOStream(drag_and_drop_filename, "rb"));
 			emulator_paused = false;
 		}
 		else
@@ -2388,7 +2388,7 @@ void Frontend::Update()
 							std::vector<unsigned char> save_state_buffer;
 							save_state_buffer.resize(emulator->GetSaveStateFileSize());
 
-							SDL::IOStream file = SDL::IOStream(SDL_IOFromMem(save_state_buffer.data(), save_state_buffer.size()));
+							SDL::IOStream file(save_state_buffer.data(), save_state_buffer.size());
 
 							if (file)
 							{

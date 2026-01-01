@@ -217,7 +217,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
 		{
 			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
-			SDL::IOStream file = SDL::IOStream(SDL_IOFromConstMem(buffer.data(), buffer.size()));
+			SDL::IOStream file(buffer.data(), buffer.size());
 
 			if (file)
 				(*callback.get())(filename, std::move(file));
@@ -232,7 +232,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 #else
 	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
 	{
-		SDL::IOStream file = SDL::IOFromFile(path, "rb");
+		SDL::IOStream file(path, "rb");
 
 		if (!file)
 			return false;
@@ -255,7 +255,7 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{
-			SDL::IOStream file = SDL::IOFromFile(path, "wb");
+			SDL::IOStream file(path, "wb");
 
 			if (!file)
 				return false;

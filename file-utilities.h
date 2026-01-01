@@ -90,7 +90,7 @@ public:
 	template<typename T, std::size_t S>
 	std::optional<std::vector<T>> LoadFileToBuffer(const std::filesystem::path &path)
 	{
-		SDL::IOStream file = SDL::IOFromFile(path, "rb");
+		SDL::IOStream file(path, "rb");
 
 		if (!file)
 		{
