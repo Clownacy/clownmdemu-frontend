@@ -356,10 +356,10 @@ public:
 	// Miscellaneous //
 	///////////////////
 
-	void ReadMegaCDHeaderSector(unsigned char* const buffer)
+	bool ReadMegaCDHeaderSector(unsigned char* const buffer)
 	{
 		// TODO: Make this return an array instead!
-		cd_reader.ReadMegaCDHeaderSector(buffer);
+		return cd_reader.ReadMegaCDHeaderSector(buffer);
 	}
 
 	void Reset(const cc_bool cd_inserted) = delete;
