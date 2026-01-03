@@ -6,14 +6,15 @@
 #include <fstream>
 #include <type_traits>
 
+#include "common/core/clownmdemu.h"
+
 #include "audio-output.h"
 #include "cd-reader.h"
 #include "debug-log.h"
-#include "emulator.h"
 #include "sdl-wrapper.h"
 
 template<typename Colour>
-class EmulatorExtended : public Emulator
+class EmulatorExtended : public ClownMDEmuCXX
 {
 protected:
 	struct Palette
@@ -29,7 +30,7 @@ public:
 	class StateBackup
 	{
 	private:
-		Emulator::StateBackup emulator;
+		ClownMDEmuCXX::StateBackup emulator;
 		CDReader::StateBackup cd_reader;
 		Palette palette;
 
@@ -287,8 +288,8 @@ private:
 	}
 
 public:
-	EmulatorExtended(const Emulator::InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
-		: Emulator(configuration)
+	EmulatorExtended(const InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
+		: ClownMDEmuCXX(configuration)
 		, audio_output(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
@@ -315,7 +316,7 @@ public:
 		// Reset state buffer, since it cannot undo the cartridge or CD being changed.
 		state_rewind_buffer.Clear();
 
-		Emulator::InsertCartridge(std::forward<Ts>(args)...);
+		ClownMDEmuCXX::InsertCartridge(std::forward<Ts>(args)...);
 		LoadCartridgeSaveData(cartridge_file_path);
 	}
 
@@ -325,7 +326,7 @@ public:
 		state_rewind_buffer.Clear();
 
 		SaveCartridgeSaveData();
-		Emulator::EjectCartridge(std::forward<Ts>(args)...);
+		ClownMDEmuCXX::EjectCartridge(std::forward<Ts>(args)...);
 	}
 
 	////////
@@ -365,7 +366,7 @@ public:
 	void Reset(const cc_bool cd_inserted) = delete;
 	void Reset()
 	{
-		Emulator::Reset(IsCDInserted());
+		ClownMDEmuCXX::Reset(IsCDInserted());
 	}
 
 	bool Iterate()
@@ -390,7 +391,7 @@ public:
 			// Reset the audio buffers so that they can be mixed into.
 			audio_output.MixerBegin();
 
-			Emulator::Iterate();
+			ClownMDEmuCXX::Iterate();
 
 			// Resample, mix, and output the audio for this frame.
 			audio_output.MixerEnd();
@@ -450,7 +451,7 @@ public:
 
 	void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 	{
-		Emulator::SetTVStandard(tv_standard);
+		ClownMDEmuCXX::SetTVStandard(tv_standard);
 		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 	}
 };

@@ -4,10 +4,11 @@
 #include <QObject>
 #include <QSettings>
 
-#include "../emulator.h"
+#include "../common/core/clownmdemu.h"
+
 #include "paste.h"
 
-class OptionsPlain : public Emulator::InitialConfiguration
+class OptionsPlain : public ClownMDEmuCXX::InitialConfiguration
 {
 public:
 	bool integer_screen_scaling = false;
@@ -15,10 +16,10 @@ public:
 	bool rewinding = false;
 	unsigned int keyboard_control_pad = 0;
 
-	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(IntegerScreenScalingEnabled, integer_screen_scaling)
-	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(TallInterlaceMode2Enabled, tall_interlace_mode_2)
-	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(RewindingEnabled, rewinding)
-	EMULATOR_CONFIGURATION_GETTER_SETTER_AS_IS(KeyboardControlPad, keyboard_control_pad)
+	CLOWNMDEMU_CONFIGURATION_GETTER_SETTER_AS_IS(IntegerScreenScalingEnabled, integer_screen_scaling)
+	CLOWNMDEMU_CONFIGURATION_GETTER_SETTER_AS_IS(TallInterlaceMode2Enabled, tall_interlace_mode_2)
+	CLOWNMDEMU_CONFIGURATION_GETTER_SETTER_AS_IS(RewindingEnabled, rewinding)
+	CLOWNMDEMU_CONFIGURATION_GETTER_SETTER_AS_IS(KeyboardControlPad, keyboard_control_pad)
 };
 
 class Options : public QObject, private OptionsPlain
@@ -26,7 +27,7 @@ class Options : public QObject, private OptionsPlain
 	Q_OBJECT
 
 public:
-	const Emulator::InitialConfiguration& GetEmulatorConfiguration() const
+	const InitialConfiguration& GetEmulatorConfiguration() const
 	{
 		return *this;
 	}
