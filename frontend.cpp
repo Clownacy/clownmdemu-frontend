@@ -2163,6 +2163,106 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	}
 }
 
+static void DrawStatusIndicator()
+{
+	if (emulator_paused || emulator->rewinding || emulator->fastforwarding)
+	{
+		// A bunch of utility junk.
+		const auto dpi_scale = window->GetDPIScale();
+
+		const auto radius = 20.0f;
+		const auto outline_radius = radius / 6;
+
+		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
+
+		const auto DrawOutlinedTriangle = [&](const ImVec2 &position, const unsigned int degree)
+		{
+			const auto DrawTriangle = [&](ImVec2 position, const unsigned int degree, const ImU32 col, const float radius)
+			{
+				position *= dpi_scale;
+
+				const auto DegreeToPoint = [&](const unsigned int degree)
+				{
+					const auto x = +std::sin(CC_DEGREE_TO_RADIAN(degree));
+					const auto y = -std::cos(CC_DEGREE_TO_RADIAN(degree));
+					return ImVec2(x, y) * radius * dpi_scale;
+				};
+
+				draw_list->AddTriangleFilled(position + DegreeToPoint(degree + 120 * 0), position + DegreeToPoint(degree + 120 * 1), position + DegreeToPoint(degree + 120 * 2), col);
+			};
+
+			DrawTriangle(position, degree, IM_COL32_BLACK, radius);
+			// The cosine trick is to make the outline thickness match that of a rectangle.
+			DrawTriangle(position, degree, IM_COL32_WHITE, radius - outline_radius / std::cos(CC_DEGREE_TO_RADIAN(180 / 3)));
+		};
+
+		const auto DrawOutlinedRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv)
+		{
+			const auto DrawRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv, const ImU32 colour)
+			{
+				draw_list->AddRectFilled((position - radiusv) * dpi_scale, (position + radiusv) * dpi_scale, colour);
+			};
+
+			DrawRectangle(position, radiusv, IM_COL32_BLACK);
+			DrawRectangle(position, radiusv - ImVec2(outline_radius, outline_radius), IM_COL32_WHITE);
+		};
+
+		const auto position = radius * 2;
+		const ImVec2 positionv(ImGui::GetContentRegionAvail().x / dpi_scale - position, position + window->GetMenuBarSize());
+
+		const auto DoLine = [&](const ImVec2 &first_scale, const ImVec2 &second_scale)
+		{
+			const auto DoCoordinate = [&](const ImVec2 &scale)
+			{
+				const ImVec2 radiusv(radius, radius);
+				return (positionv + radiusv * scale) * dpi_scale;
+			};
+
+			const auto colour = IM_COL32(0xFF, 0, 0, 0xFF);
+			const auto thickness = outline_radius * dpi_scale;
+
+			draw_list->AddLine(DoCoordinate(first_scale), DoCoordinate(second_scale), colour, thickness);
+		};
+
+		const auto DrawCross = [&]()
+		{
+			DoLine({-1, -1}, { 1,  1});
+			DoLine({ 1, -1}, {-1,  1});
+		};
+
+		const auto offset = ImVec2(radius / 2, 0);
+		const auto &left_position = positionv - offset;
+		const auto &right_position = positionv + offset;
+
+		// The actual logic for drawing the symbols.
+		if (emulator_paused)
+		{
+			// Paused symbol.
+			const ImVec2 size(radius * 2 / 5, radius);
+			DrawOutlinedRectangle(left_position, size);
+			DrawOutlinedRectangle(right_position, size);
+		}
+		else if (emulator->rewinding)
+		{
+			// Rewinding symbol.
+			const auto angle = 270;
+			DrawOutlinedTriangle(left_position, angle);
+			DrawOutlinedTriangle(right_position, angle);
+
+			// Cross-out the symbol.
+			if (emulator->IsRewindExhausted())
+				DrawCross();
+		}
+		else if (emulator->fastforwarding)
+		{
+			// Fast-forwarding symbol.
+			const auto angle = 90;
+			DrawOutlinedTriangle(right_position, angle);
+			DrawOutlinedTriangle(left_position, angle);
+		}
+	}
+}
+
 void Frontend::Update()
 {
 	if (emulator_running)
@@ -2617,6 +2717,8 @@ void Frontend::Update()
 
 			// Draw the upscaled framebuffer in the window.
 			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
+
+			DrawStatusIndicator();
 		}
 	}
 

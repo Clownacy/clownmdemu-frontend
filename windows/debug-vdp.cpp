@@ -1,8 +1,6 @@
 // TODO: Make stamp debuggers ignore stamp 0; it is always blank on real hardware!
 // TODO: Make stamp debuggers properly mask the addresses.
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-
 #include "debug-vdp.h"
 
 #include <algorithm>
