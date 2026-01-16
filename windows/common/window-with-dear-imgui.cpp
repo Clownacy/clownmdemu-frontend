@@ -30,9 +30,9 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 	io.Fonts->Clear();
 
 	ImFontConfig font_cfg;
-	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Noto Sans Regular, {}px", font_size).out = '\0';
+	*std::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Noto Sans Regular, {}px", font_size).out = '\0';
 	io.Fonts->AddFontFromMemoryCompressedTTF(noto_sans_regular_compressed_data, noto_sans_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
-	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Inconsolata Regular, {}px", font_size).out = '\0';
+	*std::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Inconsolata Regular, {}px", font_size).out = '\0';
 	monospace_font = io.Fonts->AddFontFromMemoryCompressedTTF(inconsolata_regular_compressed_data, inconsolata_regular_compressed_size, static_cast<float>(font_size), &font_cfg);
 }
 

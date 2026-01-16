@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <format>
 #include <forward_list>
 #include <functional>
 #include <iterator>
@@ -18,7 +19,6 @@
 #include <tuple>
 #include <vector>
 
-#include <fmt/core.h>
 #include <SDL3/SDL.h>
 
 #include "common/core/clowncommon/clowncommon.h"
@@ -1564,7 +1564,7 @@ static void SaveConfiguration()
 					return "INPUT_BINDING_NONE";
 				}();
 
-				const std::string buffer = fmt::format("{} = {}" ENDL, i, binding_string);
+				const std::string buffer = std::format("{} = {}" ENDL, i, binding_string);
 				SDL_WriteIO(file, buffer.data(), buffer.size());
 			}
 		}

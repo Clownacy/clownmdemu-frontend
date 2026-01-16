@@ -1,9 +1,8 @@
 #ifndef WINDOW_WITH_DEAR_IMGUI_H
 #define WINDOW_WITH_DEAR_IMGUI_H
 
+#include <format>
 #include <utility>
-
-#include <fmt/core.h>
 
 #include "../../sdl-wrapper.h"
 
@@ -29,10 +28,11 @@ namespace ImGui
 		ImGui::TextUnformatted(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1);
 	}
 
+	// TODO: Go back to `std::format_string` when Visual Studio stops sucking balls (lacking it).
 	template <typename... T>
-	void TextFormatted(fmt::format_string<T...> format, T&&... args)
+	void TextFormatted(const std::string_view &format, T &&...args)
 	{
-		const auto string = fmt::format(format, std::forward<T>(args)...);
+		const auto string = std::vformat(format, std::make_format_args(args...));
 		ImGui::TextUnformatted(string);
 	}
 
