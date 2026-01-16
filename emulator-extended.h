@@ -13,10 +13,13 @@
 #include "debug-log.h"
 #include "sdl-wrapper.h"
 
-template<typename Colour>
-class EmulatorExtended : public ClownMDEmuCXX
+template<typename Derived, typename Colour>
+class EmulatorExtended : public ClownMDEmuCXX::Emulator<Derived>
 {
 protected:
+	using Emulator = ClownMDEmuCXX::Emulator<Derived>;
+	friend Emulator;
+
 	struct Palette
 	{
 		static constexpr unsigned int total_brightnesses = VDP_TOTAL_BRIGHTNESSES;
@@ -35,13 +38,13 @@ public:
 		Palette palette;
 
 	public:
-		StateBackup(const EmulatorExtended<Colour> &emulator)
+		StateBackup(const EmulatorExtended &emulator)
 			: emulator(emulator)
 			, cd_reader(emulator.cd_reader)
 			, palette(emulator.palette)
 		{}
 
-		void Apply(EmulatorExtended<Colour> &emulator) const
+		void Apply(EmulatorExtended &emulator) const
 		{
 			this->emulator.Apply(emulator);
 			cd_reader.Apply(emulator.cd_reader);
@@ -140,37 +143,37 @@ private:
 	// Emulator Callbacks //
 	////////////////////////
 
-	void ColourUpdated(const cc_u16f index, const cc_u16f colour) override final
+	void ColourUpdated(const cc_u16f index, const cc_u16f colour)
 	{
 		palette.colours[index] = colour;
 	}
 
-	void FMAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final
+	void FMAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_fm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 	{
 		generate_fm_audio(clownmdemu, audio_output.MixerAllocateFMSamples(total_frames), total_frames);
 	}
-	void PSGAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final
+	void PSGAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_psg_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 	{
 		generate_psg_audio(clownmdemu, audio_output.MixerAllocatePSGSamples(total_frames), total_frames);
 	}
-	void PCMAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final
+	void PCMAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_pcm_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 	{
 		generate_pcm_audio(clownmdemu, audio_output.MixerAllocatePCMSamples(total_frames), total_frames);
 	}
-	void CDDAAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames)) override final
+	void CDDAAudioToBeGenerated(ClownMDEmu *clownmdemu, std::size_t total_frames, void (*generate_cdda_audio)(ClownMDEmu *clownmdemu, cc_s16l *sample_buffer, std::size_t total_frames))
 	{
 		generate_cdda_audio(clownmdemu, audio_output.MixerAllocateCDDASamples(total_frames), total_frames);
 	}
 
-	void CDSeeked(cc_u32f sector_index) override final
+	void CDSeeked(cc_u32f sector_index)
 	{
 		cd_reader.SeekToSector(sector_index);
 	}
-	void CDSectorRead(cc_u16l *buffer) override final
+	void CDSectorRead(cc_u16l *buffer)
 	{
 		cd_reader.ReadSector(buffer);
 	}
-	cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode) override final
+	cc_bool CDTrackSeeked(cc_u16f track_index, ClownMDEmu_CDDAMode mode)
 	{
 		CDReader::PlaybackSetting playback_setting;
 
@@ -195,17 +198,17 @@ private:
 
 		return cd_reader.PlayAudio(track_index, playback_setting);
 	}
-	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames) override final
+	std::size_t CDAudioRead(cc_s16l *sample_buffer, std::size_t total_frames)
 	{
 		return cd_reader.ReadAudio(sample_buffer, total_frames);
 	}
 
-	cc_bool SaveFileOpenedForReading(const char *filename) override final
+	cc_bool SaveFileOpenedForReading(const char *filename)
 	{
 		save_data_stream.open(save_file_directory / filename, std::ios::binary | std::ios::in);
 		return save_data_stream.is_open();
 	}
-	cc_s16f SaveFileRead() override final
+	cc_s16f SaveFileRead()
 	{
 		const auto byte = save_data_stream.get();
 
@@ -214,24 +217,24 @@ private:
 
 		return byte;
 	}
-	cc_bool SaveFileOpenedForWriting(const char *filename) override final
+	cc_bool SaveFileOpenedForWriting(const char *filename)
 	{
 		save_data_stream.open(save_file_directory / filename, std::ios::binary | std::ios::out);
 		return save_data_stream.is_open();
 	}
-	void SaveFileWritten(cc_u8f byte) override final
+	void SaveFileWritten(cc_u8f byte)
 	{
 		save_data_stream.put(byte);
 	}
-	void SaveFileClosed() override final
+	void SaveFileClosed()
 	{
 		save_data_stream.close();
 	}
-	cc_bool SaveFileRemoved(const char *filename) override final
+	cc_bool SaveFileRemoved(const char *filename)
 	{
 		return std::filesystem::remove(save_file_directory / filename);
 	}
-	cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size) override final
+	cc_bool SaveFileSizeObtained(const char *filename, std::size_t *size)
 	{
 		std::error_code ec;
 		*size = std::filesystem::file_size(save_file_directory / filename, ec);
@@ -251,7 +254,7 @@ private:
 		{
 			const auto save_data_size = std::filesystem::file_size(cartridge_save_file_path);
 
-			auto &external_ram_buffer = GetExternalRAM();
+			auto &external_ram_buffer = Emulator::GetExternalRAM();
 
 			if (save_data_size > std::size(external_ram_buffer))
 			{
@@ -272,7 +275,7 @@ private:
 			return;
 
 		// Write save data to disk.
-		const auto &external_ram = GetState().external_ram;
+		const auto &external_ram = Emulator::GetState().external_ram;
 
 		if (external_ram.non_volatile && external_ram.size != 0)
 		{
@@ -288,16 +291,16 @@ private:
 	}
 
 public:
-	EmulatorExtended(const InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
-		: ClownMDEmuCXX(configuration)
-		, audio_output(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
+	EmulatorExtended(const ClownMDEmuCXX::InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
+		: Emulator(configuration)
+		, audio_output(Emulator::GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
 	{
 		std::filesystem::create_directories(save_file_directory);
 
 		// This should be called before any other ClownMDEmu functions are called!
-		SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
+		Emulator::SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
 		cd_reader.SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
 	}
 
@@ -316,7 +319,7 @@ public:
 		// Reset state buffer, since it cannot undo the cartridge or CD being changed.
 		state_rewind_buffer.Clear();
 
-		ClownMDEmuCXX::InsertCartridge(std::forward<Ts>(args)...);
+		Emulator::InsertCartridge(std::forward<Ts>(args)...);
 		LoadCartridgeSaveData(cartridge_file_path);
 	}
 
@@ -326,7 +329,7 @@ public:
 		state_rewind_buffer.Clear();
 
 		SaveCartridgeSaveData();
-		ClownMDEmuCXX::EjectCartridge(std::forward<Ts>(args)...);
+		Emulator::EjectCartridge(std::forward<Ts>(args)...);
 	}
 
 	////////
@@ -366,7 +369,7 @@ public:
 	void Reset(const cc_bool cd_inserted) = delete;
 	void Reset()
 	{
-		ClownMDEmuCXX::Reset(IsCDInserted());
+		Emulator::Reset(IsCDInserted());
 	}
 
 	bool Iterate()
@@ -391,7 +394,7 @@ public:
 			// Reset the audio buffers so that they can be mixed into.
 			audio_output.MixerBegin();
 
-			ClownMDEmuCXX::Iterate();
+			Emulator::Iterate();
 
 			// Resample, mix, and output the audio for this frame.
 			audio_output.MixerEnd();
@@ -451,7 +454,7 @@ public:
 
 	void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 	{
-		ClownMDEmuCXX::SetTVStandard(tv_standard);
+		Emulator::SetTVStandard(tv_standard);
 		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 	}
 };

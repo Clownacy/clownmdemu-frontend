@@ -14,8 +14,10 @@
 #include "emulator-extended.h"
 #include "sdl-wrapper.h"
 
-class EmulatorInstance final : public EmulatorExtended<Colour>
+class EmulatorInstance final : public EmulatorExtended<EmulatorInstance, Colour>
 {
+	friend EmulatorExtended<EmulatorInstance, Colour>::Emulator;
+
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
 
@@ -32,8 +34,8 @@ private:
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
 
-	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
-	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
+	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
+	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);

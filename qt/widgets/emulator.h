@@ -23,9 +23,11 @@
 
 namespace Widgets
 {
-	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorExtended<Colour>
+	class Emulator : public QOpenGLWidget, protected QOpenGLFunctions, public EmulatorExtended<Emulator, Colour>
 	{
 		Q_OBJECT
+
+		friend EmulatorExtended<Emulator, Colour>::Emulator;
 
 	protected:
 		using Base = QOpenGLWidget;
@@ -52,8 +54,8 @@ namespace Widgets
 		bool paused = false;
 
 		// Emulator stuff.
-		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height) override;
-		cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id) override;
+		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
+		cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
 
 		// Qt stuff.
 		void initializeGL() override;
