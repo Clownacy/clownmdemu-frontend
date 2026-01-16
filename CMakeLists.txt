@@ -142,7 +142,7 @@ target_compile_definitions(clownmdemu PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<N
 # Disable some deprecated junk in Dear ImGui
 target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
 
-# Allow performing mathematical operations on vectors.
+# Allow performing mathematical operations on vectors
 target_compile_definitions(clownmdemu PRIVATE IMGUI_DEFINE_MATH_OPERATORS)
 
 # 'ImTextureID' needs to be a pointer, not an integer
