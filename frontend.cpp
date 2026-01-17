@@ -2242,10 +2242,11 @@ static void DrawStatusIndicator()
 			const ImVec2 bar_outline_offset(outline_radius, outline_radius);
 			const auto &bar_inside_left_position = bar_left_position + bar_outline_offset;
 			const auto &bar_inside_right_position = bar_right_position - bar_outline_offset;
+			const auto &bar_inside_middle_position_x = std::lerp(bar_inside_left_position.x, bar_inside_right_position.x, progress);
 
 			DrawRectangle(bar_left_position, bar_right_position, IM_COL32_BLACK);
-			DrawRectangle(bar_inside_left_position, bar_inside_right_position, IM_COL32(0x7F, 0x7F, 0x7F, 0xFF));
-			DrawRectangle(bar_inside_left_position, ImVec2(std::lerp(bar_inside_left_position.x, bar_inside_right_position.x, progress), bar_inside_right_position.y), IM_COL32_WHITE);
+			DrawRectangle(bar_inside_left_position, ImVec2(bar_inside_middle_position_x, bar_inside_right_position.y), IM_COL32_WHITE);
+			DrawRectangle(ImVec2(bar_inside_middle_position_x, bar_inside_left_position.y), bar_inside_right_position, IM_COL32(0x7F, 0x7F, 0x7F, 0xFF));
 		};
 
 		const auto offset = ImVec2(radius / 2, 0);
