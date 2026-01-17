@@ -85,9 +85,8 @@ protected:
 			ImGui::PopFont();
 	};
 
-	// TODO: Go back to `std::format_string` when Visual Studio stops sucking balls (lacking it).
 	template<typename... T>
-	void DoProperty(ImFont* const font, const char* const label, const std::string_view &format, T &&...args)
+	void DoProperty(ImFont* const font, const char* const label, fmt::format_string<T...> format, T &&...args)
 	{
 		DoProperty(font, label,
 			[&]()

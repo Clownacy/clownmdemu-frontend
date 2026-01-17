@@ -185,6 +185,13 @@ endif()
 target_link_libraries(clownmdemu clown68000-disassembler)
 target_link_libraries(clownmdemu clownz80-disassembler)
 
+# Link fmt
+find_package(fmt 8.0.0)
+if(NOT fmt_FOUND)
+	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
+endif()
+target_link_libraries(clownmdemu fmt::fmt)
+
 ################
 # Installation #
 ################

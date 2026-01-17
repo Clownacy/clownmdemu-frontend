@@ -685,7 +685,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 		ImGui::TableSetupScrollFreeze(1, 0);
 		ImGui::TableSetupColumn("Sprite #", ImGuiTableColumnFlags_WidthFixed);
 		for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
-			ImGui::TableSetupColumn(std::format("{}", i).c_str(), ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn(fmt::format("{}", i).c_str(), ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableHeadersRow();
 
 		const auto EverySprite = [&vdp](const std::string &label, const std::function<void(const Sprite &sprite, cc_u8f index)> &callback)

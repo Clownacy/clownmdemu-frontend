@@ -34,7 +34,6 @@ public:
 
 	void Log(const char *format, std::va_list args);
 
-	// TODO: Go back to `std::format_string` when Visual Studio stops sucking balls (lacking it).
 	template <typename... Ts>
 	void Log(const std::string_view &format, Ts &&...args)
 	{
