@@ -2621,7 +2621,7 @@ void Frontend::Update()
 
 				PopupButton("CDDA", cdda_status_window, 180, 324, false);
 
-				PopupButton("Other", other_status_window, 350, 810, false);
+				PopupButton("Other", other_status_window, 350, 830, false);
 
 				ImGui::EndMenu();
 			}
