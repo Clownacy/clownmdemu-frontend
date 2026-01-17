@@ -2606,7 +2606,7 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
-				PopupButton("FM", fm_status_window, 540, 920, false, std::nullopt, "FM Registers");
+				PopupButton("FM", fm_status_window, 540, 924, false, std::nullopt, "FM Registers");
 
 				PopupButton("PSG", psg_status_window, 290, 264, false, std::nullopt, "PSG Registers");
 
