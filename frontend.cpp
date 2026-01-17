@@ -2171,22 +2171,21 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 		// A bunch of utility junk.
 		const auto dpi_scale = window->GetDPIScale();
 
-		const auto radius = 20.0f;
+		const auto radius = 20.0f * dpi_scale;
 		const auto outline_radius = radius / 6;
+		const ImVec2 outline_radius_v(outline_radius, outline_radius);
 
 		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
 
 		const auto DrawOutlinedTriangle = [&](const ImVec2 &position, const unsigned int degree)
 		{
-			const auto DrawTriangle = [&](ImVec2 position, const unsigned int degree, const ImU32 col, const float radius)
+			const auto DrawTriangle = [&](const ImVec2 &position, const unsigned int degree, const ImU32 col, const float radius)
 			{
-				position *= dpi_scale;
-
 				const auto DegreeToPoint = [&](const unsigned int degree)
 				{
 					const auto x = +std::sin(CC_DEGREE_TO_RADIAN(degree));
 					const auto y = -std::cos(CC_DEGREE_TO_RADIAN(degree));
-					return ImVec2(x, y) * radius * dpi_scale;
+					return ImVec2(x, y) * radius;
 				};
 
 				draw_list->AddTriangleFilled(position + DegreeToPoint(degree + 120 * 0), position + DegreeToPoint(degree + 120 * 1), position + DegreeToPoint(degree + 120 * 2), col);
@@ -2197,36 +2196,28 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 			DrawTriangle(position, degree, IM_COL32_WHITE, radius - outline_radius / std::cos(CC_DEGREE_TO_RADIAN(180 / 3)));
 		};
 
-		const auto DrawRectangle = [&](const ImVec2 &top_left, const ImVec2 &bottom_right, const ImU32 colour)
-		{
-			draw_list->AddRectFilled(top_left * dpi_scale, bottom_right * dpi_scale, colour);
-		};
-
 		const auto DrawOutlinedRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv)
 		{
-			const auto DrawRadiusRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv, const ImU32 colour)
+			const auto DrawRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv, const ImU32 colour)
 			{
-				DrawRectangle(position - radiusv, position + radiusv, colour);
+				draw_list->AddRectFilled(position - radiusv, position + radiusv, colour);
 			};
 
-			DrawRadiusRectangle(position, radiusv, IM_COL32_BLACK);
-			DrawRadiusRectangle(position, radiusv - ImVec2(outline_radius, outline_radius), IM_COL32_WHITE);
+			DrawRectangle(position, radiusv, IM_COL32_BLACK);
+			DrawRectangle(position, radiusv - outline_radius_v, IM_COL32_WHITE);
 		};
 
-		const auto positionv = display_position / dpi_scale + ImVec2(display_size.x / dpi_scale - radius * 2, radius * 2);
+		const auto positionv = display_position + ImVec2(display_size.x - radius * 2, radius * 2);
 
 		const auto DoLine = [&](const ImVec2 &first_scale, const ImVec2 &second_scale)
 		{
 			const auto DoCoordinate = [&](const ImVec2 &scale)
 			{
 				const ImVec2 radiusv(radius, radius);
-				return (positionv + radiusv * scale) * dpi_scale;
+				return positionv + radiusv * scale;
 			};
 
-			const auto colour = IM_COL32(0xFF, 0, 0, 0xFF);
-			const auto thickness = outline_radius * dpi_scale;
-
-			draw_list->AddLine(DoCoordinate(first_scale), DoCoordinate(second_scale), colour, thickness);
+			draw_list->AddLine(DoCoordinate(first_scale), DoCoordinate(second_scale), IM_COL32(0xFF, 0, 0, 0xFF), outline_radius);
 		};
 
 		const auto DrawCross = [&]()
@@ -2239,14 +2230,13 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 		{
 			const auto &bar_left_position = positionv + ImVec2(-radius, radius);
 			const auto &bar_right_position = bar_left_position + ImVec2(radius * 2, outline_radius * 3);
-			const ImVec2 bar_outline_offset(outline_radius, outline_radius);
-			const auto &bar_inside_left_position = bar_left_position + bar_outline_offset;
-			const auto &bar_inside_right_position = bar_right_position - bar_outline_offset;
+			const auto &bar_inside_left_position = bar_left_position + outline_radius_v;
+			const auto &bar_inside_right_position = bar_right_position - outline_radius_v;
 			const auto &bar_inside_middle_position_x = std::lerp(bar_inside_left_position.x, bar_inside_right_position.x, progress);
 
-			DrawRectangle(bar_left_position, bar_right_position, IM_COL32_BLACK);
-			DrawRectangle(bar_inside_left_position, ImVec2(bar_inside_middle_position_x, bar_inside_right_position.y), IM_COL32_WHITE);
-			DrawRectangle(ImVec2(bar_inside_middle_position_x, bar_inside_left_position.y), bar_inside_right_position, IM_COL32(0x7F, 0x7F, 0x7F, 0xFF));
+			draw_list->AddRectFilled(bar_left_position, bar_right_position, IM_COL32_BLACK);
+			draw_list->AddRectFilled(bar_inside_left_position, ImVec2(bar_inside_middle_position_x, bar_inside_right_position.y), IM_COL32_WHITE);
+			draw_list->AddRectFilled(ImVec2(bar_inside_middle_position_x, bar_inside_left_position.y), bar_inside_right_position, IM_COL32(0x7F, 0x7F, 0x7F, 0xFF));
 		};
 
 		const auto offset = ImVec2(radius / 2, 0);
