@@ -503,7 +503,7 @@ private:
 			ImGui::TableNextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			int current_widescreen_setting = Frontend::emulator->GetWidescreenTiles();
-			if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILES, "%d Extra Columns", ImGuiSliderFlags_AlwaysClamp))
+			if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILES, "%d Extra Column Pairs", ImGuiSliderFlags_AlwaysClamp))
 				Frontend::emulator->SetWidescreenTiles(current_widescreen_setting);
 
 			ImGui::TableNextColumn();
