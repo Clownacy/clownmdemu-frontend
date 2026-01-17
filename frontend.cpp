@@ -2169,15 +2169,7 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 	if (emulator_paused || emulator->rewinding || emulator->fastforwarding)
 	{
 		// A bunch of utility junk.
-		const auto dpi_scale = window->GetDPIScale();
-
-		const auto radius = 20.0f * dpi_scale;
-		const auto outline_radius = radius / 6;
-		const ImVec2 outline_radius_v(outline_radius, outline_radius);
-
-		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
-
-		const auto DrawOutlinedTriangle = [&](const ImVec2 &position, const unsigned int degree)
+		const auto DrawOutlinedTriangle = [](ImDrawList* const draw_list, const ImVec2 &position, const float radius, const float outline_thickness, const unsigned int degree)
 		{
 			const auto DrawTriangle = [&](const ImVec2 &position, const unsigned int degree, const ImU32 col, const float radius)
 			{
@@ -2193,45 +2185,43 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 
 			DrawTriangle(position, degree, IM_COL32_BLACK, radius);
 			// The cosine trick is to make the outline thickness match that of a rectangle.
-			DrawTriangle(position, degree, IM_COL32_WHITE, radius - outline_radius / std::cos(CC_DEGREE_TO_RADIAN(180 / 3)));
+			DrawTriangle(position, degree, IM_COL32_WHITE, radius - outline_thickness / std::cos(CC_DEGREE_TO_RADIAN(180 / 3)));
 		};
 
-		const auto DrawOutlinedRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv)
+		const auto DrawOutlinedRectangle = [](ImDrawList* const draw_list, const ImVec2 &position, const ImVec2 &radius, const float outline_thickness)
 		{
-			const auto DrawRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv, const ImU32 colour)
+			const auto DrawRectangle = [&](const ImVec2 &position, const ImVec2 &radius, const ImU32 colour)
 			{
-				draw_list->AddRectFilled(position - radiusv, position + radiusv, colour);
+				draw_list->AddRectFilled(position - radius, position + radius, colour);
 			};
 
-			DrawRectangle(position, radiusv, IM_COL32_BLACK);
-			DrawRectangle(position, radiusv - outline_radius_v, IM_COL32_WHITE);
+			DrawRectangle(position, radius, IM_COL32_BLACK);
+			DrawRectangle(position, radius - ImVec2(outline_thickness, outline_thickness), IM_COL32_WHITE);
 		};
 
-		const auto positionv = display_position + ImVec2(display_size.x - radius * 2, radius * 2);
-
-		const auto DoLine = [&](const ImVec2 &first_scale, const ImVec2 &second_scale)
+		const auto DrawCross = [](ImDrawList* const draw_list, const ImVec2 &position, const ImVec2 &radius, const float outline_thickness)
 		{
-			const auto DoCoordinate = [&](const ImVec2 &scale)
+			const auto DoLine = [&](const ImVec2 &first_scale, const ImVec2 &second_scale)
 			{
-				const ImVec2 radiusv(radius, radius);
-				return positionv + radiusv * scale;
+				const auto DoCoordinate = [&](const ImVec2 &scale)
+				{
+					return position + radius * scale;
+				};
+
+				draw_list->AddLine(DoCoordinate(first_scale), DoCoordinate(second_scale), IM_COL32(0xFF, 0, 0, 0xFF), outline_thickness);
 			};
 
-			draw_list->AddLine(DoCoordinate(first_scale), DoCoordinate(second_scale), IM_COL32(0xFF, 0, 0, 0xFF), outline_radius);
-		};
-
-		const auto DrawCross = [&]()
-		{
 			DoLine({-1, -1}, { 1,  1});
 			DoLine({ 1, -1}, {-1,  1});
 		};
 
-		const auto DrawBar = [&](const float progress)
+		const auto DrawBar = [](ImDrawList* const draw_list, const ImVec2 &position, const float radius, const float outline_thickness, const float progress)
 		{
-			const auto &bar_left_position = positionv + ImVec2(-radius, radius);
-			const auto &bar_right_position = bar_left_position + ImVec2(radius * 2, outline_radius * 3);
-			const auto &bar_inside_left_position = bar_left_position + outline_radius_v;
-			const auto &bar_inside_right_position = bar_right_position - outline_radius_v;
+			const auto &bar_left_position = position + ImVec2(-radius, radius);
+			const auto &bar_right_position = bar_left_position + ImVec2(radius * 2, outline_thickness * 3);
+			const ImVec2 outline_thickness_v(outline_thickness, outline_thickness);
+			const auto &bar_inside_left_position = bar_left_position + outline_thickness_v;
+			const auto &bar_inside_right_position = bar_right_position - outline_thickness_v;
 			const auto &bar_inside_middle_position_x = std::lerp(bar_inside_left_position.x, bar_inside_right_position.x, progress);
 
 			draw_list->AddRectFilled(bar_left_position, bar_right_position, IM_COL32_BLACK);
@@ -2239,38 +2229,44 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 			draw_list->AddRectFilled(ImVec2(bar_inside_middle_position_x, bar_inside_left_position.y), bar_inside_right_position, IM_COL32(0x7F, 0x7F, 0x7F, 0xFF));
 		};
 
-		const auto offset = ImVec2(radius / 2, 0);
-		const auto &left_position = positionv - offset;
-		const auto &right_position = positionv + offset;
-
 		// The actual logic for drawing the symbols.
+		const auto radius = 20.0f * window->GetDPIScale();
+		const auto outline_thickness = radius / 6;
+
+		const auto position = display_position + ImVec2(display_size.x - radius * 2, radius * 2);
+		const auto offset = ImVec2(radius / 2, 0);
+		const auto &left_position = position - offset;
+		const auto &right_position = position + offset;
+
+		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
+
 		if (emulator_paused)
 		{
 			// Paused symbol.
 			const ImVec2 size(radius * 2 / 5, radius);
-			DrawOutlinedRectangle(left_position, size);
-			DrawOutlinedRectangle(right_position, size);
+			DrawOutlinedRectangle(draw_list, left_position, size, outline_thickness);
+			DrawOutlinedRectangle(draw_list, right_position, size, outline_thickness);
 		}
 		else if (emulator->rewinding)
 		{
 			// Rewinding symbol.
 			const auto angle = 270;
-			DrawOutlinedTriangle(left_position, angle);
-			DrawOutlinedTriangle(right_position, angle);
+			DrawOutlinedTriangle(draw_list, left_position, radius, outline_thickness, angle);
+			DrawOutlinedTriangle(draw_list, right_position, radius, outline_thickness, angle);
 
 			// Show how much of the rewind buffer remains.
-			DrawBar(emulator->GetRewindAmount());
+			DrawBar(draw_list, position, radius, outline_thickness, emulator->GetRewindAmount());
 
 			// Cross-out the symbol when exhausted.
 			if (emulator->IsRewindExhausted())
-				DrawCross();
+				DrawCross(draw_list, position, ImVec2(radius, radius), outline_thickness);
 		}
 		else if (emulator->fastforwarding)
 		{
 			// Fast-forwarding symbol.
 			const auto angle = 90;
-			DrawOutlinedTriangle(right_position, angle);
-			DrawOutlinedTriangle(left_position, angle);
+			DrawOutlinedTriangle(draw_list, right_position, radius, outline_thickness, angle);
+			DrawOutlinedTriangle(draw_list, left_position, radius, outline_thickness, angle);
 		}
 	}
 }
