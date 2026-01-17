@@ -57,7 +57,7 @@ Window::Window(const char* const window_title, const int window_width, const int
 	if (resizeable)
 		window_flags |= SDL_WINDOW_RESIZABLE;
 
-	// SDL3's documentation currently advices using this instead of 'SDL_CreateWindow'
+	// SDL3's documentation currently advises using this instead of 'SDL_CreateWindow'
 	// and 'SDL_CreateRenderer' separately to avoid "window flicker".
 	// https://wiki.libsdl.org/SDL3/SDL_CreateWindow
 	SDL_Window *window;
