@@ -48,11 +48,11 @@ float Window::GetDPIScale()
 	return HandleDPIError(SDL_GetWindowDisplayScale(GetSDLWindow()));
 }
 
-Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
+Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Uint32 window_flags)
 {
 	const float scale = GetDisplayDPIScale();
 
-	Uint32 window_flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+	window_flags |= SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
 	if (resizeable)
 		window_flags |= SDL_WINDOW_RESIZABLE;

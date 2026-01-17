@@ -12,7 +12,7 @@ private:
 	SDL::Renderer renderer;
 
 public:
-	Window(const char *window_title, int window_width, int window_height, bool resizeable);
+	Window(const char *window_title, int window_width, int window_height, bool resizeable, Uint32 window_flags = 0);
 
 	float GetSizeScale();
 	float GetDPIScale();

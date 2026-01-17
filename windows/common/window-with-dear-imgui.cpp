@@ -41,8 +41,8 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 // Not Fonts //
 ///////////////
 
-WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const int window_width, const int window_height, const bool resizeable)
-	: Window(window_title, window_width, window_height, resizeable)
+WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const int window_width, const int window_height, const bool resizeable, const Uint32 window_flags)
+	: Window(window_title, window_width, window_height, resizeable, window_flags)
 	, dear_imgui_context(ImGui::CreateContext())
 	, dpi_scale(GetDPIScale())
 {
