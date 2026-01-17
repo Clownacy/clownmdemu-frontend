@@ -2164,7 +2164,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	}
 }
 
-static void DrawStatusIndicator()
+static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &display_size)
 {
 	if (emulator_paused || emulator->rewinding || emulator->fastforwarding)
 	{
@@ -2213,8 +2213,7 @@ static void DrawStatusIndicator()
 			DrawRadiusRectangle(position, radiusv - ImVec2(outline_radius, outline_radius), IM_COL32_WHITE);
 		};
 
-		const auto position = radius * 2;
-		const ImVec2 positionv(ImGui::GetContentRegionAvail().x / dpi_scale - position, position + window->GetMenuBarSize());
+		const auto positionv = display_position / dpi_scale + ImVec2(display_size.x / dpi_scale - radius * 2, radius * 2);
 
 		const auto DoLine = [&](const ImVec2 &first_scale, const ImVec2 &second_scale)
 		{
@@ -2671,6 +2670,7 @@ void Frontend::Update()
 
 		// Create an invisible button which detects when input is intended for the emulator.
 		// We do this cursor stuff so that the framebuffer is drawn over the button.
+		const ImVec2 display_position = ImGui::GetCursorScreenPos();
 		const ImVec2 cursor = ImGui::GetCursorPos();
 		ImGui::InvisibleButton("Magical emulator focus detector", size_of_display_region);
 		ImGui::SetItemDefaultFocus();
@@ -2741,7 +2741,7 @@ void Frontend::Update()
 			// Draw the upscaled framebuffer in the window.
 			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
 
-			DrawStatusIndicator();
+			DrawStatusIndicator(display_position, size_of_display_region);
 		}
 	}
 
