@@ -82,7 +82,7 @@ public:
 
 		IntegerScreenScalingEnabled,
 		TallInterlaceMode2Enabled,
-		WidescreenTilePairs,
+		WidescreenTiles,
 
 		LowPassFilterEnabled,
 		LadderEffectEnabled,
@@ -127,7 +127,7 @@ signals:
 	void CDAddOnEnabledChanged(cc_bool enabled);
 	void IntegerScreenScalingEnabledChanged(cc_bool enabled);
 	void TallInterlaceMode2EnabledChanged(cc_bool enabled);
-	void WidescreenTilePairsChanged(unsigned int value);
+	void WidescreenTilesChanged(unsigned int value);
 	void LowPassFilterEnabledChanged(cc_bool enabled);
 	void LadderEffectEnabledChanged(cc_bool enabled);
 	void RewindingEnabledChanged(cc_bool enabled);

@@ -48,7 +48,7 @@ namespace Widgets
 		struct
 		{
 			cc_u16f width, height;
-			cc_u8f widescreen_tile_pairs;
+			cc_u8f widescreen_tiles;
 		} screen_properties;
 		std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 		bool paused = false;
@@ -98,7 +98,7 @@ namespace Widgets
 		}
 		void SetRegion(const ClownMDEmu_Region region){ EmulatorExtended::SetRegion(region); }
 		void SetCDAddOnEnabled(const cc_bool enabled){ EmulatorExtended::SetCDAddOnEnabled(enabled); }
-		void SetWidescreenTilePairs(const unsigned int tile_pairs){ EmulatorExtended::SetWidescreenTilePairs(tile_pairs); }
+		void SetWidescreenTiles(const unsigned int tile_pairs){ EmulatorExtended::SetWidescreenTiles(tile_pairs); }
 		void SetLowPassFilterEnabled(const cc_bool enabled){ EmulatorExtended::SetLowPassFilterEnabled(enabled); }
 		void SetLadderEffectEnabled(const cc_bool enabled){ EmulatorExtended::SetLadderEffectEnabled(enabled); }
 

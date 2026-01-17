@@ -95,7 +95,7 @@ void MainWindow::CreateEmulator()
 	connect(&options, &Options::TVStandardChanged, &*emulator, &Widgets::Emulator::SetTVStandard);
 	connect(&options, &Options::RegionChanged, &*emulator, &Widgets::Emulator::SetRegion);
 	connect(&options, &Options::CDAddOnEnabledChanged, &*emulator, &Widgets::Emulator::SetCDAddOnEnabled);
-	connect(&options, &Options::WidescreenTilePairsChanged, &*emulator, &Widgets::Emulator::SetWidescreenTilePairs);
+	connect(&options, &Options::WidescreenTilesChanged, &*emulator, &Widgets::Emulator::SetWidescreenTiles);
 	connect(&options, &Options::LowPassFilterEnabledChanged, &*emulator, &Widgets::Emulator::SetLowPassFilterEnabled);
 	connect(&options, &Options::LadderEffectEnabledChanged, &*emulator, &Widgets::Emulator::SetLadderEffectEnabled);
 	connect(&options, &Options::SpritePlaneEnabledChanged, &*emulator, &Widgets::Emulator::SetSpritePlaneEnabled);
@@ -231,7 +231,7 @@ MainWindow::MainWindow(QWidget* const parent)
 
 	// Widen the window to account for the widescreen hack.
 	constexpr int initial_window_scale = 2;
-	const int initial_window_width = (VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + options.GetWidescreenTilePairs() * 2) * VDP_TILE_PAIR_WIDTH * initial_window_scale;
+	const int initial_window_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + options.GetWidescreenTiles() * 2) * VDP_TILE_WIDTH * initial_window_scale;
 	const int initial_window_height = menuBar()->heightForWidth(initial_window_width) + VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT * initial_window_scale;
 	resize(initial_window_width, initial_window_height);
 

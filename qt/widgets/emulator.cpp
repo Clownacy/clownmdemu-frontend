@@ -122,7 +122,7 @@ void Widgets::Emulator::paintGL()
 	{
 		const auto &GetAspectRatio = [&]()
 		{
-			const cc_u16f x = (VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + screen_properties.widescreen_tile_pairs * 2) * VDP_TILE_PAIR_WIDTH;
+			const cc_u16f x = (VDP_H40_SCREEN_WIDTH_IN_TILES + screen_properties.widescreen_tiles * 2) * VDP_TILE_WIDTH;
 			const cc_u16f y = squashed ? screen_properties.height / 2 : screen_properties.height;
 
 			return std::make_pair(x, y);
@@ -201,7 +201,7 @@ void Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* c
 
 	screen_properties.width = screen_width;
 	screen_properties.height = screen_height;
-	screen_properties.widescreen_tile_pairs = GetWidescreenTilePairs();
+	screen_properties.widescreen_tiles = GetWidescreenTiles();
 }
 
 cc_bool Widgets::Emulator::InputRequested(const cc_u8f player_id, const ClownMDEmu_Button button_id)
