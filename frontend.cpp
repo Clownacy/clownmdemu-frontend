@@ -2196,15 +2196,20 @@ static void DrawStatusIndicator()
 			DrawTriangle(position, degree, IM_COL32_WHITE, radius - outline_radius / std::cos(CC_DEGREE_TO_RADIAN(180 / 3)));
 		};
 
+		const auto DrawRectangle = [&](const ImVec2 &top_left, const ImVec2 &bottom_right, const ImU32 colour)
+		{
+			draw_list->AddRectFilled(top_left * dpi_scale, bottom_right * dpi_scale, colour);
+		};
+
 		const auto DrawOutlinedRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv)
 		{
-			const auto DrawRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv, const ImU32 colour)
+			const auto DrawRadiusRectangle = [&](const ImVec2 &position, const ImVec2 &radiusv, const ImU32 colour)
 			{
-				draw_list->AddRectFilled((position - radiusv) * dpi_scale, (position + radiusv) * dpi_scale, colour);
+				DrawRectangle(position - radiusv, position + radiusv, colour);
 			};
 
-			DrawRectangle(position, radiusv, IM_COL32_BLACK);
-			DrawRectangle(position, radiusv - ImVec2(outline_radius, outline_radius), IM_COL32_WHITE);
+			DrawRadiusRectangle(position, radiusv, IM_COL32_BLACK);
+			DrawRadiusRectangle(position, radiusv - ImVec2(outline_radius, outline_radius), IM_COL32_WHITE);
 		};
 
 		const auto position = radius * 2;
@@ -2230,6 +2235,19 @@ static void DrawStatusIndicator()
 			DoLine({ 1, -1}, {-1,  1});
 		};
 
+		const auto DrawBar = [&](const float progress)
+		{
+			const auto &bar_left_position = positionv + ImVec2(-radius, radius);
+			const auto &bar_right_position = bar_left_position + ImVec2(radius * 2, outline_radius * 3);
+			const ImVec2 bar_outline_offset(outline_radius, outline_radius);
+			const auto &bar_inside_left_position = bar_left_position + bar_outline_offset;
+			const auto &bar_inside_right_position = bar_right_position - bar_outline_offset;
+
+			DrawRectangle(bar_left_position, bar_right_position, IM_COL32_BLACK);
+			DrawRectangle(bar_inside_left_position, bar_inside_right_position, IM_COL32(0x7F, 0x7F, 0x7F, 0xFF));
+			DrawRectangle(bar_inside_left_position, ImVec2(std::lerp(bar_inside_left_position.x, bar_inside_right_position.x, progress), bar_inside_right_position.y), IM_COL32_WHITE);
+		};
+
 		const auto offset = ImVec2(radius / 2, 0);
 		const auto &left_position = positionv - offset;
 		const auto &right_position = positionv + offset;
@@ -2249,7 +2267,10 @@ static void DrawStatusIndicator()
 			DrawOutlinedTriangle(left_position, angle);
 			DrawOutlinedTriangle(right_position, angle);
 
-			// Cross-out the symbol.
+			// Show how much of the rewind buffer remains.
+			DrawBar(emulator->GetRewindAmount());
+
+			// Cross-out the symbol when exhausted.
 			if (emulator->IsRewindExhausted())
 				DrawCross();
 		}

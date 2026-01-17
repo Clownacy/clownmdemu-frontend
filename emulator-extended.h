@@ -102,11 +102,16 @@ private:
 			return state_buffer_remaining < 2;
 		}
 
+		[[nodiscard]] constexpr std::size_t Capacity() const
+		{
+			return std::size(state_buffer) - 2;
+		}
+
 		void Push(EmulatorExtended &emulator)
 		{
 			assert(Exists());
 
-			state_buffer_remaining = std::min(state_buffer_remaining + 1, std::size(state_buffer) - 2);
+			state_buffer_remaining = std::min(state_buffer_remaining + 1, Capacity());
 
 			const auto old_index = state_buffer_index;
 			state_buffer_index = NextIndex(state_buffer_index);
@@ -128,6 +133,11 @@ private:
 		[[nodiscard]] bool Exists() const
 		{
 			return !state_buffer.empty();
+		}
+
+		[[nodiscard]] std::size_t Size() const
+		{
+			return state_buffer_remaining;
 		}
 	};
 
@@ -446,6 +456,11 @@ public:
 	[[nodiscard]] bool IsRewindExhausted() const
 	{
 		return state_rewind_buffer.Exhausted();
+	}
+
+	[[nodiscard]] float GetRewindAmount() const
+	{
+		return static_cast<float>(state_rewind_buffer.Size()) / state_rewind_buffer.Capacity();
 	}
 
 	/////////////////////////////
