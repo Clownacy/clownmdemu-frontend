@@ -502,9 +502,9 @@ private:
 
 			ImGui::TableNextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			int current_widescreen_setting = Frontend::emulator->GetWidescreenTilePairs();
-			if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILE_PAIRS, "%d Extra Columns", ImGuiSliderFlags_AlwaysClamp))
-				Frontend::emulator->SetWidescreenTilePairs(current_widescreen_setting);
+			int current_widescreen_setting = Frontend::emulator->GetWidescreenTiles();
+			if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILES, "%d Extra Columns", ImGuiSliderFlags_AlwaysClamp))
+				Frontend::emulator->SetWidescreenTiles(current_widescreen_setting);
 
 			ImGui::TableNextColumn();
 			auto vsync = Frontend::window->GetVSync();
@@ -1197,7 +1197,7 @@ static void LoadConfiguration()
 	bool vsync = false;
 	bool integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
-	unsigned int widescreen_tile_pairs = 0;
+	unsigned int widescreen_tiles = 0;
 #ifdef __EMSCRIPTEN__
 	native_windows = false;
 #else
@@ -1288,8 +1288,8 @@ static void LoadConfiguration()
 					integer_screen_scaling = value_boolean;
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
-				else if (name == "widescreen-tile-pairs")
-					widescreen_tile_pairs = value_integer ? *value_integer : 0;
+				else if (name == "widescreen-tiles")
+					widescreen_tiles = value_integer ? *value_integer : 0;
 			#ifndef __EMSCRIPTEN__
 				else if (name == "native-windows")
 					native_windows = value_boolean;
@@ -1416,7 +1416,7 @@ static void LoadConfiguration()
 
 	// Apply settings now that they have been decided.
 	window->SetVSync(vsync);
-	emulator->SetWidescreenTilePairs(widescreen_tile_pairs);
+	emulator->SetWidescreenTiles(widescreen_tiles);
 	emulator->SetRewindEnabled(rewinding);
 	emulator->SetLowPassFilterEnabled(low_pass_filter);
 	emulator->SetCDAddOnEnabled(cd_add_on);
@@ -1468,7 +1468,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
-		PRINT_INTEGER_OPTION(file, "widescreen-tile-pairs", emulator->GetWidescreenTilePairs());
+		PRINT_INTEGER_OPTION(file, "widescreen-tiles", emulator->GetWidescreenTiles());
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
@@ -1647,7 +1647,7 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		{
 			// Resize the window so that there's room for the menu bar.
 			// Also adjust for widescreen if the user has the option enabled.
-			const auto desired_width = ((VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + emulator->GetWidescreenTilePairs() * 2) * VDP_TILE_PAIR_WIDTH) * INITIAL_WINDOW_SCALE;
+			const auto desired_width = ((VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetWidescreenTiles() * 2) * VDP_TILE_WIDTH) * INITIAL_WINDOW_SCALE;
 
 			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
@@ -2673,7 +2673,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS + emulator->GetWidescreenTilePairs() * 2) * VDP_TILE_PAIR_WIDTH;
+			destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetWidescreenTiles() * 2) * VDP_TILE_WIDTH;
 			destination_height = emulator->GetCurrentScreenHeight();
 
 			switch (destination_height)
