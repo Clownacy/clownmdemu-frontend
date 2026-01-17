@@ -3,11 +3,11 @@
 
 #include <cstdarg>
 #include <cstddef>
-#include <format>
 #include <functional>
 #include <string>
 #include <string_view>
 
+#include <fmt/core.h>
 #include <SDL3/SDL.h>
 
 #include "libraries/imgui/imgui.h"
@@ -35,9 +35,9 @@ public:
 	void Log(const char *format, std::va_list args);
 
 	template <typename... Ts>
-	void Log(const std::string_view &format, Ts &&...args)
+	void Log(const fmt::format_string<Ts...> &format, Ts &&...args)
 	{
-		const auto &string = std::vformat(format, std::make_format_args(args...));
+		const auto &string = fmt::format(format, std::forward<Ts>(args)...);
 
 		const auto GetSize = [&]()
 		{

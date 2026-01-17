@@ -62,6 +62,13 @@ else()
 	target_link_libraries(clownmdemu-frontend-qt PRIVATE SDL3::SDL3-static)
 endif()
 
+# Link fmt (needed for Ubuntu 22.04, which lacks std::format)
+find_package(fmt 8.0.0)
+if(NOT fmt_FOUND)
+	add_subdirectory("../libraries/fmt" EXCLUDE_FROM_ALL)
+endif()
+target_link_libraries(clownmdemu-frontend-qt PRIVATE fmt::fmt)
+
 qt_add_resources(clownmdemu-frontend-qt "shaders"
 	PREFIX
 		"/"
