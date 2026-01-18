@@ -64,6 +64,7 @@ The default control scheme is as follows:
 | ----- | ----------------------------------------------- |
 | Pause | Pause                                           |
 | Space | Fast-forward (unpaused), frame-advance (paused) |
+| F     | Fast-forward (unpaused), frame-advance (paused) |
 | R     | Rewind                                          |
 | Tab   | Soft reset                                      |
 | F1    | Toggle which Control Pad the keyboard controls  |

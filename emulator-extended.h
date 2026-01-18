@@ -2,6 +2,7 @@
 #define EMULATOR_EXTENDED_H
 
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <type_traits>
@@ -56,7 +57,7 @@ public:
 	static_assert(std::is_trivially_copyable_v<StateBackup>);
 
 	// TODO: Make this private and use getters and setters instead, for consistency?
-	bool rewinding = false, fastforwarding = false;
+	bool rewinding = false;
 
 private:
 	class StateRingBuffer
@@ -148,6 +149,7 @@ private:
 	std::fstream save_data_stream;
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;
+	unsigned int speed = 1;
 
 	////////////////////////
 	// Emulator Callbacks //
@@ -402,7 +404,7 @@ public:
 
 	bool Iterate()
 	{
-		for (unsigned int i = 0; i < (fastforwarding ? 3 : 1); ++i)
+		for (unsigned int i = 0; i < speed; ++i)
 		{
 			if (state_rewind_buffer.Exists())
 			{
@@ -429,6 +431,16 @@ public:
 		}
 
 		return true;
+	}
+
+	void SetFastForwarding(const unsigned int speed)
+	{
+		this->speed = speed == 0 ? 1 : std::pow(3, speed);
+	}
+
+	bool IsFastForwarding() const
+	{
+		return speed != 1;
 	}
 
 	///////////

@@ -936,14 +936,12 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 
 static void UpdateFastForwardStatus()
 {
-	bool fast_forward_in_progress;
-
-	fast_forward_in_progress = keyboard_input.fast_forward;
+	unsigned int speed = keyboard_input.fast_forward;
 
 	for (const auto &controller_input : controller_input_list)
-		fast_forward_in_progress |= controller_input.input.fast_forward != 0;
+		speed += controller_input.input.fast_forward;
 
-	emulator->fastforwarding = fast_forward_in_progress;
+	emulator->SetFastForwarding(speed);
 }
 
 static void UpdateRewindStatus()
@@ -1261,6 +1259,7 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = INPUT_BINDING_QUICK_SAVE_STATE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = INPUT_BINDING_QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
+		keyboard_bindings[SDL_SCANCODE_F] = INPUT_BINDING_FAST_FORWARD;
 		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
 	}
 	else
@@ -2167,7 +2166,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &display_size)
 {
-	if (emulator_paused || emulator->rewinding || emulator->fastforwarding)
+	if (emulator_paused || emulator->rewinding || emulator->IsFastForwarding())
 	{
 		// A bunch of utility junk.
 		const auto DrawOutlinedTriangle = [](ImDrawList* const draw_list, const ImVec2 &position, const float radius, const float outline_thickness, const unsigned int degree)
@@ -2262,7 +2261,7 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 			if (emulator->IsRewindExhausted())
 				DrawCross(draw_list, position, ImVec2(radius, radius), outline_thickness);
 		}
-		else if (emulator->fastforwarding)
+		else if (emulator->IsFastForwarding())
 		{
 			// Fast-forwarding symbol.
 			const auto angle = 90;

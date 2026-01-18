@@ -245,7 +245,8 @@ bool Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pressed)
 #undef DO_KEY
 
 		case Qt::Key_Space:
-			fastforwarding = pressed;
+		case Qt::Key_F:
+			SetFastForwarding(GetFastForwarding() + (pressed ? 1 : -1));
 
 			if (pressed && paused)
 				Advance();
