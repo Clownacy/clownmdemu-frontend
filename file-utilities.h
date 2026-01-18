@@ -42,27 +42,19 @@ public:
 	bool FileExists(const std::filesystem::path &path);
 
 	template<typename T, std::size_t S>
+	T ReadFromIOStream(SDL::IOStream &file);
+
+	template<typename T, std::size_t S>
 	void ReadFromIOStream(SDL::IOStream &file, std::vector<T> &buffer)
 	{
 		for (auto &value : buffer)
-		{
-			std::array<unsigned char, S> bytes;
-			SDL_ReadIO(file, std::data(bytes), std::size(bytes));
-
-			value = 0;
-
-			for (const auto byte : bytes)
-			{
-				value <<= 8;
-				value |= byte;
-			}
-		}
+			value = ReadFromIOStream<T, S>(file);
 	}
 
 	template<typename T, std::size_t S>
 	std::optional<std::vector<T>> LoadFileToBuffer(SDL::IOStream &file)
 	{
-		const Sint64 size_s64 = SDL_GetIOSize(file);
+		const Sint64 size_s64 = SDL_GetIOSize(file) / S;
 
 		if (size_s64 < 0)
 		{
@@ -76,7 +68,7 @@ public:
 			{
 				std::vector<T> buffer(size);
 				ReadFromIOStream<T, S>(file, buffer);
-				return buffer;
+				return std::move(buffer);
 			}
 			catch (const std::bad_alloc&)
 			{
@@ -104,6 +96,14 @@ public:
 	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);
 };
+
+template<>
+inline cc_u16l FileUtilities::ReadFromIOStream<cc_u16l, 2>(SDL::IOStream &file)
+{
+	Uint16 integer;
+	SDL_ReadU16BE(file, &integer);
+	return integer;
+}
 
 template<>
 inline void FileUtilities::ReadFromIOStream<unsigned char, 1>(SDL::IOStream &file, std::vector<unsigned char> &buffer)
