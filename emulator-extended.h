@@ -331,6 +331,8 @@ public:
 
 		Emulator::InsertCartridge(std::forward<Ts>(args)...);
 		LoadCartridgeSaveData(cartridge_file_path);
+
+		HardReset();
 	}
 
 	template<typename... Ts>
@@ -340,6 +342,9 @@ public:
 
 		SaveCartridgeSaveData();
 		Emulator::EjectCartridge(std::forward<Ts>(args)...);
+
+		if (IsCDInserted())
+			HardReset();
 	}
 
 	////////
@@ -351,7 +356,11 @@ public:
 		state_rewind_buffer.Clear();
 
 		cd_reader.Open(path, stream);
-		return cd_reader.IsOpen();
+		if (!cd_reader.IsOpen())
+			return false;
+
+		HardReset();
+		return true;
 	}
 
 	void EjectCD()
@@ -359,6 +368,9 @@ public:
 		state_rewind_buffer.Clear();
 
 		cd_reader.Close();
+
+		if (Emulator::IsCartridgeInserted())
+			HardReset();
 	}
 
 	[[nodiscard]] bool IsCDInserted() const

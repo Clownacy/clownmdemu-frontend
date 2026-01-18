@@ -2393,9 +2393,6 @@ void Frontend::Update()
 				{
 					emulator->UnloadCartridgeFile();
 
-					if (emulator->IsCDInserted())
-						emulator->SoftReset();
-
 					SetWindowTitleToSoftwareName();
 					emulator_paused = false;
 				}
@@ -2417,9 +2414,6 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Unload CD File", nullptr, false, emulator->IsCDInserted()))
 				{
 					emulator->UnloadCDFile();
-
-					if (emulator->IsCartridgeInserted())
-						emulator->SoftReset();
 
 					SetWindowTitleToSoftwareName();
 					emulator_paused = false;
