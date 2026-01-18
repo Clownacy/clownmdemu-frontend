@@ -56,7 +56,7 @@ void EmulatorInstance::LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, con
 {
 	rom_file_buffer = std::move(file_buffer);
 	InsertCartridge(path, std::data(rom_file_buffer), std::size(rom_file_buffer));
-	Reset();
+	SoftReset();
 }
 
 void EmulatorInstance::UnloadCartridgeFile()
@@ -74,7 +74,7 @@ bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem:
 	if (!InsertCD(cd_stream, path))
 		return false;
 
-	Reset();
+	SoftReset();
 	return true;
 }
 
