@@ -190,8 +190,6 @@ Widgets::Emulator::Emulator(const Options &options, const QVector<cc_u16l> &cart
 
 	if (cd_stream != nullptr)
 		InsertCD(cd_stream, cd_path);
-
-	Reset();
 }
 
 void Widgets::Emulator::ScanlineRendered(const cc_u16f scanline, const cc_u8l* const pixels, const cc_u16f left_boundary, const cc_u16f right_boundary, const cc_u16f screen_width, const cc_u16f screen_height)

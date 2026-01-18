@@ -88,7 +88,8 @@ namespace Widgets
 			this->paused = paused;
 		}
 
-		void Reset(){ EmulatorExtended::Reset(); }
+		void SoftReset(){ EmulatorExtended::SoftReset(); }
+		void HardReset(){ EmulatorExtended::HardReset(); }
 		void SetRewindEnabled(const bool enabled){ EmulatorExtended::SetRewindEnabled(enabled); }
 
 		void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)

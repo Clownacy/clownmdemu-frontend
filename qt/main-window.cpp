@@ -41,7 +41,7 @@ void MainWindow::CreateEmulator()
 	setCentralWidget(&*emulator);
 
 	connect(ui.actionPause, &QAction::triggered, &*emulator, &Widgets::Emulator::Pause);
-	connect(ui.actionReset, &QAction::triggered, &*emulator, &Widgets::Emulator::Reset);
+	connect(ui.actionReset, &QAction::triggered, &*emulator, &Widgets::Emulator::SoftReset);
 
 	connect(ui.actionQuick_Save, &QAction::triggered, this,
 		[this]()
