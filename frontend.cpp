@@ -1930,8 +1930,8 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
 			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
-				// Toggle Dear ImGui gamepad controls.
-				io.ConfigFlags ^= ImGuiConfigFlags_NavEnableGamepad;
+				// Toggle pause.
+				emulator_paused = !emulator_paused;
 			}
 
 			// Don't use inputs that are for Dear ImGui.
@@ -2351,12 +2351,15 @@ void Frontend::Update()
 		);
 	};
 
+	auto &io = ImGui::GetIO();
+	io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
+	if (!emulator_on || emulator_paused)
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
 	const bool show_menu_bar = !window->GetFullscreen()
 	                         || pop_out
 	                         || AnyPopupsOpen()
-	                         || (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0
-	                         || !emulator_on
-	                         || emulator_paused;
+	                         || (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
 	// Hide mouse when the user just wants a fullscreen display window
 	if (!show_menu_bar)

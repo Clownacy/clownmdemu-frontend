@@ -56,7 +56,9 @@ The default control scheme is as follows:
 | Back  | Mode         |
 | LT    | Rewind       |
 | RT    | Fast-forward |
-| RSB   | [Toggle menu controls](http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png) |
+| RSB   | Pause        |
+
+[Menus can also be navigated with a controller.](http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
 ### Hotkeys
 
