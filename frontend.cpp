@@ -1131,6 +1131,11 @@ void Frontend::SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 	emulator->SetTVStandard(tv_standard);
 }
 
+bool NativeWindowsActive()
+{
+	return native_windows && !window->GetFullscreen();
+}
+
 
 /////////
 // INI //
@@ -1642,8 +1647,7 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 
 		LoadConfiguration();
 
-		if (!native_windows)
-			ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
+		ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
@@ -1691,8 +1695,7 @@ void Frontend::Deinitialise()
 		}, popup_windows
 	);
 
-	if (!native_windows)
-		ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
+	ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
 
 	SaveConfiguration();
 
@@ -2538,7 +2541,7 @@ void Frontend::Update()
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, forced_scale, native_windows ? nullptr : &*::window);
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, forced_scale, NativeWindowsActive() ? nullptr : &*::window);
 				}
 			};
 
@@ -2623,7 +2626,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
 
-				if (!native_windows)
+				if (!NativeWindowsActive())
 				{
 					ImGui::MenuItem("Display Window", nullptr, &pop_out);
 					ImGui::Separator();
