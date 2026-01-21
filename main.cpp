@@ -13,6 +13,7 @@
 #endif
 #include <SDL3/SDL_main.h>
 
+#include "file-utilities.h"
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
@@ -111,7 +112,7 @@ static void FrameRateCallback(const bool pal_mode)
 
 SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc, char** const argv)
 {
-	std::filesystem::path cartridge_path, cd_path, cartridge_or_cd_path;
+	std::string cartridge_path_raw, cd_path_raw, cartridge_or_cd_path_raw;
 	bool fullscreen = false;
 	bool help = false;
 
@@ -119,13 +120,13 @@ SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc
 		| lyra::opt(fullscreen)
 			["-f"]["--fullscreen"]
 			("Start the emulator in fullscreen.")
-		| lyra::opt(cartridge_path, "path")
+		| lyra::opt(cartridge_path_raw, "path")
 			["-c"]["--cartridge"]
 			("Cartridge software to load.")
-		| lyra::opt(cd_path, "path")
+		| lyra::opt(cd_path_raw, "path")
 			["-d"]["--disc"]
 			("Disc software to load.")
-		| lyra::arg(cartridge_or_cd_path, "path")
+		| lyra::arg(cartridge_or_cd_path_raw, "path")
 			("Cartridge or disc software to load.");
 
 	const auto result = cli.parse({argc, argv});
@@ -143,6 +144,10 @@ SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc
 		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s\n", stream.str().c_str());
 		return SDL_APP_SUCCESS;
 	}
+
+	auto cartridge_path = FileUtilities::U8Path(cartridge_path_raw);
+	auto cd_path = FileUtilities::U8Path(cd_path_raw);
+	const auto &cartridge_or_cd_path = FileUtilities::U8Path(cartridge_or_cd_path_raw);
 
 	if (!cartridge_or_cd_path.empty())
 	{

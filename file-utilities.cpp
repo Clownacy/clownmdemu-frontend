@@ -28,7 +28,7 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 				if (file_list == nullptr || *file_list == nullptr)
 					return;
 
-				(*callback.get())(reinterpret_cast<const char8_t*>(*file_list));
+				(*callback.get())(U8Path(*file_list));
 			};
 
 			const auto properties = SDL_CreateProperties();

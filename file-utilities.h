@@ -95,6 +95,11 @@ public:
 
 	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);
+
+	static std::filesystem::path U8Path(const std::string_view &string)
+	{
+		return std::u8string_view(reinterpret_cast<const char8_t*>(std::data(string)), std::size(string));
+	}
 };
 
 template<>

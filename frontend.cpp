@@ -1416,7 +1416,7 @@ static void LoadConfiguration()
 				else if (name == "path")
 				{
 					if (!value.empty())
-						AddToRecentSoftware(std::u8string_view(reinterpret_cast<const char8_t*>(value.data()), value.size()), is_cd_file, true);
+						AddToRecentSoftware(FileUtilities::U8Path(value), is_cd_file, true);
 				}
 			}
 		#endif
@@ -2132,7 +2132,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			break;
 
 		case SDL_EVENT_DROP_FILE:
-			drag_and_drop_filename = reinterpret_cast<const char8_t*>(event.drop.data);
+			drag_and_drop_filename = FileUtilities::U8Path(event.drop.data);
 			break;
 
 		default:
