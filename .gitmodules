@@ -17,3 +17,6 @@
 [submodule "libraries/fmt"]
 	path = libraries/fmt
 	url = https://github.com/fmtlib/fmt
+[submodule "libraries/Lyra"]
+	path = libraries/Lyra
+	url = https://github.com/bfgroup/Lyra

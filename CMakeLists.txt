@@ -192,6 +192,10 @@ if(NOT fmt_FOUND)
 endif()
 target_link_libraries(clownmdemu fmt::fmt)
 
+# Link Lyra
+add_subdirectory("libraries/Lyra" EXCLUDE_FROM_ALL)
+target_link_libraries(clownmdemu lyra)
+
 ################
 # Installation #
 ################

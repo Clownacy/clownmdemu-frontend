@@ -15,6 +15,8 @@
 #include "file-utilities.h"
 #include "windows/common/window-with-framebuffer.h"
 
+#define VERSION "v1.6.2"
+
 template<typename T>
 inline void DoToolTip(const T& text)
 {
@@ -75,10 +77,11 @@ namespace Frontend
 	extern bool tall_double_resolution_mode;
 	extern bool native_windows;
 
+	bool IsFileCD(const std::filesystem::path &path);
 	std::filesystem::path GetConfigurationDirectoryPath();
 	std::filesystem::path GetSaveDataDirectoryPath();
 	void SetTVStandard(ClownMDEmu_TVStandard tv_standard);
-	bool Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback);
+	bool Initialise(const FrameRateCallback &frame_rate_callback, bool fullscreen = false, const std::filesystem::path &cartridge_path = "", const std::filesystem::path &cd_path = "");
 	void HandleEvent(const SDL_Event &event);
 	void Update();
 	void Deinitialise();

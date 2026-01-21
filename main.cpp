@@ -3,6 +3,9 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#else
+#include <sstream>
+#include <lyra/lyra.hpp>
 #endif
 
 #ifndef __EMSCRIPTEN__
@@ -71,7 +74,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 	emscripten_set_main_loop(callback, 0, 0);
 
-	if (Frontend::Initialise(0, nullptr, FrameRateCallback))
+	if (Frontend::Initialise(FrameRateCallback))
 		SDL_AddEventWatch(EventFilter, nullptr);
 }
 
@@ -89,6 +92,7 @@ int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
 }
 
 #else
+static bool frontend_initialised = false;
 static Uint64 time_delta;
 
 static void FrameRateCallback(const bool pal_mode)
@@ -107,7 +111,50 @@ static void FrameRateCallback(const bool pal_mode)
 
 SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc, char** const argv)
 {
-	return Frontend::Initialise(argc, argv, FrameRateCallback) ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
+	std::filesystem::path cartridge_path, cd_path, cartridge_or_cd_path;
+	bool fullscreen = false;
+	bool help = false;
+
+	const auto cli = lyra::help(help).description("ClownMDEmu " VERSION " - A Sega Mega Drive emulator.")
+		| lyra::opt(fullscreen)
+			["-f"]["--fullscreen"]
+			("Start the emulator in fullscreen.")
+		| lyra::opt(cartridge_path, "path")
+			["-c"]["--cartridge"]
+			("Cartridge software to load.")
+		| lyra::opt(cd_path, "path")
+			["-d"]["--disc"]
+			("Disc software to load.")
+		| lyra::arg(cartridge_or_cd_path, "path")
+			("Cartridge or disc software to load.");
+
+	const auto result = cli.parse({argc, argv});
+
+	if (!result)
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_ERROR, "Error in command line: %s\n", result.message().c_str());
+		return SDL_APP_FAILURE;
+	}
+
+	if (help)
+	{
+		std::stringstream stream;
+		stream << cli;
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s\n", stream.str().c_str());
+		return SDL_APP_SUCCESS;
+	}
+
+	if (!cartridge_or_cd_path.empty())
+	{
+		if (Frontend::IsFileCD(cartridge_or_cd_path))
+			cd_path = cartridge_or_cd_path;
+		else
+			cartridge_path = cartridge_or_cd_path;
+	}
+
+	frontend_initialised = Frontend::Initialise(FrameRateCallback, fullscreen, cartridge_path, cd_path);
+
+	return frontend_initialised ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
 }
 
 SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
@@ -137,6 +184,7 @@ SDL_AppResult SDL_AppEvent([[maybe_unused]] void* const appstate, SDL_Event* con
 
 void SDL_AppQuit([[maybe_unused]] void* const appstate, [[maybe_unused]] const SDL_AppResult result)
 {
-	Frontend::Deinitialise();
+	if (frontend_initialised)
+		Frontend::Deinitialise();
 }
 #endif

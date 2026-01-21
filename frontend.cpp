@@ -48,8 +48,6 @@
 #define FILE_PATH_SUPPORT
 #endif
 
-#define VERSION "v1.6.2"
-
 using namespace Frontend;
 
 static constexpr unsigned int INITIAL_WINDOW_SCALE = 2;
@@ -959,6 +957,11 @@ static void UpdateRewindStatus()
 // Misc. //
 ///////////
 
+bool Frontend::IsFileCD(const std::filesystem::path& path)
+{
+	return CDReader::IsDefinitelyACD(path);
+}
+
 std::filesystem::path Frontend::GetConfigurationDirectoryPath()
 {
 	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
@@ -1606,7 +1609,7 @@ static void PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCallback &frame_rate_callback_param)
+bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen, [[maybe_unused]] const std::filesystem::path &cartridge_path, [[maybe_unused]] const std::filesystem::path &cd_path)
 {
 	frame_rate_callback = frame_rate_callback_param;
 
@@ -1653,11 +1656,10 @@ bool Frontend::Initialise(const int argc, char** const argv, const FrameRateCall
 		}
 #ifdef FILE_PATH_SUPPORT
 		// If the user passed the path to the software on the command line, then load it here, automatically.
-		if (argc > 1)
-		{
-			const auto path = reinterpret_cast<const char8_t*>(argv[1]);
-			LoadSoftwareFile(CDReader::IsDefinitelyACD(path), path);
-		}
+		if (!cartridge_path.empty())
+			LoadCartridgeFile(cartridge_path);
+		if (!cd_path.empty())
+			LoadCDFile(cd_path);
 #endif
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
