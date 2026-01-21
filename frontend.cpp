@@ -1201,6 +1201,7 @@ namespace INI
 static void LoadConfiguration()
 {
 	// Set default settings.
+	bool fullscreen = false;
 	bool vsync = false;
 	bool integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
@@ -1290,7 +1291,9 @@ static void LoadConfiguration()
 
 			if (section == "Miscellaneous")
 			{
-				if (name == "vsync")
+				if (name == "fullscreen")
+					fullscreen = value_boolean;
+				else if (name == "vsync")
 					vsync = value_boolean;
 				else if (name == "integer-screen-scaling")
 					integer_screen_scaling = value_boolean;
@@ -1423,6 +1426,7 @@ static void LoadConfiguration()
 	}
 
 	// Apply settings now that they have been decided.
+	window->SetFullscreen(fullscreen);
 	window->SetVSync(vsync);
 	emulator->SetWidescreenTiles(widescreen_tiles);
 	emulator->SetRewindEnabled(rewinding);
@@ -1473,6 +1477,7 @@ static void SaveConfiguration()
 		// Save settings.
 		PRINT_HEADER(file, "Miscellaneous");
 
+		PRINT_BOOLEAN_OPTION(file, "fullscreen", window->GetFullscreen());
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
