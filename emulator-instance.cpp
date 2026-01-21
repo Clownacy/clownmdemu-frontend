@@ -12,6 +12,7 @@ void EmulatorInstance::ScanlineRendered(const cc_u16f scanline, const cc_u8l* co
 {
 	current_screen_width = screen_width;
 	current_screen_height = screen_height;
+	current_widescreen_tiles = GetWidescreenTiles();
 
 	if (framebuffer_texture_pixels == nullptr)
 		return;

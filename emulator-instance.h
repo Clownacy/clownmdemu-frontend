@@ -33,6 +33,7 @@ private:
 
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
+	unsigned int current_widescreen_tiles = 0;
 
 	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
 	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
@@ -53,6 +54,7 @@ public:
 
 	unsigned int GetCurrentScreenWidth() const { return current_screen_width; }
 	unsigned int GetCurrentScreenHeight() const { return current_screen_height; }
+	unsigned int GetCurrentWidescreenTiles() const { return current_widescreen_tiles; }
 
 	const auto& GetROMBuffer() const { return rom_file_buffer; }
 

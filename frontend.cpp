@@ -2682,7 +2682,7 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetWidescreenTiles() * 2) * VDP_TILE_WIDTH;
+			destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetCurrentWidescreenTiles() * 2) * VDP_TILE_WIDTH;
 			destination_height = emulator->GetCurrentScreenHeight();
 
 			switch (destination_height)
