@@ -2352,9 +2352,11 @@ void Frontend::Update()
 	};
 
 	const bool show_menu_bar = !window->GetFullscreen()
-							|| pop_out
-							|| AnyPopupsOpen()
-							|| (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
+	                         || pop_out
+	                         || AnyPopupsOpen()
+	                         || (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0
+	                         || !emulator_on
+	                         || emulator_paused;
 
 	// Hide mouse when the user just wants a fullscreen display window
 	if (!show_menu_bar)
