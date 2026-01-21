@@ -1642,17 +1642,15 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 		IMGUI_CHECKVERSION();
 
 		// TODO: Use the proper constant, and drop support for SDL <3.4.0.
-		Uint32 window_flags = /*SDL_WINDOW_FILL_DOCUMENT*/0x200000;
-
-		if (fullscreen)
-			window_flags |= SDL_WINDOW_FULLSCREEN;
-
-		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, window_flags);
+		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);
 		emulator.emplace(window->framebuffer_texture, ReadInputCallback);
 
 		LoadConfiguration();
 
 		ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
+
+		if (fullscreen)
+			window->SetFullscreen(true);
 
 		// We shouldn't resize the window if something is overriding its size.
 		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
