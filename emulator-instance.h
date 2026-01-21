@@ -34,8 +34,8 @@ private:
 	unsigned int current_screen_width = 0;
 	unsigned int current_screen_height = 0;
 
-	virtual void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
-	virtual cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
+	void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
+	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
 
 public:
 	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);

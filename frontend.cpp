@@ -1632,7 +1632,12 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 		IMGUI_CHECKVERSION();
 
 		// TODO: Use the proper constant, and drop support for SDL <3.4.0.
-		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);
+		Uint32 window_flags = /*SDL_WINDOW_FILL_DOCUMENT*/0x200000;
+
+		if (fullscreen)
+			window_flags |= SDL_WINDOW_FULLSCREEN;
+
+		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, window_flags);
 		emulator.emplace(window->framebuffer_texture, ReadInputCallback);
 
 		LoadConfiguration();
