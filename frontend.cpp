@@ -2376,11 +2376,15 @@ void Frontend::Update()
 
 	// Hide as much of the window as possible when maximised.
 	if (!pop_out)
-		window_flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
+		window_flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
 
 	// Hide the menu bar when maximised in fullscreen.
 	if (show_menu_bar)
 		window_flags |= ImGuiWindowFlags_MenuBar;
+
+	// Show black borders around emulator display.
+	if (emulator_running)
+		window_flags |= ImGuiWindowFlags_NoBackground;
 
 	// Tweak the style so that the display fill the window.
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -2675,7 +2679,15 @@ void Frontend::Update()
 
 		emulator_has_focus = ImGui::IsItemFocused();
 
-		if (emulator_on)
+		if (!emulator_on)
+		{
+			constexpr std::string_view label = "Load software using the menu bar above.";
+		    const ImVec2 label_size = ImGui::CalcTextSize(label);
+
+			ImGui::SetCursorPos(cursor + (size_of_display_region - label_size) / 2);
+			ImGui::TextUnformatted(label);
+		}
+		else
 		{
 			ImGui::SetCursorPos(cursor);
 

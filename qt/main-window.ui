@@ -28,7 +28,7 @@
     <item>
      <widget class="QLabel" name="label">
       <property name="text">
-       <string>Load software using the menu above.</string>
+       <string>Load software using the menu bar above.</string>
       </property>
       <property name="scaledContents">
        <bool>false</bool>

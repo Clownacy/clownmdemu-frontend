@@ -16,6 +16,12 @@
 
 namespace ImGui
 {
+	template <typename T, typename... Ts>
+	auto CalcTextSize(const T &string, Ts &&...args)
+	{
+		return ImGui::CalcTextSize(&string.front(), &string.back() + 1, std::forward<Ts>(args)...);
+	}
+
 	template <typename T>
 	void TextUnformatted(const T &string)
 	{
