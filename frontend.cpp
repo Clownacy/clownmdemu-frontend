@@ -2383,7 +2383,7 @@ void Frontend::Update()
 		window_flags |= ImGuiWindowFlags_MenuBar;
 
 	// Show black borders around emulator display.
-	if (emulator_running)
+	if (emulator_on)
 		window_flags |= ImGuiWindowFlags_NoBackground;
 
 	// Tweak the style so that the display fill the window.
