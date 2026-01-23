@@ -42,6 +42,7 @@ namespace Widgets
 		QOpenGLBuffer vertex_buffer_object = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
 		QOpenGLTexture texture = QOpenGLTexture(QOpenGLTexture::Target2D);
 		std::array<std::array<Colour, texture_buffer_width>, texture_buffer_height> texture_buffer;
+		unsigned int fast_forward_speed = 0;
 
 		const Options &options;
 
