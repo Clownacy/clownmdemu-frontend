@@ -63,6 +63,8 @@ private:
 	void ReloadFonts(unsigned int font_size);
 
 public:
+	static auto FloatColourChannelToU8(const float colour) { return static_cast<unsigned char>(colour * 0xFF + 0.5f); };
+
 	// TODO: Make this private.
 	ImFont *monospace_font;
 

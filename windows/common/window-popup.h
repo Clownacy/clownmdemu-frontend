@@ -31,7 +31,8 @@ private:
 			ImGui::SetNextWindowPos(viewport->WorkPos);
 			ImGui::SetNextWindowSize(viewport->WorkSize);
 
-			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+			// The background is coloured by the call to 'SDL_RenderClear', so there's no need for Dear ImGui to do it.
+			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground;
 		}
 		else
 		{
@@ -116,6 +117,10 @@ public:
 			window.emplace(window_title, static_cast<int>(scaled_window_width / dpi_scale), static_cast<int>(scaled_window_height / dpi_scale), resizeable);
 			SDL_SetWindowParent(window->GetSDLWindow(), parent_window.GetSDLWindow());
 			SDL_ShowWindow(window->GetSDLWindow());
+
+			// Make clear colour match Dear ImGui background colour, to avoid drawing the window background twice.
+			const auto &window_bg_colour = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+			SDL_SetRenderDrawColor(window->GetRenderer(), window->FloatColourChannelToU8(window_bg_colour.x), window->FloatColourChannelToU8(window_bg_colour.y), window->FloatColourChannelToU8(window_bg_colour.z), 0xFF);
 		}
 	}
 

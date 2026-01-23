@@ -101,7 +101,6 @@ WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const i
 	style.ScaleAllSizes(dpi_scale);
 
 	const auto &menu_bar_bg_colour = colors[ImGuiCol_MenuBarBg];
-	const auto FloatColourChannelToU8 = [](const float colour) { return static_cast<unsigned char>(colour * 0xFF + 0.5f); };
 	SetTitleBarColour(FloatColourChannelToU8(menu_bar_bg_colour.x), FloatColourChannelToU8(menu_bar_bg_colour.y), FloatColourChannelToU8(menu_bar_bg_colour.z));
 
 	// Setup Platform/Renderer backends
