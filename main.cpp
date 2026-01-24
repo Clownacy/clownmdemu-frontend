@@ -17,6 +17,8 @@
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
+static const char *cartridge_file_path, *disc_file_path;
+
 static double next_time;
 static double time_delta;
 
@@ -75,20 +77,44 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 	emscripten_set_main_loop(callback, 0, 0);
 
-	if (Frontend::Initialise(FrameRateCallback))
+	if (Frontend::Initialise(FrameRateCallback, false, cartridge_file_path, disc_file_path))
 		SDL_AddEventWatch(EventFilter, nullptr);
 }
 
-int main([[maybe_unused]] const int argc, [[maybe_unused]] char** const argv)
+int main(const int argc_p, char** const argv_p)
 {
-	// Initialise persistent storage.
-	EM_ASM({
-		FS.mount(IDBFS, {}, UTF8ToString($0));
+	static int argc = argc_p;
+	static char **argv = argv_p;
 
-		FS.syncfs(true, function(err) {
-			Module._StorageLoaded();
-		});
-		}, Frontend::GetConfigurationDirectoryPath().u8string().c_str());
+	const auto &CartridgeFileLoaded = [](const char* const cartridge_file_path_p)
+	{
+		cartridge_file_path = cartridge_file_path_p;
+
+		const auto &DiscFileLoaded = [](const char* const disc_file_path_p)
+		{
+			disc_file_path = disc_file_path_p;
+
+			// Initialise persistent storage.
+			EM_ASM({
+				FS.mount(IDBFS, {}, UTF8ToString($0));
+
+				FS.syncfs(true, function(err) {
+					Module._StorageLoaded();
+				});
+				}, Frontend::GetConfigurationDirectoryPath().u8string().c_str());
+		};
+
+		if (argc > 2 && argv[2][0] != '\0')
+			emscripten_async_wget(argv[2], "disc", DiscFileLoaded, DiscFileLoaded);
+		else
+			DiscFileLoaded("");
+	};
+
+	if (argc > 1 && argv[1][0] != '\0')
+		emscripten_async_wget(argv[1], "cartridge", CartridgeFileLoaded, CartridgeFileLoaded);
+	else
+		CartridgeFileLoaded("");
+
 	return EXIT_SUCCESS;
 }
 
