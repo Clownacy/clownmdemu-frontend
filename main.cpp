@@ -17,7 +17,7 @@
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
-static const char *cartridge_file_path, *disc_file_path;
+static std::filesystem::path cartridge_file_path, disc_file_path;
 
 static double next_time;
 static double time_delta;
