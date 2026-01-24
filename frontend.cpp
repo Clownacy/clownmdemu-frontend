@@ -2689,7 +2689,7 @@ void Frontend::Update()
 		if (!emulator_on)
 		{
 			constexpr std::string_view label = "Load software using the menu bar above.";
-		    const ImVec2 label_size = ImGui::CalcTextSize(label);
+			const ImVec2 label_size = ImGui::CalcTextSize(label);
 
 			ImGui::SetCursorPos(cursor + (size_of_display_region - label_size) / 2);
 			ImGui::TextUnformatted(label);
