@@ -1055,7 +1055,6 @@ static bool LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
 	return true;
 }
 
-#ifdef FILE_PATH_SUPPORT
 static bool LoadCDFile(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "rb");
@@ -1077,7 +1076,6 @@ static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path 
 	else
 		return LoadCartridgeFile(path);
 }
-#endif
 
 static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 {
@@ -1628,12 +1626,7 @@ static void PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen
-#ifdef FILE_PATH_SUPPORT
-	, const std::filesystem::path &cartridge_path
-	, const std::filesystem::path &cd_path
-#endif
-)
+bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
 {
 	frame_rate_callback = frame_rate_callback_param;
 
@@ -1680,13 +1673,13 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 
 			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 		}
-#ifdef FILE_PATH_SUPPORT
+
 		// If the user passed the path to the software on the command line, then load it here, automatically.
 		if (!cartridge_path.empty())
 			LoadCartridgeFile(cartridge_path);
 		if (!cd_path.empty())
 			LoadCDFile(cd_path);
-#endif
+
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
 
