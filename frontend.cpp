@@ -1682,10 +1682,10 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 		}
 #ifdef FILE_PATH_SUPPORT
 		// If the user passed the path to the software on the command line, then load it here, automatically.
-		if (cartridge_path)
-			LoadCartridgeFile(*cartridge_path);
-		if (cd_path)
-			LoadCDFile(*cd_path);
+		if (!cartridge_path.empty())
+			LoadCartridgeFile(cartridge_path);
+		if (!cd_path.empty())
+			LoadCDFile(cd_path);
 #endif
 		// We are now ready to show the window
 		SDL_ShowWindow(window->GetSDLWindow());
