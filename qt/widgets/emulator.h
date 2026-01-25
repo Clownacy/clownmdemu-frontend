@@ -48,8 +48,9 @@ namespace Widgets
 
 		struct
 		{
-			cc_u16f width, height;
-			cc_u8f widescreen_tiles;
+			cc_u16f width = texture_buffer_width;
+			cc_u16f height = texture_buffer_height;
+			cc_u8f widescreen_tiles = 0;
 		} screen_properties;
 		std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
 		bool paused = false;
