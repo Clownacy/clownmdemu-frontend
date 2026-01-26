@@ -1153,7 +1153,7 @@ namespace INI
 
 		std::string line, section;
 
-		static const auto &ProcessLine = [&]()
+		const auto &ProcessLine = [&]()
 		{
 			if (line.empty())
 				return;
@@ -1276,9 +1276,9 @@ static void LoadConfiguration()
 	}
 	else
 	{
-		static const auto Callback = [&](const std::string_view &section, const std::string_view &name, const std::string_view &value)
+		const auto &Callback = [&](const std::string_view &section, const std::string_view &name, const std::string_view &value)
 		{
-			static constexpr auto StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
+			const auto &StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
 			{
 				unsigned int integer;
 				const auto result = std::from_chars(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1, integer, 10);
@@ -1467,7 +1467,7 @@ static void SaveConfiguration()
 	#define PRINT_NEWLINE(FILE) PRINT_LINE(FILE, "")
 	#define PRINT_HEADER(FILE, STRING) PRINT_LINE(FILE, "[" STRING "]")
 	#define PRINT_KEY(FILE, KEY) PRINT_STRING(FILE, KEY " = ")
-		static constexpr auto PRINT_BOOLEAN_VALUE = [](SDL::IOStream &file, const bool variable)
+		const auto &PRINT_BOOLEAN_VALUE = [](SDL::IOStream &file, const bool variable)
 		{
 			if (variable)
 				PRINT_LINE(file, "on");
