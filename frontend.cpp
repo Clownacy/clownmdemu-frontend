@@ -445,6 +445,12 @@ private:
 
 	static constexpr Uint32 window_flags = 0;
 
+	bool sorted_scancodes_done;
+	std::array<SDL_Scancode, SDL_SCANCODE_COUNT> sorted_scancodes; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+
+	SDL_Scancode selected_scancode;
+	bool scroll_to_add_bindings_button;
+
 	void DisplayInternal()
 	{
 		ImGui::SeparatorText("Console");
@@ -582,9 +588,6 @@ private:
 
 		ImGui::SeparatorText("Keyboard Input");
 
-		static bool sorted_scancodes_done;
-		static std::array<SDL_Scancode, SDL_SCANCODE_COUNT> sorted_scancodes; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
-
 		if (!sorted_scancodes_done)
 		{
 			sorted_scancodes_done = true;
@@ -599,8 +602,6 @@ private:
 				}
 			);
 		}
-
-		static SDL_Scancode selected_scancode;
 
 		static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
 			"None",
@@ -678,8 +679,6 @@ private:
 
 		if (ImGui::Button("Add Binding"))
 			ImGui::OpenPopup("Select Key");
-
-		static bool scroll_to_add_bindings_button;
 
 		if (scroll_to_add_bindings_button)
 		{
