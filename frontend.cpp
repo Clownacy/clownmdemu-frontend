@@ -652,16 +652,24 @@ private:
 			{
 				if (Frontend::keyboard_bindings[scancode] != INPUT_BINDING_NONE)
 				{
+					ImGui::PushID(&scancode);
+
 					ImGui::TableNextColumn();
 					ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(scancode)));
 
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(binding_names[Frontend::keyboard_bindings[scancode]]);
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					int index = Frontend::keyboard_bindings[scancode] - 1;
+					if (ImGui::Combo("##action", &index, std::data(binding_names) + 1, std::size(binding_names) - 1))
+					{
+						Frontend::keyboard_bindings[scancode] = static_cast<InputBinding>(index + 1);
+						sorted_scancodes_done = false;
+					}
 
 					ImGui::TableNextColumn();
-					ImGui::PushID(&scancode);
 					if (ImGui::Button("X"))
 						Frontend::keyboard_bindings[scancode] = INPUT_BINDING_NONE;
+
 					ImGui::PopID();
 				}
 			}
