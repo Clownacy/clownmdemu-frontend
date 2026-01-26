@@ -695,8 +695,6 @@ private:
 			{
 				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT, nullptr))
 				{
-					ImGui::CloseCurrentPopup();
-
 					// The 'escape' key will exit the menu without binding.
 					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE, nullptr))
 					{
@@ -710,45 +708,43 @@ private:
 			if (ImGui::Button("Cancel"))
 				ImGui::CloseCurrentPopup();
 
-			ImGui::EndPopup();
-
 			if (next_menu)
 				ImGui::OpenPopup("Select Action");
-		}
 
-		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-		if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			bool previous_menu = false;
-
-			ImGui::TextFormatted("Selected Key: {}", SDL_GetScancodeName(selected_scancode));
-
-			if (ImGui::BeginListBox("##Actions"))
+			if (ImGui::BeginPopupModal("Select Action", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 			{
-				for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
+				bool exit = false;
+
+				ImGui::TextFormatted("Selected Key: {}", SDL_GetScancodeName(selected_scancode));
+
+				if (ImGui::BeginListBox("##Actions"))
 				{
-					if (ImGui::Selectable(binding_names[i]))
+					for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
 					{
-						ImGui::CloseCurrentPopup();
-						Frontend::keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
-						sorted_scancodes_done = false;
-						scroll_to_add_bindings_button = true;
+						if (ImGui::Selectable(binding_names[i]))
+						{
+							ImGui::CloseCurrentPopup();
+							exit = true;
+							Frontend::keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
+							sorted_scancodes_done = false;
+							scroll_to_add_bindings_button = true;
+						}
 					}
+					ImGui::EndListBox();
 				}
-				ImGui::EndListBox();
-			}
 
-			if (ImGui::Button("Cancel"))
-			{
-				previous_menu = true;
-				ImGui::CloseCurrentPopup();
+				if (ImGui::Button("Cancel"))
+					ImGui::CloseCurrentPopup();
+
+				ImGui::EndPopup();
+
+				if (exit)
+					ImGui::CloseCurrentPopup();
 			}
 
 			ImGui::EndPopup();
-
-			if (previous_menu)
-				ImGui::OpenPopup("Select Key");
 		}
 	}
 
