@@ -10,7 +10,6 @@ class Window
 private:
 	SDL::Window sdl_window;
 	SDL::Renderer renderer;
-	bool fullscreen;
 
 public:
 	Window(const char *window_title, int window_width, int window_height, bool resizeable, Uint32 window_flags = 0);
@@ -19,13 +18,11 @@ public:
 	float GetDPIScale();
 	void SetFullscreen(const bool enabled)
 	{
-		fullscreen = enabled;
-
-		SDL_SetWindowFullscreen(GetSDLWindow(), fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
-		if (!fullscreen)
+		SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN : 0);
+		if (!enabled)
 			DisableRounding();
 	}
-	bool GetFullscreen() { return fullscreen; }
+	bool GetFullscreen() { return (SDL_GetWindowFlags(GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL::Window& GetSDLWindow() { return sdl_window; }
 	const SDL::Window& GetSDLWindow() const { return sdl_window; }
