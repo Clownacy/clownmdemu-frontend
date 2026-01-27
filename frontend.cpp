@@ -968,18 +968,19 @@ bool Frontend::IsFileCD(const std::filesystem::path& path)
 
 static void InitialiseConfigurationDirectoryPath(const std::filesystem::path &user_data_path)
 {
-	// Use working directory as fallback.
-	configuration_directory_path = ".";
+	// User-specified directory.
+	configuration_directory_path = user_data_path;
 
-	if (!user_data_path.empty())
-	{
-		// User-specified directory.
-		configuration_directory_path = user_data_path;
-	}
-	else
+	if (configuration_directory_path.empty())
 	{
 		// Standard configuration directory.
 		configuration_directory_path = SDL::GetPrefPath("clownacy", "clownmdemu-frontend");
+	}
+
+	if (configuration_directory_path.empty())
+	{
+		// Use working directory as fallback.
+		configuration_directory_path = ".";
 	}
 }
 
