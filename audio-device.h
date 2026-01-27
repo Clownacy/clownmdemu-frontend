@@ -13,6 +13,7 @@ private:
 	std::size_t size_of_frame;
 
 	SDL::AudioStream stream;
+	SDL_AudioDeviceID device;
 
 public:
 	AudioDevice(cc_u8f channels, cc_u32f sample_rate);
@@ -22,6 +23,17 @@ public:
 	void SetPlaybackSpeed(const cc_u32f numerator, const cc_u32f denominator)
 	{
 		SDL_SetAudioStreamFrequencyRatio(stream, static_cast<float>(numerator) / denominator);
+	}
+	bool GetPaused() const
+	{
+		return SDL_AudioDevicePaused(device);
+	}
+	void SetPaused(const bool paused)
+	{
+		if (paused)
+			SDL_PauseAudioDevice(device);
+		else
+			SDL_ResumeAudioDevice(device);
 	}
 };
 

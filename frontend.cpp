@@ -786,7 +786,6 @@ static std::list<RecentSoftware> recent_software_list;
 static std::filesystem::path drag_and_drop_filename;
 
 static bool emulator_has_focus; // Used for deciding when to pass inputs to the emulator.
-static bool emulator_paused;
 static bool emulator_frame_advance;
 
 static std::optional<EmulatorInstance::StateBackup> quick_save_state;
@@ -873,7 +872,7 @@ static bool pop_out;
 static bool dear_imgui_demo_window;
 #endif
 
-static bool emulator_on, emulator_running;
+static bool emulator_on;
 
 
 ////////////////////////////
@@ -1089,7 +1088,7 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 		return false;
 	}
 
-	emulator_paused = false;
+	emulator->SetPaused(false);
 
 	return true;
 }
@@ -1624,7 +1623,6 @@ static void SaveConfiguration()
 static void PreEventStuff()
 {
 	emulator_on = emulator->IsCartridgeInserted() || emulator->IsCDInserted();
-	emulator_running = emulator_on && (!emulator_paused || emulator_frame_advance) && !file_utilities.IsDialogOpen() && (!emulator->rewinding || !emulator->IsRewindExhausted());
 
 	emulator_frame_advance = false;
 }
@@ -1791,13 +1789,13 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				switch (keyboard_bindings[event.key.scancode])
 				{
 					case INPUT_BINDING_PAUSE:
-						emulator_paused = !emulator_paused;
+						emulator->SetPaused(!emulator->IsPaused());
 						break;
 
 					case INPUT_BINDING_RESET:
 						// Soft-reset console
 						emulator->SoftReset();
-						emulator_paused = false;
+						emulator->SetPaused(false);
 						break;
 
 					case INPUT_BINDING_QUICK_SAVE_STATE:
@@ -1810,7 +1808,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						if (quick_save_state)
 						{
 							quick_save_state->Apply(*emulator);
-							emulator_paused = false;
+							emulator->SetPaused(false);
 						}
 
 						break;
@@ -1879,10 +1877,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						// Toggle fast-forward
 						keyboard_input.fast_forward += delta;
 
-						if ((!emulator_paused && emulator_has_focus) || !pressed)
+						if ((!emulator->IsPaused() && emulator_has_focus) || !pressed)
 							UpdateFastForwardStatus();
 
-						if (pressed && emulator_paused)
+						if (pressed && emulator->IsPaused())
 							emulator_frame_advance = true;
 
 						break;
@@ -1947,7 +1945,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle pause.
-				emulator_paused = !emulator_paused;
+				emulator->SetPaused(!emulator->IsPaused());
 			}
 
 			// Don't use inputs that are for Dear ImGui.
@@ -2189,7 +2187,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &display_size)
 {
-	if (emulator_paused || emulator->rewinding || emulator->IsFastForwarding())
+	if (emulator->IsPaused() || emulator->rewinding || emulator->IsFastForwarding())
 	{
 		// A bunch of utility junk.
 		const auto DrawOutlinedTriangle = [](ImDrawList* const draw_list, const ImVec2 &position, const float radius, const float outline_thickness, const unsigned int degree)
@@ -2263,7 +2261,7 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 
 		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
 
-		if (emulator_paused)
+		if (emulator->IsPaused())
 		{
 			// Paused symbol.
 			const ImVec2 size(radius * 2 / 5, radius);
@@ -2296,7 +2294,7 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 
 void Frontend::Update()
 {
-	if (emulator_running)
+	if (emulator_on && (!emulator->IsPaused() || emulator_frame_advance) && !file_utilities.IsDialogOpen() && (!emulator->rewinding || !emulator->IsRewindExhausted()))
 	{
 		emulator->Update();
 		++frame_counter;
@@ -2310,7 +2308,7 @@ void Frontend::Update()
 		if (CDReader::IsDefinitelyACD(drag_and_drop_filename))
 		{
 			LoadCDFile(drag_and_drop_filename, SDL::IOStream(drag_and_drop_filename, "rb"));
-			emulator_paused = false;
+			emulator->SetPaused(false);
 		}
 		else
 		{
@@ -2330,7 +2328,7 @@ void Frontend::Update()
 					if (cartridge_file_buffer.has_value())
 					{
 						LoadCartridgeFile(drag_and_drop_filename, std::move(*cartridge_file_buffer));
-						emulator_paused = false;
+						emulator->SetPaused(false);
 					}
 				}
 			}
@@ -2369,7 +2367,7 @@ void Frontend::Update()
 
 	auto &io = ImGui::GetIO();
 	io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableGamepad;
-	if (!emulator_on || emulator_paused)
+	if (!emulator_on || emulator->IsPaused())
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
 	const bool show_menu_bar = !window->GetFullscreen()
@@ -2414,7 +2412,7 @@ void Frontend::Update()
 						const bool success = LoadCartridgeFile(path, file);
 
 						if (success)
-							emulator_paused = false;
+							emulator->SetPaused(false);
 
 						return success;
 					});
@@ -2425,7 +2423,7 @@ void Frontend::Update()
 					emulator->UnloadCartridgeFile();
 
 					SetWindowTitleToSoftwareName();
-					emulator_paused = false;
+					emulator->SetPaused(false);
 				}
 
 				ImGui::Separator();
@@ -2437,7 +2435,7 @@ void Frontend::Update()
 						if (!LoadCDFile(path, std::move(file)))
 							return false;
 
-						emulator_paused = false;
+						emulator->SetPaused(false);
 						return true;
 					});
 				}
@@ -2447,17 +2445,19 @@ void Frontend::Update()
 					emulator->UnloadCDFile();
 
 					SetWindowTitleToSoftwareName();
-					emulator_paused = false;
+					emulator->SetPaused(false);
 				}
 
 				ImGui::Separator();
 
-				ImGui::MenuItem("Pause", nullptr, &emulator_paused, emulator_on);
+				bool paused = emulator->IsPaused();
+				if (ImGui::MenuItem("Pause", nullptr, &paused, emulator_on))
+					emulator->SetPaused(paused);
 
 				if (ImGui::MenuItem("Reset", nullptr, false, emulator_on))
 				{
 					emulator->SoftReset();
-					emulator_paused = false;
+					emulator->SetPaused(false);
 				}
 
 			#ifdef FILE_PATH_SUPPORT
@@ -2486,7 +2486,7 @@ void Frontend::Update()
 					}
 
 					if (selected_software != nullptr && LoadSoftwareFile(selected_software->is_cd_file, selected_software->path))
-						emulator_paused = false;
+						emulator->SetPaused(false);
 				}
 			#endif
 
@@ -2504,7 +2504,7 @@ void Frontend::Update()
 				{
 					quick_save_state->Apply(*emulator);
 
-					emulator_paused = false;
+					emulator->SetPaused(false);
 				}
 
 				ImGui::Separator();

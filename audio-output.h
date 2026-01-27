@@ -33,6 +33,8 @@ public:
 	cc_u32f GetTargetFrames() const { return std::max<cc_u32f>(total_buffer_frames * 2, sample_rate / 20); } // 50ms
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
 	cc_u32f GetSampleRate() const { return sample_rate; }
+	bool GetPaused() const { return device.GetPaused(); }
+	void SetPaused(const bool paused) { device.SetPaused(paused); }
 };
 
 #endif /* AUDIO_OUTPUT_H */

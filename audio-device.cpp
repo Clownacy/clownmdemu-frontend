@@ -14,14 +14,9 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 	stream = SDL::AudioStream(SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &specification, nullptr, nullptr));
 
 	if (stream == nullptr)
-	{
 		Frontend::debug_log.Log("SDL_GetAudioDeviceFormat failed with the following message - '{}'", SDL_GetError());
-	}
 	else
-	{
-		// Unpause audio device, so that playback can begin.
-		SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(stream));
-	}
+		device = SDL_GetAudioStreamDevice(stream);
 }
 
 void AudioDevice::QueueFrames(const cc_s16l *buffer, cc_u32f total_frames)

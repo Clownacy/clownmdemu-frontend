@@ -53,7 +53,6 @@ namespace Widgets
 			cc_u8f widescreen_tiles = 0;
 		} screen_properties;
 		std::array<bool, CLOWNMDEMU_BUTTON_MAX> buttons = {};
-		bool paused = false;
 
 		// Emulator stuff.
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
@@ -87,7 +86,7 @@ namespace Widgets
 	public slots:
 		void Pause(const bool paused)
 		{
-			this->paused = paused;
+			SetPaused(paused);
 		}
 
 		void SoftReset(){ EmulatorExtended::SoftReset(); }

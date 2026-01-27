@@ -153,7 +153,7 @@ void Widgets::Emulator::paintGL()
 
 void Widgets::Emulator::timerEvent([[maybe_unused]] QTimerEvent* const event)
 {
-	if (paused)
+	if (IsPaused())
 		return;
 
 	Advance();
@@ -249,7 +249,7 @@ bool Widgets::Emulator::DoButton(QKeyEvent* const event, const bool pressed)
 			fast_forward_speed += pressed ? 1 : -1;
 			SetFastForwarding(fast_forward_speed);
 
-			if (pressed && paused)
+			if (pressed && IsPaused())
 				Advance();
 
 			break;

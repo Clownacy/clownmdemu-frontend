@@ -150,6 +150,7 @@ private:
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;
 	unsigned int speed = 1;
+	bool paused;
 
 	////////////////////////
 	// Emulator Callbacks //
@@ -314,6 +315,8 @@ public:
 		// This should be called before any other ClownMDEmu functions are called!
 		Emulator::SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
 		cd_reader.SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
+
+		SetPaused(false);
 	}
 
 	~EmulatorExtended()
@@ -404,6 +407,8 @@ public:
 
 	bool Iterate()
 	{
+		assert(!paused);
+
 		for (unsigned int i = 0; i < speed; ++i)
 		{
 			if (state_rewind_buffer.Exists())
@@ -441,6 +446,17 @@ public:
 	bool IsFastForwarding() const
 	{
 		return speed != 1;
+	}
+
+	void SetPaused(const bool paused)
+	{
+		this->paused = paused;
+		audio_output.SetPaused(paused);
+	}
+
+	bool IsPaused() const
+	{
+		return paused;
 	}
 
 	///////////
