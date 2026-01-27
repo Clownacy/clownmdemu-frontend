@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 
 #include <SDL3/SDL.h>
 
@@ -24,6 +25,11 @@ namespace SDL
 	MAKE_RAII_POINTER(IOStreamBase, SDL_IOStream,     SDL_CloseIO           );
 	MAKE_RAII_POINTER(AudioStream,  SDL_AudioStream,  SDL_DestroyAudioStream);
 	MAKE_RAII_POINTER(SharedObject, SDL_SharedObject, SDL_UnloadObject      );
+
+	inline std::filesystem::path U8Path(const std::string_view &string)
+	{
+		return std::u8string_view(reinterpret_cast<const char8_t*>(std::data(string)), std::size(string));
+	}
 
 	template<typename T>
 	auto MakePointer(T* const pointer)
@@ -54,6 +60,17 @@ namespace SDL
 
 	template<typename T>
 	bool GetPathInfo(const T &path, SDL_PathInfo* const info) { return PathFunction<SDL_GetPathInfo>(path, info); }
+
+	template<typename... Ts>
+	std::filesystem::path GetPrefPath(Ts &&...args)
+	{
+		const auto path_cstr = SDL::MakePointer(SDL_GetPrefPath(std::forward<Ts>(args)...));
+
+		if (path_cstr == nullptr)
+			return "";
+
+		return U8Path(path_cstr.get());
+	}
 
 	class IOStream : public IOStreamBase
 	{

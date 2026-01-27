@@ -979,10 +979,7 @@ static void InitialiseConfigurationDirectoryPath(const std::filesystem::path &us
 	else
 	{
 		// Standard configuration directory.
-		const auto path_cstr = SDL::MakePointer(SDL_GetPrefPath("clownacy", "clownmdemu-frontend"));
-
-		if (path_cstr != nullptr)
-			configuration_directory_path = FileUtilities::U8Path(path_cstr.get());
+		configuration_directory_path = SDL::GetPrefPath("clownacy", "clownmdemu-frontend");
 	}
 }
 
