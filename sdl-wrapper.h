@@ -25,6 +25,12 @@ namespace SDL
 	MAKE_RAII_POINTER(AudioStream,  SDL_AudioStream,  SDL_DestroyAudioStream);
 	MAKE_RAII_POINTER(SharedObject, SDL_SharedObject, SDL_UnloadObject      );
 
+	template<typename T>
+	auto MakePointer(T* const pointer)
+	{
+		return Pointer<T>(pointer);
+	}
+
 	template<auto Function, typename... Args>
 	auto PathFunction(const char* const path, Args &&...args)
 	{

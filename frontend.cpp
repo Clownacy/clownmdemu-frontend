@@ -966,7 +966,7 @@ bool Frontend::IsFileCD(const std::filesystem::path& path)
 
 std::filesystem::path Frontend::GetConfigurationDirectoryPath()
 {
-	const auto path_cstr = SDL::Pointer<char8_t>(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
+	const auto path_cstr = SDL::Pointer(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
 
 	if (path_cstr == nullptr)
 		return {};
