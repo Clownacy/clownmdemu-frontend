@@ -18,13 +18,3 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 	else
 		device = SDL_GetAudioStreamDevice(stream);
 }
-
-void AudioDevice::QueueFrames(const cc_s16l *buffer, cc_u32f total_frames)
-{
-	SDL_PutAudioStreamData(stream, buffer, total_frames * size_of_frame);
-}
-
-cc_u32f AudioDevice::GetTotalQueuedFrames()
-{
-	return SDL_GetAudioStreamQueued(stream) / size_of_frame;
-}

@@ -23,16 +23,39 @@ private:
 
 public:
 	AudioOutput(bool pal_mode);
-	void MixerBegin();
+
+	void MixerBegin()
+	{
+		mixer.Begin();
+	}
+
 	void MixerEnd();
-	cc_s16l* MixerAllocateFMSamples(std::size_t total_frames);
-	cc_s16l* MixerAllocatePSGSamples(std::size_t total_frames);
-	cc_s16l* MixerAllocatePCMSamples(std::size_t total_frames);
-	cc_s16l* MixerAllocateCDDASamples(std::size_t total_frames);
+
+	cc_s16l* MixerAllocateFMSamples(const std::size_t total_frames)
+	{
+		return mixer.AllocateFMSamples(total_frames);
+	}
+
+	cc_s16l* MixerAllocatePSGSamples(const std::size_t total_frames)
+	{
+		return mixer.AllocatePSGSamples(total_frames);
+	}
+
+	cc_s16l* MixerAllocatePCMSamples(const std::size_t total_frames)
+	{
+		return mixer.AllocatePCMSamples(total_frames);
+	}
+
+	cc_s16l* MixerAllocateCDDASamples(const std::size_t total_frames)
+	{
+		return mixer.AllocateCDDASamples(total_frames);
+	}
+
 	cc_u32f GetAverageFrames() const;
 	cc_u32f GetTargetFrames() const { return std::max<cc_u32f>(total_buffer_frames * 2, sample_rate / 20); } // 50ms
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
 	cc_u32f GetSampleRate() const { return sample_rate; }
+
 	bool GetPaused() const { return device.GetPaused(); }
 	void SetPaused(const bool paused) { device.SetPaused(paused); }
 };

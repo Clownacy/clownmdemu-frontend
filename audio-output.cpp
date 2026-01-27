@@ -25,11 +25,6 @@ AudioOutput::AudioOutput(const bool pal_mode)
 	, mixer(pal_mode)
 {}
 
-void AudioOutput::MixerBegin()
-{
-	mixer.Begin();
-}
-
 void AudioOutput::MixerEnd()
 {
 	const cc_u32f target_frames = GetTargetFrames();
@@ -53,26 +48,6 @@ void AudioOutput::MixerEnd()
 		const cc_u32f divisor = target_frames * 0x100; // The number here is the inverse of the formula's 'd' value.
 		device.SetPlaybackSpeed(queued_frames - target_frames + divisor, divisor);
 	}
-}
-
-cc_s16l* AudioOutput::MixerAllocateFMSamples(const std::size_t total_frames)
-{
-	return mixer.AllocateFMSamples(total_frames);
-}
-
-cc_s16l* AudioOutput::MixerAllocatePSGSamples(const std::size_t total_frames)
-{
-	return mixer.AllocatePSGSamples(total_frames);
-}
-
-cc_s16l* AudioOutput::MixerAllocatePCMSamples(const std::size_t total_frames)
-{
-	return mixer.AllocatePCMSamples(total_frames);
-}
-
-cc_s16l* AudioOutput::MixerAllocateCDDASamples(const std::size_t total_frames)
-{
-	return mixer.AllocateCDDASamples(total_frames);
 }
 
 cc_u32f AudioOutput::GetAverageFrames() const
