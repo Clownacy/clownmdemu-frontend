@@ -959,20 +959,36 @@ static void UpdateRewindStatus()
 // Misc. //
 ///////////
 
+static std::filesystem::path configuration_directory_path;
+
 bool Frontend::IsFileCD(const std::filesystem::path& path)
 {
 	return CDReader::IsDefinitelyACD(path);
 }
 
-std::filesystem::path Frontend::GetConfigurationDirectoryPath()
+static void InitialiseConfigurationDirectoryPath(const std::filesystem::path &user_data_path)
 {
-	const auto path_cstr = SDL::MakePointer(SDL_GetPrefPath("clownacy", "clownmdemu-frontend"));
+	// Use working directory as fallback.
+	configuration_directory_path = ".";
 
-	// Make files relative to working directory as a fallback.
-	if (path_cstr == nullptr)
-		return ".";
+	if (!user_data_path.empty())
+	{
+		// User-specified directory.
+		configuration_directory_path = user_data_path;
+	}
+	else
+	{
+		// Standard configuration directory.
+		const auto path_cstr = SDL::MakePointer(SDL_GetPrefPath("clownacy", "clownmdemu-frontend"));
 
-	return FileUtilities::U8Path(path_cstr.get());
+		if (path_cstr != nullptr)
+			configuration_directory_path = FileUtilities::U8Path(path_cstr.get());
+	}
+}
+
+const std::filesystem::path &Frontend::GetConfigurationDirectoryPath()
+{
+	return configuration_directory_path;
 }
 
 std::filesystem::path Frontend::GetSaveDataDirectoryPath()
@@ -1626,7 +1642,7 @@ static void PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
+bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen, const std::filesystem::path &user_data_path, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
 {
 	frame_rate_callback = frame_rate_callback_param;
 
@@ -1647,6 +1663,8 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 	else
 	{
 		IMGUI_CHECKVERSION();
+
+		InitialiseConfigurationDirectoryPath(user_data_path);
 
 		// TODO: Use the proper constant, and drop support for SDL <3.4.0.
 		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);

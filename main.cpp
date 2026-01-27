@@ -138,14 +138,17 @@ static void FrameRateCallback(const bool pal_mode)
 
 SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc, char** const argv)
 {
-	std::string cartridge_path_raw, cd_path_raw, cartridge_or_cd_path_raw;
-	bool fullscreen = false;
+	std::string user_data_path_raw, cartridge_path_raw, cd_path_raw, cartridge_or_cd_path_raw;
+	bool fullscreen = false, portable = false;
 	bool help = false;
 
 	const auto cli = lyra::help(help).description("ClownMDEmu " VERSION " - A Sega Mega Drive emulator.")
 		| lyra::opt(fullscreen)
 			["-f"]["--fullscreen"]
 			("Start the emulator in fullscreen.")
+		| lyra::opt(user_data_path_raw, "path")
+			["-u"]["--user"]
+			("Directory to store user data, such as settings and save data.")
 		| lyra::opt(cartridge_path_raw, "path")
 			["-c"]["--cartridge"]
 			("Cartridge software to load.")
@@ -171,6 +174,7 @@ SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc
 		return SDL_APP_SUCCESS;
 	}
 
+	auto user_data_path = FileUtilities::U8Path(user_data_path_raw);
 	auto cartridge_path = FileUtilities::U8Path(cartridge_path_raw);
 	auto cd_path = FileUtilities::U8Path(cd_path_raw);
 	const auto &cartridge_or_cd_path = FileUtilities::U8Path(cartridge_or_cd_path_raw);
@@ -183,7 +187,7 @@ SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc
 			cartridge_path = cartridge_or_cd_path;
 	}
 
-	frontend_initialised = Frontend::Initialise(FrameRateCallback, fullscreen, cartridge_path, cd_path);
+	frontend_initialised = Frontend::Initialise(FrameRateCallback, fullscreen, user_data_path, cartridge_path, cd_path);
 
 	return frontend_initialised ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
 }
