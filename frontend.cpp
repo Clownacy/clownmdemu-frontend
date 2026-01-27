@@ -966,14 +966,13 @@ bool Frontend::IsFileCD(const std::filesystem::path& path)
 
 std::filesystem::path Frontend::GetConfigurationDirectoryPath()
 {
-	const auto path_cstr = SDL::Pointer(reinterpret_cast<char8_t*>(SDL_GetPrefPath("clownacy", "clownmdemu-frontend")));
+	const auto path_cstr = SDL::MakePointer(SDL_GetPrefPath("clownacy", "clownmdemu-frontend"));
 
+	// Make files relative to working directory as a fallback.
 	if (path_cstr == nullptr)
-		return {};
+		return ".";
 
-	const std::filesystem::path path(path_cstr.get());
-
-	return path;
+	return FileUtilities::U8Path(path_cstr.get());
 }
 
 std::filesystem::path Frontend::GetSaveDataDirectoryPath()
