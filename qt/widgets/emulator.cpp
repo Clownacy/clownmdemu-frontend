@@ -153,8 +153,7 @@ void Widgets::Emulator::paintGL()
 
 void Widgets::Emulator::timerEvent([[maybe_unused]] QTimerEvent* const event)
 {
-	if (IsPaused())
-		return;
+	Q_ASSERT(!IsPaused());
 
 	Advance();
 }

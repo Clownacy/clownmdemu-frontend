@@ -86,7 +86,16 @@ namespace Widgets
 	public slots:
 		void Pause(const bool paused)
 		{
-			SetPaused(paused);
+			if (paused)
+			{
+				timer.stop();
+				SetPaused(true);
+			}
+			else
+			{
+				SetPaused(false);
+				SetTimer(GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL);
+			}
 		}
 
 		void SoftReset(){ EmulatorExtended::SoftReset(); }
@@ -95,7 +104,8 @@ namespace Widgets
 
 		void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 		{
-				EmulatorExtended::SetTVStandard(tv_standard);
+			EmulatorExtended::SetTVStandard(tv_standard);
+			if (!IsPaused())
 				SetTimer(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
 		}
 		void SetRegion(const ClownMDEmu_Region region){ EmulatorExtended::SetRegion(region); }
