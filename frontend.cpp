@@ -1004,15 +1004,6 @@ static std::filesystem::path GetDearImGuiSettingsFilePath()
 	return GetConfigurationDirectoryPath() / "dear-imgui-settings.ini";
 }
 
-static void SetWindowTitleToSoftwareName()
-{
-	const std::string name = emulator->GetSoftwareName();
-
-	// Use the default title if the ROM does not provide a name.
-	// Micro Machines is one game that lacks a name.
-	SDL_SetWindowTitle(window->GetSDLWindow(), name.empty() ? DEFAULT_TITLE : name.c_str());
-}
-
 static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_u16l> &&file_buffer)
 {
 #ifdef FILE_PATH_SUPPORT
@@ -1021,8 +1012,6 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_
 
 	quick_save_state = std::nullopt;
 	emulator->LoadCartridgeFile(std::move(file_buffer), path);
-
-	SetWindowTitleToSoftwareName();
 }
 
 static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
@@ -1064,8 +1053,6 @@ static bool LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
 	// Load the CD.
 	if (!emulator->LoadCDFile(std::move(file), path))
 		return false;
-
-	SetWindowTitleToSoftwareName();
 
 	return true;
 }
@@ -1666,7 +1653,14 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 
 		// TODO: Use the proper constant, and drop support for SDL <3.4.0.
 		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);
-		emulator.emplace(window->framebuffer_texture, ReadInputCallback);
+		emulator.emplace(window->framebuffer_texture, ReadInputCallback,
+			[](const std::string &title)
+			{
+				// Use the default title if the ROM does not provide a name.
+				// Micro Machines is one game that lacks a name.
+				SDL_SetWindowTitle(window->GetSDLWindow(), title.empty() ? DEFAULT_TITLE : title.c_str());
+			}
+		);
 
 		LoadConfiguration();
 
@@ -2437,7 +2431,6 @@ void Frontend::Update()
 				{
 					emulator->UnloadCartridgeFile();
 
-					SetWindowTitleToSoftwareName();
 					emulator->SetPaused(false);
 				}
 
@@ -2459,7 +2452,6 @@ void Frontend::Update()
 				{
 					emulator->UnloadCDFile();
 
-					SetWindowTitleToSoftwareName();
 					emulator->SetPaused(false);
 				}
 

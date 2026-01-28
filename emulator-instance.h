@@ -20,10 +20,12 @@ class EmulatorInstance final : public EmulatorExtended<EmulatorInstance, Colour>
 
 public:
 	using InputCallback = std::function<bool(cc_u8f player_id, ClownMDEmu_Button button_id)>;
+	using TitleCallback = std::function<void(const std::string &title)>;
 
 private:
 	SDL::Texture &texture;
 	const InputCallback input_callback;
+	const TitleCallback title_callback;
 
 	std::vector<cc_u16l> rom_file_buffer;
 	SDL::IOStream cd_stream;
@@ -39,7 +41,7 @@ private:
 	cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
 
 public:
-	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback);
+	EmulatorInstance(SDL::Texture &texture, const InputCallback &input_callback, const TitleCallback &title_callback);
 
 	void Update();
 	void LoadCartridgeFile(std::vector<cc_u16l> &&file_buffer, const std::filesystem::path &path);
@@ -58,7 +60,7 @@ public:
 
 	const auto& GetROMBuffer() const { return rom_file_buffer; }
 
-	std::string GetSoftwareName();
+	void TitleChanged(const std::string &title) { title_callback(title); }
 };
 
 #endif /* EMULATOR_INSTANCE_H */

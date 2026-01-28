@@ -27,6 +27,7 @@ namespace Widgets
 	{
 		Q_OBJECT
 
+		friend EmulatorExtended<Emulator, Colour>;
 		friend EmulatorExtended<Emulator, Colour>::Emulator;
 
 	protected:
@@ -57,6 +58,7 @@ namespace Widgets
 		// Emulator stuff.
 		void ScanlineRendered(cc_u16f scanline, const cc_u8l *pixels, cc_u16f left_boundary, cc_u16f right_boundary, cc_u16f screen_width, cc_u16f screen_height);
 		cc_bool InputRequested(cc_u8f player_id, ClownMDEmu_Button button_id);
+		void TitleChanged(const std::string &title) { emit NewTitle(QString::fromStdString(title)); }
 
 		// Qt stuff.
 		void initializeGL() override;
@@ -73,7 +75,7 @@ namespace Widgets
 		void SetTimer(const bool pal_mode);
 
 	public:
-		explicit Emulator(const Options &options, const QVector<cc_u16l> &cartridge_rom_buffer, const std::filesystem::path &cartridge_path, SDL::IOStream &cd_stream, const std::filesystem::path &cd_path, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+		explicit Emulator(const Options &options, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 		~Emulator()
 		{
@@ -82,6 +84,7 @@ namespace Widgets
 
 	signals:
 		void NewFrame();
+		void NewTitle(const QString &title);
 
 	public slots:
 		void Pause(const bool paused)

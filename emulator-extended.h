@@ -13,6 +13,7 @@
 #include "cd-reader.h"
 #include "debug-log.h"
 #include "sdl-wrapper.h"
+#include "text-encoding.h"
 
 template<typename Derived, typename Colour>
 class EmulatorExtended : public ClownMDEmuCXX::Emulator<Derived>
@@ -303,6 +304,77 @@ private:
 		cartridge_save_file_path.clear();
 	}
 
+	///////////////////
+	// Miscellaneous //
+	///////////////////
+
+	std::string GetSoftwareName()
+	{
+		std::string name_buffer;
+
+		if (Emulator::IsCartridgeInserted() || IsCDInserted())
+		{
+			constexpr cc_u8f name_buffer_size = 0x30;
+			// '*4' for the maximum UTF-8 length.
+			name_buffer.reserve(name_buffer_size * 4);
+
+			std::array<unsigned char, name_buffer_size> in_buffer;
+			// Choose the proper name based on the current region.
+			const auto header_offset = Emulator::GetRegion() == CLOWNMDEMU_REGION_DOMESTIC ? 0x120 : 0x150;
+
+			if (Emulator::IsCartridgeInserted())
+			{
+				// TODO: This seems unsafe - add some bounds checks?
+				const auto words = &Emulator::cartridge_buffer[header_offset / 2];
+
+				for (cc_u8f i = 0; i < name_buffer_size / 2; ++i)
+				{
+					const auto word = words[i];
+
+					in_buffer[i * 2 + 0] = (word >> 8) & 0xFF;
+					in_buffer[i * 2 + 1] = (word >> 0) & 0xFF;
+				}
+			}
+			else //if (IsCDInserted)
+			{
+				std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
+				ReadMegaCDHeaderSector(sector.data());
+				const auto bytes = &sector[header_offset];
+				std::copy(bytes, bytes + name_buffer_size, std::begin(in_buffer));
+			}
+
+			cc_u32f previous_codepoint = '\0';
+
+			// In Columns, both regions' names are encoded in SHIFT-JIS, so both names are decoded as SHIFT-JIS here.
+			for (cc_u8f in_index = 0, in_bytes_read; in_index < name_buffer_size; in_index += in_bytes_read)
+			{
+				const cc_u32f codepoint = ShiftJISToUTF32(&in_buffer[in_index], &in_bytes_read);
+
+				// Eliminate padding (the Sonic games tend to use padding to make the name look good in a hex editor).
+				if (codepoint != ' ' || previous_codepoint != ' ')
+				{
+					const auto utf8_codepoint = UTF32ToUTF8(codepoint);
+
+					if (utf8_codepoint.has_value())
+						name_buffer += *utf8_codepoint;
+				}
+
+				previous_codepoint = codepoint;
+			}
+
+			// Eliminate trailing space.
+			if (!name_buffer.empty() && name_buffer.back() == ' ')
+				name_buffer.pop_back();
+		}
+
+		return name_buffer;
+	}
+
+	void UpdateTitle()
+	{
+		static_cast<Derived*>(this)->TitleChanged(GetSoftwareName());
+	}
+
 public:
 	EmulatorExtended(const ClownMDEmuCXX::InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
@@ -338,6 +410,8 @@ public:
 		LoadCartridgeSaveData(cartridge_file_path);
 
 		HardReset();
+
+		UpdateTitle();
 	}
 
 	template<typename... Ts>
@@ -350,6 +424,8 @@ public:
 
 		if (IsCDInserted())
 			HardReset();
+
+		UpdateTitle();
 	}
 
 	////////
@@ -365,6 +441,9 @@ public:
 			return false;
 
 		HardReset();
+
+		UpdateTitle();
+
 		return true;
 	}
 
@@ -376,6 +455,8 @@ public:
 
 		if (Emulator::IsCartridgeInserted())
 			HardReset();
+
+		UpdateTitle();
 	}
 
 	[[nodiscard]] bool IsCDInserted() const
@@ -517,6 +598,12 @@ public:
 	{
 		Emulator::SetTVStandard(tv_standard);
 		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+	}
+
+	void SetRegion(const ClownMDEmu_Region region)
+	{
+		Emulator::SetRegion(region);
+		UpdateTitle();
 	}
 };
 

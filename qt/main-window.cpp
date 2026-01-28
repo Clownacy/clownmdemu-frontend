@@ -30,8 +30,27 @@ void MainWindow::DoActionEnablement(const bool enabled)
 
 void MainWindow::CreateEmulator()
 {
-	emulator.emplace(options, cartridge_rom_buffer, cartridge_file_path, cd_stream, cd_file_path, this);
+	// Initialise emulator.
+	emulator.emplace(options, this);
+
+	emulator->SetLogCallback(
+		[](const std::string &message)
+		{
+			qDebug() << message;
+		}
+	);
+
+	connect(&*emulator, &Widgets::Emulator::NewTitle, this, &MainWindow::setWindowTitle);
+
 	emulator->Pause(ui.actionPause->isChecked());
+
+	if (!cartridge_rom_buffer.isEmpty())
+		emulator->InsertCartridge(cartridge_file_path, std::data(cartridge_rom_buffer), std::size(cartridge_rom_buffer));
+
+	if (cd_stream != nullptr)
+		emulator->InsertCD(cd_stream, cd_file_path);
+
+	// Set emulator as central widget.
 
 	if (central_widget == nullptr)
 	{
@@ -39,6 +58,8 @@ void MainWindow::CreateEmulator()
 		central_widget->hide();
 	}
 	setCentralWidget(&*emulator);
+
+	// Connect UI signals.
 
 	connect(ui.actionPause, &QAction::triggered, &*emulator, &Widgets::Emulator::Pause);
 	connect(ui.actionReset, &QAction::triggered, &*emulator, &Widgets::Emulator::SoftReset);
@@ -87,7 +108,8 @@ void MainWindow::CreateEmulator()
 		}
 	);
 
-	// Options
+	// Connect options signals.
+
 	connect(&options, &Options::IntegerScreenScalingEnabledChanged, &*emulator, qOverload<>(&Widgets::Emulator::update));
 	connect(&options, &Options::TallInterlaceMode2EnabledChanged, &*emulator, qOverload<>(&Widgets::Emulator::update));
 	connect(&options, &Options::RewindingEnabledChanged, &*emulator, &Widgets::Emulator::SetRewindEnabled);
@@ -123,13 +145,6 @@ void MainWindow::CreateEmulator()
 	connect(&options, &Options::PCM8EnabledChanged, &*emulator, &Widgets::Emulator::SetPCM8Enabled);
 
 	DoActionEnablement(true);
-
-	emulator->SetLogCallback(
-		[](const std::string &message)
-		{
-			qDebug() << message;
-		}
-	);
 }
 
 void MainWindow::DestroyEmulator()
@@ -141,6 +156,8 @@ void MainWindow::DestroyEmulator()
 	setCentralWidget(central_widget);
 	central_widget->show();
 	central_widget = nullptr;
+
+	setWindowTitle("");
 }
 
 bool MainWindow::LoadCartridgeData(const std::filesystem::path &file_path)
