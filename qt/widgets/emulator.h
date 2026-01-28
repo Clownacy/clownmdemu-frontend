@@ -2,9 +2,7 @@
 #define WIDGETS_EMULATOR_H
 
 #include <array>
-#include <filesystem>
 #include <optional>
-#include <type_traits>
 
 #include <QBasicTimer>
 #include <QByteArray>
@@ -17,7 +15,6 @@
 #include <QVector>
 
 #include "../../emulator-extended.h"
-#include "../../sdl-wrapper.h"
 #include "../colour.h"
 #include "../options.h"
 
