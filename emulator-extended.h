@@ -268,7 +268,7 @@ private:
 		{
 			const auto save_data_size = std::filesystem::file_size(cartridge_save_file_path);
 
-			auto &external_ram_buffer = Emulator::GetExternalRAM();
+			auto &external_ram_buffer = this->GetExternalRAM();
 
 			if (save_data_size > std::size(external_ram_buffer))
 			{
@@ -289,7 +289,7 @@ private:
 			return;
 
 		// Write save data to disk.
-		const auto &external_ram = Emulator::GetState().external_ram;
+		const auto &external_ram = this->GetState().external_ram;
 
 		if (external_ram.non_volatile && external_ram.size != 0)
 		{
@@ -312,7 +312,7 @@ private:
 	{
 		std::string name_buffer;
 
-		if (Emulator::IsCartridgeInserted() || IsCDInserted())
+		if (this->IsCartridgeInserted() || IsCDInserted())
 		{
 			constexpr cc_u8f name_buffer_size = 0x30;
 			// '*4' for the maximum UTF-8 length.
@@ -320,12 +320,12 @@ private:
 
 			std::array<unsigned char, name_buffer_size> in_buffer;
 			// Choose the proper name based on the current region.
-			const auto header_offset = Emulator::GetRegion() == CLOWNMDEMU_REGION_DOMESTIC ? 0x120 : 0x150;
+			const auto header_offset = this->GetRegion() == CLOWNMDEMU_REGION_DOMESTIC ? 0x120 : 0x150;
 
-			if (Emulator::IsCartridgeInserted())
+			if (this->IsCartridgeInserted())
 			{
 				// TODO: This seems unsafe - add some bounds checks?
-				const auto words = &Emulator::cartridge_buffer[header_offset / 2];
+				const auto words = &this->cartridge_buffer[header_offset / 2];
 
 				for (cc_u8f i = 0; i < name_buffer_size / 2; ++i)
 				{
@@ -378,14 +378,14 @@ private:
 public:
 	EmulatorExtended(const ClownMDEmuCXX::InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
-		, audio_output(Emulator::GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
+		, audio_output(this->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
 	{
 		std::filesystem::create_directories(save_file_directory);
 
 		// This should be called before any other ClownMDEmu functions are called!
-		Emulator::SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
+		this->SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
 		cd_reader.SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
 
 		SetPaused(false);
@@ -453,7 +453,7 @@ public:
 
 		cd_reader.Close();
 
-		if (Emulator::IsCartridgeInserted())
+		if (this->IsCartridgeInserted())
 			HardReset();
 
 		UpdateTitle();
