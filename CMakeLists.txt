@@ -66,7 +66,7 @@ add_executable(clownmdemu WIN32
 	"windows/disassembler.cpp"
 	"windows/disassembler.h"
 	"windows/common/inconsolata-regular.h"
-	"windows/common/noto-sans-regular.h"
+	"windows/common/noto-sans-jp-regular.h"
 	"windows/common/winapi.cpp"
 	"windows/common/winapi.h"
 	"windows/common/window.cpp"
