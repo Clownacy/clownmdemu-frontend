@@ -139,7 +139,7 @@ static void FrameRateCallback(const bool pal_mode)
 SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc, char** const argv)
 {
 	std::string user_data_path_raw, cartridge_path_raw, cd_path_raw, cartridge_or_cd_path_raw;
-	bool fullscreen = false, portable = false;
+	bool fullscreen = false;
 	bool help = false;
 
 	const auto cli = lyra::help(help).description("ClownMDEmu " VERSION " - A Sega Mega Drive emulator.")
