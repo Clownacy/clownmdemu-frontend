@@ -1100,6 +1100,7 @@ static bool LoadCDFile(const std::filesystem::path &path)
 	return LoadCDFile(path, std::move(file));
 }
 
+#ifdef FILE_PATH_SUPPORT
 static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path &path)
 {
 	if (is_cd_file)
@@ -1107,6 +1108,7 @@ static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path 
 	else
 		return LoadCartridgeFile(path);
 }
+#endif
 
 static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 {
