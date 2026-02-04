@@ -15,7 +15,7 @@
 #include "file-utilities.h"
 #include "windows/common/window-with-framebuffer.h"
 
-#define VERSION "v1.6.3"
+#define VERSION "v1.6.4"
 
 template<typename T>
 inline void DoToolTip(const T& text)
