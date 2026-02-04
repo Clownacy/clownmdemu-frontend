@@ -124,6 +124,18 @@ private:
 		static const auto licence_inconsolata = std::to_array<const char>({
 			#include "licences/inconsolata.h"
 		});
+		static const auto licence_libretro_common = std::to_array<const char>({
+			#include "licences/libretro-common.h"
+		});
+		static const auto licence_libchdr = std::to_array<const char>({
+			#include "licences/libchdr.h"
+		});
+		static const auto licence_miniz = std::to_array<const char>({
+			#include "licences/miniz.h"
+		});
+		static const auto licence_zstd = std::to_array<const char>({
+			#include "licences/zstd.h"
+		});
 
 		const auto monospace_font = GetMonospaceFont();
 
@@ -198,6 +210,18 @@ private:
 
 		if (ImGui::CollapsingHeader("Inconsolata"))
 			DoLicence(licence_inconsolata);
+
+		if (ImGui::CollapsingHeader("libretro-common"))
+			DoLicence(licence_libretro_common);
+
+		if (ImGui::CollapsingHeader("libchdr"))
+			DoLicence(licence_libchdr);
+
+		if (ImGui::CollapsingHeader("miniz"))
+			DoLicence(licence_miniz);
+
+		if (ImGui::CollapsingHeader("zstd"))
+			DoLicence(licence_zstd);
 	}
 
 public:
