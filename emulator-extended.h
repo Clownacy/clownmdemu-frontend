@@ -263,23 +263,20 @@ private:
 	{
 		cartridge_save_file_path = save_file_directory / cartridge_file_path.stem().replace_extension(".srm");
 
+		// Reset external RAM to its default 'empty' state.
+		// This way, even if a file is not loaded, the buffer is at least initialised to something.
+		auto &external_ram_buffer = this->GetExternalRAM();
+		external_ram_buffer.fill(0xFF);
+
 		// Load save data from disk.
 		if (std::filesystem::exists(cartridge_save_file_path))
 		{
 			const auto save_data_size = std::filesystem::file_size(cartridge_save_file_path);
 
-			auto &external_ram_buffer = this->GetExternalRAM();
-
 			if (save_data_size > std::size(external_ram_buffer))
-			{
 				Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", save_data_size, std::size(external_ram_buffer));
-			}
 			else
-			{
-				std::ifstream save_data_stream(cartridge_save_file_path, std::ios::binary);
-				save_data_stream.read(reinterpret_cast<char*>(external_ram_buffer), save_data_size);
-				std::fill(std::begin(external_ram_buffer) + save_data_size, std::end(external_ram_buffer), 0xFF);
-			}
+				std::ifstream(cartridge_save_file_path, std::ios::binary).read(reinterpret_cast<char*>(std::data(external_ram_buffer)), save_data_size);
 		}
 	}
 
