@@ -56,7 +56,7 @@ public:
 	cc_u32f GetTotalBufferFrames() const { return total_buffer_frames; }
 	cc_u32f GetSampleRate() const { return sample_rate; }
 
-	bool GetPaused() const { return device.GetPaused(); }
+	bool GetPaused() { return device.GetPaused(); }
 	void SetPaused(const bool paused) { device.SetPaused(paused); }
 };
 
