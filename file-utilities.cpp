@@ -214,13 +214,20 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	{
 		LoadFileCallback* const callback_detatched = new LoadFileCallback(callback);
 
-		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, std::string_view buffer, void* const user_data)
+		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, emscripten_browser_file::buffer_unique_ptr &&buffer, size_t buffer_size, void* const user_data)
 		{
 			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
-			SDL::IOStream file(buffer.data(), buffer.size());
+			SDL::IOStream file(buffer.release(), buffer_size);
 
 			if (file)
+			{
+				// TODO: This is an SDL 3.4.0 property; older versions of SDL will ignore this and let the memory leak!
+				// To resolve this, once SDL 3.4.2 comes out (fixing that damn window-closing bug), drop support for all prior
+				// SDL versions and use the proper macro constant (SDL_PROP_IOSTREAM_MEMORY_FREE_FUNC_POINTER).
+				SDL_SetPointerProperty(SDL_GetIOProperties(file), "SDL.iostream.memory.free", reinterpret_cast<void*>(std::free));
+
 				(*callback.get())(filename, std::move(file));
+			}
 		};
 
 		emscripten_browser_file::upload("", call_callback, callback_detatched);
