@@ -48,6 +48,15 @@ float Window::GetDPIScale()
 	return HandleDPIError(SDL_GetWindowDisplayScale(GetSDLWindow()));
 }
 
+void Window::SetFullscreen(const bool enabled)
+{
+	if (!SDL_SetWindowFullscreen(GetSDLWindow(), enabled))
+		Frontend::debug_log.Log("SDL_SetWindowFullscreen failed with the following message - '{}'", SDL_GetError());
+
+	if (!enabled)
+		DisableRounding();
+}
+
 Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Uint32 window_flags)
 {
 	const float scale = GetDisplayDPIScale();

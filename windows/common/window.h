@@ -16,12 +16,7 @@ public:
 
 	float GetSizeScale();
 	float GetDPIScale();
-	void SetFullscreen(const bool enabled)
-	{
-		SDL_SetWindowFullscreen(GetSDLWindow(), enabled ? SDL_WINDOW_FULLSCREEN : 0);
-		if (!enabled)
-			DisableRounding();
-	}
+	void SetFullscreen(bool enabled);
 	bool GetFullscreen() { return (SDL_GetWindowFlags(GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) != 0; }
 	void ToggleFullscreen() { SetFullscreen(!GetFullscreen()); }
 	SDL::Window& GetSDLWindow() { return sdl_window; }
