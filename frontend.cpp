@@ -113,20 +113,32 @@ private:
 		};
 
 		if (ImGui::CollapsingHeader("ClownMDEmu"))
-			DoLicence(std::to_array<char>({
+		{
+			static constexpr auto text = std::to_array<char>({
 				#include "licences/clownmdemu.h"
-			}));
+			});
+
+			DoLicence(text);
+		}
 
 		if (ImGui::CollapsingHeader("Dear ImGui"))
-			DoLicence(std::to_array<char>({
+		{
+			static constexpr auto text = std::to_array<char>({
 				#include "licences/dear-imgui.h"
-			}));
+			});
+
+			DoLicence(text);
+		}
 
 	#ifdef __EMSCRIPTEN__
 		if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
-			DoLicence(std::to_array<char>({
+		{
+			static constexpr auto text = std::to_array<char>({
 				#include "licences/emscripten-browser-file.h"
-			}));
+			});
+
+			DoLicence(text);
+		}
 	#endif
 
 	#ifdef IMGUI_ENABLE_FREETYPE
@@ -134,41 +146,56 @@ private:
 		{
 			if (ImGui::TreeNode("General"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/freetype.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("BDF Driver"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/freetype-bdf.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("PCF Driver"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/freetype-pcf.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("fthash.c & fthash.h"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/freetype-fthash.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/freetype-ft-hb.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 		}
@@ -178,17 +205,23 @@ private:
 		{
 			if (ImGui::TreeNode("Noto Sans"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/noto-sans.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("Inconsolata"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/inconsolata.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 		}
@@ -197,33 +230,45 @@ private:
 		{
 			if (ImGui::TreeNode("libretro-common"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/libretro-common.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("libchdr"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/libchdr.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("miniz"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/miniz.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNode("zstd"))
 			{
-				DoLicence(std::to_array<char>({
+				static constexpr auto text = std::to_array<char>({
 					#include "licences/zstd.h"
-				}));
+				});
+
+				DoLicence(text);
+
 				ImGui::TreePop();
 			}
 		}
