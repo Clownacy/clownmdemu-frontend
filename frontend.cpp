@@ -995,25 +995,30 @@ bool Frontend::IsFileCD(const std::filesystem::path& path)
 	return CDReader::IsDefinitelyACD(path);
 }
 
+std::filesystem::path Frontend::GetDefaultConfigurationDirectoryPath()
+{
+	// Standard configuration directory.
+	std::filesystem::path path = SDL::GetPrefPath("clownacy", "clownmdemu-frontend");
+
+	if (path.empty())
+	{
+		// Use working directory as fallback.
+		path = ".";
+	}
+
+	return path;
+}
+
 static void InitialiseConfigurationDirectoryPath(const std::filesystem::path &user_data_path)
 {
 	// User-specified directory.
 	configuration_directory_path = user_data_path;
 
 	if (configuration_directory_path.empty())
-	{
-		// Standard configuration directory.
-		configuration_directory_path = SDL::GetPrefPath("clownacy", "clownmdemu-frontend");
-	}
-
-	if (configuration_directory_path.empty())
-	{
-		// Use working directory as fallback.
-		configuration_directory_path = ".";
-	}
+		configuration_directory_path = GetDefaultConfigurationDirectoryPath();
 }
 
-const std::filesystem::path &Frontend::GetConfigurationDirectoryPath()
+static const std::filesystem::path& GetConfigurationDirectoryPath()
 {
 	return configuration_directory_path;
 }

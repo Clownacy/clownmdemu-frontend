@@ -77,7 +77,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 	emscripten_set_main_loop(callback, 0, 0);
 
-	if (Frontend::Initialise(FrameRateCallback, false, cartridge_file_path, disc_file_path))
+	if (Frontend::Initialise(FrameRateCallback, false, "", cartridge_file_path, disc_file_path))
 		SDL_AddEventWatch(EventFilter, nullptr);
 }
 
@@ -101,7 +101,7 @@ int main(const int argc_p, char** const argv_p)
 				FS.syncfs(true, function(err) {
 					Module._StorageLoaded();
 				});
-				}, Frontend::GetConfigurationDirectoryPath().u8string().c_str());
+				}, Frontend::GetDefaultConfigurationDirectoryPath().u8string().c_str());
 		};
 
 		if (argc > 2 && argv[2][0] != '\0')
