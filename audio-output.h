@@ -22,7 +22,7 @@ private:
 	cc_u8f rolling_average_buffer_index = 0;
 
 public:
-	AudioOutput(bool pal_mode);
+	AudioOutput(bool pal_mode, bool paused);
 
 	void MixerBegin()
 	{

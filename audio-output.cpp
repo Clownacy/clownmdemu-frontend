@@ -18,10 +18,10 @@ static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 	return std::bit_ceil(sample_rate / (1000 / 10));
 }
 
-AudioOutput::AudioOutput(const bool pal_mode)
+AudioOutput::AudioOutput(const bool pal_mode, const bool paused)
 	: sample_rate(pal_mode ? MIXER_OUTPUT_SAMPLE_RATE_PAL : MIXER_OUTPUT_SAMPLE_RATE_NTSC)
 	, total_buffer_frames(BufferSizeFromSampleRate(sample_rate))
-	, device(MIXER_CHANNEL_COUNT, sample_rate)
+	, device(MIXER_CHANNEL_COUNT, sample_rate, paused)
 	, mixer(pal_mode)
 {}
 

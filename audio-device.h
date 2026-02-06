@@ -15,7 +15,7 @@ private:
 	SDL::AudioStream stream;
 
 public:
-	AudioDevice(cc_u8f channels, cc_u32f sample_rate);
+	AudioDevice(cc_u8f channels, cc_u32f sample_rate, bool paused);
 
 	void QueueFrames(const cc_s16l *buffer, cc_u32f total_frames)
 	{

@@ -143,6 +143,7 @@ private:
 		}
 	};
 
+	bool paused = false;
 	CDReader cd_reader;
 	AudioOutput audio_output;
 	Palette palette;
@@ -151,7 +152,6 @@ private:
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;
 	unsigned int speed = 1;
-	bool paused;
 
 	////////////////////////
 	// Emulator Callbacks //
@@ -375,7 +375,7 @@ private:
 public:
 	EmulatorExtended(const ClownMDEmuCXX::InitialConfiguration &configuration, const bool rewinding_enabling, const std::filesystem::path &save_file_directory)
 		: Emulator(configuration)
-		, audio_output(this->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL)
+		, audio_output(this->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL, paused)
 		, state_rewind_buffer(rewinding_enabling)
 		, save_file_directory(save_file_directory)
 	{
@@ -384,8 +384,6 @@ public:
 		// This should be called before any other ClownMDEmu functions are called!
 		this->SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
 		cd_reader.SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
-
-		SetPaused(false);
 	}
 
 	~EmulatorExtended()
@@ -594,7 +592,7 @@ public:
 	void SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 	{
 		Emulator::SetTVStandard(tv_standard);
-		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
+		audio_output = AudioOutput(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL, audio_output.GetPaused());
 	}
 
 	void SetRegion(const ClownMDEmu_Region region)

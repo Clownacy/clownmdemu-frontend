@@ -2,7 +2,7 @@
 
 #include "debug-log.h"
 
-AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
+AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate, const bool paused)
 	: size_of_frame(channels * sizeof(cc_s16l))
 {
 	SDL_AudioSpec specification;
@@ -15,4 +15,6 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate)
 
 	if (stream == nullptr)
 		Frontend::debug_log.Log("SDL_GetAudioDeviceFormat failed with the following message - '{}'", SDL_GetError());
+
+	SetPaused(paused);
 }
