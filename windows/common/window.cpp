@@ -72,7 +72,7 @@ Window::Window(const char* const window_title, const int window_width, const int
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	if (!SDL_CreateWindowAndRenderer(window_title, static_cast<int>(window_width * scale), static_cast<int>(window_height * scale), window_flags, &window, &renderer))
-		throw std::runtime_error(std::string("SDL_CreateWindowAndRenderer failed with the following message - '") + SDL_GetError() + "'");
+		throw std::runtime_error(fmt::format("SDL_CreateWindowAndRenderer failed with the following message - '{}'", SDL_GetError()));
 
 	sdl_window = SDL::Window(window);
 	this->renderer = SDL::Renderer(renderer);
