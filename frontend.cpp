@@ -1293,7 +1293,7 @@ static void LoadConfiguration()
 	bool fullscreen = false;
 #endif
 	bool vsync = false;
-	bool integer_screen_scaling = false;
+	integer_screen_scaling = false;
 	tall_double_resolution_mode = false;
 	unsigned int widescreen_tiles = 0;
 #ifdef __EMSCRIPTEN__
