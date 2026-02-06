@@ -85,6 +85,23 @@ if(WIN32)
 	target_sources(clownmdemu PRIVATE "assets/clownmdemu.rc")
 endif()
 
+##################
+# Version string #
+##################
+
+# Obtain the Git revision so that it can be displayed in the version string.
+find_package(Git)
+if(GIT_FOUND)
+	execute_process(
+		COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+		OUTPUT_VARIABLE GIT_VERSION
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+	if(GIT_VERSION)
+		target_compile_definitions(clownmdemu PRIVATE GIT_VERSION=" \(${GIT_VERSION}\)")
+	endif()
+endif()
+
 ##############################
 # Required language versions #
 ##############################

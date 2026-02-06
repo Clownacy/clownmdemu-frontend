@@ -15,7 +15,11 @@
 #include "file-utilities.h"
 #include "windows/common/window-with-framebuffer.h"
 
-#define VERSION "v1.6.4"
+#ifndef GIT_VERSION
+#define GIT_VERSION ""
+#endif
+
+#define VERSION "v1.6.4" GIT_VERSION
 
 template<typename T>
 inline void DoToolTip(const T& text)
