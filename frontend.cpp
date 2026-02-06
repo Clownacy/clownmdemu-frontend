@@ -948,6 +948,8 @@ static bool dear_imgui_demo_window;
 
 static bool emulator_on;
 
+static bool forced_fullscreen;
+
 
 ////////////////////////////
 // Emulator Functionality //
@@ -1212,9 +1214,14 @@ void Frontend::SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
 	emulator->SetTVStandard(tv_standard);
 }
 
-bool NativeWindowsActive()
+static bool ShouldBeInFullscreenMode()
 {
-	return native_windows && !window->GetFullscreen();
+	return forced_fullscreen || window->GetFullscreen();
+}
+
+static bool NativeWindowsActive()
+{
+	return native_windows && !ShouldBeInFullscreenMode();
 }
 
 
@@ -1711,6 +1718,7 @@ static void PreEventStuff()
 bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen, const std::filesystem::path &user_data_path, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
 {
 	frame_rate_callback = frame_rate_callback_param;
+	forced_fullscreen = fullscreen;
 
 	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "ClownMDEmu");
 	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, VERSION);
@@ -2460,7 +2468,7 @@ void Frontend::Update()
 	if (!emulator_on || emulator->IsPaused())
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-	const bool show_menu_bar = !window->GetFullscreen()
+	const bool show_menu_bar = !ShouldBeInFullscreenMode()
 	                         || pop_out
 	                         || AnyPopupsOpen()
 	                         || (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
