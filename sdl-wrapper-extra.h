@@ -15,16 +15,16 @@ namespace SDL
 
 		if (!texture)
 		{
-			Frontend::debug_log.Log("SDL_CreateTexture failed with the following message - '{}'", SDL_GetError());
+			Frontend::debug_log.SDLError("SDL_CreateTexture");
 		}
 		else
 		{
 			// Disable blending, since we don't need it
 			if (!SDL_SetTextureBlendMode(texture, blending ? SDL_BLENDMODE_BLEND : SDL_BLENDMODE_NONE))
-				Frontend::debug_log.Log("SDL_SetTextureBlendMode failed with the following message - '{}'", SDL_GetError());
+				Frontend::debug_log.SDLError("SDL_SetTextureBlendMode");
 
 			if (!SDL_SetTextureScaleMode(texture, scale_mode))
-				Frontend::debug_log.Log("SDL_SetTextureScaleMode failed with the following message - '{}'", SDL_GetError());
+				Frontend::debug_log.SDLError("SDL_SetTextureScaleMode");
 		}
 
 		return texture;

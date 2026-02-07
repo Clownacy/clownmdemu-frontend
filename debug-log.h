@@ -51,6 +51,16 @@ public:
 
 		Log(GetSize, WriteBuffer);
 	}
+
+	static auto GetSDLErrorMessage(const std::string_view &function_name)
+	{
+		return fmt::format("{} failed with the following message - '{}'", function_name, SDL_GetError());
+	}
+
+	void SDLError(const std::string_view &function_name)
+	{
+		Log("{}", GetSDLErrorMessage(function_name));
+	}
 };
 
 namespace Frontend

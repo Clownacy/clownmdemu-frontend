@@ -23,7 +23,7 @@ static float GetDisplayDPIScale()
 
 	if (display_index == 0)
 	{
-		Frontend::debug_log.Log("SDL_GetPrimaryDisplay failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.SDLError("SDL_GetPrimaryDisplay");
 		return 1.0f;
 	}
 
@@ -36,7 +36,7 @@ float Window::GetSizeScale()
 
 	if (display_index == 0)
 	{
-		Frontend::debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.SDLError("SDL_GetDisplayForWindow");
 		return 1.0f;
 	}
 
@@ -51,7 +51,7 @@ float Window::GetDPIScale()
 void Window::SetFullscreen(const bool enabled)
 {
 	if (!SDL_SetWindowFullscreen(GetSDLWindow(), enabled))
-		Frontend::debug_log.Log("SDL_SetWindowFullscreen failed with the following message - '{}'", SDL_GetError());
+		Frontend::debug_log.SDLError("SDL_SetWindowFullscreen");
 
 	if (!enabled)
 		DisableRounding();
@@ -72,7 +72,7 @@ Window::Window(const char* const window_title, const int window_width, const int
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	if (!SDL_CreateWindowAndRenderer(window_title, static_cast<int>(window_width * scale), static_cast<int>(window_height * scale), window_flags, &window, &renderer))
-		throw std::runtime_error(fmt::format("SDL_CreateWindowAndRenderer failed with the following message - '{}'", SDL_GetError()));
+		throw std::runtime_error(DebugLog::GetSDLErrorMessage("SDL_CreateWindowAndRenderer"));
 
 	sdl_window = SDL::Window(window);
 	this->renderer = SDL::Renderer(renderer);

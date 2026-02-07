@@ -58,7 +58,7 @@ public:
 
 		if (size_s64 < 0)
 		{
-			Frontend::debug_log.Log("SDL_GetIOSize failed with the following message - '{}'", SDL_GetError());
+			Frontend::debug_log.SDLError("SDL_GetIOSize");
 		}
 		else
 		{
@@ -86,7 +86,7 @@ public:
 
 		if (!file)
 		{
-			Frontend::debug_log.Log("SDL_IOFromFile failed with the following message - '{}'", SDL_GetError());
+			Frontend::debug_log.SDLError("SDL_IOFromFile");
 			return std::nullopt;
 		}
 

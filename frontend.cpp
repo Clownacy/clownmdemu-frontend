@@ -1313,7 +1313,7 @@ static void LoadConfiguration()
 
 	if (display_index == 0)
 	{
-		debug_log.Log("SDL_GetDisplayForWindow failed with the following message - '{}'", SDL_GetError());
+		debug_log.SDLError("SDL_GetDisplayForWindow");
 	}
 	else
 	{
@@ -1321,7 +1321,7 @@ static void LoadConfiguration()
 
 		if (display_mode == nullptr)
 		{
-			debug_log.Log("SDL_GetCurrentDisplayMode failed with the following message - '{}'", SDL_GetError());
+			debug_log.SDLError("SDL_GetCurrentDisplayMode");
 		}
 		else
 		{
@@ -1731,7 +1731,7 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 	// Initialise SDL
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
 	{
-		debug_log.Log("SDL_Init failed with the following message - '{}'", SDL_GetError());
+		debug_log.SDLError("SDL_Init");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
 	}
 	else
@@ -2006,7 +2006,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			if (controller == nullptr)
 			{
-				debug_log.Log("SDL_OpenGamepad failed with the following message - '{}'", SDL_GetError());
+				debug_log.SDLError("SDL_OpenGamepad");
 			}
 			else
 			{
@@ -2030,7 +2030,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			SDL_Gamepad *controller = SDL_GetGamepadFromID(event.gdevice.which);
 
 			if (controller == nullptr)
-				debug_log.Log("SDL_GetGamepadFromID failed with the following message - '{}'", SDL_GetError());
+				debug_log.SDLError("SDL_GetGamepadFromID");
 			else
 				SDL_CloseGamepad(controller);
 
