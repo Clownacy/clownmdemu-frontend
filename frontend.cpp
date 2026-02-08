@@ -503,6 +503,10 @@ private:
 			ImGui::EndTable();
 		}
 
+		ImGui::SeparatorText("CDDA");
+
+		DO_BUTTON(CDDAEnabled, "CDDA");
+
 		#undef DO_BUTTON
 	}
 
@@ -2662,7 +2666,7 @@ void Frontend::Update()
 			{
 				PopupButton("Log", debug_log_window, 800, 600, true);
 
-				PopupButton("Toggles", debugging_toggles_window, 234, 444, false);
+				PopupButton("Toggles", debugging_toggles_window, 234, 500, false);
 
 				PopupButton("Disassembler", disassembler_window, 380, 410, true);
 
