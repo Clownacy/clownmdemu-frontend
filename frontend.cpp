@@ -897,8 +897,8 @@ static std::optional<DebugVDP::StampMapViewer> stamp_map_visualiser_window;
 static std::optional<DebugFM::Registers> fm_status_window;
 static std::optional<DebugPSG::Registers> psg_status_window;
 static std::optional<DebugPCM::Registers> pcm_status_window;
-static std::optional<DebugCDC> cdc_status_window;
 static std::optional<DebugCDDA> cdda_status_window;
+static std::optional<DebugCDC> cdc_status_window;
 static std::optional<DebugOther> other_status_window;
 static std::optional<OptionsWindow> options_window;
 static std::optional<AboutWindow> about_window;
@@ -933,8 +933,8 @@ static constexpr auto popup_windows = std::make_tuple(
 	&fm_status_window,
 	&psg_status_window,
 	&pcm_status_window,
-	&cdc_status_window,
 	&cdda_status_window,
+	&cdc_status_window,
 	&other_status_window,
 	&options_window,
 	&about_window
@@ -2729,9 +2729,9 @@ void Frontend::Update()
 					ImGui::EndMenu();
 				}
 
-				PopupButton("CDC", cdc_status_window, 200, 364, false);
-
 				PopupButton("CDDA", cdda_status_window, 180, 324, false);
+
+				PopupButton("CDC", cdc_status_window, 200, 364, false);
 
 				PopupButton("Other", other_status_window, 350, 830, false);
 
@@ -2914,8 +2914,8 @@ void Frontend::Update()
 	DisplayWindow(fm_status_window);
 	DisplayWindow(psg_status_window);
 	DisplayWindow(pcm_status_window);
-	DisplayWindow(cdc_status_window);
 	DisplayWindow(cdda_status_window);
+	DisplayWindow(cdc_status_window);
 	DisplayWindow(other_status_window);
 	DisplayWindow(options_window);
 	DisplayWindow(about_window);
