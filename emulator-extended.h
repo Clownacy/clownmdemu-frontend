@@ -483,8 +483,6 @@ public:
 
 	bool Iterate()
 	{
-		assert(!paused);
-
 		for (unsigned int i = 0; i < speed; ++i)
 		{
 			if (state_rewind_buffer.Exists())
