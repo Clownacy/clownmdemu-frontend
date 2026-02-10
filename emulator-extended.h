@@ -316,28 +316,35 @@ private:
 			name_buffer.reserve(name_buffer_size * 4);
 
 			std::array<unsigned char, name_buffer_size> in_buffer;
+			in_buffer.fill(' ');
+
 			// Choose the proper name based on the current region.
 			const auto header_offset = this->GetRegion() == CLOWNMDEMU_REGION_DOMESTIC ? 0x120 : 0x150;
 
 			if (this->IsCartridgeInserted())
 			{
-				// TODO: This seems unsafe - add some bounds checks?
-				const auto words = &this->cartridge_buffer[header_offset / 2];
-
-				for (cc_u8f i = 0; i < name_buffer_size / 2; ++i)
+				if (header_offset + name_buffer_size <= this->cartridge_buffer_length)
 				{
-					const auto word = words[i];
+					const auto words = &this->cartridge_buffer[header_offset / 2];
 
-					in_buffer[i * 2 + 0] = (word >> 8) & 0xFF;
-					in_buffer[i * 2 + 1] = (word >> 0) & 0xFF;
+					for (cc_u8f i = 0; i < name_buffer_size / 2; ++i)
+					{
+						const auto word = words[i];
+
+						in_buffer[i * 2 + 0] = (word >> 8) & 0xFF;
+						in_buffer[i * 2 + 1] = (word >> 0) & 0xFF;
+					}
 				}
 			}
 			else //if (IsCDInserted)
 			{
 				std::array<unsigned char, CDReader::SECTOR_SIZE> sector;
-				ReadMegaCDHeaderSector(sector.data());
-				const auto bytes = &sector[header_offset];
-				std::copy(bytes, bytes + name_buffer_size, std::begin(in_buffer));
+
+				if (ReadMegaCDHeaderSector(sector.data()))
+				{
+					const auto bytes = &sector[header_offset];
+					std::copy(bytes, bytes + name_buffer_size, std::begin(in_buffer));
+				}
 			}
 
 			cc_u32f previous_codepoint = '\0';
