@@ -463,7 +463,7 @@ public:
 	// Miscellaneous //
 	///////////////////
 
-	bool ReadMegaCDHeaderSector(unsigned char* const buffer)
+	[[nodiscard]] bool ReadMegaCDHeaderSector(unsigned char* const buffer)
 	{
 		// TODO: Make this return an array instead!
 		return cd_reader.ReadMegaCDHeaderSector(buffer);
@@ -517,7 +517,7 @@ public:
 		this->speed = speed == 0 ? 1 : std::pow(3, speed);
 	}
 
-	bool IsFastForwarding() const
+	[[nodiscard]] bool IsFastForwarding() const
 	{
 		return speed != 1;
 	}
@@ -527,7 +527,7 @@ public:
 		this->paused = paused;
 	}
 
-	bool IsPaused() const
+	[[nodiscard]] bool IsPaused() const
 	{
 		return paused;
 	}
