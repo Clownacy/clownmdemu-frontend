@@ -525,7 +525,6 @@ public:
 	void SetPaused(const bool paused)
 	{
 		this->paused = paused;
-		audio_output.SetPaused(paused);
 	}
 
 	bool IsPaused() const
