@@ -1305,6 +1305,7 @@ static void LoadConfiguration()
 #else
 	native_windows = true;
 #endif
+	keyboard_input.bound_joypad = 0;
 	bool rewinding = true;
 	bool low_pass_filter = true;
 	bool cd_add_on = false;
@@ -1402,6 +1403,8 @@ static void LoadConfiguration()
 				else if (name == "native-windows")
 					native_windows = value_boolean;
 			#endif
+				else if (name == "keyboard-bound-joypad")
+					keyboard_input.bound_joypad = value_boolean;
 				else if (name == "rewinding")
 					rewinding = value_boolean;
 				else if (name == "low-pass-filter")
@@ -1586,6 +1589,7 @@ static void SaveConfiguration()
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
+		PRINT_BOOLEAN_OPTION(file, "keyboard-bound-joypad", keyboard_input.bound_joypad);
 		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->GetRewindEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilterEnabled());
 		PRINT_BOOLEAN_OPTION(file, "cd-add-on", emulator->GetCDAddOnEnabled());
