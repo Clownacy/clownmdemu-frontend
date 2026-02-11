@@ -4,8 +4,6 @@
 
 void DebugFrontend::DisplayInternal()
 {
-	const auto available_width = ImGui::GetContentRegionAvail().x;
-
 	if (ImGui::BeginTable("Tables", 2, ImGuiTableFlags_SizingStretchSame))
 	{
 		ImGui::TableNextColumn();
