@@ -46,6 +46,11 @@ namespace ImGui
 	{
 		ImGui::PushFont(font, font->LegacySize);
 	}
+
+	inline bool InputTextReadOnly(const char *const label, const char *const buf, const size_t buf_size, const ImGuiInputTextFlags flags = 0, const ImGuiInputTextCallback callback = nullptr, void *const user_data = nullptr)
+	{
+		return ImGui::InputText(label, const_cast<char*>(buf), buf_size, flags | ImGuiInputTextFlags_ReadOnly, callback, user_data);
+	}
 }
 
 class WindowWithDearImGui : public Window

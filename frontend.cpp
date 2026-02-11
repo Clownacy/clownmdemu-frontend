@@ -1069,7 +1069,7 @@ static void InitialiseConfigurationDirectoryPath(const std::filesystem::path &us
 		configuration_directory_path = GetDefaultConfigurationDirectoryPath();
 }
 
-static const std::filesystem::path& GetConfigurationDirectoryPath()
+const std::filesystem::path& Frontend::GetConfigurationDirectoryPath()
 {
 	return configuration_directory_path;
 }
@@ -2676,7 +2676,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, 164, 234, false);
+				PopupButton("Frontend", debug_frontend_window, 328, 210, true);
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
