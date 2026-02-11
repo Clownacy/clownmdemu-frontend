@@ -82,7 +82,6 @@ namespace Frontend
 	extern bool native_windows;
 
 	bool IsFileCD(const std::filesystem::path &path);
-	std::filesystem::path GetDefaultConfigurationDirectoryPath();
 	const std::filesystem::path& GetConfigurationDirectoryPath();
 	std::filesystem::path GetSaveDataDirectoryPath();
 	void SetTVStandard(ClownMDEmu_TVStandard tv_standard);

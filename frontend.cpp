@@ -1046,7 +1046,7 @@ bool Frontend::IsFileCD(const std::filesystem::path& path)
 	return CDReader::IsDefinitelyACD(path);
 }
 
-std::filesystem::path Frontend::GetDefaultConfigurationDirectoryPath()
+static std::filesystem::path GetDefaultConfigurationDirectoryPath()
 {
 	// Standard configuration directory.
 	std::filesystem::path path = SDL::GetPrefPath("clownacy", "clownmdemu-frontend");

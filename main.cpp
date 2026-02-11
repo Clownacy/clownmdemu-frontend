@@ -17,6 +17,9 @@
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
+// Hardcoded for backwards-compatibility, and because we don't need SDL to figure this out for us.
+static const std::filesystem::path user_data_path = "/libsdl/clownacy/clownmdemu-frontend/";
+
 static std::filesystem::path cartridge_file_path, disc_file_path;
 
 static double next_time;
@@ -77,7 +80,7 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 
 	emscripten_set_main_loop(callback, 0, 0);
 
-	if (Frontend::Initialise(FrameRateCallback, false, "", cartridge_file_path, disc_file_path))
+	if (Frontend::Initialise(FrameRateCallback, false, user_data_path, cartridge_file_path, disc_file_path))
 		SDL_AddEventWatch(EventFilter, nullptr);
 }
 
@@ -96,12 +99,14 @@ int main(const int argc_p, char** const argv_p)
 
 			// Initialise persistent storage.
 			EM_ASM({
-				FS.mount(IDBFS, {}, UTF8ToString($0));
+				var user_data_path = UTF8ToString($0);
+				FS.mkdirTree(user_data_path);
+				FS.mount(IDBFS, {}, user_data_path);
 
 				FS.syncfs(true, function(err) {
 					Module._StorageLoaded();
 				});
-				}, Frontend::GetDefaultConfigurationDirectoryPath().u8string().c_str());
+			}, user_data_path.u8string().c_str());
 		};
 
 		if (argc > 2 && argv[2][0] != '\0')
