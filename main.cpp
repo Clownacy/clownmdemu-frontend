@@ -25,30 +25,28 @@ static std::filesystem::path cartridge_file_path, disc_file_path;
 static double next_time;
 static double time_delta;
 
-static void Terminate()
-{
-	Frontend::Deinitialise();
-	emscripten_cancel_main_loop();
-
-	// Deinitialise persistent storage.
-	EM_ASM({
-		FS.syncfs(false, function (err) {});
-	}, 0);
-}
-
 static void FrameRateCallback(const bool pal_mode)
 {
 	time_delta = pal_mode ? Frontend::DivideByPALFramerate(1000.0) : Frontend::DivideByNTSCFramerate(1000.0);
 }
 
-static bool EventFilter(void* /*const userdata*/, SDL_Event* const event)
+static bool EventFilter([[maybe_unused]] void* const userdata, SDL_Event* const event)
 {
+	// TODO: This can be running on another thread; use a mutex!!!
+
 	// The event loop will never have time to catch this, so we
 	// must use this callback to intercept it as soon as possible.
 	if (event->type == SDL_EVENT_TERMINATING)
-		Terminate();
+	{
+		Frontend::WriteSaveData();
 
-	return 0;
+		// Deinitialise persistent storage.
+		EM_ASM({
+			FS.syncfs(false, function (err) {});
+		}, 0);
+	}
+
+	return true;
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
@@ -72,7 +70,15 @@ extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 			Frontend::Update();
 
 			if (Frontend::WantsToQuit())
-				Terminate();
+			{
+				Frontend::Deinitialise();
+				emscripten_cancel_main_loop();
+
+				// Deinitialise persistent storage.
+				EM_ASM({
+					FS.syncfs(false, function (err) {});
+				}, 0);
+			}
 		}
 	};
 

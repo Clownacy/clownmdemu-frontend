@@ -89,6 +89,7 @@ namespace Frontend
 	void HandleEvent(const SDL_Event &event);
 	void Update();
 	void Deinitialise();
+	void WriteSaveData();
 	bool WantsToQuit();
 	template<typename T>
 	T DivideByPALFramerate(T value) { return CLOWNMDEMU_DIVIDE_BY_PAL_FRAMERATE(value); }

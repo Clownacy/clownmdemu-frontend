@@ -1812,9 +1812,7 @@ void Frontend::Deinitialise()
 		}, popup_windows
 	);
 
-	ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
-
-	SaveConfiguration();
+	WriteSaveData();
 
 #ifdef FILE_PATH_SUPPORT
 	// Free recent software list.
@@ -1827,6 +1825,15 @@ void Frontend::Deinitialise()
 	window.reset();
 
 	SDL_Quit();
+}
+
+void Frontend::WriteSaveData()
+{
+	ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
+
+	SaveConfiguration();
+
+	emulator->SaveCartridgeSaveData();
 }
 
 static void HandleMainWindowEvent(const SDL_Event &event)

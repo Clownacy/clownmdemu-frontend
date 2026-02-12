@@ -297,8 +297,6 @@ private:
 			else
 				save_data_stream.write(reinterpret_cast<const char*>(external_ram.buffer), external_ram.size);
 		}
-
-		cartridge_save_file_path.clear();
 	}
 
 	///////////////////
@@ -422,6 +420,7 @@ public:
 		state_rewind_buffer.Clear();
 
 		SaveCartridgeSaveData();
+		cartridge_save_file_path.clear();
 		Emulator::EjectCartridge(std::forward<Ts>(args)...);
 
 		if (IsCDInserted())
