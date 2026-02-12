@@ -280,6 +280,7 @@ private:
 		}
 	}
 
+public:
 	void SaveCartridgeSaveData()
 	{
 		if (cartridge_save_file_path.empty())
@@ -303,6 +304,7 @@ private:
 	// Miscellaneous //
 	///////////////////
 
+private:
 	std::string GetSoftwareName()
 	{
 		std::string name_buffer;
