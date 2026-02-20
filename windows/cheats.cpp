@@ -27,14 +27,15 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 		{
 			ImGui::TableNextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::InputTextWithHint("##Code", hint, &code, ImGuiInputTextFlags_CharsUppercase);
-
-			return ImGui::IsItemDeactivatedAfterEdit();
+			return ImGui::InputTextWithHint("##Code", hint, &code, ImGuiInputTextFlags_CharsUppercase);
 		};
+
+		// For making sure that ImGui keeps the correct input selected, even as new inputs are created.
+		int id = 0;
 
 		for (auto &slot : codes)
 		{
-			ImGui::PushID(&slot);
+			ImGui::PushID(id++);
 
 			ImGui::PushFont(GetMonospaceFont());
 
@@ -72,6 +73,8 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 			ImGui::PopID();
 		}
 
+		ImGui::PushID(id++);
+
 		ImGui::PushFont(GetMonospaceFont());
 
 		std::string new_code;
@@ -80,6 +83,8 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 				codes.emplace_back(new_code);
 
 		ImGui::PopFont();
+
+		ImGui::PopID();
 
 		ImGui::EndTable();
 	}
