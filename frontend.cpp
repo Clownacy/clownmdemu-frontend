@@ -32,6 +32,7 @@
 #include "debug-log.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
+#include "windows/cheats.h"
 #include "windows/debug-fm.h"
 #include "windows/debug-frontend.h"
 #include "windows/debug-log-viewer.h"
@@ -868,6 +869,7 @@ static bool emulator_frame_advance;
 
 static std::optional<EmulatorInstance::StateBackup> quick_save_state;
 
+static std::optional<Cheats> cheats_window;
 static std::optional<DebugLogViewer> debug_log_window;
 static std::optional<DebugToggles> debugging_toggles_window;
 static std::optional<Disassembler> disassembler_window;
@@ -904,6 +906,7 @@ static std::optional<OptionsWindow> options_window;
 static std::optional<AboutWindow> about_window;
 
 static constexpr auto popup_windows = std::make_tuple(
+	&cheats_window,
 	&debug_log_window,
 	&debugging_toggles_window,
 	&disassembler_window,
@@ -2516,6 +2519,17 @@ void Frontend::Update()
 	{
 		if (show_menu_bar && ImGui::BeginMenuBar())
 		{
+			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const int width, const int height, const bool resizeable, const std::optional<float> forced_scale = std::nullopt, const char* const title = nullptr)
+			{
+				if (ImGui::MenuItem(label, nullptr, window.has_value()))
+				{
+					if (window.has_value())
+						window.reset();
+					else
+						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, forced_scale, NativeWindowsActive() ? nullptr : &*::window);
+				}
+			};
+
 			if (ImGui::BeginMenu("Software"))
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
@@ -2558,6 +2572,10 @@ void Frontend::Update()
 
 					emulator->SetPaused(false);
 				}
+
+				ImGui::Separator();
+
+				PopupButton("Cheats", cheats_window, 328, 210, true);
 
 				ImGui::Separator();
 
@@ -2661,17 +2679,6 @@ void Frontend::Update()
 
 				ImGui::EndMenu();
 			}
-
-			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const int width, const int height, const bool resizeable, const std::optional<float> forced_scale = std::nullopt, const char* const title = nullptr)
-			{
-				if (ImGui::MenuItem(label, nullptr, window.has_value()))
-				{
-					if (window.has_value())
-						window.reset();
-					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, forced_scale, NativeWindowsActive() ? nullptr : &*::window);
-				}
-			};
 
 			if (ImGui::BeginMenu("Debugging"))
 			{
@@ -2888,6 +2895,7 @@ void Frontend::Update()
 				window.reset();
 	};
 
+	DisplayWindow(cheats_window, *emulator);
 	DisplayWindow(debug_log_window);
 	DisplayWindow(debugging_toggles_window);
 	DisplayWindow(disassembler_window);

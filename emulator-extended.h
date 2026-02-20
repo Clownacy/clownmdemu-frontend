@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "common/core/clownmdemu.h"
+#include "common/cheat.h"
 
 #include "audio-output.h"
 #include "cd-reader.h"
@@ -144,6 +145,7 @@ private:
 	};
 
 	bool paused = false;
+	cc_u16l *cartridge_buffer;
 	CDReader cd_reader;
 	AudioOutput audio_output;
 	Palette palette;
@@ -402,13 +404,18 @@ public:
 	// Cartridge //
 	///////////////
 
-	template<typename... Ts>
-	void InsertCartridge(const std::filesystem::path &cartridge_file_path, Ts &&...args)
+	void InsertCartridge(const std::filesystem::path &cartridge_file_path, cc_u16l* const buffer, const cc_u32f buffer_length)
 	{
 		// Reset state buffer, since it cannot undo the cartridge or CD being changed.
 		state_rewind_buffer.Clear();
 
-		Emulator::InsertCartridge(std::forward<Ts>(args)...);
+		Cheat_UndoROMPatches(cartridge_buffer, this->cartridge_buffer_length);
+
+		cartridge_buffer = buffer;
+		Emulator::InsertCartridge(buffer, buffer_length);
+
+		Cheat_ApplyROMPatches(cartridge_buffer, this->cartridge_buffer_length);
+
 		LoadCartridgeSaveData(cartridge_file_path);
 
 		HardReset();
@@ -423,6 +430,7 @@ public:
 
 		SaveCartridgeSaveData();
 		cartridge_save_file_path.clear();
+		cartridge_buffer = nullptr;
 		Emulator::EjectCartridge(std::forward<Ts>(args)...);
 
 		if (IsCDInserted())
@@ -511,6 +519,7 @@ public:
 			// Reset the audio buffers so that they can be mixed into.
 			audio_output.MixerBegin();
 
+			Cheat_ApplyRAMPatches(this);
 			Emulator::Iterate();
 
 			// Resample, mix, and output the audio for this frame.
@@ -604,6 +613,20 @@ public:
 	{
 		Emulator::SetRegion(region);
 		UpdateTitle();
+	}
+
+	////////////
+	// Cheats //
+	////////////
+
+	void ResetCheats()
+	{
+		Cheat_ResetCheats(cartridge_buffer, this->cartridge_buffer_length);
+	}
+
+	bool AddCheat(const unsigned int index, const bool enabled, const char* const code)
+	{
+		return Cheat_AddCheat(cartridge_buffer, this->cartridge_buffer_length, index, enabled, code);
 	}
 };
 
