@@ -409,8 +409,6 @@ public:
 		// Reset state buffer, since it cannot undo the cartridge or CD being changed.
 		state_rewind_buffer.Clear();
 
-		Cheat_UndoROMPatches(cartridge_buffer, this->cartridge_buffer_length);
-
 		cartridge_buffer = buffer;
 		Emulator::InsertCartridge(buffer, buffer_length);
 
