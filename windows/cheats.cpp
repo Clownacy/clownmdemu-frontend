@@ -9,29 +9,18 @@
 Cheats::CodeSlot::CodeSlot(std::string code)
 	: code(std::move(code))
 {
-	Cheat_DecodedCheat decoded_cheat;
-
 	if (!Cheat_DecodeCheat(&decoded_cheat, this->code.c_str()))
-	{
-		address = value = "Invalid";
-	}
+		status = Status::Invalid;
 	else
-	{
-		address = fmt::format("{:06X}", decoded_cheat.address);
-		value = fmt::format("{:04X}", decoded_cheat.value);
-	}
-
-	status = Status::Pending;
+		status = Status::Pending;
 }
 
 void Cheats::DisplayInternal(EmulatorInstance &emulator)
 {
-	if (ImGui::BeginTable("Cheats", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp))
+	if (ImGui::BeginTable("Cheats", 2, ImGuiTableFlags_Borders))
 	{
 		ImGui::TableSetupColumn("Code");
-		ImGui::TableSetupColumn("Address");
-		ImGui::TableSetupColumn("Value");
-		ImGui::TableSetupColumn("Status");
+		ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 60 * GetWindow().GetDPIScale());
 		ImGui::TableHeadersRow();
 
 		const auto &DisplayCode = [](const char* const hint, std::string &code)
@@ -52,11 +41,14 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 			if (DisplayCode("This cheat will be deleted.", slot.code))
 				slot = CodeSlot(slot.code);
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(slot.address);
-
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(slot.value);
+			if (slot.status != CodeSlot::Status::Invalid)
+			{
+				if (ImGui::BeginItemTooltip())
+				{
+					ImGui::TextFormatted("Address: {:06X}\nValue:     {:04X}", slot.decoded_cheat.address, slot.decoded_cheat.value);
+					ImGui::EndTooltip();
+				}
+			}
 
 			ImGui::PopFont();
 
@@ -65,6 +57,9 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 			{
 				case CodeSlot::Status::Invalid:
 					ImGui::TextUnformatted("Invalid");
+					break;
+				case CodeSlot::Status::Error:
+					ImGui::TextUnformatted("Error");
 					break;
 				case CodeSlot::Status::Pending:
 					ImGui::TextUnformatted("Pending");
@@ -99,10 +94,13 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 		unsigned int index = 0;
 		for (auto &slot : codes)
 		{
-			if (emulator.AddCheat(index++, true, slot.code.c_str()))
-				slot.status = CodeSlot::Status::Applied;
-			else
-				slot.status = CodeSlot::Status::Invalid;
+			if (slot.status != CodeSlot::Status::Invalid)
+			{
+				if (emulator.AddDecodedCheat(index++, true, slot.decoded_cheat))
+					slot.status = CodeSlot::Status::Applied;
+				else
+					slot.status = CodeSlot::Status::Error;
+			}
 		}
 	}
 }

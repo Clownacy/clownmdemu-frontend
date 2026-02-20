@@ -19,11 +19,13 @@ private:
 		enum class Status
 		{
 			Invalid,
+			Error,
 			Pending,
 			Applied,
 		};
 
-		std::string code, address, value;
+		std::string code;
+		Cheat_DecodedCheat decoded_cheat;
 		Status status;
 
 		CodeSlot(std::string code);

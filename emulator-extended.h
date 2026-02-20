@@ -624,9 +624,9 @@ public:
 		Cheat_ResetCheats(cartridge_buffer, this->cartridge_buffer_length);
 	}
 
-	bool AddCheat(const unsigned int index, const bool enabled, const char* const code)
+	bool AddDecodedCheat(const unsigned int index, const bool enabled, const Cheat_DecodedCheat &decoded_cheat)
 	{
-		return Cheat_AddCheat(cartridge_buffer, this->cartridge_buffer_length, index, enabled, code);
+		return Cheat_AddDecodedCheat(cartridge_buffer, this->cartridge_buffer_length, index, enabled, &decoded_cheat);
 	}
 };
 
