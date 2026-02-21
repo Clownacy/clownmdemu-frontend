@@ -181,7 +181,7 @@ add_subdirectory("common" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu clownmdemu-frontend-common)
 
 # Link SDL
-find_package(SDL3 3.1.3 CONFIG COMPONENTS SDL3)
+find_package(SDL3 3.2.0 CONFIG COMPONENTS SDL3)
 if(SDL3_FOUND)
 	target_link_libraries(clownmdemu SDL3::SDL3)
 else()
