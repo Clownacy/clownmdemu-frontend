@@ -58,6 +58,8 @@ static constexpr unsigned int INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILES
 static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
+static constexpr unsigned int MAXIMUM_CONTROLLERS = 4;
+
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
 struct ControllerInput
@@ -561,6 +563,18 @@ private:
 			DoToolTip("Games may show English text.");
 
 			ImGui::TableNextColumn();
+			ImGui::TextUnformatted("Input Protocol:");
+			DoToolTip("Which method to read control pad inputs.");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Standard", Frontend::emulator->GetControllerProtocol() == CONTROLLER_MANAGER_PROTOCOL_STANDARD))
+				Frontend::emulator->SetControllerProtocol(CONTROLLER_MANAGER_PROTOCOL_STANDARD);
+			DoToolTip("2 players maximum. Should work with all games.");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("EA 4-Way Play", Frontend::emulator->GetControllerProtocol() == CONTROLLER_MANAGER_PROTOCOL_EA_4_WAY_PLAY))
+				Frontend::emulator->SetControllerProtocol(CONTROLLER_MANAGER_PROTOCOL_EA_4_WAY_PLAY);
+			DoToolTip("4 players maximum. Only works with certain games.");
+
+			ImGui::TableNextColumn();
 			bool cd_addon_enabled = Frontend::emulator->GetCDAddOnEnabled();
 			if (ImGui::Checkbox("CD Add-on", &cd_addon_enabled))
 				Frontend::emulator->SetCDAddOnEnabled(cd_addon_enabled);
@@ -708,16 +722,13 @@ private:
 
 		if (ImGui::BeginTable("Keyboard Input Options", 2))
 		{
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Control Pad #1", Frontend::keyboard_input.bound_joypad == 0))
-				Frontend::keyboard_input.bound_joypad = 0;
-			DoToolTip("Binds the keyboard to Control Pad #1.");
-
-
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Control Pad #2", Frontend::keyboard_input.bound_joypad == 1))
-				Frontend::keyboard_input.bound_joypad = 1;
-			DoToolTip("Binds the keyboard to Control Pad #2.");
+			for (unsigned int i = 0; i < MAXIMUM_CONTROLLERS; ++i)
+			{
+				ImGui::TableNextColumn();
+				if (ImGui::RadioButton(fmt::format("Control Pad #{}", 1 + i).c_str(), Frontend::keyboard_input.bound_joypad == i))
+					Frontend::keyboard_input.bound_joypad = i;
+				DoToolTip(fmt::format("Binds the keyboard to Control Pad #{}.", 1 + i).c_str());
+			}
 
 			ImGui::EndTable();
 		}
@@ -964,7 +975,7 @@ static bool forced_fullscreen;
 
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
-	SDL_assert(player_id < 2);
+	SDL_assert(player_id < MAXIMUM_CONTROLLERS);
 
 	cc_bool value = cc_false;
 
@@ -1312,6 +1323,7 @@ static void LoadConfiguration()
 	bool rewinding = true;
 	bool low_pass_filter = true;
 	bool cd_add_on = false;
+	ControllerManager_Protocol input_protocol = CONTROLLER_MANAGER_PROTOCOL_STANDARD;
 	bool ladder_effect = true;
 	bool pal_mode = false;
 	bool domestic = false;
@@ -1407,13 +1419,15 @@ static void LoadConfiguration()
 					native_windows = value_boolean;
 			#endif
 				else if (name == "keyboard-bound-joypad")
-					keyboard_input.bound_joypad = value_boolean;
+					keyboard_input.bound_joypad = value_integer ? *value_integer : 0;
 				else if (name == "rewinding")
 					rewinding = value_boolean;
 				else if (name == "low-pass-filter")
 					low_pass_filter = value_boolean;
 				else if (name == "cd-add-on")
 					cd_add_on = value_boolean;
+				else if (name == "input-protocol")
+					input_protocol = value_integer ? static_cast<ControllerManager_Protocol>(*value_integer) : CONTROLLER_MANAGER_PROTOCOL_STANDARD;
 				else if (name == "low-volume-distortion")
 					ladder_effect = value_boolean;
 				else if (name == "pal")
@@ -1537,6 +1551,7 @@ static void LoadConfiguration()
 	emulator->SetRewindEnabled(rewinding);
 	emulator->SetLowPassFilterEnabled(low_pass_filter);
 	emulator->SetCDAddOnEnabled(cd_add_on);
+	emulator->SetControllerProtocol(input_protocol);
 	emulator->SetLadderEffectEnabled(ladder_effect);
 
 	SetTVStandard(pal_mode ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC);
@@ -1592,10 +1607,11 @@ static void SaveConfiguration()
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
-		PRINT_BOOLEAN_OPTION(file, "keyboard-bound-joypad", keyboard_input.bound_joypad);
+		PRINT_INTEGER_OPTION(file, "keyboard-bound-joypad", keyboard_input.bound_joypad);
 		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->GetRewindEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilterEnabled());
 		PRINT_BOOLEAN_OPTION(file, "cd-add-on", emulator->GetCDAddOnEnabled());
+		PRINT_INTEGER_OPTION(file, "input-protocol", emulator->GetControllerProtocol());
 		PRINT_BOOLEAN_OPTION(file, "low-volume-distortion", emulator->GetLadderEffectEnabled());
 		PRINT_BOOLEAN_OPTION(file, "pal", emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL);
 		PRINT_BOOLEAN_OPTION(file, "japanese", emulator->GetRegion() == CLOWNMDEMU_REGION_DOMESTIC);
@@ -1892,7 +1908,8 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 				case INPUT_BINDING_TOGGLE_CONTROL_PAD:
 					// Toggle which joypad the keyboard controls
-					keyboard_input.bound_joypad ^= 1;
+					++keyboard_input.bound_joypad;
+					keyboard_input.bound_joypad %= MAXIMUM_CONTROLLERS;
 					break;
 
 				default:
