@@ -1417,13 +1417,13 @@ static void LoadConfiguration()
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
 				else if (name == "widescreen-tiles")
-					widescreen_tiles = value_integer ? *value_integer : 0;
+					widescreen_tiles = value_integer.value_or(0);
 			#ifndef __EMSCRIPTEN__
 				else if (name == "native-windows")
 					native_windows = value_boolean;
 			#endif
 				else if (name == "keyboard-bound-joypad")
-					keyboard_input.bound_joypad = value_integer ? *value_integer : 0;
+					keyboard_input.bound_joypad = value_integer.value_or(0);
 				else if (name == "rewinding")
 					rewinding = value_boolean;
 				else if (name == "low-pass-filter")
@@ -1431,7 +1431,7 @@ static void LoadConfiguration()
 				else if (name == "cd-add-on")
 					cd_add_on = value_boolean;
 				else if (name == "input-protocol")
-					input_protocol = value_integer ? static_cast<ControllerManager_Protocol>(*value_integer) : CONTROLLER_MANAGER_PROTOCOL_STANDARD;
+					input_protocol = static_cast<ControllerManager_Protocol>(value_integer.value_or(CONTROLLER_MANAGER_PROTOCOL_STANDARD));
 				else if (name == "low-volume-distortion")
 					ladder_effect = value_boolean;
 				else if (name == "pal")
