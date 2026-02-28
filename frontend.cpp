@@ -575,13 +575,17 @@ private:
 			DoToolTip("4 players maximum. Only works with certain games.");
 
 			ImGui::TableNextColumn();
-			bool cd_addon_enabled = Frontend::emulator->GetCDAddOnEnabled();
-			if (ImGui::Checkbox("CD Add-on", &cd_addon_enabled))
-				Frontend::emulator->SetCDAddOnEnabled(cd_addon_enabled);
+			ImGui::TextUnformatted("CD Add-on:");
 			DoToolTip(
 				"Allow cartridge-only software to utilise features of\n"
 				"the emulated Mega CD add-on, such as CD music.\n"
 				"This may break some software.");
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Disconnected", !Frontend::emulator->GetCDAddOnEnabled()))
+				Frontend::emulator->SetCDAddOnEnabled(false);
+			ImGui::TableNextColumn();
+			if (ImGui::RadioButton("Connected", Frontend::emulator->GetCDAddOnEnabled()))
+				Frontend::emulator->SetCDAddOnEnabled(true);
 
 			ImGui::EndTable();
 		}
