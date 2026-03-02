@@ -58,7 +58,7 @@ static constexpr unsigned int INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILES
 static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
-static constexpr unsigned int MAXIMUM_CONTROLLERS = 4;
+static constexpr unsigned int MAXIMUM_CONTROLLERS = 8;
 
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
@@ -536,56 +536,79 @@ private:
 	{
 		ImGui::SeparatorText("Console");
 
-		if (ImGui::BeginTable("Console Options", 3))
+		if (ImGui::BeginTable("Console Options", 2))
 		{
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("TV Standard:");
-			DoToolTip("Some games only work with a certain TV standard.");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("NTSC", Frontend::emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_NTSC))
-				Frontend::SetTVStandard(CLOWNMDEMU_TV_STANDARD_NTSC);
-			DoToolTip("59.94Hz");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("PAL", Frontend::emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL))
-				Frontend::SetTVStandard(CLOWNMDEMU_TV_STANDARD_PAL);
-			DoToolTip("50Hz");
+		#define DO_CONSOLE_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
+			do { \
+				ImGui::TableNextColumn(); \
+				ImGui::TextUnformatted(LABEL ":"); \
+				DoToolTip(LABEL_TOOLTIP); \
+				ImGui::TableNextColumn(); \
+				ImGui::SetNextItemWidth(-FLT_MIN); \
+				const auto option = Frontend::emulator->Get##OPTION(); \
+				auto option_int = static_cast<int>(option); \
+				if (ImGui::Combo("##" LABEL, &option_int, std::data(OPTION_NAMES), std::size(OPTION_NAMES))) \
+					Frontend::emulator->Set##OPTION(static_cast<decltype(option)>(option_int)); \
+				DoToolTip(OPTION_TOOLTIPS[option_int]); \
+			} while (0)
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Region:");
-			DoToolTip("Some games only work with a certain region.");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Japan", Frontend::emulator->GetRegion() == CLOWNMDEMU_REGION_DOMESTIC))
-				Frontend::emulator->SetRegion(CLOWNMDEMU_REGION_DOMESTIC);
-			DoToolTip("Games may show Japanese text.");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Elsewhere", Frontend::emulator->GetRegion() == CLOWNMDEMU_REGION_OVERSEAS))
-				Frontend::emulator->SetRegion(CLOWNMDEMU_REGION_OVERSEAS);
-			DoToolTip("Games may show English text.");
+			static const std::array<const char*, 2> tv_standard_names = {
+				"NTSC",
+				"PAL",
+			};
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Input Protocol:");
-			DoToolTip("Which method to read control pad inputs.");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Standard", Frontend::emulator->GetControllerProtocol() == CONTROLLER_MANAGER_PROTOCOL_STANDARD))
-				Frontend::emulator->SetControllerProtocol(CONTROLLER_MANAGER_PROTOCOL_STANDARD);
-			DoToolTip("2 players maximum. Should work with all games.");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("EA 4-Way Play", Frontend::emulator->GetControllerProtocol() == CONTROLLER_MANAGER_PROTOCOL_EA_4_WAY_PLAY))
-				Frontend::emulator->SetControllerProtocol(CONTROLLER_MANAGER_PROTOCOL_EA_4_WAY_PLAY);
-			DoToolTip("4 players maximum. Only works with certain games.");
+			static const std::array<const char*, 2> tv_standard_tooltips = {
+				"59.94Hz",
+				"50Hz",
+			};
 
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("CD Add-on:");
-			DoToolTip(
+			DO_CONSOLE_OPTION("TV Standard", "Some games only work with a certain TV standard.", tv_standard_names, tv_standard_tooltips, TVStandard);
+
+			static const std::array<const char*, 2> region_names = {
+				"Japan",
+				"Elsewhere",
+			};
+
+			static const std::array<const char*, 2> region_tooltips = {
+				"Games may show Japanese text.",
+				"Games may show English text.",
+			};
+
+			DO_CONSOLE_OPTION("Region", "Some games only work with a certain region.", region_names, region_tooltips, Region);
+
+			static const std::array<const char*, 3> input_protocol_names = {
+				"Standard",
+				"Multi",
+				"Extra",
+			};
+
+			static const std::array<const char*, 3> input_protocol_tooltips = {
+				"Standard input protocol.\n2 players maximum.\nShould work with all games.",
+				"Sega's multitap protocol.\n8 players maximum.\nOnly works with certain games.",
+				"Electronic Arts' multitap protocol.\n4 players maximum.\nOnly works with certain games.",
+			};
+
+			DO_CONSOLE_OPTION("Input Protocol", "Which method to read control pad inputs.", input_protocol_names, input_protocol_tooltips, ControllerProtocol);
+
+			static const std::array<const char*, 2> cd_addon_names = {
+				"Disconnected",
+				"Connected",
+			};
+
+			static const std::array<const char*, 2> cd_addon_tooltips = {
+				"More stable, but provides fewer features.",
+				"Less stable, but provides more features.",
+			};
+
+			DO_CONSOLE_OPTION(
+				"CD Add-on",
 				"Allow cartridge-only software to utilise features of\n"
 				"the emulated Mega CD add-on, such as CD music.\n"
-				"This may break some software.");
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Disconnected", !Frontend::emulator->GetCDAddOnEnabled()))
-				Frontend::emulator->SetCDAddOnEnabled(false);
-			ImGui::TableNextColumn();
-			if (ImGui::RadioButton("Connected", Frontend::emulator->GetCDAddOnEnabled()))
-				Frontend::emulator->SetCDAddOnEnabled(true);
+				"This may break some software.",
+				cd_addon_names,
+				cd_addon_tooltips,
+				CDAddOnEnabled
+			);
 
 			ImGui::EndTable();
 		}
