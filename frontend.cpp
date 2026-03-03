@@ -542,20 +542,37 @@ private:
 	{
 		ImGui::SeparatorText("Console");
 
-		if (ImGui::BeginTable("Console Options", 2))
+	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
+		do { \
+			const auto &start_position_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 3; \
+			ImGui::TextUnformatted(LABEL ":"); \
+			DoToolTip(LABEL_TOOLTIP); \
+			ImGui::SameLine(); \
+			ImGui::SetCursorPosX(start_position_x); \
+			ImGui::SetNextItemWidth(-FLT_MIN); \
+			const auto option = Frontend::emulator->Get##OPTION(); \
+			auto option_int = static_cast<int>(option); \
+			if (ImGui::Combo("##" LABEL, &option_int, std::data(OPTION_NAMES), std::size(OPTION_NAMES))) \
+				Frontend::emulator->Set##OPTION(static_cast<decltype(option)>(option_int)); \
+			DoToolTip(OPTION_TOOLTIPS[option_int]); \
+		} while (0)
+
+		if (ImGui::BeginTable("Console Options", 3))
 		{
 		#define DO_CONSOLE_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
 			do { \
 				ImGui::TableNextColumn(); \
 				ImGui::TextUnformatted(LABEL ":"); \
 				DoToolTip(LABEL_TOOLTIP); \
-				ImGui::TableNextColumn(); \
-				ImGui::SetNextItemWidth(-FLT_MIN); \
 				const auto option = Frontend::emulator->Get##OPTION(); \
-				auto option_int = static_cast<int>(option); \
-				if (ImGui::Combo("##" LABEL, &option_int, std::data(OPTION_NAMES), std::size(OPTION_NAMES))) \
-					Frontend::emulator->Set##OPTION(static_cast<decltype(option)>(option_int)); \
-				DoToolTip(OPTION_TOOLTIPS[option_int]); \
+				const auto option_int = static_cast<unsigned int>(option); \
+				for (unsigned int i = 0; i < std::size(OPTION_NAMES); ++i) \
+				{ \
+					ImGui::TableNextColumn(); \
+					if (ImGui::RadioButton(OPTION_NAMES[i], i == option_int)) \
+						Frontend::emulator->Set##OPTION(static_cast<decltype(option)>(i)); \
+					DoToolTip(OPTION_TOOLTIPS[i]); \
+				} \
 			} while (0)
 
 			static const std::array<const char*, 2> tv_standard_names = {
@@ -581,20 +598,6 @@ private:
 			};
 
 			DO_CONSOLE_OPTION("Region", "Some games only work with a certain region.", region_names, region_tooltips, Region);
-
-			static const std::array<const char*, 3> input_protocol_names = {
-				"Standard",
-				"Multi",
-				"Extra",
-			};
-
-			static const std::array<const char*, 3> input_protocol_tooltips = {
-				"Standard input protocol.\n2 players maximum.\nShould work with all games.",
-				"Sega's multitap protocol.\n8 players maximum.\nOnly works with certain games.",
-				"Electronic Arts' multitap protocol.\n4 players maximum.\nOnly works with certain games.",
-			};
-
-			DO_CONSOLE_OPTION("Input Protocol", "Which method to read control pad inputs.", input_protocol_names, input_protocol_tooltips, ControllerProtocol);
 
 			static const std::array<const char*, 2> cd_addon_names = {
 				"Disconnected",
@@ -714,7 +717,21 @@ private:
 
 		ImGui::SeparatorText("Control Pads");
 
-		if (ImGui::BeginTable("Control Pads", 2, ImGuiTableFlags_Borders))
+		static const std::array<const char*, 3> input_protocol_names = {
+			"Standard",
+			"Multi",
+			"Extra",
+		};
+
+		static const std::array<const char*, 3> input_protocol_tooltips = {
+			"Standard input protocol.\nShould work with all games.",
+			"Sega's multitap protocol.\nOnly works with certain games.",
+			"Electronic Arts' multitap protocol.\nOnly works with certain games.",
+		};
+
+		DO_FORM_OPTION("Protocol", "Which method to read control pad inputs.", input_protocol_names, input_protocol_tooltips, ControllerProtocol);
+
+		if (ImGui::BeginTable("Control Pad Devices", 2, ImGuiTableFlags_Borders))
 		{
 			ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableSetupColumn("Device");
