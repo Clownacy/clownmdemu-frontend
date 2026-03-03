@@ -571,7 +571,7 @@ private:
 
 			static const std::array<const char*, 2> region_names = {
 				"Japan",
-				"Elsewhere",
+				"International",
 			};
 
 			static const std::array<const char*, 2> region_tooltips = {
