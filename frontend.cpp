@@ -553,7 +553,7 @@ private:
 			const auto option = Frontend::emulator->Get##OPTION(); \
 			auto option_int = static_cast<int>(option); \
 			if (ImGui::Combo("##" LABEL, &option_int, std::data(OPTION_NAMES), std::size(OPTION_NAMES))) \
-				Frontend::emulator->Set##OPTION(static_cast<decltype(option)>(option_int)); \
+				Frontend::emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(option_int)); \
 			DoToolTip(OPTION_TOOLTIPS[option_int]); \
 		} while (0)
 
@@ -570,7 +570,7 @@ private:
 				{ \
 					ImGui::TableNextColumn(); \
 					if (ImGui::RadioButton(OPTION_NAMES[i], i == option_int)) \
-						Frontend::emulator->Set##OPTION(static_cast<decltype(option)>(i)); \
+						Frontend::emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(i)); \
 					DoToolTip(OPTION_TOOLTIPS[i]); \
 				} \
 			} while (0)
