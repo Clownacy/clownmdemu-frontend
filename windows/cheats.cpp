@@ -17,6 +17,17 @@ Cheats::CodeSlot::CodeSlot(std::string code)
 
 void Cheats::DisplayInternal(EmulatorInstance &emulator)
 {
+	const auto &ApplyCode = [&](const int index, CodeSlot &slot)
+	{
+		if (slot.status != CodeSlot::Status::Invalid)
+		{
+			if (emulator.AddDecodedCheat(index, true, slot.decoded_cheat))
+				slot.status = CodeSlot::Status::Applied;
+			else
+				slot.status = CodeSlot::Status::Error;
+		}
+	};
+
 	if (ImGui::BeginTable("Cheats", 2, ImGuiTableFlags_Borders))
 	{
 		ImGui::TableSetupColumn("Code");
@@ -27,19 +38,22 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 		{
 			ImGui::TableNextColumn();
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			return ImGui::InputTextWithHint("##Code", hint, &code, ImGuiInputTextFlags_CharsUppercase);
+			return ImGui::InputTextWithHint("##Code", hint, &code, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue);
 		};
 
 		// For making sure that ImGui keeps the correct input selected, even as new inputs are created.
-		int id = 0;
+		int index = 0;
 
 		for (auto &slot : codes)
 		{
-			ImGui::PushID(id++);
+			ImGui::PushID(index);
 
 			ImGui::PushFont(GetMonospaceFont());
 
 			if (DisplayCode("This cheat will be deleted.", slot.code))
+				ApplyCode(index, slot);
+
+			if (ImGui::IsItemEdited())
 				slot = CodeSlot(slot.code);
 
 			if (slot.status != CodeSlot::Status::Invalid)
@@ -71,14 +85,18 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 			}
 
 			ImGui::PopID();
+
+			++index;
 		}
 
-		ImGui::PushID(id++);
+		ImGui::PushID(index);
 
 		ImGui::PushFont(GetMonospaceFont());
 
 		std::string new_code;
-		if (DisplayCode("Input cheat code here.", new_code))
+		DisplayCode("Input cheat code here.", new_code);
+
+		if (ImGui::IsItemEdited())
 			if (!new_code.empty())
 				codes.emplace_back(new_code);
 
@@ -89,23 +107,15 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 		ImGui::EndTable();
 	}
 
-	if (ImGui::Button("Apply"))
+	if (ImGui::Button("Apply All"))
 	{
 		// Remove empty codes.
 		codes.remove_if([](const auto &slot){return slot.code.empty();});
 
 		emulator.ResetCheats();
 
-		unsigned int index = 0;
+		int index = 0;
 		for (auto &slot : codes)
-		{
-			if (slot.status != CodeSlot::Status::Invalid)
-			{
-				if (emulator.AddDecodedCheat(index++, true, slot.decoded_cheat))
-					slot.status = CodeSlot::Status::Applied;
-				else
-					slot.status = CodeSlot::Status::Error;
-			}
-		}
+			ApplyCode(index++, slot);
 	}
 }
