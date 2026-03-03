@@ -58,13 +58,11 @@ static constexpr unsigned int INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILES
 static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
-static constexpr unsigned int MAXIMUM_CONTROLLERS = 8;
-
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
 struct ControllerInput
 {
-	SDL_JoystickID joystick_instance_id;
+	const SDL_JoystickID joystick_instance_id;
 	Sint16 left_stick_x = 0;
 	Sint16 left_stick_y = 0;
 	std::array<bool, 4> left_stick = {false};
@@ -73,7 +71,10 @@ struct ControllerInput
 	bool right_trigger = false;
 	Input input;
 
-	ControllerInput(const SDL_JoystickID joystick_instance_id) : joystick_instance_id(joystick_instance_id) {}
+	ControllerInput(const SDL_JoystickID joystick_instance_id)
+		: joystick_instance_id(joystick_instance_id)
+		, input(SDL_GetJoystickNameForID(joystick_instance_id))
+	{}
 };
 
 #ifdef FILE_PATH_SUPPORT
@@ -83,6 +84,10 @@ struct RecentSoftware
 	std::filesystem::path path;
 };
 #endif
+
+static std::forward_list<ControllerInput> controller_input_list;
+
+static std::array<Input*, 8> bound_inputs = {&keyboard_input};
 
 class AboutWindow : public WindowPopup<AboutWindow>
 {
@@ -706,22 +711,40 @@ private:
 			ImGui::EndTable();
 		}
 
-		ImGui::SeparatorText("Keyboard Input");
+		ImGui::SeparatorText("Control Pads");
 
-		if (!sorted_scancodes_done)
+		if (ImGui::BeginTable("Control Pads", 2))
 		{
-			sorted_scancodes_done = true;
+			for (unsigned int i = 0; i < std::size(bound_inputs); ++i)
+			{
+				ImGui::TableNextColumn();
 
-			for (std::size_t i = 0; i != std::size(sorted_scancodes); ++i)
-				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
+				auto &bound_input = bound_inputs[i];
 
-			std::sort(sorted_scancodes.begin(), sorted_scancodes.end(),
-				[](const auto &binding_1, const auto &binding_2)
+				if (ImGui::BeginCombo(fmt::format("Player {}", 1 + i).c_str(), bound_input == nullptr ? "None" : bound_input->name.c_str()))
 				{
-					return Frontend::keyboard_bindings[binding_1] < Frontend::keyboard_bindings[binding_2];
+					const auto &DoSelectable = [&bound_input](const char* name, Input* const address)
+					{
+						const bool selected = bound_input == address;
+						if (ImGui::Selectable(name, selected))
+							bound_input = address;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					};
+
+					DoSelectable("None", nullptr);
+					DoSelectable(keyboard_input.name.c_str(), &keyboard_input);
+
+					for (auto &controller_input : controller_input_list)
+						DoSelectable(controller_input.input.name.c_str(), &controller_input.input);
+
+					ImGui::EndCombo();
 				}
-			);
+			}
+			ImGui::EndTable();
 		}
+
+		ImGui::SeparatorText("Keyboard");
 
 		static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
 			"None",
@@ -743,24 +766,25 @@ private:
 			"Rewind",
 			"Quick Save State",
 			"Quick Load State",
-			"Toggle Fullscreen",
-			"Toggle Control Pad"
+			"Toggle Fullscreen"
 		};
 
-		if (ImGui::BeginTable("Keyboard Input Options", 2))
+		if (!sorted_scancodes_done)
 		{
-			for (unsigned int i = 0; i < MAXIMUM_CONTROLLERS; ++i)
-			{
-				ImGui::TableNextColumn();
-				if (ImGui::RadioButton(fmt::format("Control Pad #{}", 1 + i).c_str(), Frontend::keyboard_input.bound_joypad == i))
-					Frontend::keyboard_input.bound_joypad = i;
-				DoToolTip(fmt::format("Binds the keyboard to Control Pad #{}.", 1 + i).c_str());
-			}
+			sorted_scancodes_done = true;
 
-			ImGui::EndTable();
+			for (std::size_t i = 0; i != std::size(sorted_scancodes); ++i)
+				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
+
+			std::sort(sorted_scancodes.begin(), sorted_scancodes.end(),
+				[](const auto &binding_1, const auto &binding_2)
+				{
+					return Frontend::keyboard_bindings[binding_1] < Frontend::keyboard_bindings[binding_2];
+				}
+			);
 		}
 
-		if (ImGui::BeginTable("control pad bindings", 3, ImGuiTableFlags_Borders))
+		if (ImGui::BeginTable("Keyboard Bindings", 3, ImGuiTableFlags_Borders))
 		{
 			ImGui::TableSetupColumn("Key");
 			ImGui::TableSetupColumn("Action");
@@ -887,15 +911,13 @@ bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
 bool Frontend::native_windows;
 
-Input Frontend::keyboard_input;
+Input Frontend::keyboard_input = {"Keyboard"};
 std::array<InputBinding, SDL_SCANCODE_COUNT> Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 static std::array<bool, SDL_SCANCODE_COUNT> key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 static Frontend::FrameRateCallback frame_rate_callback;
-
-static std::forward_list<ControllerInput> controller_input_list;
 
 #ifdef FILE_PATH_SUPPORT
 static std::list<RecentSoftware> recent_software_list;
@@ -1002,27 +1024,26 @@ static bool forced_fullscreen;
 
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
-	SDL_assert(player_id < MAXIMUM_CONTROLLERS);
+	SDL_assert(player_id < std::size(bound_inputs));
 
-	cc_bool value = cc_false;
+	Input* const input = bound_inputs[player_id];
+
+	if (input == nullptr)
+		return cc_false;
 
 	// Don't use inputs that are for Dear ImGui
-	if (emulator_has_focus)
+	if (input == &keyboard_input)
 	{
-		// First, try to obtain the input from the keyboard.
-		if (keyboard_input.bound_joypad == player_id)
-			value |= keyboard_input.buttons[button_id] != 0 ? cc_true : cc_false;
+		if (!emulator_has_focus)
+			return cc_false;
+	}
+	else
+	{
+		if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
+			return cc_false;
 	}
 
-	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-	{
-		// Then, try to obtain the input from the controllers.
-		for (const auto &controller_input : controller_input_list)
-			if (controller_input.input.bound_joypad == player_id)
-				value |= controller_input.input.buttons[button_id] != 0 ? cc_true : cc_false;
-	}
-
-	return value;
+	return input->buttons[button_id] != 0;
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -1346,7 +1367,6 @@ static void LoadConfiguration()
 #else
 	native_windows = true;
 #endif
-	keyboard_input.bound_joypad = 0;
 	bool rewinding = true;
 	bool low_pass_filter = true;
 	bool cd_add_on = false;
@@ -1401,7 +1421,6 @@ static void LoadConfiguration()
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE, nullptr)] = INPUT_BINDING_PAUSE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11, nullptr)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB, nullptr)] = INPUT_BINDING_RESET;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F1, nullptr)] = INPUT_BINDING_TOGGLE_CONTROL_PAD;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = INPUT_BINDING_QUICK_SAVE_STATE;
 		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = INPUT_BINDING_QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
@@ -1445,8 +1464,6 @@ static void LoadConfiguration()
 				else if (name == "native-windows")
 					native_windows = value_boolean;
 			#endif
-				else if (name == "keyboard-bound-joypad")
-					keyboard_input.bound_joypad = value_integer.value_or(0);
 				else if (name == "rewinding")
 					rewinding = value_boolean;
 				else if (name == "low-pass-filter")
@@ -1493,8 +1510,7 @@ static void LoadConfiguration()
 								INPUT_BINDING_REWIND,
 								INPUT_BINDING_QUICK_SAVE_STATE,
 								INPUT_BINDING_QUICK_LOAD_STATE,
-								INPUT_BINDING_TOGGLE_FULLSCREEN,
-								INPUT_BINDING_TOGGLE_CONTROL_PAD
+								INPUT_BINDING_TOGGLE_FULLSCREEN
 							});
 
 							if (*binding_index < std::size(input_bindings))
@@ -1540,8 +1556,6 @@ static void LoadConfiguration()
 								return INPUT_BINDING_QUICK_LOAD_STATE;
 							else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
 								return INPUT_BINDING_TOGGLE_FULLSCREEN;
-							else if (value == "INPUT_BINDING_TOGGLE_CONTROL_PAD")
-								return INPUT_BINDING_TOGGLE_CONTROL_PAD;
 						}
 
 						return INPUT_BINDING_NONE;
@@ -1634,7 +1648,6 @@ static void SaveConfiguration()
 	#ifndef __EMSCRIPTEN__
 		PRINT_BOOLEAN_OPTION(file, "native-windows", native_windows);
 	#endif
-		PRINT_INTEGER_OPTION(file, "keyboard-bound-joypad", keyboard_input.bound_joypad);
 		PRINT_BOOLEAN_OPTION(file, "rewinding", emulator->GetRewindEnabled());
 		PRINT_BOOLEAN_OPTION(file, "low-pass-filter", emulator->GetLowPassFilterEnabled());
 		PRINT_BOOLEAN_OPTION(file, "cd-add-on", emulator->GetCDAddOnEnabled());
@@ -1716,9 +1729,6 @@ static void SaveConfiguration()
 
 						case INPUT_BINDING_TOGGLE_FULLSCREEN:
 							return "INPUT_BINDING_TOGGLE_FULLSCREEN";
-
-						case INPUT_BINDING_TOGGLE_CONTROL_PAD:
-							return "INPUT_BINDING_TOGGLE_CONTROL_PAD";
 
 						case INPUT_BINDING__TOTAL:
 							SDL_assert(false);
@@ -1933,12 +1943,6 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 					window->ToggleFullscreen();
 					break;
 
-				case INPUT_BINDING_TOGGLE_CONTROL_PAD:
-					// Toggle which joypad the keyboard controls
-					++keyboard_input.bound_joypad;
-					keyboard_input.bound_joypad %= MAXIMUM_CONTROLLERS;
-					break;
-
 				default:
 					break;
 			}
@@ -2074,7 +2078,17 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			{
 				try
 				{
-					controller_input_list.emplace_front(event.gdevice.which);
+					auto &controller_input = controller_input_list.emplace_front(event.gdevice.which);
+
+					// Automatically bind this new controller to the first unbound input.
+					for (auto &bound_input : bound_inputs)
+					{
+						if (bound_input == nullptr)
+						{
+							bound_input = &controller_input.input;
+							break;
+						}
+					}
 				}
 				catch (const std::bad_alloc&)
 				{
@@ -2096,7 +2110,20 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			else
 				SDL_CloseGamepad(controller);
 
-			controller_input_list.remove_if([&event](const ControllerInput &controller_input){ return controller_input.joystick_instance_id == event.gdevice.which;});
+			controller_input_list.remove_if(
+				[&event](const ControllerInput &controller_input)
+				{
+					if (controller_input.joystick_instance_id != event.gdevice.which)
+						return false;
+
+					// Remove controller from input bindings.
+					for (auto &bound_input : bound_inputs)
+						if (bound_input == &controller_input.input)
+							bound_input = nullptr;
+
+					return true;
+				}
+			);
 
 			break;
 		}

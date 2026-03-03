@@ -69,7 +69,6 @@ The default control scheme is as follows:
 | F     | Fast-forward (unpaused), frame-advance (paused) |
 | R     | Rewind                                          |
 | Tab   | Soft reset                                      |
-| F1    | Toggle which Control Pad the keyboard controls  |
 | F5    | Create save state                               |
 | F9    | Load save state                                 |
 | F11   | Toggle fullscreen                               |

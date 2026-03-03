@@ -35,10 +35,14 @@ namespace Frontend
 {
 	struct Input
 	{
-		unsigned int bound_joypad = 0;
+		const std::string name;
 		std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons = {0};
 		unsigned char fast_forward = 0;
 		unsigned char rewind = 0;
+
+		Input(std::string name)
+			: name(std::move(name))
+		{}
 	};
 
 	enum InputBinding
@@ -63,7 +67,6 @@ namespace Frontend
 		INPUT_BINDING_QUICK_SAVE_STATE,
 		INPUT_BINDING_QUICK_LOAD_STATE,
 		INPUT_BINDING_TOGGLE_FULLSCREEN,
-		INPUT_BINDING_TOGGLE_CONTROL_PAD,
 		INPUT_BINDING__TOTAL
 	};
 
