@@ -8,7 +8,6 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
-#include <forward_list>
 #include <functional>
 #include <iterator>
 #include <list>
@@ -62,6 +61,8 @@ static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
 struct ControllerInput
 {
+	static inline unsigned int controller_number;
+
 	const SDL_JoystickID joystick_instance_id;
 	Sint16 left_stick_x = 0;
 	Sint16 left_stick_y = 0;
@@ -73,7 +74,7 @@ struct ControllerInput
 
 	ControllerInput(const SDL_JoystickID joystick_instance_id)
 		: joystick_instance_id(joystick_instance_id)
-		, input(SDL_GetJoystickNameForID(joystick_instance_id))
+		, input(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
 	{}
 };
 
@@ -85,7 +86,7 @@ struct RecentSoftware
 };
 #endif
 
-static std::forward_list<ControllerInput> controller_input_list;
+static std::list<ControllerInput> controller_input_list;
 
 static std::array<Input*, 8> bound_inputs = {&keyboard_input};
 
@@ -713,35 +714,29 @@ private:
 
 		ImGui::SeparatorText("Control Pads");
 
-		if (ImGui::BeginTable("Control Pads", 2))
+		for (unsigned int i = 0; i < std::size(bound_inputs); ++i)
 		{
-			for (unsigned int i = 0; i < std::size(bound_inputs); ++i)
+			auto &bound_input = bound_inputs[i];
+
+			if (ImGui::BeginCombo(fmt::format("Player {}", 1 + i).c_str(), bound_input == nullptr ? "None" : bound_input->name.c_str()))
 			{
-				ImGui::TableNextColumn();
-
-				auto &bound_input = bound_inputs[i];
-
-				if (ImGui::BeginCombo(fmt::format("Player {}", 1 + i).c_str(), bound_input == nullptr ? "None" : bound_input->name.c_str()))
+				const auto &DoSelectable = [&bound_input](const char* name, Input* const address)
 				{
-					const auto &DoSelectable = [&bound_input](const char* name, Input* const address)
-					{
-						const bool selected = bound_input == address;
-						if (ImGui::Selectable(name, selected))
-							bound_input = address;
-						if (selected)
-							ImGui::SetItemDefaultFocus();
-					};
+					const bool selected = bound_input == address;
+					if (ImGui::Selectable(name, selected))
+						bound_input = address;
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+				};
 
-					DoSelectable("None", nullptr);
-					DoSelectable(keyboard_input.name.c_str(), &keyboard_input);
+				DoSelectable("None", nullptr);
+				DoSelectable(keyboard_input.name.c_str(), &keyboard_input);
 
-					for (auto &controller_input : controller_input_list)
-						DoSelectable(controller_input.input.name.c_str(), &controller_input.input);
+				for (auto &controller_input : controller_input_list)
+					DoSelectable(controller_input.input.name.c_str(), &controller_input.input);
 
-					ImGui::EndCombo();
-				}
+				ImGui::EndCombo();
 			}
-			ImGui::EndTable();
 		}
 
 		ImGui::SeparatorText("Keyboard");
@@ -2078,7 +2073,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			{
 				try
 				{
-					auto &controller_input = controller_input_list.emplace_front(event.gdevice.which);
+					auto &controller_input = controller_input_list.emplace_back(event.gdevice.which);
 
 					// Automatically bind this new controller to the first unbound input.
 					for (auto &bound_input : bound_inputs)
