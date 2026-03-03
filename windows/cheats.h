@@ -27,8 +27,9 @@ private:
 		std::string code;
 		Cheat_DecodedCheat decoded_cheat;
 		Status status;
+		bool enabled;
 
-		CodeSlot(std::string code);
+		CodeSlot(std::string code, bool enabled);
 	};
 
 	static constexpr Uint32 window_flags = 0;

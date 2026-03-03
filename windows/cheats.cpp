@@ -6,8 +6,9 @@
 
 #include "../common/cheat.h"
 
-Cheats::CodeSlot::CodeSlot(std::string code)
+Cheats::CodeSlot::CodeSlot(std::string code, const bool enabled)
 	: code(std::move(code))
+	, enabled(enabled)
 {
 	if (!Cheat_DecodeCheat(&decoded_cheat, this->code.c_str()))
 		status = Status::Invalid;
@@ -21,16 +22,17 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 	{
 		if (slot.status != CodeSlot::Status::Invalid)
 		{
-			if (emulator.AddDecodedCheat(index, true, slot.decoded_cheat))
+			if (emulator.AddDecodedCheat(index, slot.enabled, slot.decoded_cheat))
 				slot.status = CodeSlot::Status::Applied;
 			else
 				slot.status = CodeSlot::Status::Error;
 		}
 	};
 
-	if (ImGui::BeginTable("Cheats", 2, ImGuiTableFlags_Borders))
+	if (ImGui::BeginTable("Cheats", 3, ImGuiTableFlags_Borders))
 	{
 		ImGui::TableSetupColumn("Code");
+		ImGui::TableSetupColumn("Enabled", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 60 * GetWindow().GetDPIScale());
 		ImGui::TableHeadersRow();
 
@@ -48,13 +50,14 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 		{
 			ImGui::PushID(index);
 
+			bool changed = false;
+
 			ImGui::PushFont(GetMonospaceFont());
 
 			if (DisplayCode("This cheat will be deleted.", slot.code))
 				ApplyCode(index, slot);
 
-			if (ImGui::IsItemEdited())
-				slot = CodeSlot(slot.code);
+			changed |= ImGui::IsItemEdited();
 
 			if (slot.status != CodeSlot::Status::Invalid)
 			{
@@ -66,6 +69,10 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 			}
 
 			ImGui::PopFont();
+
+			ImGui::TableNextColumn();
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight()) / 2);
+			changed |= ImGui::Checkbox("##Enabled", &slot.enabled);
 
 			ImGui::TableNextColumn();
 			switch (slot.status)
@@ -84,6 +91,9 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 					break;
 			}
 
+			if (changed)
+				slot = CodeSlot(slot.code, slot.enabled);
+
 			ImGui::PopID();
 
 			++index;
@@ -98,7 +108,7 @@ void Cheats::DisplayInternal(EmulatorInstance &emulator)
 
 		if (ImGui::IsItemEdited())
 			if (!new_code.empty())
-				codes.emplace_back(new_code);
+				codes.emplace_back(new_code, true);
 
 		ImGui::PopFont();
 
