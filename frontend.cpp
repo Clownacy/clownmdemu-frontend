@@ -714,29 +714,68 @@ private:
 
 		ImGui::SeparatorText("Control Pads");
 
-		for (unsigned int i = 0; i < std::size(bound_inputs); ++i)
+		if (ImGui::BeginTable("Control Pads", 2, ImGuiTableFlags_Borders))
 		{
-			auto &bound_input = bound_inputs[i];
+			ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
+			ImGui::TableSetupColumn("Device");
+			ImGui::TableHeadersRow();
 
-			if (ImGui::BeginCombo(fmt::format("Player {}", 1 + i).c_str(), bound_input == nullptr ? "None" : bound_input->name.c_str()))
+			constexpr auto GetMaximumControlPads = [](const ControllerManager_Protocol protocol) -> unsigned int
 			{
-				const auto &DoSelectable = [&bound_input](const char* name, Input* const address)
+				switch (protocol)
 				{
-					const bool selected = bound_input == address;
-					if (ImGui::Selectable(name, selected))
-						bound_input = address;
-					if (selected)
-						ImGui::SetItemDefaultFocus();
-				};
+					case CONTROLLER_MANAGER_PROTOCOL_STANDARD:
+						return 2;
 
-				DoSelectable("None", nullptr);
-				DoSelectable(keyboard_input.name.c_str(), &keyboard_input);
+					case CONTROLLER_MANAGER_PROTOCOL_SEGA_TAP:
+						return 8;
 
-				for (auto &controller_input : controller_input_list)
-					DoSelectable(controller_input.input.name.c_str(), &controller_input.input);
+					case CONTROLLER_MANAGER_PROTOCOL_EA_4_WAY_PLAY:
+						return 4;
+				}
 
-				ImGui::EndCombo();
+				return 0;
+			};
+
+			const auto maximum_control_pads = GetMaximumControlPads(Frontend::emulator->GetControllerProtocol());
+
+			for (unsigned int i = 0; i < maximum_control_pads; ++i)
+			{
+				ImGui::PushID(i);
+
+				const auto &label = std::to_string(1 + i);
+
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(label);
+
+				auto &bound_input = bound_inputs[i];
+
+				ImGui::TableNextColumn();
+				ImGui::SetNextItemWidth(-FLT_MIN);
+				if (ImGui::BeginCombo("", bound_input == nullptr ? "None" : bound_input->name.c_str()))
+				{
+					const auto &DoSelectable = [&bound_input](const char* name, Input* const address)
+					{
+						const bool selected = bound_input == address;
+						if (ImGui::Selectable(name, selected))
+							bound_input = address;
+						if (selected)
+							ImGui::SetItemDefaultFocus();
+					};
+
+					DoSelectable("None", nullptr);
+					DoSelectable(keyboard_input.name.c_str(), &keyboard_input);
+
+					for (auto &controller_input : controller_input_list)
+						DoSelectable(controller_input.input.name.c_str(), &controller_input.input);
+
+					ImGui::EndCombo();
+				}
+
+				ImGui::PopID();
 			}
+
+			ImGui::EndTable();
 		}
 
 		ImGui::SeparatorText("Keyboard");
