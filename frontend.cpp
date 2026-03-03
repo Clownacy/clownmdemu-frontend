@@ -2211,7 +2211,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
 
 							// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
-							const float magnitude = SDL_sqrtf(static_cast<float>(controller_input.left_stick_x * controller_input.left_stick_x + controller_input.left_stick_y * controller_input.left_stick_y));
+							const float magnitude = std::sqrt(static_cast<float>(controller_input.left_stick_x * controller_input.left_stick_x + controller_input.left_stick_y * controller_input.left_stick_y));
 
 							const float left_stick_x_unit = controller_input.left_stick_x / magnitude;
 							const float left_stick_y_unit = controller_input.left_stick_y / magnitude;
@@ -2237,10 +2237,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 									}};
 
 									// Perform dot product of stick's direction vector with other direction vector.
-									const float delta_angle = SDL_acosf(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
+									const float delta_angle = std::acos(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
 
 									// If the stick is within 67.5 degrees of the specified direction, then this will be true.
-									controller_input.left_stick[i] = (delta_angle < (360.0f * 3.0f / 8.0f / 2.0f) * (static_cast<float>(CC_PI) / 180.0f)); // Half of 3/8 of 360 degrees converted to radians
+									controller_input.left_stick[i] = (delta_angle < CC_DEGREE_TO_RADIAN(360.0f * 3.0f / 8.0f / 2.0f)); // Half of 3/8 of 360 degrees (in radians)
 								}
 
 								static const std::array<unsigned int, 4> buttons = {
