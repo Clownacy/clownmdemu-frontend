@@ -775,7 +775,25 @@ private:
 					{
 						const bool selected = bound_input == address;
 						if (ImGui::Selectable(name, selected))
-							bound_input = address;
+						{
+							// If the selected device is already bound to an input, swap them.
+							const auto &FindOtherBoundInput = [](const Input* const address) -> Input**
+							{
+								if (address != nullptr)
+									for (auto &other_bound_input : bound_inputs)
+										if (other_bound_input == address)
+											return &other_bound_input;
+
+								return nullptr;
+							};
+
+							Input** const other_bound_input = FindOtherBoundInput(address);
+
+							if (other_bound_input != nullptr)
+								std::swap(*other_bound_input, bound_input);
+							else
+								bound_input = address;
+						}
 						if (selected)
 							ImGui::SetItemDefaultFocus();
 					};
