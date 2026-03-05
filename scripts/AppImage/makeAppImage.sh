@@ -5,12 +5,13 @@ ARCH=$(uname -m)
 
 # Set LinuxDeploy filename based on architecture.
 LINUXDEPLOY_FILENAME=linuxdeploy-${ARCH}.AppImage
+LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/$LINUXDEPLOY_FILENAME"
 
 # Download LinuxDeploy if not already downloaded.
 if [ ! -f "build/$LINUXDEPLOY_FILENAME" ]; then
-    wget -O "build/$LINUXDEPLOY_FILENAME" "https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/$LINUXDEPLOY_FILENAME"
+    wget -O "build/$LINUXDEPLOY_FILENAME" "$LINUXDEPLOY_URL"
     if [ $? -ne 0 ]; then
-        curl -L -o "build/$LINUXDEPLOY_FILENAME" "https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/$LINUXDEPLOY_FILENAME"
+        curl -L -o "build/$LINUXDEPLOY_FILENAME" "$LINUXDEPLOY_URL"
     fi
 fi
 
@@ -32,7 +33,7 @@ cmake -B build ../../ \
 
 # Once again specify the Release build, for generators that require it be done this way.
 # Build in parallel to speed-up compilation greatly.
-cmake --build build --config Release --parallel $(nproc)
+cmake --build build --config Release --parallel ${1:-$(nproc)}
 
 # Make a temporary directory to install the built files into.
 # Make sure that it is fresh and empty, in case this script was ran before; we do not want old, leftover files.
