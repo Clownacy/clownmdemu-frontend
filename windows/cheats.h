@@ -25,7 +25,7 @@ private:
 		};
 
 		std::string code;
-		Cheat_DecodedCheat decoded_cheat;
+		CheatManager_DecodedCheat decoded_cheat;
 		Status status;
 		bool enabled;
 

@@ -149,6 +149,7 @@ private:
 	CDReader cd_reader;
 	AudioOutput audio_output;
 	Palette palette;
+	CheatManager cheat_manager;
 	StateRingBuffer state_rewind_buffer;
 	std::fstream save_data_stream;
 	std::filesystem::path save_file_directory;
@@ -412,7 +413,7 @@ public:
 		cartridge_buffer = buffer;
 		Emulator::InsertCartridge(buffer, buffer_length);
 
-		Cheat_ApplyROMPatches(cartridge_buffer, this->cartridge_buffer_length);
+		CheatManager_ApplyROMPatches(&cheat_manager, cartridge_buffer, this->cartridge_buffer_length);
 
 		LoadCartridgeSaveData(cartridge_file_path);
 
@@ -517,7 +518,7 @@ public:
 			// Reset the audio buffers so that they can be mixed into.
 			audio_output.MixerBegin();
 
-			Cheat_ApplyRAMPatches(this);
+			CheatManager_ApplyRAMPatches(&cheat_manager, this);
 			Emulator::Iterate();
 
 			// Resample, mix, and output the audio for this frame.
@@ -619,12 +620,12 @@ public:
 
 	void ResetCheats()
 	{
-		Cheat_ResetCheats(cartridge_buffer, this->cartridge_buffer_length);
+		CheatManager_ResetCheats(&cheat_manager, cartridge_buffer, this->cartridge_buffer_length);
 	}
 
-	bool AddDecodedCheat(const unsigned int index, const bool enabled, const Cheat_DecodedCheat &decoded_cheat)
+	bool AddDecodedCheat(const unsigned int index, const bool enabled, const CheatManager_DecodedCheat &decoded_cheat)
 	{
-		return Cheat_AddDecodedCheat(cartridge_buffer, this->cartridge_buffer_length, index, enabled, &decoded_cheat);
+		return CheatManager_AddDecodedCheat(&cheat_manager, cartridge_buffer, this->cartridge_buffer_length, index, enabled, &decoded_cheat);
 	}
 };
 
