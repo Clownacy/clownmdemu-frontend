@@ -10,7 +10,7 @@ Cheats::CodeSlot::CodeSlot(std::string code, const bool enabled)
 	: code(std::move(code))
 	, enabled(enabled)
 {
-	if (!CheatManager_DecodeCheat(&decoded_cheat, this->code.c_str()))
+	if (!CheatManagerCXX::DecodeCheat(&decoded_cheat, this->code.c_str()))
 		status = Status::Invalid;
 	else
 		status = Status::Pending;
