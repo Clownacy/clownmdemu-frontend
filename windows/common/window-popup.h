@@ -73,6 +73,10 @@ private:
 			{
 				size = new_size;
 				SDL_SetWindowSize(window->GetSDLWindow(), size.first, size.second);
+
+				// Now that the window has its proper size, show it.
+				// `SDL_ShowWindow` bails if the window is already visible, so this is low-overhead.
+				SDL_ShowWindow(window->GetSDLWindow());
 			}
 
 			ImGui::EndChild();
@@ -146,7 +150,10 @@ public:
 		{
 			window.emplace(window_title, width, height, resizeable, dpi_scale);
 			SDL_SetWindowParent(window->GetSDLWindow(), parent_window.GetSDLWindow());
-			SDL_ShowWindow(window->GetSDLWindow());
+
+			// We don't want to show the window before its size is correctly set in the `End` method.
+			if (resizeable)
+				SDL_ShowWindow(window->GetSDLWindow());
 
 			// Make clear colour match Dear ImGui background colour, to avoid drawing the window background twice.
 			const auto &window_bg_colour = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
