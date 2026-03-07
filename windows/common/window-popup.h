@@ -128,23 +128,23 @@ protected:
 	};
 
 public:
-	WindowPopup(const char* const window_title, Window &parent_window, WindowWithDearImGui* const host_window = nullptr, const std::pair<int, int> &window_size = {}, const std::optional<float> forced_scale = std::nullopt)
+	WindowPopup(const char* const window_title, Window &parent_window, WindowWithDearImGui* const host_window = nullptr, const std::pair<int, int> &window_size = {}, const std::optional<float> &forced_scale = std::nullopt)
 		: title(window_title)
 		, resizeable(window_size.first != 0 && window_size.second != 0)
 		, host_window(host_window)
 	{
-		const auto dpi_scale = host_window != nullptr ? host_window->GetDPIScale() : parent_window.GetDPIScale();
-		const auto scaled_window_width = (window_size.first == 0 ? 100 : window_size.first) * forced_scale.value_or(dpi_scale);
-		const auto scaled_window_height = (window_size.second == 0 ? 100 : window_size.second) * forced_scale.value_or(dpi_scale);
+		const auto dpi_scale = forced_scale.value_or(Window::GetDPIScale(host_window));
+		const float width = window_size.first == 0 ? 100 : window_size.first;
+		const float height = window_size.second == 0 ? 100 : window_size.second;
 
 		if (host_window != nullptr)
 		{
-			size.first = scaled_window_width;
-			size.second = scaled_window_height;
+			size.first = width * dpi_scale;
+			size.second = height * dpi_scale;
 		}
 		else
 		{
-			window.emplace(window_title, static_cast<int>(scaled_window_width / dpi_scale), static_cast<int>(scaled_window_height / dpi_scale), resizeable);
+			window.emplace(window_title, width, height, resizeable, dpi_scale);
 			SDL_SetWindowParent(window->GetSDLWindow(), parent_window.GetSDLWindow());
 			SDL_ShowWindow(window->GetSDLWindow());
 

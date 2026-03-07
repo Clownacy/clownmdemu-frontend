@@ -17,7 +17,7 @@ static float HandleDPIError(const float dpi_scale)
 	return dpi_scale;
 }
 
-static float GetDisplayDPIScale()
+float Window::GetDisplayDPIScale()
 {
 	const SDL_DisplayID display_index = SDL_GetPrimaryDisplay();
 
@@ -57,9 +57,9 @@ void Window::SetFullscreen(const bool enabled)
 		DisableRounding();
 }
 
-Window::Window(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Uint32 window_flags)
+Window::Window(const char* const window_title, const float window_width, const float window_height, const bool resizeable, const std::optional<float> &forced_scale, Uint32 window_flags)
 {
-	const float scale = GetDisplayDPIScale();
+	const float scale = forced_scale.value_or(GetDisplayDPIScale());
 
 	window_flags |= SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 

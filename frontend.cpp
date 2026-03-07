@@ -51,8 +51,8 @@
 using namespace Frontend;
 
 static constexpr unsigned int INITIAL_WINDOW_SCALE = 2;
-static constexpr unsigned int INITIAL_WINDOW_WIDTH = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH * INITIAL_WINDOW_SCALE;
-static constexpr unsigned int INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT * INITIAL_WINDOW_SCALE;
+static constexpr float INITIAL_WINDOW_WIDTH = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH * INITIAL_WINDOW_SCALE;
+static constexpr float INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT * INITIAL_WINDOW_SCALE;
 
 static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
@@ -1874,7 +1874,7 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 		InitialiseConfigurationDirectoryPath(user_data_path);
 
 		// TODO: Use the proper constant, and drop support for SDL <3.4.0.
-		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);
+		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, std::nullopt, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);
 		emulator.emplace(window->framebuffer_texture, ReadInputCallback,
 			[](const std::string &title)
 			{

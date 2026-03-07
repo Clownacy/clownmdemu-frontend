@@ -73,7 +73,7 @@ public:
 	// TODO: Make this private.
 	ImFont *monospace_font;
 
-	WindowWithDearImGui(const char *window_title, int window_width, int window_height, bool resizeable, Uint32 window_flags = 0);
+	WindowWithDearImGui(const char *window_title, float window_width, float window_height, bool resizeable, const std::optional<float> &forced_scale = std::nullopt, Uint32 window_flags = 0);
 	~WindowWithDearImGui();
 	void MakeDearImGuiContextCurrent() { ImGui::SetCurrentContext(dear_imgui_context); }
 	void StartDearImGuiFrame();
