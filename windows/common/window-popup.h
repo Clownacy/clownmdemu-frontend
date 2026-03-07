@@ -52,12 +52,13 @@ private:
 		if (!ImGui::Begin(title.c_str(), open, window_flags))
 			return false;
 
-		if (!UsesChildWindow())
-			return true;
-
 		// Child windows can exceed the size of their parent window, which is great because
 		// we need the Dear ImGui window to not be restricted to the size of its parent SDL window.
-		return ImGui::BeginChild(title.c_str(), ImVec2(0, 0), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY);
+		if (UsesChildWindow())
+			if (!ImGui::BeginChild(title.c_str(), ImVec2(0, 0), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY))
+				return false;
+
+		return true;
 	}
 
 	void End()
