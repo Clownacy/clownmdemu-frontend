@@ -6,7 +6,7 @@
 #ifdef __EMSCRIPTEN__
 #include "libraries/emscripten-browser-file/emscripten_browser_file.h"
 #endif
-#include "libraries/imgui/imgui.h"
+#include "libraries/imgui/misc/cpp/imgui_stdlib.h"
 
 #include "common/core/clowncommon/clowncommon.h"
 
@@ -77,22 +77,6 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 		if (ImGui::BeginPopupModal(active_file_picker_popup->c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			const ImGuiInputTextCallback callback = [](ImGuiInputTextCallbackData* const data)
-			{
-				FileUtilities* const file_utilities = static_cast<FileUtilities*>(data->UserData);
-
-				if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
-				{
-					if (static_cast<std::size_t>(data->BufSize) > file_utilities->text_buffer.size())
-					{
-						file_utilities->text_buffer.resize(data->BufSize);
-						data->Buf = file_utilities->text_buffer.data();
-					}
-				}
-
-				return 0;
-			};
-
 			/* Make it so that the text box is selected by default,
 			   so that the user doesn't have to click on it first.
 			   If a file is dropped onto the dialog, focus on the
@@ -104,7 +88,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 				ImGui::SetKeyboardFocusHere();
 
 			ImGui::TextUnformatted("Filename:");
-			const bool enter_pressed = ImGui::InputText("##filename", text_buffer.data(), text_buffer.capacity() + 1, ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_EnterReturnsTrue, callback, this);
+			const bool enter_pressed = ImGui::InputText("##filename", &text_buffer, ImGuiInputTextFlags_EnterReturnsTrue);
 
 			// Set the text box's contents to the dropped file's path.
 			if (!drag_and_drop_filename.empty())
