@@ -8,6 +8,7 @@
 #endif
 #include "libraries/imgui/misc/cpp/imgui_stdlib.h"
 
+#include "common/clowncd/disc/chd/libchdr/deps/miniz-3.1.0/miniz.h"
 #include "common/core/clowncommon/clowncommon.h"
 
 void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
@@ -260,4 +261,64 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		return callback(save_file);
 	});
 #endif
+}
+
+std::optional<std::vector<cc_u16l>> FileUtilities::LoadZIPFileToBuffer(SDL::IOStream &file, const unsigned int file_index)
+{
+	const auto starting_position = SDL_TellIO(file);
+
+	std::optional<std::vector<cc_u16l>> file_buffer;
+
+	mz_zip_archive miniz;
+	mz_zip_zero_struct(&miniz);
+	miniz.m_pRead = [](void* const pOpaque, const mz_uint64 file_ofs, void* const pBuf, const std::size_t n) -> std::size_t
+	{
+		SDL::IOStream &file = *static_cast<SDL::IOStream*>(pOpaque);
+
+		SDL_SeekIO(file, file_ofs, SDL_IO_SEEK_SET);
+		return SDL_ReadIO(file, pBuf, n);
+	};
+	miniz.m_pIO_opaque = &file;
+
+	if (mz_zip_reader_init(&miniz, SDL_GetIOSize(file), 0))
+	{
+		if (mz_zip_validate_file(&miniz, file_index, MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY))
+		{
+			file_buffer.emplace();
+
+			if (!mz_zip_reader_extract_to_callback(
+				&miniz, file_index,
+				[](void* const pOpaque, const mz_uint64 file_ofs, const void* const pBuf, const std::size_t n) -> std::size_t
+				{
+					auto &file_buffer = *static_cast<std::vector<cc_u16l>*>(pOpaque);
+					auto bytes = static_cast<const unsigned char*>(pBuf);
+
+					const auto end = (file_ofs + n + 1) / 2;
+					if (file_buffer.size() < end)
+						file_buffer.resize(end);
+
+					for (std::size_t i = 0; i < n; ++i)
+					{
+						const auto byte_position = file_ofs + i;
+						const bool upper_byte = byte_position % 2 == 0;
+						const unsigned int shift = upper_byte ? 8 : 0;
+						auto &value = file_buffer[byte_position / 2];
+
+						value &= ~(0xFFu << shift);
+						value |= bytes[i] << shift;
+					}
+
+					return n;
+				},
+				&*file_buffer, 0
+			))
+				file_buffer = std::nullopt;
+		}
+
+		mz_zip_reader_end(&miniz);
+	}
+
+	SDL_SeekIO(file, starting_position, SDL_IO_SEEK_SET);
+
+	return file_buffer;
 }

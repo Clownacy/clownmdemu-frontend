@@ -1300,7 +1300,14 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_
 
 static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
 {
-	auto file_buffer = file_utilities.LoadFileToBuffer<cc_u16l, 2>(file);
+	std::optional<std::vector<cc_u16l>> file_buffer;
+
+	// First try loading the file as a ZIP file.
+	file_buffer = FileUtilities::LoadZIPFileToBuffer(file, 0); // Assume that it's the first file in the archive.
+
+	// Failing that, just load it as a raw binary.
+	if (!file_buffer.has_value())
+		file_buffer = file_utilities.LoadFileToBuffer<cc_u16l, 2>(file);
 
 	if (!file_buffer.has_value())
 	{

@@ -93,6 +93,8 @@ public:
 		return LoadFileToBuffer<T, S>(file);
 	}
 
+	static std::optional<std::vector<cc_u16l>> LoadZIPFileToBuffer(SDL::IOStream &file, unsigned int file_index);
+
 	void LoadFile(Window &window, const std::string &title, const LoadFileCallback &callback);
 	void SaveFile(Window &window, const std::string &title, const SaveFileCallback &callback);
 
