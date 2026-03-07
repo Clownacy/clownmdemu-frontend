@@ -2,6 +2,7 @@
 #define SDL_WRAPPER_H
 
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <string_view>
 
@@ -90,6 +91,51 @@ namespace SDL
 			: IOStreamBase(SDL_IOFromConstMem(mem, size))
 		{}
 	};
+
+	inline bool RunOnMainThread(const SDL_MainThreadCallback main_thread_callback, const void* const user_data = nullptr, const bool wait_complete = true)
+	{
+		return SDL_RunOnMainThread(main_thread_callback, const_cast<void*>(user_data), wait_complete);
+	}
+
+	using MainThreadCallback = std::function<void()>;
+	inline bool RunOnMainThread(const MainThreadCallback &main_thread_callback)
+	{
+		return RunOnMainThread(
+			[](void* const user_data)
+			{
+				const auto &callback = *static_cast<MainThreadCallback*>(user_data);
+
+				callback();
+			},
+			&main_thread_callback, true
+		);
+	}
+
+	inline void ShowFileDialogWithProperties(const SDL_FileDialogType type, const SDL_DialogFileCallback callback, void *const userdata, const SDL_PropertiesID props)
+	{
+		SDL_ShowFileDialogWithProperties(type, callback, userdata, props);
+	}
+
+	using DialogFileCallback = std::function<void(const char* const *file_list, int filter)>;
+	inline void ShowFileDialogWithProperties(const SDL_FileDialogType type, const DialogFileCallback &callback, const SDL_PropertiesID props)
+	{
+		// Create copy of the callback so that it outlives its caller.
+		// `ShowFileDialogWithProperties` may run the callback on a different thread.
+		const auto callback_copy_pointer = new DialogFileCallback(callback);
+
+		ShowFileDialogWithProperties(
+			type,
+			[](void* const user_data, const char* const* const file_list, const int filter)
+			{
+				// Automatically handles freeing the callback copy.
+				const std::unique_ptr<DialogFileCallback> callback_copy(static_cast<DialogFileCallback*>(user_data));
+
+				(*callback_copy)(file_list, filter);
+			},
+			callback_copy_pointer,
+			props
+		);
+	}
 }
 
 #endif /* SDL_WRAPPER_H */

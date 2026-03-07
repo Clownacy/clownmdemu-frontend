@@ -18,36 +18,26 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 	{
 		try
 		{
-			PopupCallback* const callback_detatched = new PopupCallback(callback);
-
-			const auto call_callback = [](void* const user_data, const char* const* const file_list, [[maybe_unused]] const int filter)
-			{
-				auto main_thread_callback = [user_data, file_list]()
-				{
-						const std::unique_ptr<PopupCallback> popup_callback(static_cast<PopupCallback*>(user_data));
-
-						if (file_list == nullptr || *file_list == nullptr)
-							return;
-
-						(*popup_callback.get())(U8Path(*file_list));
-				};
-
-				// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
-				SDL_RunOnMainThread(
-					[](void* const user_data)
-					{
-						const auto &callback = *static_cast<decltype(main_thread_callback)*>(user_data);
-
-						callback();
-					},
-					&main_thread_callback, true
-				);
-			};
-
 			const auto properties = SDL_CreateProperties();
 			SDL_SetPointerProperty(properties, SDL_PROP_FILE_DIALOG_WINDOW_POINTER, window.GetSDLWindow());
 			SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, title.c_str());
-			SDL_ShowFileDialogWithProperties(save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE, call_callback, callback_detatched, properties);
+			SDL::ShowFileDialogWithProperties(
+				save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE,
+				[callback](const char* const* const file_list, [[maybe_unused]] const int filter)
+				{
+					// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
+					SDL::RunOnMainThread(
+						[callback, file_list]()
+						{
+							if (file_list == nullptr || *file_list == nullptr)
+								return;
+
+							callback(U8Path(*file_list));
+						}
+					);
+				},
+				properties
+			);
 			SDL_DestroyProperties(properties);
 
 			done = true;
