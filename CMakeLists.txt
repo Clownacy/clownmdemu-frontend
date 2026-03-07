@@ -177,7 +177,7 @@ target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui
 ##################
 
 # Link clownmdemu-frontend-common and miniz
-set(MINIZ_ARCHIVE_APIS ON)
+set(MINIZ_ARCHIVE_APIS ON FORCE)
 add_subdirectory("common" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu clownmdemu-frontend-common miniz)
 
