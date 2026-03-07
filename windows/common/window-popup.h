@@ -19,6 +19,11 @@ private:
 	WindowWithDearImGui *host_window;
 	int dear_imgui_window_width, dear_imgui_window_height;
 
+	bool UsesChildWindow() const
+	{
+		return window.has_value() && !resizeable;
+	}
+
 	bool Begin(bool* const open = nullptr, ImGuiWindowFlags window_flags = 0)
 	{
 		if (window.has_value())
@@ -43,11 +48,29 @@ private:
 			window_flags |= ImGuiWindowFlags_AlwaysAutoResize;
 
 		//ImGui::PushID(this);
-		return ImGui::Begin(title.c_str(), open, window_flags);
+		if (!ImGui::Begin(title.c_str(), open, window_flags))
+			return false;
+
+		if (!UsesChildWindow())
+			return true;
+
+		// Child windows can exceed the size of their parent window, which is great because
+		// we need the Dear ImGui window to not be restricted to the size of its parent SDL window.
+		return ImGui::BeginChild(title.c_str(), ImVec2(0, 0), ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY);
 	}
 
 	void End()
 	{
+		if (UsesChildWindow())
+		{
+			// `ImGuiWindowFlags_AlwaysAutoResize` does not work for SDL windows, so we simulate
+			// it by using a Dear ImGui child window and then resizing the SDL window to its size.
+			const auto &size = ImGui::GetWindowSize() + ImGui::GetStyle().WindowPadding * 2;
+			SDL_SetWindowSize(window->GetSDLWindow(), size.x, size.y);
+
+			ImGui::EndChild();
+		}
+
 		ImGui::End();
 		//ImGui::PopID();
 
