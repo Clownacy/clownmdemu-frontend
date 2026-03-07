@@ -25,14 +25,12 @@ chmod +x "build/$LINUXDEPLOY_FILENAME"
 # - Link-time optimisation, for improved optimisation.
 # - To set the CMake policy that normally prevents link-time optimisation.
 # - FreeType font rendering, since using a system library means less bloat in the executable.
-# - The system zstd library; see above.
 cmake -B build ../../ \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
     -DCMAKE_POLICY_DEFAULT_CMP0069=NEW \
-    -DCLOWNMDEMU_FRONTEND_FREETYPE=ON \
-    -DWITH_SYSTEM_ZSTD=ON
+    -DCLOWNMDEMU_FRONTEND_FREETYPE=ON
 
 # Once again specify the Release build, for generators that require it be done this way.
 # Build in parallel to speed-up compilation greatly.
