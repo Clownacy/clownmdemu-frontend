@@ -2773,7 +2773,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Cheats", cheats_window, nullptr, std::make_pair(328, 210));
+				PopupButton("Cheats", cheats_window, nullptr, std::make_pair(360, 214));
 
 				ImGui::Separator();
 
