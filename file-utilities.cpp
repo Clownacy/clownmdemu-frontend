@@ -88,7 +88,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 				ImGui::SetKeyboardFocusHere();
 
 			ImGui::TextUnformatted("Filename:");
-			const bool enter_pressed = ImGui::InputText("##filename", &text_buffer, ImGuiInputTextFlags_EnterReturnsTrue);
+			const bool enter_pressed = ImGui::InputText("##filename", &text_buffer, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_ElideLeft);
 
 			// Set the text box's contents to the dropped file's path.
 			if (!drag_and_drop_filename.empty())
