@@ -93,7 +93,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 			// Set the text box's contents to the dropped file's path.
 			if (!drag_and_drop_filename.empty())
 			{
-				text_buffer = drag_and_drop_filename.string();
+				text_buffer = reinterpret_cast<const char*>(drag_and_drop_filename.u8string().c_str());
 				drag_and_drop_filename.clear();
 			}
 
@@ -119,7 +119,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 			if (enter_pressed || ok_pressed)
 			{
-				if (!is_save_dialog || !FileExists(text_buffer))
+				if (!is_save_dialog || !FileExists(U8Path(text_buffer)))
 					submit = true;
 				else
 					ImGui::OpenPopup("File Already Exists");
@@ -148,7 +148,7 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 
 			if (submit)
 			{
-				if (popup_callback(text_buffer))
+				if (popup_callback(U8Path(text_buffer)))
 					exit = true;
 				else
 					ImGui::OpenPopup(is_save_dialog ? "Could Not Save File" : "Could Not Open File");
