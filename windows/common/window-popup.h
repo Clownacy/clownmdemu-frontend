@@ -122,7 +122,7 @@ protected:
 	};
 
 public:
-	WindowPopup(const char* const window_title, const std::pair<int, int> &window_size, Window &parent_window, const std::optional<float> forced_scale, WindowWithDearImGui* const host_window = nullptr)
+	WindowPopup(const char* const window_title, Window &parent_window, WindowWithDearImGui* const host_window = nullptr, const std::pair<int, int> &window_size = {}, const std::optional<float> forced_scale = std::nullopt)
 		: title(window_title)
 		, resizeable(window_size.first != 0 && window_size.second != 0)
 		, host_window(host_window)

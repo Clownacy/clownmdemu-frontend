@@ -779,17 +779,13 @@ void DebugVDP::GridViewer<Derived>::DisplayGrid(
 
 	// Variables relating to the sizing and spacing of the tiles in the viewer.
 	const float dpi_scale = derived->GetWindow().GetDPIScale();
-	const float tile_scale = SDL_roundf(3.0f * dpi_scale);
-	const float tile_spacing = SDL_roundf(2.0f * dpi_scale);
+	const float tile_scale = GetTileScale(dpi_scale);
+	const float tile_spacing = GetTileSpacing(dpi_scale);
 
 	// TODO: This.
 #if 0
 	// Don't let the window become too small, or we can get division by zero errors later on.
 	ImGui::SetNextWindowSizeConstraints(ImVec2(100.0f * dpi_scale, 100.0f * dpi_scale), ImVec2(FLT_MAX, FLT_MAX)); // Width > 100, Height > 100
-
-	// Give the window a default size of 16 tiles wide.
-	const float default_window_size = ((8 * tile_scale + tile_spacing * 2) * 0x10) + 40.0f * dpi_scale;
-	ImGui::SetNextWindowSize(ImVec2(default_window_size, default_window_size), ImGuiCond_FirstUseEver);
 #endif
 
 	const bool options_changed = DisplayBrightnessAndPaletteLineSettings();

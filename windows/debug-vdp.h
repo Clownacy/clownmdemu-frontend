@@ -205,9 +205,28 @@ namespace DebugVDP
 			const char *label_singular,
 			const char *label_plural);
 
+		static auto GetTileScale(const float dpi_scale)
+		{
+			return SDL_roundf(3.0f * dpi_scale);
+		}
+
+		static auto GetTileSpacing(const float dpi_scale)
+		{
+			return SDL_roundf(2.0f * dpi_scale);
+		}
+
+		static std::pair<int, int> GetDefaultWindowSize(const std::size_t piece_size, const float dpi_scale)
+		{
+			// Give the window a default size of 16 tiles wide.
+			const int default_window_size = ((piece_size * GetTileScale(dpi_scale) + GetTileSpacing(dpi_scale) * 2) * 0x10) + 40.0f * dpi_scale;
+			return {default_window_size, default_window_size};
+		}
 	public:
 		using Base = WindowPopup<Derived>;
-		using Base::WindowPopup;
+
+		GridViewer(const char* const window_title, Window &parent_window, WindowWithDearImGui* const host_window, const std::size_t piece_size)
+			: Base(window_title, parent_window, host_window, GetDefaultWindowSize(piece_size, host_window == nullptr ? parent_window.GetDPIScale() : host_window->GetDPIScale()), 1.0f)
+		{}
 
 		friend Base;
 	};
