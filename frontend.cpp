@@ -59,6 +59,27 @@ static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
+class Input
+{
+private:
+	std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons = {0};
+
+public:
+	const std::string name;
+	unsigned char fast_forward = 0;
+	unsigned char rewind = 0;
+
+	Input(std::string name)
+		: name(std::move(name))
+	{}
+
+	unsigned char GetButton(ClownMDEmu_Button button)
+	{
+		return buttons[button];
+	}
+	void SetButton(ClownMDEmu_Button button, unsigned char value);
+};
+
 struct ControllerInput
 {
 	static inline unsigned int controller_number;
@@ -78,6 +99,31 @@ struct ControllerInput
 	{}
 };
 
+enum InputBinding
+{
+	INPUT_BINDING_NONE,
+	INPUT_BINDING_CONTROLLER_UP,
+	INPUT_BINDING_CONTROLLER_DOWN,
+	INPUT_BINDING_CONTROLLER_LEFT,
+	INPUT_BINDING_CONTROLLER_RIGHT,
+	INPUT_BINDING_CONTROLLER_A,
+	INPUT_BINDING_CONTROLLER_B,
+	INPUT_BINDING_CONTROLLER_C,
+	INPUT_BINDING_CONTROLLER_X,
+	INPUT_BINDING_CONTROLLER_Y,
+	INPUT_BINDING_CONTROLLER_Z,
+	INPUT_BINDING_CONTROLLER_START,
+	INPUT_BINDING_CONTROLLER_MODE,
+	INPUT_BINDING_PAUSE,
+	INPUT_BINDING_RESET,
+	INPUT_BINDING_FAST_FORWARD,
+	INPUT_BINDING_REWIND,
+	INPUT_BINDING_QUICK_SAVE_STATE,
+	INPUT_BINDING_QUICK_LOAD_STATE,
+	INPUT_BINDING_TOGGLE_FULLSCREEN,
+	INPUT_BINDING__TOTAL
+};
+
 #ifdef FILE_PATH_SUPPORT
 struct RecentSoftware
 {
@@ -88,7 +134,32 @@ struct RecentSoftware
 
 static std::list<ControllerInput> controller_input_list;
 
-static std::array<Input*, 8> bound_inputs = {&keyboard_input};
+static Input keyboard_input = {"Keyboard"};
+static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
+
+static std::array<Input*, 8> bound_inputs;
+
+void Input::SetButton(const ClownMDEmu_Button button, const unsigned char value)
+{
+	buttons[button] = value;
+
+	if (!value)
+		return;
+
+	// Automatically bind this controller to the first unbound input.
+	for (auto &bound_input : bound_inputs)
+		if (bound_input == this)
+			return;
+
+	for (auto &bound_input : bound_inputs)
+	{
+		if (bound_input == nullptr)
+		{
+			bound_input = this;
+			break;
+		}
+	}
+}
 
 class AboutWindow : public WindowPopup<AboutWindow>
 {
@@ -848,7 +919,7 @@ private:
 			std::sort(sorted_scancodes.begin(), sorted_scancodes.end(),
 				[](const auto &binding_1, const auto &binding_2)
 				{
-					return Frontend::keyboard_bindings[binding_1] < Frontend::keyboard_bindings[binding_2];
+					return keyboard_bindings[binding_1] < keyboard_bindings[binding_2];
 				}
 			);
 		}
@@ -861,7 +932,7 @@ private:
 			ImGui::TableHeadersRow();
 			for (const auto &scancode : sorted_scancodes)
 			{
-				if (Frontend::keyboard_bindings[scancode] != INPUT_BINDING_NONE)
+				if (keyboard_bindings[scancode] != INPUT_BINDING_NONE)
 				{
 					ImGui::PushID(&scancode);
 
@@ -870,16 +941,16 @@ private:
 
 					ImGui::TableNextColumn();
 					ImGui::SetNextItemWidth(-FLT_MIN);
-					int index = Frontend::keyboard_bindings[scancode] - 1;
+					int index = keyboard_bindings[scancode] - 1;
 					if (ImGui::Combo("##action", &index, std::data(binding_names) + 1, std::size(binding_names) - 1))
 					{
-						Frontend::keyboard_bindings[scancode] = static_cast<InputBinding>(index + 1);
+						keyboard_bindings[scancode] = static_cast<InputBinding>(index + 1);
 						sorted_scancodes_done = false;
 					}
 
 					ImGui::TableNextColumn();
 					if (ImGui::Button("X"))
-						Frontend::keyboard_bindings[scancode] = INPUT_BINDING_NONE;
+						keyboard_bindings[scancode] = INPUT_BINDING_NONE;
 
 					ImGui::PopID();
 				}
@@ -944,7 +1015,7 @@ private:
 						{
 							ImGui::CloseCurrentPopup();
 							exit = true;
-							Frontend::keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
+							keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
 							sorted_scancodes_done = false;
 							scroll_to_add_bindings_button = true;
 						}
@@ -979,9 +1050,6 @@ unsigned int Frontend::frame_counter;
 bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
 bool Frontend::native_windows;
-
-Input Frontend::keyboard_input = {"Keyboard"};
-std::array<InputBinding, SDL_SCANCODE_COUNT> Frontend::keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 static std::array<bool, SDL_SCANCODE_COUNT> key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
@@ -1112,7 +1180,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 			return cc_false;
 	}
 
-	return input->buttons[button_id] != 0;
+	return input->GetButton(button_id) != 0;
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -2089,7 +2157,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 				switch (binding)
 				{
-					#define DO_KEY(state, code) case code: keyboard_input.buttons[state] += delta; break
+					#define DO_KEY(state, code) case code: keyboard_input.SetButton(state, keyboard_input.GetButton(state) + delta); break
 
 					DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
 					DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
@@ -2147,17 +2215,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			{
 				try
 				{
-					auto &controller_input = controller_input_list.emplace_back(event.gdevice.which);
-
-					// Automatically bind this new controller to the first unbound input.
-					for (auto &bound_input : bound_inputs)
-					{
-						if (bound_input == nullptr)
-						{
-							bound_input = &controller_input.input;
-							break;
-						}
-					}
+					controller_input_list.emplace_back(event.gdevice.which);
 				}
 				catch (const std::bad_alloc&)
 				{
@@ -2221,7 +2279,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				{
 					switch (event.gbutton.button)
 					{
-						#define DO_BUTTON(state, code) case code: controller_input.input.buttons[state] = pressed; break
+						#define DO_BUTTON(state, code) case code: controller_input.input.SetButton(state, pressed); break
 
 						// TODO: This is currently just Genesis Plus GX's libretro button layout,
 						// but I would like something closer to a real 6-button controller's layout.
@@ -2242,7 +2300,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 						{
 							unsigned int direction;
-							unsigned int button;
+							ClownMDEmu_Button button;
 
 							switch (event.gbutton.button)
 							{
@@ -2271,7 +2329,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 							controller_input.dpad[direction] = pressed;
 
 							// Combine D-pad and left stick values into final joypad D-pad inputs.
-							controller_input.input.buttons[button] = controller_input.left_stick[direction] || controller_input.dpad[direction];
+							controller_input.input.SetButton(button, controller_input.left_stick[direction] || controller_input.dpad[direction]);
 
 							break;
 						}
@@ -2339,7 +2397,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 									controller_input.left_stick[i] = (delta_angle < CC_DEGREE_TO_RADIAN(360.0f * 3.0f / 8.0f / 2.0f)); // Half of 3/8 of 360 degrees (in radians)
 								}
 
-								static const std::array<unsigned int, 4> buttons = {
+								static const std::array<ClownMDEmu_Button, 4> buttons = {
 									CLOWNMDEMU_BUTTON_UP,
 									CLOWNMDEMU_BUTTON_DOWN,
 									CLOWNMDEMU_BUTTON_LEFT,
@@ -2347,7 +2405,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 								};
 
 								// Combine D-pad and left stick values into final joypad D-pad inputs.
-								controller_input.input.buttons[buttons[i]] = controller_input.left_stick[i] || controller_input.dpad[i];
+								controller_input.input.SetButton(buttons[i], controller_input.left_stick[i] || controller_input.dpad[i]);
 							}
 
 							break;
