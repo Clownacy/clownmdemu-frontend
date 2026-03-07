@@ -2962,7 +2962,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
 
-				if (!NativeWindowsActive())
+				if (!NativeWindowsActive() || pop_out)
 				{
 					ImGui::MenuItem("Display Window", nullptr, &pop_out);
 					ImGui::Separator();
