@@ -2822,6 +2822,9 @@ void Frontend::Update()
 
 			if (ImGui::BeginMenu("Debugging"))
 			{
+				const auto &clownmdemu = emulator->GetState();
+				const auto &vdp = emulator->GetVDPState();
+
 				PopupButton("Log", debug_log_window, nullptr, std::make_pair(800, 600));
 
 				PopupButton("Toggles", debugging_toggles_window);
@@ -2835,23 +2838,23 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("Main-68000"))
 				{
 					PopupButton("Registers", m68k_status_window, "Main-68000 Registers");
-					PopupButton("WORK-RAM", m68k_ram_viewer_window, nullptr, std::make_pair(400, 400));
-					PopupButton("External RAM", external_ram_viewer_window, nullptr, std::make_pair(460, 460));
+					PopupButton("WORK-RAM", m68k_ram_viewer_window, nullptr, clownmdemu.m68k.ram, window->monospace_font);
+					PopupButton("External RAM", external_ram_viewer_window, nullptr, clownmdemu.external_ram.buffer, window->monospace_font);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
 					PopupButton("Registers", mcd_m68k_status_window, "Sub-68000 Registers");
-					PopupButton("PRG-RAM", prg_ram_viewer_window, nullptr, std::make_pair(410, 410));
-					PopupButton("WORD-RAM", word_ram_viewer_window, nullptr, std::make_pair(410, 410));
+					PopupButton("PRG-RAM", prg_ram_viewer_window, nullptr, clownmdemu.mega_cd.prg_ram.buffer, window->monospace_font);
+					PopupButton("WORD-RAM", word_ram_viewer_window, nullptr, clownmdemu.mega_cd.word_ram.buffer, window->monospace_font);
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Z80"))
 				{
 					PopupButton("Registers", z80_status_window, "Z80 Registers");
-					PopupButton("SOUND-RAM", z80_ram_viewer_window, nullptr, std::make_pair(460, 460));
+					PopupButton("SOUND-RAM", z80_ram_viewer_window, nullptr, clownmdemu.z80.ram, window->monospace_font);
 					ImGui::EndMenu();
 				}
 
@@ -2859,9 +2862,9 @@ void Frontend::Update()
 				{
 					PopupButton("Registers", vdp_registers_window, "VDP Registers");
 					PopupButton("Sprites", sprite_list_window, nullptr, std::make_pair(540, 344));
-					PopupButton("VRAM", vram_viewer_window, nullptr, std::make_pair(460, 460));
-					PopupButton("CRAM", cram_viewer_window);
-					PopupButton("VSRAM", vsram_viewer_window);
+					PopupButton("VRAM", vram_viewer_window, nullptr, vdp.vram, window->monospace_font);
+					PopupButton("CRAM", cram_viewer_window, nullptr, vdp.cram, window->monospace_font);
+					PopupButton("VSRAM", vsram_viewer_window, nullptr, vdp.vsram, window->monospace_font);
 					ImGui::SeparatorText("Visualisers");
 					ImGui::PushID("Visualisers");
 					PopupButton("Sprite Plane", sprite_plane_visualiser_window, nullptr, std::make_pair(540, 610), 1.0f);
@@ -2883,7 +2886,7 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("PCM"))
 				{
 					PopupButton("Registers", pcm_status_window, "PCM Registers");
-					PopupButton("WAVE-RAM", wave_ram_viewer_window, nullptr, std::make_pair(460, 460));
+					PopupButton("WAVE-RAM", wave_ram_viewer_window, nullptr, emulator->GetPCMState().wave_ram, window->monospace_font);
 					ImGui::EndMenu();
 				}
 

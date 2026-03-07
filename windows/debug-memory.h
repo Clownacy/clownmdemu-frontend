@@ -42,7 +42,29 @@ private:
 	}
 
 	template<typename T>
-	void PrintLine(const T *buffer, std::size_t offset_digits, int index);
+	static std::string PrintLineInternal(const T *buffer, std::size_t offset_digits, int index);
+
+	template<typename... Ts>
+	void PrintLine(Ts &&...args)
+	{
+		ImGui::TextUnformatted(PrintLineInternal(std::forward<Ts>(args)...).c_str());
+	}
+
+	template<typename T>
+	static std::size_t GetMaximumIndexDigits(const T &buffer)
+	{
+		const auto maximum_index_bits = 1 + static_cast<std::size_t>(std::log2(std::size(buffer) - 1));
+		const auto maximum_index_digits = CC_DIVIDE_CEILING(maximum_index_bits, 4);
+		return maximum_index_digits;
+	}
+
+	template<typename T>
+	static std::size_t GetBytesPerValue(const T &buffer)
+	{
+		return IntegerSize<decltype(*std::cbegin(buffer))>();
+	}
+
+	static constexpr auto bytes_per_line = 0x10;
 
 	template<typename T>
 	void DisplayInternal(const T &buffer)
@@ -60,7 +82,7 @@ private:
 		ImGui::PopFont();
 	#endif
 
-		const auto bytes_per_value = IntegerSize<decltype(*std::cbegin(buffer))>();
+		const auto bytes_per_value = GetBytesPerValue(buffer);
 
 		if (ImGui::Button("Save to File"))
 		{
@@ -89,12 +111,9 @@ private:
 
 		ImGui::PushFont(GetMonospaceFont());
 
-		const auto bytes_per_line = 0x10;
 		const auto values_per_line = bytes_per_line / bytes_per_value;
 		const auto total_lines = std::size(buffer) / values_per_line;
-		const auto maximum_index = (total_lines - 1) * bytes_per_line;
-		const auto maximum_index_bits = 1 + static_cast<std::size_t>(std::log2(maximum_index));
-		const auto maximum_index_digits = CC_DIVIDE_CEILING(maximum_index_bits, 4);
+		const auto maximum_index_digits = GetMaximumIndexDigits(buffer);
 
 		ImGuiListClipper clipper;
 		clipper.Begin(total_lines);
@@ -108,16 +127,37 @@ private:
 			ImGui::EndChild();
 	}
 
+	template<typename T>
+	static std::pair<int, int> GetDefaultWindowSize(const T &buffer, ImFont* const monospace_font)
+	{
+		ImGui::PushFont(monospace_font);
+		const auto &template_string = PrintLineInternal(std::data(buffer), GetMaximumIndexDigits(buffer), 0);
+		const auto text_size = ImGui::CalcTextSize(template_string.c_str());
+		ImGui::PopFont();
+
+		const ImGuiStyle &style = ImGui::GetStyle();
+		const int width = style.ScrollbarSize + style.WindowPadding.x * 2 + text_size.x;
+
+		// If buffer is small enough to be displayed entirely within the fixed-sized window, use an auto-sized window instead.
+		if (std::size(buffer) * GetBytesPerValue(buffer) / bytes_per_line * text_size.y < width)
+			return {0, 0};
+
+		return {width, width};
+	}
+
 public:
-	using Base::WindowPopup;
+	template<typename T>
+	DebugMemory(const char* const window_title, Window &parent_window, WindowWithDearImGui* const host_window, const T &buffer, ImFont* const monospace_font)
+		: Base(window_title, parent_window, host_window, GetDefaultWindowSize(buffer, monospace_font), 1.0f)
+	{}
 
 	friend Base;
 };
 
 template<>
-void DebugMemory::PrintLine(const cc_u8l *buffer, std::size_t buffer_length_digits, int index);
+std::string DebugMemory::PrintLineInternal(const cc_u8l *buffer, std::size_t buffer_length_digits, int index);
 
 template<>
-void DebugMemory::PrintLine(const cc_u16l *buffer, std::size_t buffer_length_digits, int index);
+std::string DebugMemory::PrintLineInternal(const cc_u16l *buffer, std::size_t buffer_length_digits, int index);
 
 #endif /* DEBUG_MEMORY_H */
