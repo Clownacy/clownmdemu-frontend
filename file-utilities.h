@@ -1,6 +1,7 @@
 #ifndef FILE_UTILITIES_H
 #define FILE_UTILITIES_H
 
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -42,7 +43,23 @@ public:
 	bool FileExists(const std::filesystem::path &path);
 
 	template<typename T, std::size_t S>
-	bool ReadFromIOStream(SDL::IOStream &file, T &value);
+	bool ReadFromIOStream(SDL::IOStream &file, T &integer)
+	{
+		// Read bytes.
+		std::array<unsigned char, S> bytes;
+		if (SDL_ReadIO(file, std::data(bytes), std::size(bytes)) != std::size(bytes))
+			return false;
+
+		// Combine bytes into an integer.
+		integer = 0;
+		for (auto &byte : bytes)
+		{
+			integer <<= 8;
+			integer |= byte;
+		}
+
+		return true;
+	}
 
 	template<typename T, std::size_t S>
 	bool ReadFromIOStream(SDL::IOStream &file, std::vector<T> &buffer)
@@ -110,15 +127,6 @@ public:
 		return SDL::U8Path(std::forward<Ts>(args)...);
 	}
 };
-
-template<>
-inline bool FileUtilities::ReadFromIOStream<cc_u16l, 2>(SDL::IOStream &file, cc_u16l &integer)
-{
-	Uint16 sdl_integer;
-	const bool success = SDL_ReadU16BE(file, &sdl_integer);
-	integer = sdl_integer;
-	return success;
-}
 
 template<>
 inline bool FileUtilities::ReadFromIOStream<unsigned char, 1>(SDL::IOStream &file, std::vector<unsigned char> &buffer)
