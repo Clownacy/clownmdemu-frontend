@@ -16,19 +16,32 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 
 	if (use_native_file_dialogs)
 	{
-		// TODO: According to documentation, the callback may be ran on a different thread, so find some way to ensure that there are no race conditions!
 		try
 		{
 			PopupCallback* const callback_detatched = new PopupCallback(callback);
 
 			const auto call_callback = [](void* const user_data, const char* const* const file_list, [[maybe_unused]] const int filter)
 			{
-				const std::unique_ptr<PopupCallback> callback(static_cast<PopupCallback*>(user_data));
+				auto main_thread_callback = [user_data, file_list]()
+				{
+						const std::unique_ptr<PopupCallback> popup_callback(static_cast<PopupCallback*>(user_data));
 
-				if (file_list == nullptr || *file_list == nullptr)
-					return;
+						if (file_list == nullptr || *file_list == nullptr)
+							return;
 
-				(*callback.get())(U8Path(*file_list));
+						(*popup_callback.get())(U8Path(*file_list));
+				};
+
+				// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
+				SDL_RunOnMainThread(
+					[](void* const user_data)
+					{
+						const auto &callback = *static_cast<decltype(main_thread_callback)*>(user_data);
+
+						callback();
+					},
+					&main_thread_callback, true
+				);
 			};
 
 			const auto properties = SDL_CreateProperties();
