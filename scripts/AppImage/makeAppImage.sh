@@ -4,8 +4,9 @@ mkdir -p build
 ARCH=$(uname -m)
 
 # Set LinuxDeploy filename based on architecture.
-LINUXDEPLOY_FILENAME=linuxdeploy-${ARCH}.AppImage
-LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/1-alpha-20251107-1/$LINUXDEPLOY_FILENAME"
+LINUXDEPLOY_VERSION="1-alpha-20251107-1"
+LINUXDEPLOY_FILENAME="linuxdeploy-${LINUXDEPLOY_VERSION}-${ARCH}.AppImage"
+LINUXDEPLOY_URL="https://github.com/linuxdeploy/linuxdeploy/releases/download/${LINUXDEPLOY_VERSION}/${LINUXDEPLOY_FILENAME}"
 
 # Download LinuxDeploy if not already downloaded.
 if [ ! -f "build/$LINUXDEPLOY_FILENAME" ]; then
