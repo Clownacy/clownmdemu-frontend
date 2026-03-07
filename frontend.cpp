@@ -2659,14 +2659,14 @@ void Frontend::Update()
 	{
 		if (show_menu_bar && ImGui::BeginMenuBar())
 		{
-			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const int width, const int height, const bool resizeable, const std::optional<float> forced_scale = std::nullopt, const char* const title = nullptr)
+			const auto PopupButton = []<typename T>(const char* const label, std::optional<T> &window, const std::pair<int, int> &size = {}, const std::optional<float> forced_scale = std::nullopt, const char* const title = nullptr)
 			{
 				if (ImGui::MenuItem(label, nullptr, window.has_value()))
 				{
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, width, height, resizeable, *::window, forced_scale, NativeWindowsActive() ? nullptr : &*::window);
+						window.emplace(title == nullptr ? label : title, size, *::window, forced_scale, NativeWindowsActive() ? nullptr : &*::window);
 				}
 			};
 
@@ -2715,7 +2715,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Cheats", cheats_window, 328, 210, true);
+				PopupButton("Cheats", cheats_window, {328, 210});
 
 				ImGui::Separator();
 
@@ -2822,76 +2822,76 @@ void Frontend::Update()
 
 			if (ImGui::BeginMenu("Debugging"))
 			{
-				PopupButton("Log", debug_log_window, 800, 600, true);
+				PopupButton("Log", debug_log_window, {800, 600});
 
-				PopupButton("Toggles", debugging_toggles_window, 234, 500, false);
+				PopupButton("Toggles", debugging_toggles_window);
 
-				PopupButton("Disassembler", disassembler_window, 380, 410, true);
+				PopupButton("Disassembler", disassembler_window, {380, 410});
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, 328, 210, true);
+				PopupButton("Frontend", debug_frontend_window, {328, 210});
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{
-					PopupButton("Registers", m68k_status_window, 390, 120, false, std::nullopt, "Main-68000 Registers");
-					PopupButton("WORK-RAM", m68k_ram_viewer_window, 400, 400, true);
-					PopupButton("External RAM", external_ram_viewer_window, 460, 460, true);
+					PopupButton("Registers", m68k_status_window, {}, std::nullopt, "Main-68000 Registers");
+					PopupButton("WORK-RAM", m68k_ram_viewer_window, {400, 400});
+					PopupButton("External RAM", external_ram_viewer_window, {460, 460});
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Sub-68000"))
 				{
-					PopupButton("Registers", mcd_m68k_status_window, 390, 120, false, std::nullopt, "Sub-68000 Registers");
-					PopupButton("PRG-RAM", prg_ram_viewer_window, 410, 410, true);
-					PopupButton("WORD-RAM", word_ram_viewer_window, 410, 410, true);
+					PopupButton("Registers", mcd_m68k_status_window, {}, std::nullopt, "Sub-68000 Registers");
+					PopupButton("PRG-RAM", prg_ram_viewer_window, {410, 410});
+					PopupButton("WORD-RAM", word_ram_viewer_window, {410, 410});
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("Z80"))
 				{
-					PopupButton("Registers", z80_status_window, 405, 80, false, std::nullopt, "Z80 Registers");
-					PopupButton("SOUND-RAM", z80_ram_viewer_window, 460, 460, true);
+					PopupButton("Registers", z80_status_window, {}, std::nullopt, "Z80 Registers");
+					PopupButton("SOUND-RAM", z80_ram_viewer_window, {460, 460});
 					ImGui::EndMenu();
 				}
 
 				if (ImGui::BeginMenu("VDP"))
 				{
-					PopupButton("Registers", vdp_registers_window, 400, 320, false, std::nullopt, "VDP Registers");
-					PopupButton("Sprites", sprite_list_window, 540, 344, true);
-					PopupButton("VRAM", vram_viewer_window, 460, 460, true);
-					PopupButton("CRAM", cram_viewer_window, 384, 192, false);
-					PopupButton("VSRAM", vsram_viewer_window, 384, 192, false);
+					PopupButton("Registers", vdp_registers_window, {}, std::nullopt, "VDP Registers");
+					PopupButton("Sprites", sprite_list_window, {540, 344});
+					PopupButton("VRAM", vram_viewer_window, {460, 460});
+					PopupButton("CRAM", cram_viewer_window);
+					PopupButton("VSRAM", vsram_viewer_window);
 					ImGui::SeparatorText("Visualisers");
 					ImGui::PushID("Visualisers");
-					PopupButton("Sprite Plane", sprite_plane_visualiser_window, 540, 610, true, 1.0f);
-					PopupButton("Window Plane", window_plane_visualiser_window, 540, 610, true, 1.0f);
-					PopupButton("Plane A", plane_a_visualiser_window, 1050, 610, true, 1.0f);
-					PopupButton("Plane B", plane_b_visualiser_window, 1050, 610, true, 1.0f);
-					PopupButton("Tiles", tile_visualiser_window, 530, 530, true);
-					PopupButton("Colours", colour_visualiser_window, 456, 186, false);
-					PopupButton("Stamps", stamp_visualiser_window, 530, 530, true);
-					PopupButton("Stamp Map", stamp_map_visualiser_window, 1050, 610, true, 1.0f);
+					PopupButton("Sprite Plane", sprite_plane_visualiser_window, {540, 610}, 1.0f);
+					PopupButton("Window Plane", window_plane_visualiser_window, {540, 610}, 1.0f);
+					PopupButton("Plane A", plane_a_visualiser_window, {1050, 610}, 1.0f);
+					PopupButton("Plane B", plane_b_visualiser_window, {1050, 610}, 1.0f);
+					PopupButton("Tiles", tile_visualiser_window, {530, 530});
+					PopupButton("Colours", colour_visualiser_window);
+					PopupButton("Stamps", stamp_visualiser_window, {530, 530});
+					PopupButton("Stamp Map", stamp_map_visualiser_window, {1050, 610}, 1.0f);
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}
 
-				PopupButton("FM", fm_status_window, 540, 924, false, std::nullopt, "FM Registers");
+				PopupButton("FM", fm_status_window, {}, std::nullopt, "FM Registers");
 
-				PopupButton("PSG", psg_status_window, 290, 264, false, std::nullopt, "PSG Registers");
+				PopupButton("PSG", psg_status_window, {}, std::nullopt, "PSG Registers");
 
 				if (ImGui::BeginMenu("PCM"))
 				{
-					PopupButton("Registers", pcm_status_window, 630, 200, false, std::nullopt, "PCM Registers");
-					PopupButton("WAVE-RAM", wave_ram_viewer_window, 460, 460, true);
+					PopupButton("Registers", pcm_status_window, {}, std::nullopt, "PCM Registers");
+					PopupButton("WAVE-RAM", wave_ram_viewer_window, {460, 460});
 					ImGui::EndMenu();
 				}
 
-				PopupButton("CDDA", cdda_status_window, 180, 324, false);
+				PopupButton("CDDA", cdda_status_window);
 
-				PopupButton("CDC", cdc_status_window, 200, 364, false);
+				PopupButton("CDC", cdc_status_window);
 
-				PopupButton("Other", other_status_window, 350, 830, false);
+				PopupButton("Other", other_status_window);
 
 				ImGui::EndMenu();
 			}
@@ -2907,9 +2907,9 @@ void Frontend::Update()
 					ImGui::Separator();
 				}
 
-				PopupButton("Options", options_window, 360, 360, true);
+				PopupButton("Options", options_window, {360, 360});
 
-				PopupButton("About", about_window, 626, 430, true);
+				PopupButton("About", about_window, {626, 430});
 
 			#ifndef __EMSCRIPTEN__
 				ImGui::Separator();

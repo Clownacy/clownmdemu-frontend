@@ -4,6 +4,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <utility>
 
 #include <SDL3/SDL.h>
 
@@ -121,14 +122,14 @@ protected:
 	};
 
 public:
-	WindowPopup(const char* const window_title, const int window_width, const int window_height, const bool resizeable, Window &parent_window, const std::optional<float> forced_scale, WindowWithDearImGui* const host_window = nullptr)
+	WindowPopup(const char* const window_title, const std::pair<int, int> &window_size, Window &parent_window, const std::optional<float> forced_scale, WindowWithDearImGui* const host_window = nullptr)
 		: title(window_title)
-		, resizeable(resizeable)
+		, resizeable(window_size.first != 0 && window_size.second != 0)
 		, host_window(host_window)
 	{
 		const auto dpi_scale = host_window != nullptr ? host_window->GetDPIScale() : parent_window.GetDPIScale();
-		const auto scaled_window_width = window_width * forced_scale.value_or(dpi_scale);
-		const auto scaled_window_height = window_height * forced_scale.value_or(dpi_scale);
+		const auto scaled_window_width = (window_size.first == 0 ? 100 : window_size.first) * forced_scale.value_or(dpi_scale);
+		const auto scaled_window_height = (window_size.second == 0 ? 100 : window_size.second) * forced_scale.value_or(dpi_scale);
 
 		if (host_window != nullptr)
 		{
