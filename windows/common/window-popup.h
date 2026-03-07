@@ -18,7 +18,7 @@ private:
 	std::string title;
 	bool resizeable;
 	WindowWithDearImGui *host_window;
-	int dear_imgui_window_width, dear_imgui_window_height;
+	std::pair<int, int> size;
 
 	bool UsesChildWindow() const
 	{
@@ -42,7 +42,7 @@ private:
 		}
 		else
 		{
-			ImGui::SetNextWindowSize(ImVec2(dear_imgui_window_width, dear_imgui_window_height), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2(size.first, size.second), ImGuiCond_FirstUseEver);
 		}
 
 		if (!resizeable)
@@ -66,8 +66,13 @@ private:
 		{
 			// `ImGuiWindowFlags_AlwaysAutoResize` does not work for SDL windows, so we simulate
 			// it by using a Dear ImGui child window and then resizing the SDL window to its size.
-			const auto &size = ImGui::GetWindowSize() + ImGui::GetStyle().WindowPadding * 2;
-			SDL_SetWindowSize(window->GetSDLWindow(), size.x, size.y);
+			const auto &size_float = ImGui::GetWindowSize() + ImGui::GetStyle().WindowPadding * 2;
+			const auto &new_size = std::make_pair(static_cast<int>(size_float.x), static_cast<int>(size_float.y));
+			if (size != new_size)
+			{
+				size = new_size;
+				SDL_SetWindowSize(window->GetSDLWindow(), size.first, size.second);
+			}
 
 			ImGui::EndChild();
 		}
@@ -133,8 +138,8 @@ public:
 
 		if (host_window != nullptr)
 		{
-			dear_imgui_window_width = scaled_window_width;
-			dear_imgui_window_height = scaled_window_height;
+			size.first = scaled_window_width;
+			size.second = scaled_window_height;
 		}
 		else
 		{
