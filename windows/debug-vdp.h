@@ -218,7 +218,8 @@ namespace DebugVDP
 		static std::pair<int, int> GetDefaultWindowSize(const std::size_t piece_size, const float dpi_scale)
 		{
 			// Give the window a default size of 16 tiles wide.
-			const int default_window_size = ((piece_size * GetTileScale(dpi_scale) + GetTileSpacing(dpi_scale) * 2) * 0x10) + 40.0f * dpi_scale;
+			const auto &style = ImGui::GetStyle();
+			const int default_window_size = style.WindowPadding.x * 2 + ((piece_size * GetTileScale(dpi_scale) + GetTileSpacing(dpi_scale) * 2) * 0x10) + style.ScrollbarSize;
 			return {default_window_size, default_window_size};
 		}
 	public:
