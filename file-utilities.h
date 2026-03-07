@@ -40,10 +40,10 @@ public:
 	void DisplayFileDialog(std::filesystem::path &drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup.has_value(); }
 
-	bool FileExists(const std::filesystem::path &path);
+	static bool FileExists(const std::filesystem::path &path);
 
 	template<typename T, std::size_t S>
-	bool ReadFromIOStream(SDL::IOStream &file, T &integer)
+	static bool ReadFromIOStream(SDL::IOStream &file, T &integer)
 	{
 		// Read bytes.
 		std::array<unsigned char, S> bytes;
@@ -62,7 +62,7 @@ public:
 	}
 
 	template<typename T, std::size_t S>
-	bool ReadFromIOStream(SDL::IOStream &file, std::vector<T> &buffer)
+	static bool ReadFromIOStream(SDL::IOStream &file, std::vector<T> &buffer)
 	{
 		for (auto &value : buffer)
 			 if (!ReadFromIOStream<T, S>(file, value))
@@ -72,7 +72,7 @@ public:
 	}
 
 	template<typename T, std::size_t S>
-	std::optional<std::vector<T>> LoadFileToBuffer(SDL::IOStream &file)
+	static std::optional<std::vector<T>> LoadFileToBuffer(SDL::IOStream &file)
 	{
 		const Sint64 size_s64 = SDL_GetIOSize(file) / S;
 
@@ -103,7 +103,7 @@ public:
 	}
 
 	template<typename T, std::size_t S>
-	std::optional<std::vector<T>> LoadFileToBuffer(const std::filesystem::path &path)
+	static std::optional<std::vector<T>> LoadFileToBuffer(const std::filesystem::path &path)
 	{
 		SDL::IOStream file(path, "rb");
 

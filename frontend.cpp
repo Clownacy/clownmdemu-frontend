@@ -1307,7 +1307,7 @@ static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &
 
 	// Failing that, just load it as a raw binary.
 	if (!file_buffer.has_value())
-		file_buffer = file_utilities.LoadFileToBuffer<cc_u16l, 2>(file);
+		file_buffer = FileUtilities::LoadFileToBuffer<cc_u16l, 2>(file);
 
 	if (!file_buffer.has_value())
 	{
@@ -1388,7 +1388,7 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 
 static bool LoadSaveState(SDL::IOStream &file)
 {
-	const auto file_buffer = file_utilities.LoadFileToBuffer<unsigned char, 1>(file);
+	const auto file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(file);
 
 	if (!file_buffer.has_value())
 	{
