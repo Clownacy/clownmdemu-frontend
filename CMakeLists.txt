@@ -176,9 +176,10 @@ target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui
 # Link libraries #
 ##################
 
-# Link clownmdemu-frontend-common
+# Link clownmdemu-frontend-common and miniz
+set(MINIZ_ARCHIVE_APIS ON)
 add_subdirectory("common" EXCLUDE_FROM_ALL)
-target_link_libraries(clownmdemu clownmdemu-frontend-common)
+target_link_libraries(clownmdemu clownmdemu-frontend-common miniz)
 
 # Link SDL
 find_package(SDL3 3.2.0 CONFIG COMPONENTS SDL3)
@@ -216,12 +217,6 @@ target_link_libraries(clownmdemu fmt::fmt)
 # Link Lyra
 add_subdirectory("libraries/Lyra" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu lyra)
-
-# Hack to remove `MINIZ_NO_ARCHIVE_APIS` definition from the miniz library, so that it can be used to decompress ZIP files.
-# TODO: Replace this whenever CMake's devs get off their arses and add `target_remove_definitions`.
-get_target_property(MINIZ_COMPILE_DEFINITIONS miniz COMPILE_DEFINITIONS)
-list(FILTER MINIZ_COMPILE_DEFINITIONS EXCLUDE REGEX [[^MINIZ_NO_ARCHIVE_APIS]])
-set_property(TARGET miniz PROPERTY COMPILE_DEFINITIONS ${MINIZ_COMPILE_DEFINITIONS})
 
 ################
 # Installation #
