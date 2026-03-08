@@ -1300,38 +1300,32 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_
 
 static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
 {
-	std::optional<std::vector<cc_u16l>> file_buffer;
-
-	// First try loading the file as a ZIP file.
-	file_buffer = FileUtilities::LoadZIPFileToBuffer(file, 0); // Assume that it's the first file in the archive.
-
-	// Failing that, just load it as a raw binary.
-	if (!file_buffer.has_value())
-		file_buffer = FileUtilities::LoadFileToBuffer<cc_u16l, 2>(file);
-
-	if (!file_buffer.has_value())
+	if (file)
 	{
-		debug_log.Log("Could not load the cartridge file");
-		window->ShowErrorMessageBox("Failed to load the cartridge file.");
-		return false;
+		std::optional<std::vector<cc_u16l>> file_buffer;
+
+		// First try loading the file as a ZIP file.
+		file_buffer = FileUtilities::LoadZIPFileToBuffer(file, 0); // Assume that it's the first file in the archive.
+
+		// Failing that, just load it as a raw binary.
+		if (!file_buffer.has_value())
+			file_buffer = FileUtilities::LoadFileToBuffer<cc_u16l, 2>(file);
+
+		if (file_buffer.has_value())
+		{
+			LoadCartridgeFile(path, std::move(*file_buffer));
+			return true;
+		}
 	}
 
-	LoadCartridgeFile(path, std::move(*file_buffer));
-
-	return true;
+	debug_log.Log("Could not load the cartridge file");
+	window->ShowErrorMessageBox("Failed to load the cartridge file.");
+	return false;
 }
 
 static bool LoadCartridgeFile(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "rb");
-
-	if (!file)
-	{
-		debug_log.Log("Could not load the cartridge file");
-		window->ShowErrorMessageBox("Failed to load the cartridge file.");
-		return false;
-	}
-
 	return LoadCartridgeFile(path, file);
 }
 
