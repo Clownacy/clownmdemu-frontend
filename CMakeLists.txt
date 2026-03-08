@@ -166,6 +166,9 @@ target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS I
 # Allow performing mathematical operations on vectors
 target_compile_definitions(clownmdemu PRIVATE IMGUI_DEFINE_MATH_OPERATORS)
 
+# Remove the useless (and ugly) default font
+target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_DEFAULT_FONT)
+
 # 'ImTextureID' needs to be a pointer, not an integer
 target_compile_definitions(clownmdemu PRIVATE ImTextureID=void*)
 
