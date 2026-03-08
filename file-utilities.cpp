@@ -1,6 +1,7 @@
 #include "file-utilities.h"
 
 #include <climits>
+#include <cstdlib>
 #include <vector>
 
 #ifdef __EMSCRIPTEN__
@@ -8,6 +9,7 @@
 #endif
 #include "libraries/imgui/misc/cpp/imgui_stdlib.h"
 
+#include "common/clowncd/disc/chd/libchdr/deps/lzma-25.01/include/LzmaDec.h"
 #include "common/clowncd/disc/chd/libchdr/deps/miniz-3.1.1/miniz.h"
 #include "common/core/clowncommon/clowncommon.h"
 
@@ -321,4 +323,29 @@ std::optional<std::vector<cc_u16l>> FileUtilities::LoadZIPFileToBuffer(SDL::IOSt
 	SDL_SeekIO(file, starting_position, SDL_IO_SEEK_SET);
 
 	return file_buffer;
+}
+
+std::optional<std::vector<unsigned char>> FileUtilities::DecompressLZMABuffer(const unsigned char* const input_buffer, const std::size_t input_buffer_size, const std::size_t uncompressed_size)
+{
+	std::optional<std::vector<unsigned char>> decompressed_buffer(uncompressed_size);
+
+	SizeT output_written = std::size(*decompressed_buffer), input_read = input_buffer_size;
+	constexpr unsigned int header_size = 13;
+	ELzmaStatus status;
+	static constexpr ISzAlloc allocation = {
+		[]([[maybe_unused]] const ISzAllocPtr p, const std::size_t size)
+		{
+			return std::malloc(size);
+		},
+		[]([[maybe_unused]] const ISzAllocPtr p, void* const address)
+		{
+			std::free(address);
+		}
+	};
+	const auto result = LzmaDecode(std::data(*decompressed_buffer), &output_written, input_buffer + header_size, &input_read, input_buffer, header_size, LZMA_FINISH_END, &status, &allocation);
+
+	if (result != SZ_OK)
+		decompressed_buffer = std::nullopt;
+
+	return decompressed_buffer;
 }

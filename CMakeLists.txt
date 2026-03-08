@@ -69,8 +69,7 @@ add_executable(clownmdemu WIN32
 	"windows/debug-z80.h"
 	"windows/disassembler.cpp"
 	"windows/disassembler.h"
-	"windows/common/inconsolata-regular.h"
-	"windows/common/noto-sans-jp-regular.h"
+	"windows/common/fonts-compressed.h"
 	"windows/common/winapi.cpp"
 	"windows/common/winapi.h"
 	"windows/common/window.cpp"
@@ -179,10 +178,10 @@ target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui
 # Link libraries #
 ##################
 
-# Link clownmdemu-frontend-common and miniz
-set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE)
+# Link clownmdemu-frontend-common, miniz, and chdr-lzma
+set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
 add_subdirectory("common" EXCLUDE_FROM_ALL)
-target_link_libraries(clownmdemu clownmdemu-frontend-common miniz)
+target_link_libraries(clownmdemu clownmdemu-frontend-common miniz chdr-lzma)
 
 # Link SDL
 find_package(SDL3 3.2.0 CONFIG COMPONENTS SDL3)
