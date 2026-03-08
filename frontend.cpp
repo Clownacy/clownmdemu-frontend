@@ -1388,17 +1388,26 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 
 static bool LoadSaveState(SDL::IOStream &file)
 {
-	const auto file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(file);
-
-	if (!file_buffer.has_value())
+	if (file)
 	{
-		debug_log.Log("Could not load save state file");
-		window->ShowErrorMessageBox("Could not load save state file.");
-		return false;
+		const auto file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(file);
+
+		if (file_buffer.has_value())
+			return LoadSaveState(*file_buffer);
 	}
 
-	return LoadSaveState(*file_buffer);
+	debug_log.Log("Could not load save state file");
+	window->ShowErrorMessageBox("Could not load save state file.");
+	return false;
 }
+
+#if 0
+static bool LoadSaveState(const std::filesystem::path &path)
+{
+	SDL::IOStream file(path, "rb");
+	return LoadSaveState(file);
+}
+#endif
 
 #ifdef FILE_PATH_SUPPORT
 static bool SaveState(const std::filesystem::path &path)
@@ -2633,25 +2642,16 @@ void Frontend::Update()
 		}
 		else
 		{
-			auto file_buffer = file_utilities.LoadFileToBuffer<unsigned char, 1>(drag_and_drop_filename);
+			const auto &file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(drag_and_drop_filename);
 
-			if (file_buffer.has_value())
+			if (file_buffer.has_value() && emulator->ValidateSaveStateFile(*file_buffer))
 			{
-				if (emulator->ValidateSaveStateFile(*file_buffer))
-				{
-					if (emulator_on)
-						LoadSaveState(*file_buffer);
-				}
-				else
-				{
-					auto cartridge_file_buffer = file_utilities.LoadFileToBuffer<cc_u16l, 2>(drag_and_drop_filename);
-
-					if (cartridge_file_buffer.has_value())
-					{
-						LoadCartridgeFile(drag_and_drop_filename, std::move(*cartridge_file_buffer));
-						emulator->SetPaused(false);
-					}
-				}
+				if (emulator_on)
+					LoadSaveState(*file_buffer);
+			}
+			else if (LoadCartridgeFile(drag_and_drop_filename))
+			{
+				emulator->SetPaused(false);
 			}
 		}
 
