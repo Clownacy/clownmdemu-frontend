@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 #include "../../../file-utilities.h"
-#include "fonts-compressed.h"
+#include "compressed-fonts.h"
 
 
 ///////////
@@ -25,7 +25,7 @@ unsigned int WindowWithDearImGui::CalculateFontSize()
 
 void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 {
-	static auto decompressed_buffer = FileUtilities::DecompressLZMABuffer(std::data(fonts_compressed_data), std::size(fonts_compressed_data), fonts_uncompressed_size);
+	static auto decompressed_buffer = FileUtilities::DecompressLZMABuffer(std::data(CompressedFonts::data), std::size(CompressedFonts::data), CompressedFonts::uncompressed_size);
 
 	ImGuiIO &io = ImGui::GetIO();
 
@@ -35,10 +35,10 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 	font_cfg.FontDataOwnedByAtlas = false;
 
 	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Noto Sans JP Regular, {}px", font_size).out = '\0';
-	io.Fonts->AddFontFromMemoryTTF(std::data(decompressed_buffer.value()) + fonts_nono_sans_jp_position, fonts_nono_sans_jp_uncompressed_size, static_cast<float>(font_size), &font_cfg);
+	io.Fonts->AddFontFromMemoryTTF(std::data(decompressed_buffer.value()) + CompressedFonts::NotoSansJP::position, CompressedFonts::NotoSansJP::uncompressed_size, static_cast<float>(font_size), &font_cfg);
 
 	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Inconsolata Regular, {}px", font_size).out = '\0';
-	monospace_font = io.Fonts->AddFontFromMemoryTTF(std::data(decompressed_buffer.value()) + fonts_inconsolata_position, fonts_inconsolata_uncompressed_size, static_cast<float>(font_size), &font_cfg);
+	monospace_font = io.Fonts->AddFontFromMemoryTTF(std::data(decompressed_buffer.value()) + CompressedFonts::Inconsolata::position, CompressedFonts::Inconsolata::uncompressed_size, static_cast<float>(font_size), &font_cfg);
 }
 
 
