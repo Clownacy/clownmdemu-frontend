@@ -3079,30 +3079,16 @@ void Frontend::Update()
 					// Fall-back on fit scaling when the window is smaller than the screen.
 					[[fallthrough]];
 				case ScreenScaling::FIT:
-					if (work_width > work_height * destination_width / destination_height)
-					{
-						destination_width_scaled = work_height * destination_width / destination_height;
-						destination_height_scaled = work_height;
-					}
-					else
-					{
-						destination_width_scaled = work_width;
-						destination_height_scaled = work_width * destination_height / destination_width;
-					}
-
-					break;
-
 				case ScreenScaling::FILL:
-					if (work_width > work_height * destination_width / destination_height)
-					{
-						destination_width_scaled = work_width;
-						destination_height_scaled = work_width * destination_height / destination_width;
-
-					}
-					else
+					if ((work_width > work_height * destination_width / destination_height) != (screen_scaling == ScreenScaling::FILL))
 					{
 						destination_width_scaled = work_height * destination_width / destination_height;
 						destination_height_scaled = work_height;
+					}
+					else
+					{
+						destination_width_scaled = work_width;
+						destination_height_scaled = work_width * destination_height / destination_width;
 					}
 					
 					const auto &ClampDimension = [&](unsigned int &destination_dimension, const unsigned int dimension_index)
