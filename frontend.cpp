@@ -1792,7 +1792,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "fullscreen", window->GetFullscreen());
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
-		PRINT_INTEGER_OPTION(file, "screen-scaling", screen_scaling);
+		PRINT_INTEGER_OPTION(file, "screen-scaling", static_cast<int>(screen_scaling));
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_INTEGER_OPTION(file, "widescreen-tiles", emulator->GetWidescreenTiles());
 	#ifndef __EMSCRIPTEN__
@@ -3076,8 +3076,8 @@ void Frontend::Update()
 						break;
 					}
 				}
-				// Fall-back on fit scaling when the window is smaller than the screen.
-				[[fallthrough]];
+					// Fall-back on fit scaling when the window is smaller than the screen.
+					[[fallthrough]];
 				case ScreenScaling::FIT:
 					if (work_width > work_height * destination_width / destination_height)
 					{
@@ -3109,8 +3109,6 @@ void Frontend::Update()
 					{
 						if (destination_dimension > size_of_display_region[dimension_index])
 						{
-							const auto delta = size_of_display_region[dimension_index] - destination_dimension;
-
 							const auto new_size = uv1[dimension_index] * size_of_display_region[dimension_index] / destination_dimension;
 							uv0[dimension_index] = (uv1[dimension_index] - new_size) / 2;
 							uv1[dimension_index] = uv0[dimension_index] + new_size;
