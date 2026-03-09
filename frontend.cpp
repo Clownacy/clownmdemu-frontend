@@ -3082,22 +3082,34 @@ void Frontend::Update()
 					break;
 
 				case ScreenScaling::FILL:
-					destination_width_scaled = work_width;
-					destination_height_scaled = work_height;
-
 					if (work_width > work_height * destination_width / destination_height)
 					{
-						const auto new_uv1_y = uv1.x * destination_height_scaled / destination_width_scaled;
-						uv0.y = (uv1.y - new_uv1_y) / 2;
-						uv1.y = uv0.y + new_uv1_y;
+						destination_width_scaled = work_width;
+						destination_height_scaled = work_width * destination_height / destination_width;
 
 					}
 					else
 					{
-						const auto new_uv1_x = uv1.y * destination_width_scaled / destination_height_scaled;
-						uv0.x = (uv1.x - new_uv1_x) / 2;
-						uv1.x = uv0.x + new_uv1_x;
+						destination_width_scaled = work_height * destination_width / destination_height;
+						destination_height_scaled = work_height;
 					}
+					
+					const auto &ClampDimension = [&](unsigned int &destination_dimension, const unsigned int dimension_index)
+					{
+						if (destination_dimension > size_of_display_region[dimension_index])
+						{
+							const auto delta = size_of_display_region[dimension_index] - destination_dimension;
+
+							const auto new_size = uv1[dimension_index] * size_of_display_region[dimension_index] / destination_dimension;
+							uv0[dimension_index] = (uv1[dimension_index] - new_size) / 2;
+							uv1[dimension_index] = uv0[dimension_index] + new_size;
+
+							destination_dimension = size_of_display_region[dimension_index];
+						}
+					};
+					
+					ClampDimension(destination_width_scaled, 0);
+					ClampDimension(destination_height_scaled, 1);
 
 					break;
 			}
