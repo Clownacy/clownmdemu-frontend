@@ -3180,17 +3180,9 @@ void Frontend::Update()
 	DisplayWindow(cram_viewer_window, vdp.cram);
 	DisplayWindow(vsram_viewer_window, vdp.vsram);
 	DisplayWindow(sprite_plane_visualiser_window);
-	{
-		const auto window_plane_width = vdp.h40_enabled ? 64 : 32;
-		const auto window_plane_height = 32;
-		DisplayWindow(window_plane_visualiser_window, vdp.window_address, window_plane_width, window_plane_height);
-	}
-	{
-		const auto scrolling_plane_width = 1 << vdp.plane_width_shift;
-		const auto scrolling_plane_height = vdp.plane_height_bitmask + 1;
-		DisplayWindow(plane_a_visualiser_window, vdp.plane_a_address, scrolling_plane_width, scrolling_plane_height);
-		DisplayWindow(plane_b_visualiser_window, vdp.plane_b_address, scrolling_plane_width, scrolling_plane_height);
-	}
+	DisplayWindow(window_plane_visualiser_window, DebugVDP::Plane::WINDOW);
+	DisplayWindow(plane_a_visualiser_window, DebugVDP::Plane::A);
+	DisplayWindow(plane_b_visualiser_window, DebugVDP::Plane::B);
 	DisplayWindow(tile_visualiser_window);
 	DisplayWindow(colour_visualiser_window);
 	DisplayWindow(stamp_visualiser_window);

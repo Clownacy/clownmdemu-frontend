@@ -384,6 +384,8 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const std::size_t piece_height,
 	const DrawMapPiece &draw_piece,
 	const MapPieceTooltip &piece_tooltip,
+	const DrawOverlay &draw_overlay,
+	bool* const scroll_overlay,
 	const bool force_regenerate)
 {
 	const auto derived = static_cast<Derived*>(this);
@@ -399,6 +401,12 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 		ImGui::InputInt("Zoom", &derived->scale);
 		if (derived->scale < 1)
 			derived->scale = 1;
+
+		if (scroll_overlay != nullptr)
+		{
+			ImGui::SameLine();
+			ImGui::Checkbox("Scroll Overlay", scroll_overlay);
+		}
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
@@ -432,15 +440,22 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				piece_tooltip(piece_x, piece_y);
 				ImGui::EndTooltip();
 			}
+
+			if (draw_overlay)
+				draw_overlay(image_position);
 		}
 
 		ImGui::EndChild();
 	}
 }
 
-void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const std::size_t plane_width, const std::size_t plane_height)
+void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 {
 	const auto &vdp = Frontend::emulator->GetVDPState();
+
+	const cc_u16l plane_address = plane == Plane::A ? vdp.plane_a_address : plane == Plane::B ? vdp.plane_b_address : vdp.window_address;
+	const std::size_t plane_width = plane == Plane::WINDOW ? vdp.h40_enabled ? 64 : 32 : 1 << vdp.plane_width_shift;
+	const std::size_t plane_height = plane == Plane::WINDOW ? 32 : vdp.plane_height_bitmask + 1;
 
 	const auto maximum_plane_width_in_pixels = 128 * tile_width; // 128 is the maximum plane size
 	const auto maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
@@ -470,7 +485,40 @@ void DebugVDP::PlaneViewer::DisplayInternal(const cc_u16l plane_address, const s
 			const cc_u16f packed_tile_metadata = VDP_ReadVRAMWord(&vdp, plane_address + (y * plane_width + x) * 2);
 			const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 			ImGui::TextFormatted("Tile Index: 0x{:X}" "\n" "Palette Line: {}" "\n" "X-Flip: {}" "\n" "Y-Flip: {}" "\n" "Priority: {}", tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
-		}
+		},
+		[&](const ImVec2 &cursor_position)
+		{
+			if (plane == Plane::WINDOW || !scroll_overlay)
+				return;
+
+			const auto plane_width_in_pixels = plane_width * VDP_TILE_WIDTH;
+			const auto dpi_scale = GetWindow().GetDPIScale();
+			const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
+			const auto pixel_size = ImVec2(scale, scale << vdp.double_resolution_enabled);
+			const auto scanline_size = ImVec2(pixel_size.x * Frontend::emulator->GetCurrentScreenWidth(), pixel_size.y);
+			auto &draw_list = *ImGui::GetWindowDrawList();
+
+			for (unsigned int i = 0; i < total_scanlines; ++i)
+			{
+				const int hscroll = VDP_ReadVRAMWord(&vdp, vdp.hscroll_address + (i & vdp.hscroll_mask) * 4 + (plane == Plane::A ? 0 : 2)) & (plane_width_in_pixels - 1);
+
+				const auto &DoLine = [&](const int offset)
+				{
+					auto min = ImVec2((offset - hscroll) * pixel_size.x, i * scanline_size.y);
+					auto max = min + scanline_size;
+
+					min.x = std::max(min.x, 0.0f);
+					max.x = std::min(max.x, plane_width_in_pixels * pixel_size.x);
+
+					if (min.x < max.x && min.y < max.y)
+						draw_list.AddRectFilled(cursor_position + min, cursor_position + max, IM_COL32(0xFF, 0, 0, 0x7F));
+				};
+
+				DoLine(0);
+				DoLine(plane_width_in_pixels);
+			}
+		},
+		plane == Plane::WINDOW ? nullptr : &scroll_overlay
 	);
 }
 
@@ -559,6 +607,8 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 
 			ImGui::TextFormatted("Stamp Index: 0x{:X}" "\n" "Angle: {} degrees" "\n" "Horizontal Flip: {}", stamp_index, stamp_metadata.angle * 90, stamp_metadata.horizontal_flip ? "True" : "False");
 		},
+		{},
+		nullptr,
 		options_changed
 	);
 }

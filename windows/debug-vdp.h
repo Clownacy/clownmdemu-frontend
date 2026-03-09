@@ -19,6 +19,14 @@ namespace DebugVDP
 	using DrawMapPiece = std::function<void(SDL::Renderer &renderer, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
 	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, SDL::Pixel *pixels, int pitch)>;
+	using DrawOverlay = std::function<void(const ImVec2 &cursor_position)>;
+
+	enum class Plane
+	{
+		WINDOW,
+		A,
+		B
+	};
 
 	struct BrightnessAndPaletteLineSettings
 	{
@@ -142,6 +150,8 @@ namespace DebugVDP
 			std::size_t piece_height,
 			const DrawMapPiece &draw_piece,
 			const MapPieceTooltip &piece_tooltip,
+			const DrawOverlay &draw_overlay = {},
+			bool *scroll_overlay = nullptr,
 			bool force_regenerate = false);
 
 	public:
@@ -157,9 +167,10 @@ namespace DebugVDP
 		using Base = MapViewer<PlaneViewer>;
 
 		int scale = 2;
+		bool scroll_overlay = false;
 		RegeneratingPieces regenerating_pieces;
 
-		void DisplayInternal(cc_u16l plane_address, std::size_t plane_width, std::size_t plane_height);
+		void DisplayInternal(Plane plane);
 
 	public:
 		using Base::MapViewer;
