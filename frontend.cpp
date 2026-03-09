@@ -632,14 +632,42 @@ private:
 			ImGui::SetNextItemWidth(-FLT_MIN); \
 		} while (0)
 
+		const auto &ComboWithToolTips = [](const char* const label, int &current_item, const char* const items[], const char* const tooltips[], const int items_count)
+		{
+			bool changed = false;
+
+			if (ImGui::BeginCombo(label, items[current_item]))
+			{
+				for (int i = 0; i < items_count; ++i)
+				{
+					const bool selected = current_item == i;
+					if (ImGui::Selectable(items[i], selected))
+					{
+						current_item = i;
+						changed = true;
+					}
+
+					DoToolTip(tooltips[i]);
+
+					if (selected)
+						ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::EndCombo();
+			}
+
+			DoToolTip(tooltips[current_item]);
+
+			return changed;
+		};
+
 	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
 		do { \
 			DO_FORM_LAYOUT(LABEL, LABEL_TOOLTIP); \
 			const auto option = Frontend::emulator->Get##OPTION(); \
 			auto option_int = static_cast<int>(option); \
-			if (ImGui::Combo("##" LABEL, &option_int, std::data(OPTION_NAMES), std::size(OPTION_NAMES))) \
+			if (ComboWithToolTips("##" LABEL, option_int, std::data(OPTION_NAMES), std::data(OPTION_TOOLTIPS), std::size(OPTION_NAMES))) \
 				Frontend::emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(option_int)); \
-			DoToolTip(OPTION_TOOLTIPS[option_int]); \
 		} while (0)
 
 		if (ImGui::BeginTable("Console Options", 3))
@@ -724,9 +752,8 @@ private:
 		DO_FORM_LAYOUT("Scaling", "How to fit the screen to the window.");
 
 		auto scaling_int = static_cast<int>(screen_scaling);
-		if (ImGui::Combo("##Scaling", &scaling_int, std::data(scaling_names), std::size(scaling_names)))
+		if (ComboWithToolTips("##Scaling", scaling_int, std::data(scaling_names), std::data(scaling_tooltips), std::size(scaling_names)))
 			screen_scaling = static_cast<ScreenScaling>(scaling_int);
-		DoToolTip(scaling_tooltips[scaling_int]);
 
 		DO_FORM_LAYOUT(
 			"Widescreen Hack",
