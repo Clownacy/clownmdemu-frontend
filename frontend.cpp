@@ -3025,8 +3025,21 @@ void Frontend::Update()
 			unsigned int destination_width;
 			unsigned int destination_height;
 
-			destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetCurrentWidescreenTiles() * 2) * VDP_TILE_WIDTH;
-			destination_height = emulator->GetCurrentScreenHeight();
+			switch (screen_scaling)
+			{
+				case ScreenScaling::PIXEL_PERFECT:
+					destination_width = emulator->GetCurrentScreenWidth();
+					destination_height = emulator->GetCurrentScreenHeight();
+					break;
+
+				case ScreenScaling::FIT:
+				case ScreenScaling::FILL:
+					// Correct the aspect ratio of the rendered frame.
+					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
+					destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetCurrentWidescreenTiles() * 2) * VDP_TILE_WIDTH;
+					destination_height = emulator->GetCurrentScreenHeight();
+					break;
+			}
 
 			switch (destination_height)
 			{
@@ -3066,8 +3079,6 @@ void Frontend::Update()
 				// Fall-back on fit scaling when the window is smaller than the screen.
 				[[fallthrough]];
 				case ScreenScaling::FIT:
-					// Correct the aspect ratio of the rendered frame.
-					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
 					if (work_width > work_height * destination_width / destination_height)
 					{
 						destination_width_scaled = work_height * destination_width / destination_height;
