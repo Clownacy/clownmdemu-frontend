@@ -3086,8 +3086,6 @@ void Frontend::Update()
 			if (emulator->GetVDPState().double_resolution_enabled && !tall_double_resolution_mode)
 				destination_size.x *= 2;
 
-			ImVec2 destination_size_scaled;
-
 			ImVec2 uv0 = {0, 0};
 			ImVec2 uv1 = {static_cast<float>(emulator->GetCurrentScreenWidth()), static_cast<float>(emulator->GetCurrentScreenHeight())};
 
@@ -3100,7 +3098,7 @@ void Frontend::Update()
 
 					if (framebuffer_upscale_factor != 0)
 					{
-						destination_size_scaled = destination_size * framebuffer_upscale_factor;
+						destination_size *= framebuffer_upscale_factor;
 						break;
 					}
 				}
@@ -3110,24 +3108,24 @@ void Frontend::Update()
 				case ScreenScaling::FILL:
 					if ((size_of_display_region.x > size_of_display_region.y * destination_size.x / destination_size.y) != (screen_scaling == ScreenScaling::FILL))
 					{
-						destination_size_scaled.x = size_of_display_region.y * destination_size.x / destination_size.y;
-						destination_size_scaled.y = size_of_display_region.y;
+						destination_size.x = size_of_display_region.y * destination_size.x / destination_size.y;
+						destination_size.y = size_of_display_region.y;
 					}
 					else
 					{
-						destination_size_scaled.x = size_of_display_region.x;
-						destination_size_scaled.y = size_of_display_region.x * destination_size.y / destination_size.x;
+						destination_size.y = size_of_display_region.x * destination_size.y / destination_size.x;
+						destination_size.x = size_of_display_region.x;
 					}
 					
 					const auto &ClampDimension = [&](const unsigned int dimension_index)
 					{
-						if (destination_size_scaled[dimension_index] > size_of_display_region[dimension_index])
+						if (destination_size[dimension_index] > size_of_display_region[dimension_index])
 						{
-							const auto new_size = uv1[dimension_index] * size_of_display_region[dimension_index] / destination_size_scaled[dimension_index];
+							const auto new_size = uv1[dimension_index] * size_of_display_region[dimension_index] / destination_size[dimension_index];
 							uv0[dimension_index] = (uv1[dimension_index] - new_size) / 2;
 							uv1[dimension_index] = uv0[dimension_index] + new_size;
 
-							destination_size_scaled[dimension_index] = size_of_display_region[dimension_index];
+							destination_size[dimension_index] = size_of_display_region[dimension_index];
 						}
 					};
 					
@@ -3137,12 +3135,12 @@ void Frontend::Update()
 					break;
 			}
 
-			// Center the framebuffer in the available region.
-			ImGui::SetCursorPos(ImGui::GetCursorPos() + (size_of_display_region - destination_size_scaled) / 2);
+			// Centre the framebuffer in the available region.
+			ImGui::SetCursorPos(ImGui::GetCursorPos() + (size_of_display_region - destination_size) / 2);
 
 			// Draw the upscaled framebuffer in the window.
 			const ImVec2 uv_div = {static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(FRAMEBUFFER_HEIGHT)};
-			ImGui::Image(ImTextureRef(window->framebuffer_texture), destination_size_scaled, uv0 / uv_div, uv1 / uv_div);
+			ImGui::Image(ImTextureRef(window->framebuffer_texture), destination_size, uv0 / uv_div, uv1 / uv_div);
 
 			DrawStatusIndicator(display_position, size_of_display_region);
 		}
