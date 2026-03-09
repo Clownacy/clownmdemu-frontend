@@ -622,6 +622,7 @@ private:
 	{
 		ImGui::SeparatorText("Console");
 
+		// TODO: Convert these horrible macros to lambdas.
 	#define DO_FORM_LAYOUT(LABEL, LABEL_TOOLTIP) \
 		do { \
 			const auto &start_position_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 3; \
@@ -632,22 +633,28 @@ private:
 			ImGui::SetNextItemWidth(-FLT_MIN); \
 		} while (0)
 
-		const auto &ComboWithToolTips = [](const char* const label, int &current_item, const char* const items[], const char* const tooltips[], const int items_count)
+		struct ComboItemAndToolTip
+		{
+			const char* label;
+			const char* tooltip;
+		};
+
+		const auto &ComboWithToolTips = [](const char* const label, int &current_item, const ComboItemAndToolTip items_and_tooltip[], const int items_and_tooltip_count)
 		{
 			bool changed = false;
 
-			if (ImGui::BeginCombo(label, items[current_item]))
+			if (ImGui::BeginCombo(label, items_and_tooltip[current_item].label))
 			{
-				for (int i = 0; i < items_count; ++i)
+				for (int i = 0; i < items_and_tooltip_count; ++i)
 				{
 					const bool selected = current_item == i;
-					if (ImGui::Selectable(items[i], selected))
+					if (ImGui::Selectable(items_and_tooltip[i].label, selected))
 					{
 						current_item = i;
 						changed = true;
 					}
 
-					DoToolTip(tooltips[i]);
+					DoToolTip(items_and_tooltip[i].tooltip);
 
 					if (selected)
 						ImGui::SetItemDefaultFocus();
@@ -656,17 +663,17 @@ private:
 				ImGui::EndCombo();
 			}
 
-			DoToolTip(tooltips[current_item]);
+			DoToolTip(items_and_tooltip[current_item].tooltip);
 
 			return changed;
 		};
 
-	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
+	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES_AND_TOOLTIPS, OPTION) \
 		do { \
 			DO_FORM_LAYOUT(LABEL, LABEL_TOOLTIP); \
 			const auto option = Frontend::emulator->Get##OPTION(); \
 			auto option_int = static_cast<int>(option); \
-			if (ComboWithToolTips("##" LABEL, option_int, std::data(OPTION_NAMES), std::data(OPTION_TOOLTIPS), std::size(OPTION_NAMES))) \
+			if (ComboWithToolTips("##" LABEL, option_int, std::data(OPTION_NAMES_AND_TOOLTIPS), std::size(OPTION_NAMES_AND_TOOLTIPS))) \
 				Frontend::emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(option_int)); \
 		} while (0)
 
@@ -737,22 +744,25 @@ private:
 
 		ImGui::SeparatorText("Video");
 
-		static const std::array<const char*, 3> scaling_names = {
-			"Fit",
-			"Fill",
-			"Pixel-Perfect",
-		};
-
-		static const std::array<const char*, 3> scaling_tooltips = {
-			"Adds black bars around the screen\nto fit it within the window.",
-			"Crops the screen to fill the entire window.\nPairs well with the widescreen hack.",
-			"Preserves pixel aspect ratio,\navoiding non-square pixels.",
-		};
+		static const std::array<ComboItemAndToolTip, 3> scaling_types = {{
+			{
+				"Fit",
+				"Adds black bars around the screen\nto fit it within the window."
+			},
+			{
+				"Fill",
+				"Crops the screen to fill the entire window.\nPairs well with the widescreen hack."
+			},
+			{
+				"Pixel-Perfect",
+				"Preserves pixel aspect ratio,\navoiding non-square pixels."
+			},
+		}};
 
 		DO_FORM_LAYOUT("Scaling", "How to fit the screen to the window.");
 
 		auto scaling_int = static_cast<int>(screen_scaling);
-		if (ComboWithToolTips("##Scaling", scaling_int, std::data(scaling_names), std::data(scaling_tooltips), std::size(scaling_names)))
+		if (ComboWithToolTips("##Scaling", scaling_int, std::data(scaling_types), std::size(scaling_types)))
 			screen_scaling = static_cast<ScreenScaling>(scaling_int);
 
 		DO_FORM_LAYOUT(
@@ -839,19 +849,22 @@ private:
 
 		ImGui::SeparatorText("Control Pads");
 
-		static const std::array<const char*, 3> input_protocol_names = {
-			"Standard",
-			"Multi",
-			"Extra",
-		};
+		static const std::array<ComboItemAndToolTip, 3> input_protocols = {{
+			{
+				"Standard",
+				"Standard input protocol.\nShould work with all games.",
+			},
+			{
+				"Multi",
+				"Sega's multitap protocol.\nOnly works with certain games.",
+			},
+			{
+				"Extra",
+				"Electronic Arts' multitap protocol.\nOnly works with certain games.",
+			}
+		}};
 
-		static const std::array<const char*, 3> input_protocol_tooltips = {
-			"Standard input protocol.\nShould work with all games.",
-			"Sega's multitap protocol.\nOnly works with certain games.",
-			"Electronic Arts' multitap protocol.\nOnly works with certain games.",
-		};
-
-		DO_FORM_OPTION("Protocol", "Which method to read control pad inputs.", input_protocol_names, input_protocol_tooltips, ControllerProtocol);
+		DO_FORM_OPTION("Protocol", "Which method to read control pad inputs.", input_protocols, ControllerProtocol);
 
 		if (ImGui::BeginTable("Control Pad Devices", 2, ImGuiTableFlags_Borders))
 		{
