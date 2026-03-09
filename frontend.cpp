@@ -3019,45 +3019,28 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			const unsigned int work_width = static_cast<unsigned int>(size_of_display_region.x);
-			const unsigned int work_height = static_cast<unsigned int>(size_of_display_region.y);
-
-			unsigned int destination_width;
-			unsigned int destination_height;
+			ImVec2 destination_size;
 
 			switch (screen_scaling)
 			{
 				case ScreenScaling::PIXEL_PERFECT:
-					destination_width = emulator->GetCurrentScreenWidth();
-					destination_height = emulator->GetCurrentScreenHeight();
+					destination_size.x = emulator->GetCurrentScreenWidth();
+					destination_size.y = emulator->GetCurrentScreenHeight();
 					break;
 
 				case ScreenScaling::FIT:
 				case ScreenScaling::FILL:
 					// Correct the aspect ratio of the rendered frame.
 					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
-					destination_width = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetCurrentWidescreenTiles() * 2) * VDP_TILE_WIDTH;
-					destination_height = emulator->GetCurrentScreenHeight();
+					destination_size.x = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetCurrentWidescreenTiles() * 2) * VDP_TILE_WIDTH;
+					destination_size.y = emulator->GetCurrentScreenHeight();
 					break;
 			}
 
-			switch (destination_height)
-			{
-				default:
-					assert(false);
-					[[fallthrough]];
-				case VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT:
-				case VDP_V30_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT:
-					break;
+			if (emulator->GetVDPState().double_resolution_enabled && !tall_double_resolution_mode)
+				destination_size.x *= 2;
 
-				case VDP_V28_SCANLINES_IN_TILES * VDP_INTERLACE_MODE_2_TILE_HEIGHT:
-				case VDP_V30_SCANLINES_IN_TILES * VDP_INTERLACE_MODE_2_TILE_HEIGHT:
-					destination_width <<= tall_double_resolution_mode ? 0 : 1;
-					break;
-			}
-
-			unsigned int destination_width_scaled;
-			unsigned int destination_height_scaled;
+			ImVec2 destination_size_scaled;
 
 			ImVec2 uv0 = {0, 0};
 			ImVec2 uv1 = {static_cast<float>(emulator->GetCurrentScreenWidth()), static_cast<float>(emulator->GetCurrentScreenHeight())};
@@ -3067,12 +3050,11 @@ void Frontend::Update()
 				case ScreenScaling::PIXEL_PERFECT:
 				{
 					// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
-					const unsigned int framebuffer_upscale_factor = std::min(work_width / destination_width, work_height / destination_height);
+					const unsigned int framebuffer_upscale_factor = std::min(size_of_display_region.x / destination_size.x, size_of_display_region.y / destination_size.y);
 
 					if (framebuffer_upscale_factor != 0)
 					{
-						destination_width_scaled = destination_width * framebuffer_upscale_factor;
-						destination_height_scaled = destination_height * framebuffer_upscale_factor;
+						destination_size_scaled = destination_size * framebuffer_upscale_factor;
 						break;
 					}
 				}
@@ -3080,42 +3062,41 @@ void Frontend::Update()
 					[[fallthrough]];
 				case ScreenScaling::FIT:
 				case ScreenScaling::FILL:
-					if ((work_width > work_height * destination_width / destination_height) != (screen_scaling == ScreenScaling::FILL))
+					if ((size_of_display_region.x > size_of_display_region.y * destination_size.x / destination_size.y) != (screen_scaling == ScreenScaling::FILL))
 					{
-						destination_width_scaled = work_height * destination_width / destination_height;
-						destination_height_scaled = work_height;
+						destination_size_scaled.x = size_of_display_region.y * destination_size.x / destination_size.y;
+						destination_size_scaled.y = size_of_display_region.y;
 					}
 					else
 					{
-						destination_width_scaled = work_width;
-						destination_height_scaled = work_width * destination_height / destination_width;
+						destination_size_scaled.x = size_of_display_region.x;
+						destination_size_scaled.y = size_of_display_region.x * destination_size.y / destination_size.x;
 					}
 					
-					const auto &ClampDimension = [&](unsigned int &destination_dimension, const unsigned int dimension_index)
+					const auto &ClampDimension = [&](const unsigned int dimension_index)
 					{
-						if (destination_dimension > size_of_display_region[dimension_index])
+						if (destination_size_scaled[dimension_index] > size_of_display_region[dimension_index])
 						{
-							const auto new_size = uv1[dimension_index] * size_of_display_region[dimension_index] / destination_dimension;
+							const auto new_size = uv1[dimension_index] * size_of_display_region[dimension_index] / destination_size_scaled[dimension_index];
 							uv0[dimension_index] = (uv1[dimension_index] - new_size) / 2;
 							uv1[dimension_index] = uv0[dimension_index] + new_size;
 
-							destination_dimension = size_of_display_region[dimension_index];
+							destination_size_scaled[dimension_index] = size_of_display_region[dimension_index];
 						}
 					};
 					
-					ClampDimension(destination_width_scaled, 0);
-					ClampDimension(destination_height_scaled, 1);
+					ClampDimension(0);
+					ClampDimension(1);
 
 					break;
 			}
 
 			// Center the framebuffer in the available region.
-			ImGui::SetCursorPosX(static_cast<float>(static_cast<int>(ImGui::GetCursorPosX()) + (static_cast<int>(size_of_display_region.x) - destination_width_scaled) / 2));
-			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
+			ImGui::SetCursorPos(ImGui::GetCursorPos() + (size_of_display_region - destination_size_scaled) / 2);
 
 			// Draw the upscaled framebuffer in the window.
 			const ImVec2 uv_div = {static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(FRAMEBUFFER_HEIGHT)};
-			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), uv0 / uv_div, uv1 / uv_div);
+			ImGui::Image(ImTextureRef(window->framebuffer_texture), destination_size_scaled, uv0 / uv_div, uv1 / uv_div);
 
 			DrawStatusIndicator(display_position, size_of_display_region);
 		}
