@@ -3106,6 +3106,7 @@ void Frontend::Update()
 					[[fallthrough]];
 				case ScreenScaling::FIT:
 				case ScreenScaling::FILL:
+				{
 					if ((size_of_display_region.x > size_of_display_region.y * destination_size.x / destination_size.y) != (screen_scaling == ScreenScaling::FILL))
 					{
 						destination_size.x = size_of_display_region.y * destination_size.x / destination_size.y;
@@ -3133,6 +3134,7 @@ void Frontend::Update()
 					ClampDimension(1);
 
 					break;
+				}
 			}
 
 			// Centre the framebuffer in the available region.
