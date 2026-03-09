@@ -461,7 +461,10 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 	const auto maximum_plane_height_in_pixels = 64 * tile_height_double_resolution;
 	const auto tile_buffer_size_in_pixels = std::size(vdp.vram) * pixels_per_byte;
 
-	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), TileWidth(), TileHeight(vdp), tile_width, tile_height_double_resolution, tile_buffer_size_in_pixels, true,
+	const auto tile_width = TileWidth();
+	const auto tile_height = TileHeight(vdp);
+
+	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), tile_width, tile_height, tile_width, tile_height_double_resolution, tile_buffer_size_in_pixels, true,
 		[&](const cc_u16f tile_index, const cc_u8f brightness, const cc_u8f palette_line, SDL::Pixel* const pixels, const int pitch)
 		{
 			if (tile_index >= VRAMSizeInTiles(vdp))
@@ -472,13 +475,13 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 		}
 	);
 
-	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, TileWidth(), TileHeight(vdp),
+	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, tile_width, tile_height,
 		[&](SDL::Renderer &renderer, const cc_u16f x, const cc_u16f y)
 		{
 			const cc_u16f plane_index = plane_address + (y * plane_width + x) * 2;
 			const auto tile_metadata = VDP_DecomposeTileMetadata(VDP_ReadVRAMWord(&vdp, plane_index));
 			const cc_u8f brightness = vdp.shadow_highlight_enabled && !tile_metadata.priority;
-			regenerating_pieces.Draw(renderer, tile_metadata, TileWidth(), TileHeight(vdp), tile_buffer_size_in_pixels, x, y, brightness, false);
+			regenerating_pieces.Draw(renderer, tile_metadata, tile_width, tile_height, tile_buffer_size_in_pixels, x, y, brightness, false);
 		},
 		[&](const cc_u16f x, const cc_u16f y)
 		{
@@ -491,27 +494,32 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			if (plane == Plane::WINDOW || !scroll_overlay)
 				return;
 
-			const auto plane_width_in_pixels = plane_width * VDP_TILE_WIDTH;
+			const auto plane_width_in_pixels = plane_width * tile_width;
 			const auto dpi_scale = GetWindow().GetDPIScale();
 			const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
 			const auto pixel_size = ImVec2(scale, scale << vdp.double_resolution_enabled);
-			const auto scanline_size = ImVec2(pixel_size.x * Frontend::emulator->GetCurrentScreenWidth(), pixel_size.y);
+			const int scanline_width_in_tile_pairs = Frontend::emulator->GetCurrentScreenWidth() / VDP_TILE_PAIR_WIDTH;
+			const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_PAIR_WIDTH, pixel_size.y);
 			auto &draw_list = *ImGui::GetWindowDrawList();
 
-			for (unsigned int i = 0; i < total_scanlines; ++i)
+			for (unsigned int scanline_index = 0; scanline_index < total_scanlines; ++scanline_index)
 			{
-				const int hscroll = VDP_ReadVRAMWord(&vdp, vdp.hscroll_address + (i & vdp.hscroll_mask) * 4 + (plane == Plane::A ? 0 : 2)) & (plane_width_in_pixels - 1);
+				const int hscroll = VDP_ReadVRAMWord(&vdp, vdp.hscroll_address + (scanline_index & vdp.hscroll_mask) * 4 + (plane == Plane::A ? 0 : 2)) & (plane_width_in_pixels - 1);
 
 				const auto &DoLine = [&](const int offset)
 				{
-					auto min = ImVec2((offset - hscroll) * pixel_size.x, i * scanline_size.y);
-					auto max = min + scanline_size;
+					for (int tile_pair_line_index = 0; tile_pair_line_index < scanline_width_in_tile_pairs; ++tile_pair_line_index)
+					{
+						const auto tile_pair_line_y = (scanline_index + vdp.vsram[(vdp.vscroll_mode == VDP_VSCROLL_MODE_FULL ? 0 : tile_pair_line_index * 2) + (plane == Plane::A ? 0 : 1)]) & (plane_height * VDP_STANDARD_TILE_HEIGHT - 1);
+						auto min = ImVec2((offset - hscroll + tile_pair_line_index * VDP_TILE_PAIR_WIDTH) * pixel_size.x, tile_pair_line_y * tile_pair_line_size.y);
+						auto max = min + tile_pair_line_size;
 
-					min.x = std::max(min.x, 0.0f);
-					max.x = std::min(max.x, plane_width_in_pixels * pixel_size.x);
+						min.x = std::max(min.x, 0.0f);
+						max.x = std::min(max.x, plane_width_in_pixels * pixel_size.x);
 
-					if (min.x < max.x && min.y < max.y)
-						draw_list.AddRectFilled(cursor_position + min, cursor_position + max, IM_COL32(0xFF, 0, 0, 0x7F));
+						if (min.x < max.x && min.y < max.y)
+							draw_list.AddRectFilled(cursor_position + min, cursor_position + max, IM_COL32(0xFF, 0, 0, 0x7F));
+					}
 				};
 
 				DoLine(0);
