@@ -3054,13 +3054,17 @@ void Frontend::Update()
 				case ScreenScaling::PIXEL_PERFECT:
 				{
 					// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
-					const unsigned int framebuffer_upscale_factor = std::max(1u, std::min(work_width / destination_width, work_height / destination_height));
+					const unsigned int framebuffer_upscale_factor = std::min(work_width / destination_width, work_height / destination_height);
 
-					destination_width_scaled = destination_width * framebuffer_upscale_factor;
-					destination_height_scaled = destination_height * framebuffer_upscale_factor;
-					break;
+					if (framebuffer_upscale_factor != 0)
+					{
+						destination_width_scaled = destination_width * framebuffer_upscale_factor;
+						destination_height_scaled = destination_height * framebuffer_upscale_factor;
+						break;
+					}
 				}
-
+				// Fall-back on fit scaling when the window is smaller than the screen.
+				[[fallthrough]];
 				case ScreenScaling::FIT:
 					// Correct the aspect ratio of the rendered frame.
 					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
