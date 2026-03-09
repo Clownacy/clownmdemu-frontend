@@ -1366,9 +1366,9 @@ static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path 
 }
 #endif
 
-static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
+static bool LoadSaveState(SDL::IOStream &file)
 {
-	if (!emulator->LoadSaveStateFile(file_buffer))
+	if (!file || !emulator->LoadSaveStateFile(file))
 	{
 		debug_log.Log("Could not load save state file");
 		window->ShowErrorMessageBox("Could not load save state file.");
@@ -1376,48 +1376,28 @@ static bool LoadSaveState(const std::vector<unsigned char> &file_buffer)
 	}
 
 	emulator->SetPaused(false);
-
 	return true;
 }
 
-static bool LoadSaveState(SDL::IOStream &file)
-{
-	if (file)
-	{
-		const auto file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(file);
-
-		if (file_buffer.has_value())
-			return LoadSaveState(*file_buffer);
-	}
-
-	debug_log.Log("Could not load save state file");
-	window->ShowErrorMessageBox("Could not load save state file.");
-	return false;
-}
-
-#if 0
 static bool LoadSaveState(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "rb");
 	return LoadSaveState(file);
 }
-#endif
 
 #ifdef FILE_PATH_SUPPORT
 static bool SaveState(const std::filesystem::path &path)
 {
-	bool success = true;
-
 	SDL::IOStream file(path, "wb");
 
 	if (!file || !emulator->WriteSaveStateFile(file))
 	{
 		debug_log.Log("Could not create save state file");
 		window->ShowErrorMessageBox("Could not create save state file.");
-		success = false;
+		return false;
 	}
 
-	return success;
+	return true;
 }
 #endif
 
@@ -2634,19 +2614,14 @@ void Frontend::Update()
 			LoadCDFile(drag_and_drop_filename, SDL::IOStream(drag_and_drop_filename, "rb"));
 			emulator->SetPaused(false);
 		}
-		else
+		else if (emulator->ValidateSaveStateFile(drag_and_drop_filename))
 		{
-			const auto &file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(drag_and_drop_filename);
-
-			if (file_buffer.has_value() && emulator->ValidateSaveStateFile(*file_buffer))
-			{
-				if (emulator_on)
-					LoadSaveState(*file_buffer);
-			}
-			else if (LoadCartridgeFile(drag_and_drop_filename))
-			{
-				emulator->SetPaused(false);
-			}
+			if (emulator_on)
+				LoadSaveState(drag_and_drop_filename);
+		}
+		else if (LoadCartridgeFile(drag_and_drop_filename))
+		{
+			emulator->SetPaused(false);
 		}
 
 		drag_and_drop_filename.clear();

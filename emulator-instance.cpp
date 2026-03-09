@@ -78,41 +78,53 @@ void EmulatorInstance::UnloadCDFile()
 	EjectCD();
 }
 
-static const std::array<char, 8> save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
+using SaveStateMagic = std::array<char, 8>;
+static const SaveStateMagic save_state_magic = {"CMDEFSS"}; // Clownacy Mega Drive Emulator Frontend Save State
 
-bool EmulatorInstance::ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer) const
+bool EmulatorInstance::ValidateSaveStateFile(SDL::IOStream &file) const
 {
-	return file_buffer.size() == save_state_magic.size() + sizeof(StateBackup) && std::equal(save_state_magic.cbegin(), save_state_magic.cend(), file_buffer.cbegin());
+	if (SDL_GetIOSize(file) != static_cast<Sint64>(GetSaveStateFileSize()))
+		return false;
+
+	const auto starting_position = SDL_TellIO(file);
+
+	SaveStateMagic magic_buffer;
+	SDL_ReadIO(file, std::data(magic_buffer), std::size(magic_buffer));
+
+	SDL_SeekIO(file, starting_position, SDL_IO_SEEK_SET);
+
+	return magic_buffer == save_state_magic;
 }
 
-bool EmulatorInstance::LoadSaveStateFile(const std::vector<unsigned char> &file_buffer)
+bool EmulatorInstance::ValidateSaveStateFile(const std::filesystem::path &path) const
 {
-	bool success = false;
+	SDL::IOStream file(path, "rb");
+	return ValidateSaveStateFile(file);
+}
 
-	if (ValidateSaveStateFile(file_buffer))
-	{
-		reinterpret_cast<const StateBackup*>(&file_buffer[save_state_magic.size()])->Apply(*this);
+bool EmulatorInstance::LoadSaveStateFile(SDL::IOStream &file)
+{
+	if (!ValidateSaveStateFile(file))
+		return false;
 
-		success = true;
-	}
+	const auto &file_buffer = FileUtilities::LoadFileToBuffer<unsigned char, 1>(file);
 
-	return success;
+	if (!file_buffer.has_value())
+		return false;
+
+	reinterpret_cast<const StateBackup*>(&(*file_buffer)[sizeof(SaveStateMagic)])->Apply(*this);
+	return true;
 }
 
 std::size_t EmulatorInstance::GetSaveStateFileSize() const
 {
-	return save_state_magic.size() + sizeof(StateBackup);
+	return sizeof(SaveStateMagic) + sizeof(StateBackup);
 }
 
 bool EmulatorInstance::WriteSaveStateFile(SDL::IOStream &file)
 {
-	bool success = false;
-
 	// Allocate on the heap to prevent stack exhaustion.
 	const auto &save_state = std::make_unique<StateBackup>(*this);
 
-	if (SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &*save_state, sizeof(*save_state)) == sizeof(*save_state))
-		success = true;
-
-	return success;
+	return SDL_WriteIO(file, &save_state_magic, sizeof(save_state_magic)) == sizeof(save_state_magic) && SDL_WriteIO(file, &*save_state, sizeof(*save_state)) == sizeof(*save_state);
 }

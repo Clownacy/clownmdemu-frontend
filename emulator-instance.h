@@ -48,8 +48,9 @@ public:
 	bool LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path);
 	void UnloadCDFile();
 
-	bool ValidateSaveStateFile(const std::vector<unsigned char> &file_buffer) const;
-	bool LoadSaveStateFile(const std::vector<unsigned char> &file_buffer);
+	bool ValidateSaveStateFile(SDL::IOStream &file) const;
+	bool ValidateSaveStateFile(const std::filesystem::path &path) const;
+	bool LoadSaveStateFile(SDL::IOStream &file);
 	std::size_t GetSaveStateFileSize() const;
 	bool WriteSaveStateFile(SDL::IOStream &file);
 
