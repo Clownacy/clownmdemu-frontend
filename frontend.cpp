@@ -148,6 +148,10 @@ static std::array<Input*, 8> bound_inputs;
 
 static ScreenScaling screen_scaling;
 
+#ifndef NDEBUG
+static bool dear_imgui_demo_window;
+#endif
+
 void Input::SetButton(const ClownMDEmu_Button button, const unsigned char value)
 {
 	buttons[button] = value;
@@ -847,6 +851,21 @@ private:
 			ImGui::EndTable();
 		}
 
+	#ifndef NDEBUG
+		ImGui::SeparatorText("Development");
+
+		if (ImGui::BeginTable("Development Options", 2))
+		{
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Dear ImGui Demo Window", &dear_imgui_demo_window);
+
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Native File Dialogs", &file_utilities.use_native_file_dialogs);
+
+			ImGui::EndTable();
+		}
+	#endif
+
 		ImGui::SeparatorText("Control Pads");
 
 		static const std::array<ComboItemAndToolTip, 3> input_protocols = {{
@@ -1208,10 +1227,6 @@ static bool quit;
 
 // Used for tracking when to pop the emulation display out into its own little window.
 static bool pop_out;
-
-#ifndef NDEBUG
-static bool dear_imgui_demo_window;
-#endif
 
 static bool emulator_on;
 
@@ -3020,15 +3035,6 @@ void Frontend::Update()
 
 				ImGui::EndMenu();
 			}
-
-		#ifndef NDEBUG
-			if (ImGui::BeginMenu("Development"))
-			{
-				ImGui::MenuItem("Dear ImGui Demo Window", nullptr, &dear_imgui_demo_window);
-				ImGui::MenuItem("Native File Dialogs", nullptr, &file_utilities.use_native_file_dialogs);
-				ImGui::EndMenu();
-			}
-		#endif
 
 			ImGui::EndMenuBar();
 		}
