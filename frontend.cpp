@@ -124,6 +124,13 @@ enum InputBinding
 	INPUT_BINDING__TOTAL
 };
 
+enum class ScreenScaling
+{
+	FIT,
+	FILL,
+	PIXEL_PERFECT,
+};
+
 #ifdef FILE_PATH_SUPPORT
 struct RecentSoftware
 {
@@ -138,6 +145,8 @@ static Input keyboard_input = {"Keyboard"};
 static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 static std::array<Input*, 8> bound_inputs;
+
+static ScreenScaling screen_scaling;
 
 void Input::SetButton(const ClownMDEmu_Button button, const unsigned char value)
 {
@@ -613,7 +622,7 @@ private:
 	{
 		ImGui::SeparatorText("Console");
 
-	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
+	#define DO_FORM_LAYOUT(LABEL, LABEL_TOOLTIP) \
 		do { \
 			const auto &start_position_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x / 3; \
 			ImGui::TextUnformatted(LABEL ":"); \
@@ -621,6 +630,11 @@ private:
 			ImGui::SameLine(); \
 			ImGui::SetCursorPosX(start_position_x); \
 			ImGui::SetNextItemWidth(-FLT_MIN); \
+		} while (0)
+
+	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES, OPTION_TOOLTIPS, OPTION) \
+		do { \
+			DO_FORM_LAYOUT(LABEL, LABEL_TOOLTIP); \
 			const auto option = Frontend::emulator->Get##OPTION(); \
 			auto option_int = static_cast<int>(option); \
 			if (ImGui::Combo("##" LABEL, &option_int, std::data(OPTION_NAMES), std::size(OPTION_NAMES))) \
@@ -695,33 +709,43 @@ private:
 
 		ImGui::SeparatorText("Video");
 
+		static const std::array<const char*, 3> scaling_names = {
+			"Fit",
+			"Fill",
+			"Pixel-Perfect",
+		};
+
+		static const std::array<const char*, 3> scaling_tooltips = {
+			"Adds black bars around the screen\nto fit it within the window.",
+			"Crops the screen to fill the entire window.\nPairs well with the widescreen hack.",
+			"Preserves pixel aspect ratio,\navoiding non-square pixels.",
+		};
+
+		DO_FORM_LAYOUT("Scaling", "How to fit the screen to the window.");
+
+		auto scaling_int = static_cast<int>(screen_scaling);
+		if (ImGui::Combo("##Scaling", &scaling_int, std::data(scaling_names), std::size(scaling_names)))
+			screen_scaling = static_cast<ScreenScaling>(scaling_int);
+		DoToolTip(scaling_tooltips[scaling_int]);
+
+		DO_FORM_LAYOUT(
+			"Widescreen Hack",
+			"Widens the display. Works well\n"
+			"with some games, badly with others."
+		);
+
+		int current_widescreen_setting = Frontend::emulator->GetWidescreenTiles();
+		const std::string widescreen_slider_text = current_widescreen_setting == 0 ? "Disabled" : fmt::format("{} Extra Columns", current_widescreen_setting * 2);
+		if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILES, widescreen_slider_text.c_str(), ImGuiSliderFlags_AlwaysClamp))
+			Frontend::emulator->SetWidescreenTiles(current_widescreen_setting);
+
 		if (ImGui::BeginTable("Video Options", 2))
 		{
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted("Widescreen Hack:");
-			DoToolTip(
-				"Widens the display. Works well\n"
-				"with some games, badly with others."
-			);
-
-			ImGui::TableNextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			int current_widescreen_setting = Frontend::emulator->GetWidescreenTiles();
-			const std::string widescreen_slider_text = current_widescreen_setting == 0 ? "Disabled" : fmt::format("{} Extra Columns", current_widescreen_setting * 2);
-			if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILES, widescreen_slider_text.c_str(), ImGuiSliderFlags_AlwaysClamp))
-				Frontend::emulator->SetWidescreenTiles(current_widescreen_setting);
-
 			ImGui::TableNextColumn();
 			auto vsync = Frontend::window->GetVSync();
 			if (ImGui::Checkbox("V-Sync", &vsync))
 				Frontend::window->SetVSync(vsync);
 			DoToolTip("Prevents screen tearing.");
-
-			ImGui::TableNextColumn();
-			ImGui::Checkbox("Integer Screen Scaling", &Frontend::integer_screen_scaling);
-			DoToolTip(
-				"Preserves pixel aspect ratio,\n"
-				"avoiding non-square pixels.");
 
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
@@ -1047,7 +1071,6 @@ std::optional<WindowWithFramebuffer> Frontend::window;
 FileUtilities Frontend::file_utilities;
 unsigned int Frontend::frame_counter;
 
-bool Frontend::integer_screen_scaling;
 bool Frontend::tall_double_resolution_mode;
 bool Frontend::native_windows;
 
@@ -1486,7 +1509,7 @@ static void LoadConfiguration()
 	bool fullscreen = false;
 #endif
 	bool vsync = false;
-	integer_screen_scaling = false;
+	screen_scaling = ScreenScaling::FIT;
 	tall_double_resolution_mode = false;
 	unsigned int widescreen_tiles = 0;
 #ifdef __EMSCRIPTEN__
@@ -1581,8 +1604,8 @@ static void LoadConfiguration()
 			#endif
 				if (name == "vsync")
 					vsync = value_boolean;
-				else if (name == "integer-screen-scaling")
-					integer_screen_scaling = value_boolean;
+				else if (name == "screen-scaling")
+					screen_scaling = value_integer.has_value() ? static_cast<ScreenScaling>(*value_integer) : ScreenScaling::FIT;
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
 				else if (name == "widescreen-tiles")
@@ -1769,7 +1792,7 @@ static void SaveConfiguration()
 		PRINT_BOOLEAN_OPTION(file, "fullscreen", window->GetFullscreen());
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
-		PRINT_BOOLEAN_OPTION(file, "integer-screen-scaling", integer_screen_scaling);
+		PRINT_INTEGER_OPTION(file, "screen-scaling", screen_scaling);
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_INTEGER_OPTION(file, "widescreen-tiles", emulator->GetWidescreenTiles());
 	#ifndef __EMSCRIPTEN__
@@ -3023,30 +3046,56 @@ void Frontend::Update()
 			unsigned int destination_width_scaled;
 			unsigned int destination_height_scaled;
 
-			ImVec2 uv1 = {static_cast<float>(emulator->GetCurrentScreenWidth()) / static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(emulator->GetCurrentScreenHeight()) / static_cast<float>(FRAMEBUFFER_HEIGHT)};
+			ImVec2 uv0 = {0, 0};
+			ImVec2 uv1 = {static_cast<float>(emulator->GetCurrentScreenWidth()), static_cast<float>(emulator->GetCurrentScreenHeight())};
 
-			if (integer_screen_scaling)
+			switch (screen_scaling)
 			{
-				// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
-				const unsigned int framebuffer_upscale_factor = std::max(1u, std::min(work_width / destination_width, work_height / destination_height));
-
-				destination_width_scaled = destination_width * framebuffer_upscale_factor;
-				destination_height_scaled = destination_height * framebuffer_upscale_factor;
-			}
-			else
-			{
-				// Correct the aspect ratio of the rendered frame.
-				// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
-				if (work_width > work_height * destination_width / destination_height)
+				case ScreenScaling::PIXEL_PERFECT:
 				{
-					destination_width_scaled = work_height * destination_width / destination_height;
-					destination_height_scaled = work_height;
+					// Round down to the nearest multiple of 'destination_width' and 'destination_height'.
+					const unsigned int framebuffer_upscale_factor = std::max(1u, std::min(work_width / destination_width, work_height / destination_height));
+
+					destination_width_scaled = destination_width * framebuffer_upscale_factor;
+					destination_height_scaled = destination_height * framebuffer_upscale_factor;
+					break;
 				}
-				else
-				{
+
+				case ScreenScaling::FIT:
+					// Correct the aspect ratio of the rendered frame.
+					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
+					if (work_width > work_height * destination_width / destination_height)
+					{
+						destination_width_scaled = work_height * destination_width / destination_height;
+						destination_height_scaled = work_height;
+					}
+					else
+					{
+						destination_width_scaled = work_width;
+						destination_height_scaled = work_width * destination_height / destination_width;
+					}
+
+					break;
+
+				case ScreenScaling::FILL:
 					destination_width_scaled = work_width;
-					destination_height_scaled = work_width * destination_height / destination_width;
-				}
+					destination_height_scaled = work_height;
+
+					if (work_width > work_height * destination_width / destination_height)
+					{
+						const auto new_uv1_y = uv1.x * destination_height_scaled / destination_width_scaled;
+						uv0.y = (uv1.y - new_uv1_y) / 2;
+						uv1.y = uv0.y + new_uv1_y;
+
+					}
+					else
+					{
+						const auto new_uv1_x = uv1.y * destination_width_scaled / destination_height_scaled;
+						uv0.x = (uv1.x - new_uv1_x) / 2;
+						uv1.x = uv0.x + new_uv1_x;
+					}
+
+					break;
 			}
 
 			// Center the framebuffer in the available region.
@@ -3054,7 +3103,8 @@ void Frontend::Update()
 			ImGui::SetCursorPosY(static_cast<float>(static_cast<int>(ImGui::GetCursorPosY()) + (static_cast<int>(size_of_display_region.y) - destination_height_scaled) / 2));
 
 			// Draw the upscaled framebuffer in the window.
-			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), ImVec2(0, 0), uv1);
+			const ImVec2 uv_div = {static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(FRAMEBUFFER_HEIGHT)};
+			ImGui::Image(ImTextureRef(window->framebuffer_texture), ImVec2(static_cast<float>(destination_width_scaled), static_cast<float>(destination_height_scaled)), uv0 / uv_div, uv1 / uv_div);
 
 			DrawStatusIndicator(display_position, size_of_display_region);
 		}

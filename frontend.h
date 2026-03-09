@@ -40,7 +40,6 @@ namespace Frontend
 	extern FileUtilities file_utilities;
 	extern unsigned int frame_counter;
 
-	extern bool integer_screen_scaling;
 	extern bool tall_double_resolution_mode;
 	extern bool native_windows;
 
