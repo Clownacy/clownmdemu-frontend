@@ -1226,7 +1226,7 @@ static constexpr auto popup_windows = std::make_tuple(
 static bool quit;
 
 // Used for tracking when to pop the emulation display out into its own little window.
-static bool pop_out;
+static bool screen_subwindow;
 
 static bool emulator_on;
 
@@ -2713,7 +2713,7 @@ void Frontend::Update()
 	const ImGuiViewport *viewport = ImGui::GetMainViewport();
 
 	// Maximise the window if needed.
-	if (!pop_out)
+	if (!screen_subwindow)
 	{
 		ImGui::SetNextWindowPos(viewport->WorkPos);
 		ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -2739,7 +2739,7 @@ void Frontend::Update()
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
 	const bool show_menu_bar = !ShouldBeInFullscreenMode()
-	                         || pop_out
+	                         || screen_subwindow
 	                         || AnyPopupsOpen()
 	                         || (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0;
 
@@ -2751,7 +2751,7 @@ void Frontend::Update()
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoBringToFrontOnFocus;
 
 	// Hide as much of the window as possible when maximised.
-	if (!pop_out)
+	if (!screen_subwindow)
 		window_flags |= ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
 
 	// Hide the menu bar when maximised in fullscreen.
@@ -2762,9 +2762,9 @@ void Frontend::Update()
 	if (emulator_on)
 		window_flags |= ImGuiWindowFlags_NoBackground;
 
-	// Tweak the style so that the display fill the window.
+	// Tweak the style so that the screen fills the window.
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	const bool not_collapsed = ImGui::Begin("Display", nullptr, window_flags);
+	const bool not_collapsed = ImGui::Begin("Screen", nullptr, window_flags);
 	ImGui::PopStyleVar();
 
 	if (not_collapsed)
@@ -3016,9 +3016,9 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Fullscreen", nullptr, window->GetFullscreen()))
 					window->ToggleFullscreen();
 
-				if (!NativeWindowsActive() || pop_out)
+				if (!NativeWindowsActive() || screen_subwindow)
 				{
-					ImGui::MenuItem("Display Window", nullptr, &pop_out);
+					ImGui::MenuItem("Sub-Window", nullptr, &screen_subwindow);
 					ImGui::Separator();
 				}
 
