@@ -19,7 +19,7 @@ namespace DebugVDP
 	using DrawMapPiece = std::function<void(SDL::Renderer &renderer, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
 	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f brightness, cc_u8f palette_line, SDL::Pixel *pixels, int pitch)>;
-	using DrawOverlay = std::function<void(const ImVec2 &cursor_position)>;
+	using DrawOverlay = std::function<void(SDL::Renderer &renderer)>;
 
 	enum class Plane
 	{

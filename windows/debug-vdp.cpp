@@ -386,7 +386,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const MapPieceTooltip &piece_tooltip,
 	const DrawOverlay &draw_overlay,
 	bool* const scroll_overlay,
-	const bool force_regenerate)
+	bool force_regenerate)
 {
 	const auto derived = static_cast<Derived*>(this);
 
@@ -405,7 +405,8 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 		if (scroll_overlay != nullptr)
 		{
 			ImGui::SameLine();
-			ImGui::Checkbox("Scroll Overlay", scroll_overlay);
+			if (ImGui::Checkbox("Scroll Overlay", scroll_overlay))
+				force_regenerate = true;
 		}
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
@@ -415,6 +416,9 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
 					for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
 						draw_piece(renderer, x, y);
+
+				if (draw_overlay)
+					draw_overlay(renderer);
 			}, force_regenerate);
 
 			const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
@@ -440,9 +444,6 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				piece_tooltip(piece_x, piece_y);
 				ImGui::EndTooltip();
 			}
-
-			if (draw_overlay)
-				draw_overlay(image_position);
 		}
 
 		ImGui::EndChild();
@@ -489,18 +490,24 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			const VDP_TileMetadata tile_metadata = VDP_DecomposeTileMetadata(packed_tile_metadata);
 			ImGui::TextFormatted("Tile Index: 0x{:X}" "\n" "Palette Line: {}" "\n" "X-Flip: {}" "\n" "Y-Flip: {}" "\n" "Priority: {}", tile_metadata.tile_index, tile_metadata.palette_line, tile_metadata.x_flip ? "True" : "False", tile_metadata.y_flip ? "True" : "False", tile_metadata.priority ? "True" : "False");
 		},
-		[&](const ImVec2 &cursor_position)
+		[&](SDL::Renderer &renderer)
 		{
 			if (plane == Plane::WINDOW || !scroll_overlay)
 				return;
 
+			Uint8 previous_red, previous_green, previous_blue, previous_alpha;
+			SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
+			SDL_BlendMode previous_blend_mode;
+			SDL_GetRenderDrawBlendMode(renderer, &previous_blend_mode);
+
+			SDL_SetRenderDrawColor(renderer, 0xFF, 0, 0, 0x7F);
+			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
 			const auto plane_width_in_pixels = plane_width * tile_width;
-			const auto dpi_scale = GetWindow().GetDPIScale();
 			const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
-			const auto pixel_size = ImVec2(scale, scale << vdp.double_resolution_enabled);
+			const auto pixel_size = ImVec2(1, 1 << vdp.double_resolution_enabled);
 			const int scanline_width_in_tile_pairs = Frontend::emulator->GetCurrentScreenWidth() / VDP_TILE_PAIR_WIDTH;
 			const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_PAIR_WIDTH, pixel_size.y);
-			auto &draw_list = *ImGui::GetWindowDrawList();
 
 			for (unsigned int scanline_index = 0; scanline_index < total_scanlines; ++scanline_index)
 			{
@@ -518,13 +525,23 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 						max.x = std::min(max.x, plane_width_in_pixels * pixel_size.x);
 
 						if (min.x < max.x && min.y < max.y)
-							draw_list.AddRectFilled(cursor_position + min, cursor_position + max, IM_COL32(0xFF, 0, 0, 0x7F));
+						{
+							SDL_FRect rect;
+							rect.x = min.x;
+							rect.y = min.y;
+							rect.w = max.x - min.x;
+							rect.h = max.y - min.y;
+							SDL_RenderFillRect(renderer, &rect);
+						}
 					}
 				};
 
 				DoLine(0);
 				DoLine(plane_width_in_pixels);
 			}
+
+			SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
+			SDL_SetRenderDrawBlendMode(renderer, previous_blend_mode);
 		},
 		plane == Plane::WINDOW ? nullptr : &scroll_overlay
 	);
