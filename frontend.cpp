@@ -3138,7 +3138,16 @@ void Frontend::Update()
 			}
 
 			// Centre the framebuffer in the available region.
-			ImGui::SetCursorPos(ImGui::GetCursorPos() + (size_of_display_region - destination_size) / 2);
+			auto offset = (size_of_display_region - destination_size) / 2;
+
+			if (screen_scaling == ScreenScaling::PIXEL_PERFECT)
+			{
+				// Round to the nearest integer to prevent blurry rendering.
+				for (unsigned int i = 0; i < 2; ++i)
+					offset[i] = std::round(offset[i]);
+			}
+
+			ImGui::SetCursorPos(ImGui::GetCursorPos() + offset);
 
 			// Draw the upscaled framebuffer in the window.
 			const ImVec2 uv_div = {static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(FRAMEBUFFER_HEIGHT)};
