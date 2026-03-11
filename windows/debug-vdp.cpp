@@ -506,8 +506,9 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			const auto plane_width_in_pixels = plane_width * tile_width;
 			const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
 			const auto pixel_size = ImVec2(1, 1 << vdp.double_resolution_enabled);
-			const int scanline_width_in_tile_pairs = Frontend::emulator->GetCurrentScreenWidth() / VDP_TILE_PAIR_WIDTH;
-			const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_PAIR_WIDTH, pixel_size.y);
+			const int total_widescreen_tiles = Frontend::emulator->GetCurrentWidescreenTiles();
+			const int normal_screen_width_in_tiles = Frontend::emulator->GetCurrentScreenWidth() / VDP_TILE_WIDTH - total_widescreen_tiles * 2;
+			const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_WIDTH, pixel_size.y);
 
 			for (unsigned int scanline_index = 0; scanline_index < total_scanlines; ++scanline_index)
 			{
@@ -515,10 +516,10 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 
 				const auto &DoLine = [&](const int offset)
 				{
-					for (int tile_pair_line_index = 0; tile_pair_line_index < scanline_width_in_tile_pairs; ++tile_pair_line_index)
+					for (int tile_pair_line_index = -total_widescreen_tiles; tile_pair_line_index < normal_screen_width_in_tiles + total_widescreen_tiles; ++tile_pair_line_index)
 					{
-						const auto tile_pair_line_y = (scanline_index + vdp.vsram[(vdp.vscroll_mode == VDP_VSCROLL_MODE_FULL ? 0 : tile_pair_line_index * 2) + (plane == Plane::A ? 0 : 1)]) & (plane_height * VDP_STANDARD_TILE_HEIGHT - 1);
-						auto min = ImVec2((offset - hscroll + tile_pair_line_index * VDP_TILE_PAIR_WIDTH) * pixel_size.x, tile_pair_line_y * tile_pair_line_size.y);
+						const auto tile_pair_line_y = (scanline_index + vdp.vsram[((vdp.vscroll_mode == VDP_VSCROLL_MODE_FULL ? 0 : tile_pair_line_index / 2 * 2) + (plane == Plane::A ? 0 : 1)) % std::size(vdp.vsram)]) & (plane_height * VDP_STANDARD_TILE_HEIGHT - 1);
+						auto min = ImVec2((offset - hscroll + tile_pair_line_index * VDP_TILE_WIDTH) * pixel_size.x, tile_pair_line_y * tile_pair_line_size.y);
 						auto max = min + tile_pair_line_size;
 
 						min.x = std::max(min.x, 0.0f);
