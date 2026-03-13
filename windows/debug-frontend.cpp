@@ -106,16 +106,18 @@ void DebugFrontend::DisplayInternal()
 	{
 		const auto &DoPath = [](const char* const label, const std::filesystem::path &path)
 		{
-			auto path_string = std::filesystem::absolute(path).u8string();
-			const std::string_view path_string_view(reinterpret_cast<char*>(std::data(path_string)), std::size(path_string));
-
-			ImGui::PushID(label);
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted(label);
-			ImGui::TableNextColumn();
-			ImGui::SetNextItemWidth(-FLT_MIN);
-			ImGui::InputTextReadOnly("", std::data(path_string_view), std::size(path_string_view) + 1, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_ElideLeft);
-			ImGui::PopID();
+			FileUtilities::PathToStringView(std::filesystem::absolute(path),
+				[&](const std::string_view &string_view)
+				{
+					ImGui::PushID(label);
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(label);
+					ImGui::TableNextColumn();
+					ImGui::SetNextItemWidth(-FLT_MIN);
+					ImGui::InputTextReadOnly("", std::data(string_view), std::size(string_view) + 1, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_ElideLeft);
+					ImGui::PopID();
+				}
+			);
 		};
 
 		DoPath("Configuration", Frontend::GetConfigurationDirectoryPath());

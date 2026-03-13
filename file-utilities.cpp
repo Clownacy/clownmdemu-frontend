@@ -96,7 +96,13 @@ void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filen
 			// Set the text box's contents to the dropped file's path.
 			if (!drag_and_drop_filename.empty())
 			{
-				text_buffer = reinterpret_cast<const char*>(drag_and_drop_filename.u8string().c_str());
+				FileUtilities::PathToStringView(drag_and_drop_filename,
+					[&](const std::string_view &string_view)
+					{
+						text_buffer = string_view;
+					}
+				);
+
 				drag_and_drop_filename.clear();
 			}
 

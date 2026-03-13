@@ -1963,8 +1963,12 @@ static void SaveConfiguration()
 				PRINT_LINE(file, "false");
 
 			PRINT_KEY(file, "path");
-			const auto path_string = recent_software.path.u8string();
-			SDL_WriteIO(file, reinterpret_cast<const char*>(path_string.c_str()), path_string.length());
+			FileUtilities::PathToStringView(recent_software.path,
+				[&](const std::string_view &string_view)
+				{
+					SDL_WriteIO(file, std::data(string_view), std::size(string_view));
+				}
+			);
 			PRINT_NEWLINE(file);
 		}
 	#endif
@@ -2022,7 +2026,12 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 
 		LoadConfiguration();
 
-		ImGui::LoadIniSettingsFromDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
+		FileUtilities::PathToCString(GetDearImGuiSettingsFilePath(),
+			[&](const char* const string)
+			{
+				ImGui::LoadIniSettingsFromDisk(string);
+			}
+		);
 
 		if (fullscreen)
 			window->SetFullscreen(true);
@@ -2090,7 +2099,12 @@ void Frontend::Deinitialise()
 
 void Frontend::WriteSaveData()
 {
-	ImGui::SaveIniSettingsToDisk(reinterpret_cast<const char*>(GetDearImGuiSettingsFilePath().u8string().c_str()));
+	FileUtilities::PathToCString(GetDearImGuiSettingsFilePath(),
+		[&](const char* const string)
+		{
+			ImGui::SaveIniSettingsToDisk(string);
+		}
+	);
 
 	SaveConfiguration();
 
@@ -2857,8 +2871,13 @@ void Frontend::Update()
 						ImGui::PushID(&recent_software);
 
 						// Display only the filename.
-						if (ImGui::MenuItem(reinterpret_cast<const char*>(recent_software.path.filename().u8string().c_str())))
-							selected_software = &recent_software;
+						FileUtilities::PathToCString(recent_software.path.filename(),
+							[&](const char* const string)
+							{
+								if (ImGui::MenuItem(string))
+									selected_software = &recent_software;
+							}
+						);
 
 						ImGui::PopID();
 

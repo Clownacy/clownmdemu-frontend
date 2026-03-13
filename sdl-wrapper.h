@@ -32,6 +32,18 @@ namespace SDL
 		return std::u8string_view(reinterpret_cast<const char8_t*>(std::data(string)), std::size(string));
 	}
 
+	inline auto PathToStringView(const std::filesystem::path &path, const auto &callback)
+	{
+		const auto &string = path.u8string();
+		return callback(std::string_view(reinterpret_cast<const char*>(std::data(string)), std::size(string)));
+	}
+
+	inline auto PathToCString(const std::filesystem::path &path, const auto &callback)
+	{
+		const auto &string = path.u8string();
+		return callback(reinterpret_cast<const char*>(std::data(string)));
+	}
+
 	template<typename T>
 	auto MakePointer(T* const pointer)
 	{
@@ -53,7 +65,12 @@ namespace SDL
 	template<auto Function, typename... Args>
 	auto PathFunction(const std::filesystem::path &path, Args &&...args)
 	{
-		return Function(reinterpret_cast<const char*>(path.u8string().c_str()), std::forward<Args>(args)...);
+		return PathToCString(path,
+			[&](const char* const string)
+			{
+				return Function(string, std::forward<Args>(args)...);
+			}
+		);
 	}
 
 	template<typename T>

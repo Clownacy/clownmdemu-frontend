@@ -8,6 +8,7 @@
 
 #include "common/cd-reader.h"
 
+#include "file-utilities.h"
 #include "sdl-wrapper.h"
 
 class CDReader : private CDReader_State
@@ -75,12 +76,22 @@ public:
 	CDReader& operator=(CDReader &&other) = delete;
 	void Open(const std::filesystem::path &path)
 	{
-		CDReader_Open(this, nullptr, reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
+		FileUtilities::PathToCString(path,
+			[&](const char* const string)
+			{
+				CDReader_Open(this, nullptr, string, &callbacks);
+			}
+		);
 	}
 	void Open(const std::filesystem::path &path, SDL::IOStream &&stream)
 	{
 		// Release ownership of SDL_IOStream object, allowing for manual memory management by ClownCD.
-		CDReader_Open(this, stream.release(), reinterpret_cast<const char*>(path.u8string().c_str()), &callbacks);
+		FileUtilities::PathToCString(path,
+			[&](const char* const string)
+			{
+				CDReader_Open(this, stream.release(), string, &callbacks);
+			}
+		);
 	}
 	void Close()
 	{

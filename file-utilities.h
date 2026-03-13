@@ -127,6 +127,18 @@ public:
 	{
 		return SDL::U8Path(std::forward<Ts>(args)...);
 	}
+
+	template<typename... Ts>
+	static auto PathToStringView(Ts &&...args)
+	{
+		return SDL::PathToStringView(std::forward<Ts>(args)...);
+	}
+
+	template<typename... Ts>
+	static auto PathToCString(Ts &&...args)
+	{
+		return SDL::PathToCString(std::forward<Ts>(args)...);
+	}
 };
 
 template<>
