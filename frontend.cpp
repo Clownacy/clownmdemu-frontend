@@ -99,29 +99,29 @@ struct ControllerInput
 	{}
 };
 
-enum InputBinding
+enum class InputBinding
 {
-	INPUT_BINDING_NONE,
-	INPUT_BINDING_CONTROLLER_UP,
-	INPUT_BINDING_CONTROLLER_DOWN,
-	INPUT_BINDING_CONTROLLER_LEFT,
-	INPUT_BINDING_CONTROLLER_RIGHT,
-	INPUT_BINDING_CONTROLLER_A,
-	INPUT_BINDING_CONTROLLER_B,
-	INPUT_BINDING_CONTROLLER_C,
-	INPUT_BINDING_CONTROLLER_X,
-	INPUT_BINDING_CONTROLLER_Y,
-	INPUT_BINDING_CONTROLLER_Z,
-	INPUT_BINDING_CONTROLLER_START,
-	INPUT_BINDING_CONTROLLER_MODE,
-	INPUT_BINDING_PAUSE,
-	INPUT_BINDING_RESET,
-	INPUT_BINDING_FAST_FORWARD,
-	INPUT_BINDING_REWIND,
-	INPUT_BINDING_QUICK_SAVE_STATE,
-	INPUT_BINDING_QUICK_LOAD_STATE,
-	INPUT_BINDING_TOGGLE_FULLSCREEN,
-	INPUT_BINDING__TOTAL
+	NONE,
+	CONTROLLER_UP,
+	CONTROLLER_DOWN,
+	CONTROLLER_LEFT,
+	CONTROLLER_RIGHT,
+	CONTROLLER_A,
+	CONTROLLER_B,
+	CONTROLLER_C,
+	CONTROLLER_X,
+	CONTROLLER_Y,
+	CONTROLLER_Z,
+	CONTROLLER_START,
+	CONTROLLER_MODE,
+	PAUSE,
+	RESET,
+	FAST_FORWARD,
+	REWIND,
+	QUICK_SAVE_STATE,
+	QUICK_LOAD_STATE,
+	TOGGLE_FULLSCREEN,
+	TOTAL,
 };
 
 enum class ScreenScaling
@@ -969,7 +969,7 @@ private:
 
 		ImGui::SeparatorText("Keyboard");
 
-		static const std::array<const char*, INPUT_BINDING__TOTAL> binding_names = {
+		static const std::array<const char*, static_cast<std::size_t>(InputBinding::TOTAL)> binding_names = {
 			"None",
 			"Control Pad Up",
 			"Control Pad Down",
@@ -1015,7 +1015,7 @@ private:
 			ImGui::TableHeadersRow();
 			for (const auto &scancode : sorted_scancodes)
 			{
-				if (keyboard_bindings[scancode] != INPUT_BINDING_NONE)
+				if (keyboard_bindings[scancode] != InputBinding::NONE)
 				{
 					ImGui::PushID(&scancode);
 
@@ -1024,7 +1024,7 @@ private:
 
 					ImGui::TableNextColumn();
 					ImGui::SetNextItemWidth(-FLT_MIN);
-					int index = keyboard_bindings[scancode] - 1;
+					int index = static_cast<int>(keyboard_bindings[scancode]) - 1;
 					if (ImGui::Combo("##action", &index, std::data(binding_names) + 1, std::size(binding_names) - 1))
 					{
 						keyboard_bindings[scancode] = static_cast<InputBinding>(index + 1);
@@ -1033,7 +1033,7 @@ private:
 
 					ImGui::TableNextColumn();
 					if (ImGui::Button("X"))
-						keyboard_bindings[scancode] = INPUT_BINDING_NONE;
+						keyboard_bindings[scancode] = InputBinding::NONE;
 
 					ImGui::PopID();
 				}
@@ -1092,7 +1092,7 @@ private:
 
 				if (ImGui::BeginListBox("##Actions"))
 				{
-					for (unsigned int i = INPUT_BINDING_NONE + 1; i < INPUT_BINDING__TOTAL; i = i + 1)
+					for (unsigned int i = static_cast<unsigned int>(InputBinding::NONE) + 1; i < static_cast<unsigned int>(InputBinding::TOTAL); i = i + 1)
 					{
 						if (ImGui::Selectable(binding_names[i]))
 						{
@@ -1609,28 +1609,28 @@ static void LoadConfiguration()
 	if (!file)
 	{
 		// Failed to read configuration file: set defaults key bindings.
-		keyboard_bindings.fill(INPUT_BINDING_NONE);
+		keyboard_bindings.fill(InputBinding::NONE);
 
-		keyboard_bindings[SDL_SCANCODE_UP] = INPUT_BINDING_CONTROLLER_UP;
-		keyboard_bindings[SDL_SCANCODE_DOWN] = INPUT_BINDING_CONTROLLER_DOWN;
-		keyboard_bindings[SDL_SCANCODE_LEFT] = INPUT_BINDING_CONTROLLER_LEFT;
-		keyboard_bindings[SDL_SCANCODE_RIGHT] = INPUT_BINDING_CONTROLLER_RIGHT;
-		keyboard_bindings[SDL_SCANCODE_A] = INPUT_BINDING_CONTROLLER_A;
-		keyboard_bindings[SDL_SCANCODE_S] = INPUT_BINDING_CONTROLLER_B;
-		keyboard_bindings[SDL_SCANCODE_D] = INPUT_BINDING_CONTROLLER_C;
-		keyboard_bindings[SDL_SCANCODE_Q] = INPUT_BINDING_CONTROLLER_X;
-		keyboard_bindings[SDL_SCANCODE_W] = INPUT_BINDING_CONTROLLER_Y;
-		keyboard_bindings[SDL_SCANCODE_E] = INPUT_BINDING_CONTROLLER_Z;
-		keyboard_bindings[SDL_SCANCODE_RETURN] = INPUT_BINDING_CONTROLLER_START;
-		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = INPUT_BINDING_CONTROLLER_MODE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE, nullptr)] = INPUT_BINDING_PAUSE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11, nullptr)] = INPUT_BINDING_TOGGLE_FULLSCREEN;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB, nullptr)] = INPUT_BINDING_RESET;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = INPUT_BINDING_QUICK_SAVE_STATE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = INPUT_BINDING_QUICK_LOAD_STATE;
-		keyboard_bindings[SDL_SCANCODE_SPACE] = INPUT_BINDING_FAST_FORWARD;
-		keyboard_bindings[SDL_SCANCODE_F] = INPUT_BINDING_FAST_FORWARD;
-		keyboard_bindings[SDL_SCANCODE_R] = INPUT_BINDING_REWIND;
+		keyboard_bindings[SDL_SCANCODE_UP] = InputBinding::CONTROLLER_UP;
+		keyboard_bindings[SDL_SCANCODE_DOWN] = InputBinding::CONTROLLER_DOWN;
+		keyboard_bindings[SDL_SCANCODE_LEFT] = InputBinding::CONTROLLER_LEFT;
+		keyboard_bindings[SDL_SCANCODE_RIGHT] = InputBinding::CONTROLLER_RIGHT;
+		keyboard_bindings[SDL_SCANCODE_A] = InputBinding::CONTROLLER_A;
+		keyboard_bindings[SDL_SCANCODE_S] = InputBinding::CONTROLLER_B;
+		keyboard_bindings[SDL_SCANCODE_D] = InputBinding::CONTROLLER_C;
+		keyboard_bindings[SDL_SCANCODE_Q] = InputBinding::CONTROLLER_X;
+		keyboard_bindings[SDL_SCANCODE_W] = InputBinding::CONTROLLER_Y;
+		keyboard_bindings[SDL_SCANCODE_E] = InputBinding::CONTROLLER_Z;
+		keyboard_bindings[SDL_SCANCODE_RETURN] = InputBinding::CONTROLLER_START;
+		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = InputBinding::CONTROLLER_MODE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE, nullptr)] = InputBinding::PAUSE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11, nullptr)] = InputBinding::TOGGLE_FULLSCREEN;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB, nullptr)] = InputBinding::RESET;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = InputBinding::QUICK_SAVE_STATE;
+		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = InputBinding::QUICK_LOAD_STATE;
+		keyboard_bindings[SDL_SCANCODE_SPACE] = InputBinding::FAST_FORWARD;
+		keyboard_bindings[SDL_SCANCODE_F] = InputBinding::FAST_FORWARD;
+		keyboard_bindings[SDL_SCANCODE_R] = InputBinding::REWIND;
 	}
 	else
 	{
@@ -1700,22 +1700,22 @@ static void LoadConfiguration()
 						{
 							// Legacy numerical input bindings.
 							static constexpr auto input_bindings = std::to_array({
-								INPUT_BINDING_NONE,
-								INPUT_BINDING_CONTROLLER_UP,
-								INPUT_BINDING_CONTROLLER_DOWN,
-								INPUT_BINDING_CONTROLLER_LEFT,
-								INPUT_BINDING_CONTROLLER_RIGHT,
-								INPUT_BINDING_CONTROLLER_A,
-								INPUT_BINDING_CONTROLLER_B,
-								INPUT_BINDING_CONTROLLER_C,
-								INPUT_BINDING_CONTROLLER_START,
-								INPUT_BINDING_PAUSE,
-								INPUT_BINDING_RESET,
-								INPUT_BINDING_FAST_FORWARD,
-								INPUT_BINDING_REWIND,
-								INPUT_BINDING_QUICK_SAVE_STATE,
-								INPUT_BINDING_QUICK_LOAD_STATE,
-								INPUT_BINDING_TOGGLE_FULLSCREEN
+								InputBinding::NONE,
+								InputBinding::CONTROLLER_UP,
+								InputBinding::CONTROLLER_DOWN,
+								InputBinding::CONTROLLER_LEFT,
+								InputBinding::CONTROLLER_RIGHT,
+								InputBinding::CONTROLLER_A,
+								InputBinding::CONTROLLER_B,
+								InputBinding::CONTROLLER_C,
+								InputBinding::CONTROLLER_START,
+								InputBinding::PAUSE,
+								InputBinding::RESET,
+								InputBinding::FAST_FORWARD,
+								InputBinding::REWIND,
+								InputBinding::QUICK_SAVE_STATE,
+								InputBinding::QUICK_LOAD_STATE,
+								InputBinding::TOGGLE_FULLSCREEN
 							});
 
 							if (*binding_index < std::size(input_bindings))
@@ -1724,46 +1724,46 @@ static void LoadConfiguration()
 						else
 						{
 							if (value == "INPUT_BINDING_CONTROLLER_UP")
-								return INPUT_BINDING_CONTROLLER_UP;
+								return InputBinding::CONTROLLER_UP;
 							else if (value == "INPUT_BINDING_CONTROLLER_DOWN")
-								return INPUT_BINDING_CONTROLLER_DOWN;
+								return InputBinding::CONTROLLER_DOWN;
 							else if (value == "INPUT_BINDING_CONTROLLER_LEFT")
-								return INPUT_BINDING_CONTROLLER_LEFT;
+								return InputBinding::CONTROLLER_LEFT;
 							else if (value == "INPUT_BINDING_CONTROLLER_RIGHT")
-								return INPUT_BINDING_CONTROLLER_RIGHT;
+								return InputBinding::CONTROLLER_RIGHT;
 							else if (value == "INPUT_BINDING_CONTROLLER_A")
-								return INPUT_BINDING_CONTROLLER_A;
+								return InputBinding::CONTROLLER_A;
 							else if (value == "INPUT_BINDING_CONTROLLER_B")
-								return INPUT_BINDING_CONTROLLER_B;
+								return InputBinding::CONTROLLER_B;
 							else if (value == "INPUT_BINDING_CONTROLLER_C")
-								return INPUT_BINDING_CONTROLLER_C;
+								return InputBinding::CONTROLLER_C;
 							else if (value == "INPUT_BINDING_CONTROLLER_X")
-								return INPUT_BINDING_CONTROLLER_X;
+								return InputBinding::CONTROLLER_X;
 							else if (value == "INPUT_BINDING_CONTROLLER_Y")
-								return INPUT_BINDING_CONTROLLER_Y;
+								return InputBinding::CONTROLLER_Y;
 							else if (value == "INPUT_BINDING_CONTROLLER_Z")
-								return INPUT_BINDING_CONTROLLER_Z;
+								return InputBinding::CONTROLLER_Z;
 							else if (value == "INPUT_BINDING_CONTROLLER_START")
-								return INPUT_BINDING_CONTROLLER_START;
+								return InputBinding::CONTROLLER_START;
 							else if (value == "INPUT_BINDING_CONTROLLER_MODE")
-								return INPUT_BINDING_CONTROLLER_MODE;
+								return InputBinding::CONTROLLER_MODE;
 							else if (value == "INPUT_BINDING_PAUSE")
-								return INPUT_BINDING_PAUSE;
+								return InputBinding::PAUSE;
 							else if (value == "INPUT_BINDING_RESET")
-								return INPUT_BINDING_RESET;
+								return InputBinding::RESET;
 							else if (value == "INPUT_BINDING_FAST_FORWARD")
-								return INPUT_BINDING_FAST_FORWARD;
+								return InputBinding::FAST_FORWARD;
 							else if (value == "INPUT_BINDING_REWIND")
-								return INPUT_BINDING_REWIND;
+								return InputBinding::REWIND;
 							else if (value == "INPUT_BINDING_QUICK_SAVE_STATE")
-								return INPUT_BINDING_QUICK_SAVE_STATE;
+								return InputBinding::QUICK_SAVE_STATE;
 							else if (value == "INPUT_BINDING_QUICK_LOAD_STATE")
-								return INPUT_BINDING_QUICK_LOAD_STATE;
+								return InputBinding::QUICK_LOAD_STATE;
 							else if (value == "INPUT_BINDING_TOGGLE_FULLSCREEN")
-								return INPUT_BINDING_TOGGLE_FULLSCREEN;
+								return InputBinding::TOGGLE_FULLSCREEN;
 						}
 
-						return INPUT_BINDING_NONE;
+						return InputBinding::NONE;
 					}();
 				}
 			}
@@ -1869,73 +1869,73 @@ static void SaveConfiguration()
 		{
 			const auto &keyboard_binding = keyboard_bindings[i];
 
-			if (keyboard_binding != INPUT_BINDING_NONE)
+			if (keyboard_binding != InputBinding::NONE)
 			{
 				const auto &binding_string = [&]()
 				{
 					switch (keyboard_binding)
 					{
-						case INPUT_BINDING_NONE:
+						case InputBinding::NONE:
 							return "INPUT_BINDING_NONE";
 
-						case INPUT_BINDING_CONTROLLER_UP:
+						case InputBinding::CONTROLLER_UP:
 							return "INPUT_BINDING_CONTROLLER_UP";
 
-						case INPUT_BINDING_CONTROLLER_DOWN:
+						case InputBinding::CONTROLLER_DOWN:
 							return "INPUT_BINDING_CONTROLLER_DOWN";
 
-						case INPUT_BINDING_CONTROLLER_LEFT:
+						case InputBinding::CONTROLLER_LEFT:
 							return "INPUT_BINDING_CONTROLLER_LEFT";
 
-						case INPUT_BINDING_CONTROLLER_RIGHT:
+						case InputBinding::CONTROLLER_RIGHT:
 							return "INPUT_BINDING_CONTROLLER_RIGHT";
 
-						case INPUT_BINDING_CONTROLLER_A:
+						case InputBinding::CONTROLLER_A:
 							return "INPUT_BINDING_CONTROLLER_A";
 
-						case INPUT_BINDING_CONTROLLER_B:
+						case InputBinding::CONTROLLER_B:
 							return "INPUT_BINDING_CONTROLLER_B";
 
-						case INPUT_BINDING_CONTROLLER_C:
+						case InputBinding::CONTROLLER_C:
 							return "INPUT_BINDING_CONTROLLER_C";
 
-						case INPUT_BINDING_CONTROLLER_X:
+						case InputBinding::CONTROLLER_X:
 							return "INPUT_BINDING_CONTROLLER_X";
 
-						case INPUT_BINDING_CONTROLLER_Y:
+						case InputBinding::CONTROLLER_Y:
 							return "INPUT_BINDING_CONTROLLER_Y";
 
-						case INPUT_BINDING_CONTROLLER_Z:
+						case InputBinding::CONTROLLER_Z:
 							return "INPUT_BINDING_CONTROLLER_Z";
 
-						case INPUT_BINDING_CONTROLLER_START:
+						case InputBinding::CONTROLLER_START:
 							return "INPUT_BINDING_CONTROLLER_START";
 
-						case INPUT_BINDING_CONTROLLER_MODE:
+						case InputBinding::CONTROLLER_MODE:
 							return "INPUT_BINDING_CONTROLLER_MODE";
 
-						case INPUT_BINDING_PAUSE:
+						case InputBinding::PAUSE:
 							return "INPUT_BINDING_PAUSE";
 
-						case INPUT_BINDING_RESET:
+						case InputBinding::RESET:
 							return "INPUT_BINDING_RESET";
 
-						case INPUT_BINDING_FAST_FORWARD:
+						case InputBinding::FAST_FORWARD:
 							return "INPUT_BINDING_FAST_FORWARD";
 
-						case INPUT_BINDING_REWIND:
+						case InputBinding::REWIND:
 							return "INPUT_BINDING_REWIND";
 
-						case INPUT_BINDING_QUICK_SAVE_STATE:
+						case InputBinding::QUICK_SAVE_STATE:
 							return "INPUT_BINDING_QUICK_SAVE_STATE";
 
-						case INPUT_BINDING_QUICK_LOAD_STATE:
+						case InputBinding::QUICK_LOAD_STATE:
 							return "INPUT_BINDING_QUICK_LOAD_STATE";
 
-						case INPUT_BINDING_TOGGLE_FULLSCREEN:
+						case InputBinding::TOGGLE_FULLSCREEN:
 							return "INPUT_BINDING_TOGGLE_FULLSCREEN";
 
-						case INPUT_BINDING__TOTAL:
+						case InputBinding::TOTAL:
 							SDL_assert(false);
 							break;
 					}
@@ -2144,7 +2144,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			switch (keyboard_bindings[event.key.scancode])
 			{
-				case INPUT_BINDING_TOGGLE_FULLSCREEN:
+				case InputBinding::TOGGLE_FULLSCREEN:
 					window->ToggleFullscreen();
 					break;
 
@@ -2157,22 +2157,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			{
 				switch (keyboard_bindings[event.key.scancode])
 				{
-					case INPUT_BINDING_PAUSE:
+					case InputBinding::PAUSE:
 						emulator->SetPaused(!emulator->IsPaused());
 						break;
 
-					case INPUT_BINDING_RESET:
+					case InputBinding::RESET:
 						// Soft-reset console
 						emulator->SoftReset();
 						emulator->SetPaused(false);
 						break;
 
-					case INPUT_BINDING_QUICK_SAVE_STATE:
+					case InputBinding::QUICK_SAVE_STATE:
 						// Save save state
 						quick_save_state.emplace(*emulator);
 						break;
 
-					case INPUT_BINDING_QUICK_LOAD_STATE:
+					case InputBinding::QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_state)
 						{
@@ -2227,22 +2227,22 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				{
 					#define DO_KEY(state, code) case code: keyboard_input.SetButton(state, keyboard_input.GetButton(state) + delta); break
 
-					DO_KEY(CLOWNMDEMU_BUTTON_UP, INPUT_BINDING_CONTROLLER_UP);
-					DO_KEY(CLOWNMDEMU_BUTTON_DOWN, INPUT_BINDING_CONTROLLER_DOWN);
-					DO_KEY(CLOWNMDEMU_BUTTON_LEFT, INPUT_BINDING_CONTROLLER_LEFT);
-					DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, INPUT_BINDING_CONTROLLER_RIGHT);
-					DO_KEY(CLOWNMDEMU_BUTTON_A, INPUT_BINDING_CONTROLLER_A);
-					DO_KEY(CLOWNMDEMU_BUTTON_B, INPUT_BINDING_CONTROLLER_B);
-					DO_KEY(CLOWNMDEMU_BUTTON_C, INPUT_BINDING_CONTROLLER_C);
-					DO_KEY(CLOWNMDEMU_BUTTON_X, INPUT_BINDING_CONTROLLER_X);
-					DO_KEY(CLOWNMDEMU_BUTTON_Y, INPUT_BINDING_CONTROLLER_Y);
-					DO_KEY(CLOWNMDEMU_BUTTON_Z, INPUT_BINDING_CONTROLLER_Z);
-					DO_KEY(CLOWNMDEMU_BUTTON_START, INPUT_BINDING_CONTROLLER_START);
-					DO_KEY(CLOWNMDEMU_BUTTON_MODE, INPUT_BINDING_CONTROLLER_MODE);
+					DO_KEY(CLOWNMDEMU_BUTTON_UP, InputBinding::CONTROLLER_UP);
+					DO_KEY(CLOWNMDEMU_BUTTON_DOWN, InputBinding::CONTROLLER_DOWN);
+					DO_KEY(CLOWNMDEMU_BUTTON_LEFT, InputBinding::CONTROLLER_LEFT);
+					DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, InputBinding::CONTROLLER_RIGHT);
+					DO_KEY(CLOWNMDEMU_BUTTON_A, InputBinding::CONTROLLER_A);
+					DO_KEY(CLOWNMDEMU_BUTTON_B, InputBinding::CONTROLLER_B);
+					DO_KEY(CLOWNMDEMU_BUTTON_C, InputBinding::CONTROLLER_C);
+					DO_KEY(CLOWNMDEMU_BUTTON_X, InputBinding::CONTROLLER_X);
+					DO_KEY(CLOWNMDEMU_BUTTON_Y, InputBinding::CONTROLLER_Y);
+					DO_KEY(CLOWNMDEMU_BUTTON_Z, InputBinding::CONTROLLER_Z);
+					DO_KEY(CLOWNMDEMU_BUTTON_START, InputBinding::CONTROLLER_START);
+					DO_KEY(CLOWNMDEMU_BUTTON_MODE, InputBinding::CONTROLLER_MODE);
 
 					#undef DO_KEY
 
-					case INPUT_BINDING_FAST_FORWARD:
+					case InputBinding::FAST_FORWARD:
 						// Toggle fast-forward
 						keyboard_input.fast_forward += delta;
 
@@ -2254,7 +2254,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 						break;
 
-					case INPUT_BINDING_REWIND:
+					case InputBinding::REWIND:
 						keyboard_input.rewind += delta;
 
 						if (emulator_has_focus || !pressed)
