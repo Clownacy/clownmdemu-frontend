@@ -3093,6 +3093,7 @@ void Frontend::Update()
 			if (!emulator->GetVDPState().h40_enabled && screen_scaling != ScreenScaling::PIXEL_PERFECT)
 				destination_size.x = destination_size.x * VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS / VDP_H32_SCREEN_WIDTH_IN_TILE_PAIRS;
 
+			// Squish the aspect ratio vertically when in Interlace Mode 2.
 			if (emulator->GetVDPState().double_resolution_enabled && !tall_double_resolution_mode)
 				destination_size.x *= 2;
 
