@@ -3,8 +3,13 @@
 #include <stdexcept>
 
 #include "../../file-utilities.h"
-#include "compressed-fonts.h"
+#include "../../tar.h"
 
+namespace CompressedFonts
+{
+	static
+	#include "../../assets/font/fonts.tar.lzma.h"
+}
 
 ///////////
 // Fonts //
@@ -25,20 +30,24 @@ unsigned int WindowWithDearImGui::CalculateFontSize()
 
 void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 {
-	static auto decompressed_buffer = FileUtilities::DecompressLZMABuffer(std::data(CompressedFonts::data), std::size(CompressedFonts::data), CompressedFonts::uncompressed_size);
+	static auto fonts = TarBall(CompressedFonts::buffer, CompressedFonts::uncompressed_size, TarBall::Compression::LZMA);
 
 	ImGuiIO &io = ImGui::GetIO();
 
 	io.Fonts->Clear();
 
-	ImFontConfig font_cfg;
-	font_cfg.FontDataOwnedByAtlas = false;
+	const auto &LoadFont = [&](const std::filesystem::path &path, const std::string_view &name)
+	{
+		ImFontConfig font_cfg;
+		font_cfg.FontDataOwnedByAtlas = false;
+		*fmt::format_to_n(std::data(font_cfg.Name), std::size(font_cfg.Name) - 1, "{}, {}px", name, font_size).out = '\0';
 
-	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Noto Sans JP Regular, {}px", font_size).out = '\0';
-	io.Fonts->AddFontFromMemoryTTF(std::data(decompressed_buffer.value()) + CompressedFonts::NotoSansJP::position, CompressedFonts::NotoSansJP::uncompressed_size, static_cast<float>(font_size), &font_cfg);
+		const auto font = fonts.OpenFile(path).value();
+		return io.Fonts->AddFontFromMemoryTTF(const_cast<unsigned char*>(std::data(font)), std::size(font), static_cast<float>(font_size), &font_cfg);
+	};
 
-	*fmt::format_to_n(font_cfg.Name, std::size(font_cfg.Name) - 1, "Inconsolata Regular, {}px", font_size).out = '\0';
-	monospace_font = io.Fonts->AddFontFromMemoryTTF(std::data(decompressed_buffer.value()) + CompressedFonts::Inconsolata::position, CompressedFonts::Inconsolata::uncompressed_size, static_cast<float>(font_size), &font_cfg);
+	LoadFont("NotoSansJP-Regular.ttf", "Noto Sans JP Regular");
+	monospace_font = LoadFont("Inconsolata-Regular.ttf", "Inconsolata Regular");
 }
 
 

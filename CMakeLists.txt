@@ -29,6 +29,8 @@ add_executable(clownmdemu WIN32
 	"source/raii-wrapper.h"
 	"source/sdl-wrapper.h"
 	"source/sdl-wrapper-extra.h"
+	"source/tar.cpp"
+	"source/tar.h"
 	"source/text-encoding.cpp"
 	"source/text-encoding.h"
 	"source/windows/cheats.cpp"
@@ -53,8 +55,6 @@ add_executable(clownmdemu WIN32
 	"source/windows/debug-z80.h"
 	"source/windows/disassembler.cpp"
 	"source/windows/disassembler.h"
-	"source/windows/common/compressed-fonts.cpp"
-	"source/windows/common/compressed-fonts.h"
 	"source/windows/common/winapi.cpp"
 	"source/windows/common/winapi.h"
 	"source/windows/common/window.cpp"
@@ -216,6 +216,10 @@ if(NOT fmt_FOUND)
 	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
 endif()
 target_link_libraries(clownmdemu fmt::fmt)
+
+# Link span
+add_subdirectory("libraries/span" EXCLUDE_FROM_ALL)
+target_link_libraries(clownmdemu span)
 
 # Link Lyra
 add_subdirectory("libraries/Lyra" EXCLUDE_FROM_ALL)

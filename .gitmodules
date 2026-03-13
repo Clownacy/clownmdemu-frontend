@@ -20,3 +20,6 @@
 [submodule "libraries/Lyra"]
 	path = libraries/Lyra
 	url = https://github.com/bfgroup/Lyra
+[submodule "libraries/span"]
+	path = libraries/span
+	url = https://github.com/tcbrindle/span
