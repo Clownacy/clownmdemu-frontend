@@ -6,7 +6,7 @@
 #include <functional>
 #include <string_view>
 
-#include "common/cd-reader.h"
+#include "../common/cd-reader.h"
 
 #include "file-utilities.h"
 #include "sdl-wrapper.h"

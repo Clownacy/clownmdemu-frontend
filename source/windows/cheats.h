@@ -4,7 +4,7 @@
 #include <list>
 #include <string>
 
-#include "../common/core/clowncommon/clowncommon.h"
+#include "../../common/core/clowncommon/clowncommon.h"
 
 #include "../emulator-instance.h"
 #include "common/window-popup.h"

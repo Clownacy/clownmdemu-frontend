@@ -2,9 +2,9 @@
 
 #include <fmt/core.h>
 
-#include "../libraries/imgui/misc/cpp/imgui_stdlib.h"
+#include "../../libraries/imgui/misc/cpp/imgui_stdlib.h"
 
-#include "../common/cheat.h"
+#include "../../common/cheat.h"
 
 Cheats::CodeSlot::CodeSlot(std::string code, const bool enabled)
 	: code(std::move(code))

@@ -2,8 +2,8 @@
 
 #include <SDL3/SDL.h>
 
-#include "../libraries/imgui/imgui.h"
-#include "../common/core/clowncommon/clowncommon.h"
+#include "../../libraries/imgui/imgui.h"
+#include "../../common/core/clowncommon/clowncommon.h"
 
 #if 0
 void DebugMemory::DisplayInternal(const cc_u8l* const buffer, const std::size_t buffer_length)

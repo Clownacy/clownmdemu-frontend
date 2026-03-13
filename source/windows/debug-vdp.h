@@ -6,8 +6,8 @@
 
 #include "../sdl-wrapper-extra.h"
 
-#include "../common/core/clowncommon/clowncommon.h"
-#include "../common/core/vdp.h"
+#include "../../common/core/clowncommon/clowncommon.h"
+#include "../../common/core/vdp.h"
 
 #include "common/window-popup.h"
 

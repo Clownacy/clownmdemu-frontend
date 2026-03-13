@@ -20,12 +20,12 @@
 #include <fmt/core.h>
 #include <SDL3/SDL.h>
 
-#include "common/core/clowncommon/clowncommon.h"
-#include "common/core/clownmdemu.h"
+#include "../common/core/clowncommon/clowncommon.h"
+#include "../common/core/clownmdemu.h"
 
-#include "libraries/imgui/imgui.h"
-#include "libraries/imgui/backends/imgui_impl_sdl3.h"
-#include "libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
+#include "../libraries/imgui/imgui.h"
+#include "../libraries/imgui/backends/imgui_impl_sdl3.h"
+#include "../libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
 
 #include "cd-reader.h"
 #include "debug-log.h"
@@ -208,7 +208,7 @@ private:
 		if (ImGui::CollapsingHeader("ClownMDEmu"))
 		{
 			static constexpr auto text = std::to_array<char>({
-				#include "licences/clownmdemu.h"
+				#include "../licences/clownmdemu.h"
 			});
 
 			DoLicence(text);
@@ -217,7 +217,7 @@ private:
 		if (ImGui::CollapsingHeader("Dear ImGui"))
 		{
 			static constexpr auto text = std::to_array<char>({
-				#include "licences/dear-imgui.h"
+				#include "../licences/dear-imgui.h"
 			});
 
 			DoLicence(text);
@@ -227,7 +227,7 @@ private:
 		if (ImGui::CollapsingHeader("Emscripten Browser File Library"))
 		{
 			static constexpr auto text = std::to_array<char>({
-				#include "licences/emscripten-browser-file.h"
+				#include "../licences/emscripten-browser-file.h"
 			});
 
 			DoLicence(text);
@@ -240,7 +240,7 @@ private:
 			if (ImGui::TreeNode("General"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/freetype.h"
+					#include "../licences/freetype.h"
 				});
 
 				DoLicence(text);
@@ -251,7 +251,7 @@ private:
 			if (ImGui::TreeNode("BDF Driver"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/freetype-bdf.h"
+					#include "../licences/freetype-bdf.h"
 				});
 
 				DoLicence(text);
@@ -262,7 +262,7 @@ private:
 			if (ImGui::TreeNode("PCF Driver"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/freetype-pcf.h"
+					#include "../licences/freetype-pcf.h"
 				});
 
 				DoLicence(text);
@@ -273,7 +273,7 @@ private:
 			if (ImGui::TreeNode("fthash.c & fthash.h"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/freetype-fthash.h"
+					#include "../licences/freetype-fthash.h"
 				});
 
 				DoLicence(text);
@@ -284,7 +284,7 @@ private:
 			if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/freetype-ft-hb.h"
+					#include "../licences/freetype-ft-hb.h"
 				});
 
 				DoLicence(text);
@@ -299,7 +299,7 @@ private:
 			if (ImGui::TreeNode("Noto Sans"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/noto-sans.h"
+					#include "../licences/noto-sans.h"
 				});
 
 				DoLicence(text);
@@ -310,7 +310,7 @@ private:
 			if (ImGui::TreeNode("Inconsolata"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/inconsolata.h"
+					#include "../licences/inconsolata.h"
 				});
 
 				DoLicence(text);
@@ -324,7 +324,7 @@ private:
 			if (ImGui::TreeNode("libretro-common"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/libretro-common.h"
+					#include "../licences/libretro-common.h"
 				});
 
 				DoLicence(text);
@@ -335,7 +335,7 @@ private:
 			if (ImGui::TreeNode("libchdr"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/libchdr.h"
+					#include "../licences/libchdr.h"
 				});
 
 				DoLicence(text);
@@ -346,7 +346,7 @@ private:
 			if (ImGui::TreeNode("miniz"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/miniz.h"
+					#include "../licences/miniz.h"
 				});
 
 				DoLicence(text);
@@ -357,7 +357,7 @@ private:
 			if (ImGui::TreeNode("zstd"))
 			{
 				static constexpr auto text = std::to_array<char>({
-					#include "licences/zstd.h"
+					#include "../licences/zstd.h"
 				});
 
 				DoLicence(text);

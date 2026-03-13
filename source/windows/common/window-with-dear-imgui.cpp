@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "../../../file-utilities.h"
+#include "../../file-utilities.h"
 #include "compressed-fonts.h"
 
 

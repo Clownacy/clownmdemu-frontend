@@ -12,9 +12,9 @@
 
 #include <SDL3/SDL.h>
 
-#include "../libraries/imgui/imgui.h"
-#include "../common/core/clowncommon/clowncommon.h"
-#include "../common/core/clownmdemu.h"
+#include "../../libraries/imgui/imgui.h"
+#include "../../common/core/clowncommon/clowncommon.h"
+#include "../../common/core/clownmdemu.h"
 
 #include "../frontend.h"
 

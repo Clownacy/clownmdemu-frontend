@@ -7,8 +7,8 @@
 #include <fstream>
 #include <type_traits>
 
-#include "common/core/clownmdemu.h"
-#include "common/cheat.h"
+#include "../common/core/clownmdemu.h"
+#include "../common/cheat.h"
 
 #include "audio-output.h"
 #include "cd-reader.h"

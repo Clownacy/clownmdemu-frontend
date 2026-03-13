@@ -5,9 +5,9 @@
 #include <array>
 #include <cstddef>
 
-#include "common/core/clowncommon/clowncommon.h"
+#include "../common/core/clowncommon/clowncommon.h"
 
-#include "common/mixer.h"
+#include "../common/mixer.h"
 
 #include "audio-device.h"
 

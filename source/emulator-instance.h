@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "common/core/clownmdemu.h"
+#include "../common/core/clownmdemu.h"
 
 #include "colour.h"
 #include "emulator-extended.h"

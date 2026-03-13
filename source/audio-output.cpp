@@ -10,7 +10,7 @@
 #define MIXER_CALLOC SDL_calloc
 #define MIXER_MEMMOVE SDL_memmove
 #define MIXER_MEMSET SDL_memset
-#include "common/mixer.h"
+#include "../common/mixer.h"
 
 static constexpr cc_u32f BufferSizeFromSampleRate(const cc_u32f sample_rate)
 {
