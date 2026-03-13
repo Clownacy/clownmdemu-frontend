@@ -1639,9 +1639,9 @@ static void LoadConfiguration()
 			const auto &StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
 			{
 				unsigned int integer;
-				const auto result = std::from_chars(reinterpret_cast<const char*>(&string.front()), reinterpret_cast<const char*>(&string.back()) + 1, integer, 10);
+				const auto result = std::from_chars(&string.front(), &string.back() + 1, integer, 10);
 
-				if (result.ec != std::errc{} || result.ptr != reinterpret_cast<const char*>(&string.back()) + 1)
+				if (result.ec != std::errc{} || result.ptr != &string.back() + 1)
 					return std::nullopt;
 
 				return integer;
