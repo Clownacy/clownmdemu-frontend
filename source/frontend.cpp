@@ -3084,29 +3084,20 @@ void Frontend::Update()
 		{
 			ImGui::SetCursorPos(cursor);
 
-			ImVec2 destination_size;
+			const ImVec2 current_screen_size = {static_cast<float>(emulator->GetCurrentScreenWidth()), static_cast<float>(emulator->GetCurrentScreenHeight())};
 
-			switch (screen_scaling)
-			{
-				case ScreenScaling::PIXEL_PERFECT:
-					destination_size.x = emulator->GetCurrentScreenWidth();
-					destination_size.y = emulator->GetCurrentScreenHeight();
-					break;
+			ImVec2 destination_size = current_screen_size;
 
-				case ScreenScaling::FIT:
-				case ScreenScaling::FILL:
-					// Correct the aspect ratio of the rendered frame.
-					// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
-					destination_size.x = (VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetCurrentWidescreenTiles() * 2) * VDP_TILE_WIDTH;
-					destination_size.y = emulator->GetCurrentScreenHeight();
-					break;
-			}
+			// Correct the aspect ratio of the rendered frame.
+			// (256x224 and 320x240 should be the same width, but 320x224 and 320x240 should be different heights - this matches the behaviour of a real Mega Drive).
+			if (!emulator->GetVDPState().h40_enabled && screen_scaling != ScreenScaling::PIXEL_PERFECT)
+				destination_size.x = destination_size.x * VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS / VDP_H32_SCREEN_WIDTH_IN_TILE_PAIRS;
 
 			if (emulator->GetVDPState().double_resolution_enabled && !tall_double_resolution_mode)
 				destination_size.x *= 2;
 
 			ImVec2 uv0 = {0, 0};
-			ImVec2 uv1 = {static_cast<float>(emulator->GetCurrentScreenWidth()), static_cast<float>(emulator->GetCurrentScreenHeight())};
+			ImVec2 uv1 = current_screen_size;
 
 			switch (screen_scaling)
 			{
