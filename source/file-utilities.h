@@ -2,6 +2,7 @@
 #define FILE_UTILITIES_H
 
 #include <array>
+#include <charconv>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -139,6 +140,18 @@ public:
 	{
 		return SDL::PathToCString(std::forward<Ts>(args)...);
 	}
+
+	template<typename T>
+	static std::optional<T> StringToInteger(const std::string_view &string, const int base = 10)
+	{
+		T integer;
+		const auto result = std::from_chars(&string.front(), &string.back() + 1, integer, base);
+
+		if (result.ec != std::errc{} || result.ptr != &string.back() + 1)
+			return std::nullopt;
+
+		return integer;
+	};
 };
 
 template<>

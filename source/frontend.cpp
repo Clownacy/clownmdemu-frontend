@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
-#include <charconv>
 #include <climits> // For INT_MAX.
 #include <cmath>
 #include <cstddef>
@@ -1636,19 +1635,8 @@ static void LoadConfiguration()
 	{
 		const auto &Callback = [&](const std::string_view &section, const std::string_view &name, const std::string_view &value)
 		{
-			const auto &StringToInteger = [](const std::string_view &string) -> std::optional<unsigned int>
-			{
-				unsigned int integer;
-				const auto result = std::from_chars(&string.front(), &string.back() + 1, integer, 10);
-
-				if (result.ec != std::errc{} || result.ptr != &string.back() + 1)
-					return std::nullopt;
-
-				return integer;
-			};
-
 			const bool value_boolean = value == "on" || value == "true";
-			const auto &value_integer = StringToInteger(value);
+			const auto &value_integer = FileUtilities::StringToInteger<unsigned int>(value);
 
 			if (section == "Miscellaneous")
 			{
@@ -1686,13 +1674,13 @@ static void LoadConfiguration()
 			}
 			else if (section == "Keyboard Bindings")
 			{
-				const auto scancode_integer = StringToInteger(name);
+				const auto scancode_integer = FileUtilities::StringToInteger<unsigned int>(name);
 
 				if (scancode_integer.has_value() && *scancode_integer < SDL_SCANCODE_COUNT)
 				{
 					const SDL_Scancode scancode = static_cast<SDL_Scancode>(*scancode_integer);
 
-					const auto binding_index = StringToInteger(value);
+					const auto binding_index = FileUtilities::StringToInteger<unsigned int>(value);
 
 					keyboard_bindings[scancode] = [&]()
 					{
