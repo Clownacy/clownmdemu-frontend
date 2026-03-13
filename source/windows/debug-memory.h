@@ -6,7 +6,7 @@
 #include <functional>
 #include <vector>
 
-#include "../../common/core/clowncommon/clowncommon.h"
+#include "../../common/core/libraries/clowncommon/clowncommon.h"
 
 #include "../frontend.h"
 #include "common/window-popup.h"

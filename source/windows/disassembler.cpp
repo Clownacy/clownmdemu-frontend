@@ -5,8 +5,8 @@
 
 #include <SDL3/SDL.h>
 
-#include "../../common/core/clown68000/disassembler/disassembler.h"
-#include "../../common/core/clownz80/disassembler.h"
+#include "../../common/core/libraries/clown68000/source/disassembler/disassembler.h"
+#include "../../common/core/libraries/clownz80/source/disassembler.h"
 #include "../../libraries/imgui/imgui.h"
 
 #include "../emulator-instance.h"

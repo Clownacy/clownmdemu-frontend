@@ -1,7 +1,7 @@
 #ifndef DEBUG_M68K_H
 #define DEBUG_M68K_H
 
-#include "../../common/core/clown68000/interpreter/clown68000.h"
+#include "../../common/core/libraries/clown68000/source/interpreter/clown68000.h"
 
 #include "common/window-popup.h"
 

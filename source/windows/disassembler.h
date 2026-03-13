@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "../../common/core/clowncommon/clowncommon.h"
+#include "../../common/core/libraries/clowncommon/clowncommon.h"
 
 #include "common/window-popup.h"
 

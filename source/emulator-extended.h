@@ -7,7 +7,7 @@
 #include <fstream>
 #include <type_traits>
 
-#include "../common/core/clownmdemu.h"
+#include "../common/core/source/clownmdemu.h"
 #include "../common/cheat.h"
 
 #include "audio-output.h"

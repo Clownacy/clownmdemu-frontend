@@ -9,9 +9,9 @@
 #endif
 #include "../libraries/imgui/misc/cpp/imgui_stdlib.h"
 
-#include "../common/clowncd/disc/chd/libchdr/deps/lzma-25.01/include/LzmaDec.h"
-#include "../common/clowncd/disc/chd/libchdr/deps/miniz-3.1.1/miniz.h"
-#include "../common/core/clowncommon/clowncommon.h"
+#include "../common/clowncd/libraries/chd/libchdr/deps/lzma-25.01/include/LzmaDec.h"
+#include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
+#include "../common/core/libraries/clowncommon/clowncommon.h"
 
 void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {

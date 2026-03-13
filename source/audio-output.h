@@ -5,7 +5,7 @@
 #include <array>
 #include <cstddef>
 
-#include "../common/core/clowncommon/clowncommon.h"
+#include "../common/core/libraries/clowncommon/clowncommon.h"
 
 #include "../common/mixer.h"
 

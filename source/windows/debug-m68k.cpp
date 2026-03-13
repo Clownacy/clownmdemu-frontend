@@ -1,8 +1,8 @@
 #include "debug-m68k.h"
 
 #include "../../libraries/imgui/imgui.h"
-#include "../../common/core/clowncommon/clowncommon.h"
-#include "../../common/core/clownmdemu.h"
+#include "../../common/core/libraries/clowncommon/clowncommon.h"
+#include "../../common/core/source/clownmdemu.h"
 
 void DebugM68k::Registers::DisplayInternal(const Clown68000_State &m68k)
 {
