@@ -374,6 +374,22 @@ void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileM
 	SDL_RenderTextureRotated(renderer, textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_FlipMode>(flip));
 }
 
+static void ZoomableChild(const char* const label, int &zoom, const float dpi_scale, const std::function<void()> &callback)
+{
+	ImGui::PushID(label);
+
+	// Allow higher zooms at higher DPIs, so that the limit isn't painfully low at ultra-high resolutions.
+	ImGui::VSliderInt("##Zoom", {20 * dpi_scale, ImGui::GetContentRegionAvail().y}, &zoom, 1, 8 * dpi_scale, "%dx", ImGuiSliderFlags_ClampOnInput);
+	ImGui::SameLine();
+
+	if (ImGui::BeginChild("##Child", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
+		callback();
+
+	ImGui::EndChild();
+
+	ImGui::PopID();
+}
+
 template<typename Derived>
 void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const std::size_t map_width_in_pieces,
@@ -400,48 +416,43 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 	if (!textures.empty())
 	{
-		// Allow higher zooms at higher DPIs, so that the limit isn't painfully low at ultra-high resolutions.
-		ImGui::VSliderInt("##Zoom", {20 * dpi_scale, ImGui::GetContentRegionAvail().y}, &derived->scale, 1, 8 * dpi_scale, "%dx", ImGuiSliderFlags_ClampOnInput);
-
-		ImGui::SameLine();
-
-		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
-		{
-			RegenerateTexturesIfNeeded(window.GetRenderer(), [&](SDL::Renderer &renderer, [[maybe_unused]] const unsigned int texture_index)
+		ZoomableChild("Plane View", derived->scale, dpi_scale,
+			[&]()
 			{
-				for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
-					for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
-						draw_piece(renderer, x, y);
+				RegenerateTexturesIfNeeded(window.GetRenderer(), [&](SDL::Renderer &renderer, [[maybe_unused]] const unsigned int texture_index)
+				{
+					for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
+						for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
+							draw_piece(renderer, x, y);
 
-				if (draw_overlay)
-					draw_overlay(renderer);
-			}, force_regenerate);
+					if (draw_overlay)
+						draw_overlay(renderer);
+				}, force_regenerate);
 
-			const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
-			const float map_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
+				const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
+				const float map_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
 
-			const ImVec2 image_position = ImGui::GetCursorScreenPos();
+				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(ImTextureRef(textures[0]), ImVec2(map_width_in_pixels * derived->scale, map_height_in_pixels * derived->scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
+				ImGui::Image(ImTextureRef(textures[0]), ImVec2(map_width_in_pixels * derived->scale, map_height_in_pixels * derived->scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
 
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::BeginTooltip();
 
-				const ImVec2 mouse_position = ImGui::GetMousePos();
+					const ImVec2 mouse_position = ImGui::GetMousePos();
 
-				const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / derived->scale / piece_width);
-				const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / derived->scale / piece_height);
+					const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / derived->scale / piece_width);
+					const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / derived->scale / piece_height);
 
-				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
-				ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
-				ImGui::SameLine();
-				piece_tooltip(piece_x, piece_y);
-				ImGui::EndTooltip();
+					const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
+					ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
+					ImGui::SameLine();
+					piece_tooltip(piece_x, piece_y);
+					ImGui::EndTooltip();
+				}
 			}
-		}
-
-		ImGui::EndChild();
+		);
 	}
 }
 
@@ -663,9 +674,12 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 
 void DebugVDP::SpriteViewer::DisplayInternal()
 {
-	DisplaySpriteCommon(GetWindow());
+	auto &window = GetWindow();
+	auto &renderer = window.GetRenderer();
+	const auto dpi_scale = window.GetDPIScale();
 
-	SDL::Renderer &renderer = GetWindow().GetRenderer();
+	DisplaySpriteCommon(window);
+
 	const VDP_State &vdp = Frontend::emulator->GetVDPState();
 
 	constexpr cc_u16f plane_texture_width = 512;
@@ -677,75 +691,71 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
 
-	ImGui::InputInt("Zoom", &scale);
-	if (scale < 1)
-		scale = 1;
-
-	if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
-	{
-		const auto previous_render_target = SDL_GetRenderTarget(renderer);
-		SDL_SetRenderTarget(renderer, texture);
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-		SDL_RenderClear(renderer);
-		SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
-		const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-		const SDL_FRect visible_area_rectangle = {
-			static_cast<float>(0x80 - (Frontend::emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
-			static_cast<float>(0x80 * vertical_scale),
-			static_cast<float>(Frontend::emulator->GetCurrentScreenWidth()),
-			static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
-		};
-		SDL_RenderFillRect(renderer, &visible_area_rectangle);
-
-		std::vector<cc_u8l> sprite_vector;
-
-		// Need to display sprites backwards for proper layering.
-		for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+	ZoomableChild("Plane View", scale, dpi_scale,
+		[&]()
 		{
-			sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+			const auto previous_render_target = SDL_GetRenderTarget(renderer);
+			SDL_SetRenderTarget(renderer, texture);
+			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+			SDL_RenderClear(renderer);
+			SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
+			const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
+			const SDL_FRect visible_area_rectangle = {
+				static_cast<float>(0x80 - (Frontend::emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
+				static_cast<float>(0x80 * vertical_scale),
+				static_cast<float>(Frontend::emulator->GetCurrentScreenWidth()),
+				static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
+			};
+			SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
-			sprite_index = GetSprite(vdp, sprite_index).cached.link;
+			std::vector<cc_u8l> sprite_vector;
 
-			if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
-				break;
+			// Need to display sprites backwards for proper layering.
+			for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+			{
+				sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+
+				sprite_index = GetSprite(vdp, sprite_index).cached.link;
+
+				if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
+					break;
+			}
+
+			// Draw sprites to the plane texture.
+			for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+			{
+				const cc_u8f sprite_index = *it;
+				const Sprite sprite = GetSprite(vdp, sprite_index);
+
+				const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+				const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+				SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
+			}
+
+			SDL_SetRenderTarget(renderer, previous_render_target);
+
+			const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
+			const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
+
+			const ImVec2 image_position = ImGui::GetCursorScreenPos();
+
+			ImGui::Image(ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+
+				const ImVec2 mouse_position = ImGui::GetMousePos();
+
+				const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale);
+				const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale);
+
+				ImGui::TextFormatted("{},{}", pixel_x, pixel_y);
+
+				ImGui::EndTooltip();
+			}
 		}
-
-		// Draw sprites to the plane texture.
-		for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
-		{
-			const cc_u8f sprite_index = *it;
-			const Sprite sprite = GetSprite(vdp, sprite_index);
-
-			const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-			const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-			SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
-		}
-
-		SDL_SetRenderTarget(renderer, previous_render_target);
-
-		const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
-		const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
-
-		const ImVec2 image_position = ImGui::GetCursorScreenPos();
-
-		ImGui::Image(ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::BeginTooltip();
-
-			const ImVec2 mouse_position = ImGui::GetMousePos();
-
-			const cc_u16f pixel_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / scale);
-			const cc_u16f pixel_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / scale);
-
-			ImGui::TextFormatted("{},{}", pixel_x, pixel_y);
-
-			ImGui::EndTooltip();
-		}
-	}
-
-	ImGui::EndChild();
+	);
 }
 
 void DebugVDP::SpriteList::DisplayInternal()

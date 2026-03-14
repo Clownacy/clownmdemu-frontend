@@ -109,7 +109,7 @@ namespace DebugVDP
 
 		static constexpr Uint32 window_flags = 0;
 
-		int scale = 0;
+		int scale = 1;
 		SDL::Texture texture = nullptr;
 
 		void DisplayInternal();
