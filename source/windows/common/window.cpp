@@ -12,7 +12,6 @@
 #ifndef SDL_PLATFORM_WIN32
 namespace WindowIcon
 {
-	static
 	#include "../../assets/icon/archive.tar.lzma.h"
 }
 

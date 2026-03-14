@@ -7,7 +7,6 @@
 
 namespace CompressedFonts
 {
-	static
 	#include "../../assets/font/archive.tar.lzma.h"
 }
 
