@@ -2001,8 +2001,7 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 
 		InitialiseConfigurationDirectoryPath(user_data_path);
 
-		// TODO: Use the proper constant, and drop support for SDL <3.4.0.
-		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, std::nullopt, /*SDL_WINDOW_FILL_DOCUMENT*/0x200000);
+		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, std::nullopt, SDL_WINDOW_FILL_DOCUMENT);
 		emulator.emplace(window->framebuffer_texture, ReadInputCallback,
 			[](const std::string &title)
 			{
