@@ -471,7 +471,9 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 		}
 	);
 
-	const bool force_regenerate = plane != Plane::WINDOW && ImGui::Checkbox("Scroll Overlay", &scroll_overlay);
+	const bool force_regenerate = plane != Plane::WINDOW && ImGui::Checkbox("Scroll Overlay", &scroll_overlay_enabled);
+	ImGui::SameLine();
+	ImGui::ColorEdit4("Overlay Colour", std::data(scroll_overlay_colour), ImGuiColorEditFlags_NoInputs);
 
 	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, tile_width, tile_height,
 		[&](SDL::Renderer &renderer, const cc_u16f x, const cc_u16f y)
@@ -489,7 +491,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 		},
 		[&](SDL::Renderer &renderer)
 		{
-			if (plane == Plane::WINDOW || !scroll_overlay)
+			if (plane == Plane::WINDOW || !scroll_overlay_enabled)
 				return;
 
 			Uint8 previous_red, previous_green, previous_blue, previous_alpha;
@@ -497,7 +499,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			SDL_BlendMode previous_blend_mode;
 			SDL_GetRenderDrawBlendMode(renderer, &previous_blend_mode);
 
-			SDL_SetRenderDrawColor(renderer, 0xFF, 0, 0, 0x7F);
+			SDL_SetRenderDrawColorFloat(renderer, scroll_overlay_colour[0], scroll_overlay_colour[1], scroll_overlay_colour[2], scroll_overlay_colour[3]);
 			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 			const auto plane_width_in_pixels = plane_width * tile_width;

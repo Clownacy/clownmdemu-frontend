@@ -1,6 +1,7 @@
 #ifndef DEBUG_VDP_H
 #define DEBUG_VDP_H
 
+#include <array>
 #include <cstddef>
 #include <functional>
 
@@ -166,7 +167,8 @@ namespace DebugVDP
 		using Base = MapViewer<PlaneViewer>;
 
 		int scale = 2;
-		bool scroll_overlay = false;
+		bool scroll_overlay_enabled = false;
+		std::array<float, 4> scroll_overlay_colour = {1.0f, 0.0f, 0.0f, 0.5f};
 		RegeneratingPieces regenerating_pieces;
 
 		void DisplayInternal(Plane plane);
