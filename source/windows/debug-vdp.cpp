@@ -385,7 +385,6 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const DrawMapPiece &draw_piece,
 	const MapPieceTooltip &piece_tooltip,
 	const DrawOverlay &draw_overlay,
-	bool* const scroll_overlay,
 	bool force_regenerate)
 {
 	const auto derived = static_cast<Derived*>(this);
@@ -393,25 +392,22 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 	const cc_u16f map_texture_width = maximum_map_width_in_pixels;
 	const cc_u16f map_texture_height = maximum_map_height_in_pixels;
 
+	auto &window = derived->GetWindow();
+	const auto dpi_scale = derived->GetWindow().GetDPIScale();
+
 	if (textures.empty())
-		textures.emplace_back(SDL::CreateTexture(derived->GetWindow().GetRenderer(), SDL_TEXTUREACCESS_TARGET, map_texture_width, map_texture_height, SDL_SCALEMODE_NEAREST));
+		textures.emplace_back(SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_TARGET, map_texture_width, map_texture_height, SDL_SCALEMODE_NEAREST));
 
 	if (!textures.empty())
 	{
-		ImGui::InputInt("Zoom", &derived->scale);
-		if (derived->scale < 1)
-			derived->scale = 1;
+		// Allow higher zooms at higher DPIs, so that the limit isn't painfully low at ultra-high resolutions.
+		ImGui::VSliderInt("##Zoom", {20 * dpi_scale, ImGui::GetContentRegionAvail().y}, &derived->scale, 1, 8 * dpi_scale, "%dx", ImGuiSliderFlags_ClampOnInput);
 
-		if (scroll_overlay != nullptr)
-		{
-			ImGui::SameLine();
-			if (ImGui::Checkbox("Scroll Overlay", scroll_overlay))
-				force_regenerate = true;
-		}
+		ImGui::SameLine();
 
 		if (ImGui::BeginChild("Plane View", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
 		{
-			RegenerateTexturesIfNeeded(derived->GetWindow().GetRenderer(), [&](SDL::Renderer &renderer, [[maybe_unused]] const unsigned int texture_index)
+			RegenerateTexturesIfNeeded(window.GetRenderer(), [&](SDL::Renderer &renderer, [[maybe_unused]] const unsigned int texture_index)
 			{
 				for (cc_u16f y = 0; y < map_height_in_pieces; ++y)
 					for (cc_u16f x = 0; x < map_width_in_pieces; ++x)
@@ -437,7 +433,6 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / derived->scale / piece_width);
 				const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / derived->scale / piece_height);
 
-				const auto dpi_scale = derived->GetWindow().GetDPIScale();
 				const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
 				ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
 				ImGui::SameLine();
@@ -475,6 +470,8 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			DrawTileFromVRAM(tile_metadata, pixels, pitch, 0, 0, false, brightness);
 		}
 	);
+
+	const bool force_regenerate = plane != Plane::WINDOW && ImGui::Checkbox("Scroll Overlay", &scroll_overlay);
 
 	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, tile_width, tile_height,
 		[&](SDL::Renderer &renderer, const cc_u16f x, const cc_u16f y)
@@ -544,7 +541,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
 			SDL_SetRenderDrawBlendMode(renderer, previous_blend_mode);
 		},
-		plane == Plane::WINDOW ? nullptr : &scroll_overlay
+		force_regenerate
 	);
 }
 
@@ -634,7 +631,6 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			ImGui::TextFormatted("Stamp Index: 0x{:X}" "\n" "Angle: {} degrees" "\n" "Horizontal Flip: {}", stamp_index, stamp_metadata.angle * 90, stamp_metadata.horizontal_flip ? "True" : "False");
 		},
 		{},
-		nullptr,
 		options_changed
 	);
 }

@@ -2988,12 +2988,12 @@ void Frontend::Update()
 					ImGui::PushID("Visualisers");
 					PopupButton("Sprite Plane", sprite_plane_visualiser_window, nullptr, std::make_pair(540, 610), 1.0f);
 					PopupButton("Window Plane", window_plane_visualiser_window, nullptr, std::make_pair(540, 610), 1.0f);
-					PopupButton("Plane A", plane_a_visualiser_window, nullptr, std::make_pair(1050, 610), 1.0f);
-					PopupButton("Plane B", plane_b_visualiser_window, nullptr, std::make_pair(1050, 610), 1.0f);
+					PopupButton("Plane A", plane_a_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
+					PopupButton("Plane B", plane_b_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
 					PopupButton("Tiles", tile_visualiser_window, nullptr, 8);
 					PopupButton("Colours", colour_visualiser_window);
 					PopupButton("Stamps", stamp_visualiser_window, nullptr, 16);
-					PopupButton("Stamp Map", stamp_map_visualiser_window, nullptr, std::make_pair(1050, 610), 1.0f);
+					PopupButton("Stamp Map", stamp_map_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}

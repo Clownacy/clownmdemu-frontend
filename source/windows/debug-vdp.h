@@ -151,7 +151,6 @@ namespace DebugVDP
 			const DrawMapPiece &draw_piece,
 			const MapPieceTooltip &piece_tooltip,
 			const DrawOverlay &draw_overlay = {},
-			bool *scroll_overlay = nullptr,
 			bool force_regenerate = false);
 
 	public:
