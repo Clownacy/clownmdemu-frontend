@@ -1,3 +1,5 @@
+#!/usr/bin/env sh
+
 magick icon-master.png -thumbnail 512x512 icon-qt.png
 magick icon-master.png -thumbnail 512x512 -background transparent -gravity center -extent 512x512 icon-512.png
 magick icon-master.png -thumbnail 256x256 -background transparent -gravity center -extent 256x256 icon-256.png
@@ -10,3 +12,5 @@ magick icon-master.png -thumbnail 40x40 -background transparent -gravity center 
 #magick icon-master.png -thumbnail 20x20 -background transparent -gravity center -extent 20x20 icon-20.png
 #magick icon-master.png -thumbnail 16x16 -background transparent -gravity center -extent 16x16 icon-16.png
 magick icon-256.png icon-64.png icon-48.png icon-40.png icon-32.png icon-24.png icon-20.png icon-16.png icon.ico
+
+sh ../make-archive.sh icon-512.png icon-32.png icon-24.png icon-20.png icon-16.png

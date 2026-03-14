@@ -23,6 +23,7 @@ namespace SDL
 	MAKE_RAII_POINTER(Window,       SDL_Window,       SDL_DestroyWindow     );
 	MAKE_RAII_POINTER(Renderer,     SDL_Renderer,     SDL_DestroyRenderer   );
 	MAKE_RAII_POINTER(Texture,      SDL_Texture,      SDL_DestroyTexture    );
+	MAKE_RAII_POINTER(Surface,      SDL_Surface,      SDL_DestroySurface    );
 	MAKE_RAII_POINTER(IOStreamBase, SDL_IOStream,     SDL_CloseIO           );
 	MAKE_RAII_POINTER(AudioStream,  SDL_AudioStream,  SDL_DestroyAudioStream);
 	MAKE_RAII_POINTER(SharedObject, SDL_SharedObject, SDL_UnloadObject      );

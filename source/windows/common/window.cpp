@@ -6,7 +6,39 @@
 #include "../../common/core/libraries/clowncommon/clowncommon.h"
 
 #include "../../frontend.h"
+#include "../../tar.h"
 #include "winapi.h"
+
+#ifndef SDL_PLATFORM_WIN32
+namespace WindowIcon
+{
+	static
+	#include "../../assets/icon/archive.tar.lzma.h"
+}
+
+static SDL::Surface LoadWindowIcon()
+{
+	TarBall archive(WindowIcon::buffer, WindowIcon::uncompressed_size, TarBall::Compression::LZMA);
+
+	const auto &LoadPNG = [&](const std::filesystem::path &path) -> SDL::Surface
+	{
+		const auto &file = archive.OpenFile(path);
+
+		if (!file.has_value())
+			return nullptr;
+
+		return SDL::Surface(SDL_LoadPNG_IO(SDL::IOStream(std::data(*file), std::size(*file)), false));
+	};
+
+	auto surface = LoadPNG("icon-16.png");
+	SDL_AddSurfaceAlternateImage(surface, LoadPNG("icon-20.png"));
+	SDL_AddSurfaceAlternateImage(surface, LoadPNG("icon-24.png"));
+	SDL_AddSurfaceAlternateImage(surface, LoadPNG("icon-32.png"));
+	SDL_AddSurfaceAlternateImage(surface, LoadPNG("icon-512.png"));
+
+	return surface;
+}
+#endif
 
 static float HandleDPIError(const float dpi_scale)
 {
@@ -78,6 +110,11 @@ Window::Window(const char* const window_title, const float window_width, const f
 	this->renderer = SDL::Renderer(renderer);
 
 	DisableRounding();
+
+#ifndef SDL_PLATFORM_WIN32
+	static SDL::Surface window_icon = LoadWindowIcon();
+	SDL_SetWindowIcon(window, window_icon);
+#endif
 }
 
 void Window::SetTitleBarColour(const unsigned char red, const unsigned char green, const unsigned char blue)
