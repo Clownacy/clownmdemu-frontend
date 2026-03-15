@@ -483,9 +483,13 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 	);
 
 	bool force_regenerate = false;
-	force_regenerate |= plane != Plane::WINDOW && ImGui::Checkbox("Scroll Overlay", &scroll_overlay_enabled);
-	ImGui::SameLine();
-	force_regenerate |= ImGui::ColorEdit4("Overlay Colour", std::data(scroll_overlay_colour), ImGuiColorEditFlags_NoInputs) && scroll_overlay_enabled;
+
+	if (plane != Plane::WINDOW)
+	{
+		force_regenerate |= ImGui::Checkbox("Scroll Overlay", &scroll_overlay_enabled);
+		ImGui::SameLine();
+		force_regenerate |= ImGui::ColorEdit4("Overlay Colour", std::data(scroll_overlay_colour), ImGuiColorEditFlags_NoInputs) && scroll_overlay_enabled;
+	}
 
 	DisplayMap(plane_width, plane_height, maximum_plane_width_in_pixels, maximum_plane_height_in_pixels, tile_width, tile_height,
 		[&](SDL::Renderer &renderer, const cc_u16f x, const cc_u16f y)
