@@ -33,8 +33,6 @@ inline void DoToolTip(const T& text)
 
 namespace Frontend
 {
-	using FrameRateCallback = std::function<void(bool pal_mode)>;
-
 	extern std::optional<EmulatorInstance> emulator;
 	extern std::optional<WindowWithFramebuffer> window;
 	extern FileUtilities file_utilities;
@@ -46,8 +44,7 @@ namespace Frontend
 	bool IsFileCD(const std::filesystem::path &path);
 	const std::filesystem::path& GetConfigurationDirectoryPath();
 	std::filesystem::path GetSaveDataDirectoryPath();
-	void SetTVStandard(ClownMDEmu_TVStandard tv_standard);
-	bool Initialise(const FrameRateCallback &frame_rate_callback, bool fullscreen = false, const std::filesystem::path &user_data_path = "", const std::filesystem::path &cartridge_path = "", const std::filesystem::path &cd_path = "");
+	bool Initialise(const EmulatorInstance::FramerateCallback &framerate_callback, bool fullscreen = false, const std::filesystem::path &user_data_path = "", const std::filesystem::path &cartridge_path = "", const std::filesystem::path &cd_path = "");
 	void HandleEvent(const SDL_Event &event);
 	void Update();
 	void Deinitialise();

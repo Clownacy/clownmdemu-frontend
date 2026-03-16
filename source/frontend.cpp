@@ -1135,8 +1135,6 @@ bool Frontend::native_windows;
 static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 static std::array<bool, SDL_SCANCODE_COUNT> key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
-static Frontend::FrameRateCallback frame_rate_callback;
-
 #ifdef FILE_PATH_SUPPORT
 static std::list<RecentSoftware> recent_software_list;
 #endif
@@ -1478,12 +1476,6 @@ static bool SaveState(const std::filesystem::path &path)
 }
 #endif
 
-void Frontend::SetTVStandard(const ClownMDEmu_TVStandard tv_standard)
-{
-	frame_rate_callback(tv_standard == CLOWNMDEMU_TV_STANDARD_PAL);
-	emulator->SetTVStandard(tv_standard);
-}
-
 static bool ShouldBeInFullscreenMode()
 {
 	return forced_fullscreen || window->GetFullscreen();
@@ -1788,7 +1780,7 @@ static void LoadConfiguration()
 	emulator->SetControllerProtocol(input_protocol);
 	emulator->SetLadderEffectEnabled(ladder_effect);
 
-	SetTVStandard(pal_mode ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC);
+	emulator->SetTVStandard(pal_mode ? CLOWNMDEMU_TV_STANDARD_PAL : CLOWNMDEMU_TV_STANDARD_NTSC);
 	emulator->SetRegion(domestic ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS);
 }
 
@@ -1976,9 +1968,8 @@ static void PreEventStuff()
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, const bool fullscreen, const std::filesystem::path &user_data_path, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
+bool Frontend::Initialise(const EmulatorInstance::FramerateCallback &framerate_callback, const bool fullscreen, const std::filesystem::path &user_data_path, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
 {
-	frame_rate_callback = frame_rate_callback_param;
 	forced_fullscreen = fullscreen;
 
 	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "ClownMDEmu");
@@ -2008,7 +1999,8 @@ bool Frontend::Initialise(const FrameRateCallback &frame_rate_callback_param, co
 				// Use the default title if the ROM does not provide a name.
 				// Micro Machines is one game that lacks a name.
 				SDL_SetWindowTitle(window->GetSDLWindow(), title.empty() ? DEFAULT_TITLE : title.c_str());
-			}
+			},
+			framerate_callback
 		);
 
 		LoadConfiguration();

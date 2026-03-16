@@ -31,12 +31,14 @@ cc_bool EmulatorInstance::InputRequested(const cc_u8f player_id, const ClownMDEm
 EmulatorInstance::EmulatorInstance(
 	SDL::Texture &texture,
 	const InputCallback &input_callback,
-	const TitleCallback &title_callback
+	const TitleCallback &title_callback,
+	const FramerateCallback &framerate_callback
 )
 	: EmulatorExtended({}, false, Frontend::GetSaveDataDirectoryPath())
 	, texture(texture)
 	, input_callback(input_callback)
 	, title_callback(title_callback)
+	, framerate_callback(framerate_callback)
 {}
 
 void EmulatorInstance::Update()
