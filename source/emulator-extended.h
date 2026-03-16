@@ -357,13 +357,19 @@ private:
 			{
 				const cc_u32f codepoint = ShiftJISToUTF32(&in_buffer[in_index], &in_bytes_read);
 
+				// Null characters are obviously invalid.
+				if (codepoint == '\0')
+					return {};
+
 				// Eliminate padding (the Sonic games tend to use padding to make the name look good in a hex editor).
 				if (codepoint != ' ' || previous_codepoint != ' ')
 				{
 					const auto utf8_codepoint = UTF32ToUTF8(codepoint);
 
-					if (utf8_codepoint.has_value())
-						name_buffer += *utf8_codepoint;
+					if (!utf8_codepoint.has_value())
+						return {};
+
+					name_buffer += *utf8_codepoint;
 				}
 
 				previous_codepoint = codepoint;
