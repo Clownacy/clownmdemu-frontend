@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <numeric>
@@ -378,7 +379,11 @@ static void ZoomableChild(const char* const label, float &zoom, const float dpi_
 {
 	ImGui::PushID(label);
 
-	ImGui::VSliderFloat("##Zoom", {ImGui::GetFrameHeight(), ImGui::GetContentRegionAvail().y}, &zoom, 1, 8, "%.1fx", ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_Logarithmic);
+	const auto slider_width = ImGui::GetFrameHeight();
+	ImGui::PushFont(nullptr, std::floor(13 * dpi_scale));
+	ImGui::VSliderFloat("##Zoom", {slider_width, ImGui::GetContentRegionAvail().y}, &zoom, 1, 8, "%.1fx", ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_Logarithmic);
+	ImGui::PopFont();
+
 	ImGui::SameLine();
 
 	if (ImGui::BeginChild("##Child", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
