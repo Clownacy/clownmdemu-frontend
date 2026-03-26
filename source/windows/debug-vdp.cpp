@@ -700,6 +700,8 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 		{
 			const auto previous_render_target = SDL_GetRenderTarget(renderer);
 			SDL_SetRenderTarget(renderer, texture);
+			Uint8 previous_red, previous_green, previous_blue, previous_alpha;
+			SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
 			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
 			SDL_RenderClear(renderer);
 			SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
@@ -737,6 +739,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			}
 
 			SDL_SetRenderTarget(renderer, previous_render_target);
+			SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
 
 			const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
 			const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
