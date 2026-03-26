@@ -2971,20 +2971,20 @@ void Frontend::Update()
 				if (ImGui::BeginMenu("VDP"))
 				{
 					PopupButton("Registers", vdp_registers_window, "VDP Registers");
-					PopupButton("Sprites", sprite_list_window, nullptr, std::make_pair(540, 344));
+					PopupButton("Sprites", sprite_list_window, nullptr, std::make_pair(1000, 344));
 					PopupButton("VRAM", vram_viewer_window, nullptr, vdp.vram, window->monospace_font);
 					PopupButton("CRAM", cram_viewer_window, nullptr, vdp.cram, window->monospace_font);
 					PopupButton("VSRAM", vsram_viewer_window, nullptr, vdp.vsram, window->monospace_font);
 					ImGui::SeparatorText("Visualisers");
 					ImGui::PushID("Visualisers");
-					PopupButton("Sprite Plane", sprite_plane_visualiser_window, nullptr, std::make_pair(610, 580), 1.0f);
-					PopupButton("Window Plane", window_plane_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
-					PopupButton("Plane A", plane_a_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
-					PopupButton("Plane B", plane_b_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
+					PopupButton("Sprite Plane", sprite_plane_visualiser_window, nullptr, std::make_pair(730, 700));
+					PopupButton("Window Plane", window_plane_visualiser_window, nullptr, std::make_pair(1100, 600));
+					PopupButton("Plane A", plane_a_visualiser_window, nullptr, std::make_pair(1100, 600));
+					PopupButton("Plane B", plane_b_visualiser_window, nullptr, std::make_pair(1100, 600));
 					PopupButton("Tiles", tile_visualiser_window, nullptr, 8);
 					PopupButton("Colours", colour_visualiser_window);
 					PopupButton("Stamps", stamp_visualiser_window, nullptr, 16);
-					PopupButton("Stamp Map", stamp_map_visualiser_window, nullptr, std::make_pair(1100, 610), 1.0f);
+					PopupButton("Stamp Map", stamp_map_visualiser_window, nullptr, std::make_pair(1100, 600));
 					ImGui::PopID();
 					ImGui::EndMenu();
 				}

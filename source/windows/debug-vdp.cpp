@@ -310,7 +310,7 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 		texture_width = texture_width_rounded_up;
 		texture_height = texture_height_rounded_up;
 
-		textures.emplace_back(SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), SDL_SCALEMODE_NEAREST));
+		textures.emplace_back(SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_STREAMING, static_cast<int>(texture_width), static_cast<int>(texture_height), SDL_SCALEMODE_PIXELART));
 	}
 
 	if (!textures.empty())
@@ -374,12 +374,11 @@ void DebugVDP::RegeneratingPieces::Draw(SDL::Renderer &renderer, const VDP_TileM
 	SDL_RenderTextureRotated(renderer, textures[0], &piece_rect, &destination_rect, angle, nullptr, static_cast<SDL_FlipMode>(flip));
 }
 
-static void ZoomableChild(const char* const label, int &zoom, const float dpi_scale, const std::function<void()> &callback)
+static void ZoomableChild(const char* const label, float &zoom, const float dpi_scale, const std::function<void()> &callback)
 {
 	ImGui::PushID(label);
 
-	// Allow higher zooms at higher DPIs, so that the limit isn't painfully low at ultra-high resolutions.
-	ImGui::VSliderInt("##Zoom", {20 * dpi_scale, ImGui::GetContentRegionAvail().y}, &zoom, 1, 8 * dpi_scale, "%dx", ImGuiSliderFlags_ClampOnInput);
+	ImGui::VSliderFloat("##Zoom", {ImGui::GetFrameHeight(), ImGui::GetContentRegionAvail().y}, &zoom, 1, 8, "%.1fx", ImGuiSliderFlags_ClampOnInput | ImGuiSliderFlags_NoRoundToFormat | ImGuiSliderFlags_Logarithmic);
 	ImGui::SameLine();
 
 	if (ImGui::BeginChild("##Child", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar))
@@ -405,14 +404,11 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 {
 	const auto derived = static_cast<Derived*>(this);
 
-	const cc_u16f map_texture_width = maximum_map_width_in_pixels;
-	const cc_u16f map_texture_height = maximum_map_height_in_pixels;
-
 	auto &window = derived->GetWindow();
 	const auto dpi_scale = derived->GetWindow().GetDPIScale();
 
 	if (textures.empty())
-		textures.emplace_back(SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_TARGET, map_texture_width, map_texture_height, SDL_SCALEMODE_NEAREST));
+		textures.emplace_back(SDL::CreateTexture(window.GetRenderer(), SDL_TEXTUREACCESS_TARGET, maximum_map_width_in_pixels, maximum_map_height_in_pixels, SDL_SCALEMODE_PIXELART));
 
 	if (!textures.empty())
 	{
@@ -429,12 +425,14 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 						draw_overlay(renderer);
 				}, force_regenerate);
 
-				const float map_width_in_pixels = static_cast<float>(map_width_in_pieces * piece_width);
-				const float map_height_in_pixels = static_cast<float>(map_height_in_pieces * piece_height);
+				const ImVec2 piece_size(piece_width, piece_height);
+				const ImVec2 map_texture_size(maximum_map_width_in_pixels, maximum_map_height_in_pixels);
+				const ImVec2 map_size_in_pieces(map_width_in_pieces, map_height_in_pieces);
+				const ImVec2 map_size_in_pixels = map_size_in_pieces * piece_size;
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-				ImGui::Image(ImTextureRef(textures[0]), ImVec2(map_width_in_pixels * derived->scale, map_height_in_pixels * derived->scale), ImVec2(0.0f, 0.0f), ImVec2(map_width_in_pixels / map_texture_width, map_height_in_pixels / map_texture_height));
+				ImGui::Image(ImTextureRef(textures[0]), map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size);
 
 				if (ImGui::IsItemHovered())
 				{
@@ -442,13 +440,14 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 					const ImVec2 mouse_position = ImGui::GetMousePos();
 
-					const cc_u16f piece_x = static_cast<cc_u16f>((mouse_position.x - image_position.x) / derived->scale / piece_width);
-					const cc_u16f piece_y = static_cast<cc_u16f>((mouse_position.y - image_position.y) / derived->scale / piece_height);
+					ImVec2 piece_position = (mouse_position - image_position) / derived->scale / dpi_scale / piece_size;
+					piece_position.x = std::floor(piece_position.x);
+					piece_position.y = std::floor(piece_position.y);
 
-					const auto destination_width = 8 * SDL_roundf(9.0f * dpi_scale);
-					ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), ImVec2(static_cast<float>(piece_x * piece_width) / map_texture_width, static_cast<float>(piece_y * piece_height) / map_texture_height), ImVec2(static_cast<float>((piece_x + 1) * piece_width) / map_texture_width, static_cast<float>((piece_y + 1) * piece_height) / map_texture_height));
+					const auto destination_width = TileWidth() * 9.0f * dpi_scale;
+					ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), piece_position * piece_size / map_texture_size, (piece_position + ImVec2(1, 1)) * piece_size / map_texture_size);
 					ImGui::SameLine();
-					piece_tooltip(piece_x, piece_y);
+					piece_tooltip(piece_position.x, piece_position.y);
 					ImGui::EndTooltip();
 				}
 			}
@@ -662,7 +661,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 		textures.reserve(TOTAL_SPRITES);
 
 		for (cc_u8f i = 0; i < TOTAL_SPRITES; ++i)
-			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, SDL_SCALEMODE_NEAREST));
+			textures.emplace_back(SDL::CreateTextureWithBlending(window.GetRenderer(), SDL_TEXTUREACCESS_STREAMING, sprite_texture_width, sprite_texture_height, SDL_SCALEMODE_PIXELART));
 	}
 
 	RegenerateTexturesIfNeeded(
@@ -691,7 +690,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	constexpr cc_u16f plane_texture_height = 1024;
 
 	if (!texture)
-		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, SDL_SCALEMODE_NEAREST);
+		texture = SDL::CreateTexture(renderer, SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, SDL_SCALEMODE_PIXELART);
 
 	constexpr cc_u16f tile_width = TileWidth();
 	const cc_u16f tile_height = TileHeight(vdp);
@@ -796,16 +795,18 @@ void DebugVDP::SpriteList::DisplayInternal()
 
 			const auto dpi_scale = GetWindow().GetDPIScale();
 
-			const auto image_scale  = SDL_roundf(2.0f * dpi_scale);
-			auto image_space = ImVec2(sprite_texture_width, sprite_texture_height) * image_scale;
+			const auto image_scale = 2.0f * dpi_scale;
 
-			const auto image_internal_size = ImVec2(sprite_texture_width, sprite_texture_height) * image_scale;
-			const auto image_size = ImVec2(sprite.cached.width * tile_width, sprite.cached.height * tile_height) * image_scale;
-			const auto image_offset = (image_space - image_size) / 2;
+			const auto image_internal_size = ImVec2(sprite_texture_width, sprite_texture_height);
+			const auto image_size = ImVec2(sprite.cached.width * tile_width, sprite.cached.height * tile_height);
+
+			const auto image_destination_space = image_internal_size * image_scale;
+			const auto image_destination_size = image_size * image_scale;
+			const auto image_destination_offset = (image_destination_space - image_destination_size) / 2;
 			const auto cursor_position = ImGui::GetCursorPos();
-			ImGui::Dummy(image_space);
-			ImGui::SetCursorPos(cursor_position + image_offset);
-			ImGui::Image(ImTextureRef(textures[index]), image_size, ImVec2(0, 0), image_size / image_internal_size);
+			ImGui::Dummy(image_destination_space);
+			ImGui::SetCursorPos(cursor_position + image_destination_offset);
+			ImGui::Image(ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
 		});
 
 		EverySprite("Position", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)
@@ -852,8 +853,8 @@ void DebugVDP::SpriteList::DisplayInternal()
 	}
 }
 
-template<typename Derived>
-void DebugVDP::GridViewer<Derived>::DisplayGrid(
+template<typename Derived, unsigned int default_line_length>
+void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 	const std::size_t piece_width,
 	const std::size_t piece_height,
 	const std::size_t total_pieces,

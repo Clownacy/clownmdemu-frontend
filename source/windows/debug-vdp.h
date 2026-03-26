@@ -109,7 +109,7 @@ namespace DebugVDP
 
 		static constexpr Uint32 window_flags = 0;
 
-		int scale = 1;
+		float scale = 2.0f;
 		SDL::Texture texture = nullptr;
 
 		void DisplayInternal();
@@ -166,7 +166,7 @@ namespace DebugVDP
 	private:
 		using Base = MapViewer<PlaneViewer>;
 
-		int scale = 2;
+		float scale = 2.0f;
 		bool scroll_overlay_enabled = false;
 		std::array<float, 4> scroll_overlay_colour = {1.0f, 0.0f, 0.0f, 0.5f};
 		RegeneratingPieces regenerating_pieces;
@@ -185,7 +185,7 @@ namespace DebugVDP
 	private:
 		using Base = MapViewer<StampMapViewer>;
 
-		int scale = 1;
+		float scale = 1.0f;
 		RegeneratingPieces regenerating_pieces;
 
 		void DisplayInternal();
@@ -197,7 +197,7 @@ namespace DebugVDP
 		friend Base::Base;
 	};
 
-	template<typename Derived>
+	template<typename Derived, unsigned int default_line_length>
 	class GridViewer : public WindowPopup<Derived>, protected BrightnessAndPaletteLineSettings
 	{
 	private:
@@ -219,19 +219,18 @@ namespace DebugVDP
 
 		static auto GetTileScale(const float dpi_scale)
 		{
-			return SDL_roundf(3.0f * dpi_scale);
+			return 3.0f * dpi_scale;
 		}
 
 		static auto GetTileSpacing(const float dpi_scale)
 		{
-			return SDL_roundf(2.0f * dpi_scale);
+			return 2.0f * dpi_scale;
 		}
 
 		static std::pair<int, int> GetDefaultWindowSize(const std::size_t piece_size, const float dpi_scale)
 		{
-			// Give the window a default size of 16 tiles wide.
 			const auto &style = ImGui::GetStyle();
-			const int default_window_size = style.WindowPadding.x * 2 + ((piece_size * GetTileScale(dpi_scale) + GetTileSpacing(dpi_scale) * 2) * 0x10) + style.ScrollbarSize;
+			const int default_window_size = style.WindowPadding.x * 2 + ((piece_size * GetTileScale(dpi_scale) + GetTileSpacing(dpi_scale) * 2) * default_line_length) + style.ScrollbarSize;
 			return {default_window_size, default_window_size};
 		}
 	public:
@@ -244,10 +243,10 @@ namespace DebugVDP
 		friend Base;
 	};
 
-	class VRAMViewer : public GridViewer<VRAMViewer>
+	class VRAMViewer : public GridViewer<VRAMViewer, 0x20>
 	{
 	private:
-		using Base = GridViewer<VRAMViewer>;
+		using Base = GridViewer<VRAMViewer, 0x20>;
 
 		void DisplayInternal();
 
@@ -258,10 +257,10 @@ namespace DebugVDP
 		friend Base::Base;
 	};
 
-	class StampViewer : public GridViewer<StampViewer>
+	class StampViewer : public GridViewer<StampViewer, 0x10>
 	{
 	private:
-		using Base = GridViewer<StampViewer>;
+		using Base = GridViewer<StampViewer, 0x10>;
 
 		void DisplayInternal();
 
