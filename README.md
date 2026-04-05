@@ -1,4 +1,6 @@
-![Logo](/assets/logo.svg)
+<p align="center">
+  <img src="/assets/logo.svg" width="256" align="center"/>
+</p>
 
 # Try It Yourself
 
