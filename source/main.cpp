@@ -17,11 +17,6 @@
 #include "frontend.h"
 
 #ifdef __EMSCRIPTEN__
-// Hardcoded for backwards-compatibility, and because we don't need SDL to figure this out for us.
-static const std::filesystem::path user_data_path = "/libsdl/clownacy/clownmdemu-frontend/";
-
-static std::filesystem::path cartridge_file_path, disc_file_path;
-
 static double next_time;
 static double time_delta;
 
@@ -37,57 +32,13 @@ static bool EventFilter([[maybe_unused]] void* const userdata, SDL_Event* const 
 	// The event loop will never have time to catch this, so we
 	// must use this callback to intercept it as soon as possible.
 	if (event->type == SDL_EVENT_TERMINATING)
-	{
 		Frontend::WriteSaveData();
-
-		// Deinitialise persistent storage.
-		EM_ASM({
-			FS.syncfs(false, function (err) {});
-		}, 0);
-	}
 
 	return true;
 }
 
 extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
 {
-	const auto callback = []()
-	{
-		const double current_time = emscripten_get_now();
-
-		if (current_time >= next_time)
-		{
-			// If massively delayed, resynchronise to avoid fast-forwarding.
-			if (current_time >= next_time + 100.0)
-				next_time = current_time;
-
-			next_time += time_delta;
-
-			SDL_Event event;
-			while (SDL_PollEvent(&event))
-				Frontend::HandleEvent(event);
-
-			Frontend::Update();
-
-			if (Frontend::WantsToQuit())
-			{
-				Frontend::Deinitialise();
-				emscripten_cancel_main_loop();
-
-				// Deinitialise persistent storage.
-				EM_ASM({
-					FS.syncfs(false, function (err) {});
-				}, 0);
-			}
-		}
-	};
-
-	next_time = emscripten_get_now();
-
-	emscripten_set_main_loop(callback, 0, 0);
-
-	if (Frontend::Initialise(FrameRateCallback, false, user_data_path, cartridge_file_path, disc_file_path))
-		SDL_AddEventWatch(EventFilter, nullptr);
 }
 
 int main(const int argc_p, char** const argv_p)
@@ -97,22 +48,44 @@ int main(const int argc_p, char** const argv_p)
 
 	const auto &CartridgeFileLoaded = [](const char* const cartridge_file_path_p)
 	{
-		cartridge_file_path = cartridge_file_path_p;
+		static std::filesystem::path cartridge_file_path = cartridge_file_path_p;
 
 		const auto &DiscFileLoaded = [](const char* const disc_file_path_p)
 		{
-			disc_file_path = disc_file_path_p;
+			static std::filesystem::path disc_file_path = disc_file_path_p;
 
-			// Initialise persistent storage.
-			EM_ASM({
-				var user_data_path = UTF8ToString($0);
-				FS.mkdirTree(user_data_path);
-				FS.mount(IDBFS, {}, user_data_path);
+			const auto callback = []()
+			{
+				const double current_time = emscripten_get_now();
 
-				FS.syncfs(true, function(err) {
-					Module._StorageLoaded();
-				});
-			}, user_data_path.u8string().c_str());
+				if (current_time >= next_time)
+				{
+					// If massively delayed, resynchronise to avoid fast-forwarding.
+					if (current_time >= next_time + 100.0)
+						next_time = current_time;
+
+					next_time += time_delta;
+
+					SDL_Event event;
+					while (SDL_PollEvent(&event))
+						Frontend::HandleEvent(event);
+
+					Frontend::Update();
+
+					if (Frontend::WantsToQuit())
+					{
+						Frontend::Deinitialise();
+						emscripten_cancel_main_loop();
+					}
+				}
+			};
+
+			next_time = emscripten_get_now();
+
+			emscripten_set_main_loop(callback, 0, 0);
+
+			if (Frontend::Initialise(FrameRateCallback, false, SDL_EMSCRIPTEN_PERSISTENT_PATH, cartridge_file_path, disc_file_path))
+				SDL_AddEventWatch(EventFilter, nullptr);
 		};
 
 		if (argc > 2 && argv[2][0] != '\0')

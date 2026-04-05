@@ -133,6 +133,10 @@ if(EMSCRIPTEN)
 
 	# Link the persistent file storage library
 	target_link_libraries(clownmdemu "idbfs.js")
+
+	# Hardcoded to specifically this for backwards-compatibility.
+	set(SDL_EMSCRIPTEN_PERSISTENT_PATH "/libsdl/clownacy/clownmdemu-frontend/")
+	target_compile_definitions(clownmdemu PRIVATE SDL_EMSCRIPTEN_PERSISTENT_PATH="${SDL_EMSCRIPTEN_PERSISTENT_PATH}")
 endif()
 
 ##################
