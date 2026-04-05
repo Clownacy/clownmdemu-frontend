@@ -37,10 +37,6 @@ static bool EventFilter([[maybe_unused]] void* const userdata, SDL_Event* const 
 	return true;
 }
 
-extern "C" EMSCRIPTEN_KEEPALIVE void StorageLoaded()
-{
-}
-
 int main(const int argc_p, char** const argv_p)
 {
 	static int argc = argc_p;
