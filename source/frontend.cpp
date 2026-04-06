@@ -2943,7 +2943,7 @@ void Frontend::Update()
 
 				ImGui::Separator();
 
-				PopupButton("Frontend", debug_frontend_window, nullptr, std::make_pair(328, 210));
+				PopupButton("Frontend", debug_frontend_window, nullptr, std::make_pair(400, 210));
 
 				if (ImGui::BeginMenu("Main-68000"))
 				{

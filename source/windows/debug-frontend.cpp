@@ -78,13 +78,13 @@ void DebugFrontend::DisplayInternal()
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Buffer Frames");
-			DoToolTip("The number of audio frames that are pulled from the buffer in a single batch.");
+			DoToolTip("The number of audio frames that are pulled from the\nbuffer in a single batch.");
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("{}", Frontend::emulator->GetAudioTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");
-			DoToolTip("The number of buffered audio frames that the audio system tries to maintain.");
+			DoToolTip("The number of buffered audio frames that the audio\nsystem tries to maintain.");
 			ImGui::TableNextColumn();
 			ImGui::TextFormatted("{}", Frontend::emulator->GetAudioTargetFrames());
 
