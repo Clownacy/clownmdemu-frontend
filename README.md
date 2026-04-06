@@ -1,29 +1,31 @@
-<p align="center">
-  <img src="/assets/logo.svg" width="256" align="center"/>
-</p>
+<h1 align="center">
+  <img src="/assets/logo.svg" width="256"/>
+  <br/>
+  ClownMDEmu
+</h1>
 
-# Try It Yourself
+## Try It Yourself
 
 You can try ClownMDEmu in your web browser at [clownmdemu.clownacy.com](http://clownmdemu.clownacy.com).
 
-# Overview
+## Overview
 
 This is ClownMDEmu, a Sega Mega Drive (a.k.a. Sega Genesis) emulator.
 
 Some features of the Mega Drive are currently unemulated (see
 `common/core/TODO.md` for more information).
 
-![Minimal](/assets/screenshot-minimal.png)
-![Debug](/assets/screenshot-debug.png)
+<img src="/assets/screenshot-minimal.png" width="600"/>
+<img src="/assets/screenshot-debug.png"/>
 
 The repository contains ClownMDEmu's standalone frontend; it is written in
 C++20 and leverages the SDL3 and Dear ImGui libraries.
 
-## Controls
+### Controls
 
 The default control scheme is as follows:
 
-### Keyboard
+#### Keyboard
 
 | Input     | Action |
 | --------- | ------ |
@@ -40,7 +42,7 @@ The default control scheme is as follows:
 | Enter     | Start  |
 | Backspace | Mode   |
 
-### Controller
+#### Controller
 
 | Input | Action       |
 | ----- | ------------ |
@@ -62,7 +64,7 @@ The default control scheme is as follows:
 
 [Menus can also be navigated with a controller.](http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
-### Hotkeys
+#### Hotkeys
 
 | Input | Action                                          |
 | ----- | ----------------------------------------------- |
@@ -75,7 +77,7 @@ The default control scheme is as follows:
 | F9    | Load save state                                 |
 | F11   | Toggle fullscreen                               |
 
-# Licence
+## Licence
 
 ClownMDEmu is free software, licensed under the AGPLv3 (or any later version).
 See `LICENCE.txt` for more information.
