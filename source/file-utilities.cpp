@@ -15,6 +15,12 @@
 
 void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {
+	const auto CreateFallbackFileDialog = [=]{
+		active_file_picker_popup = title;
+		popup_callback = callback;
+		is_save_dialog = save;
+	};
+
 	bool done = false;
 
 	if (use_native_file_dialogs)
@@ -26,15 +32,24 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 			SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, title.c_str());
 			SDL::ShowFileDialogWithProperties(
 				save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE,
-				[callback](const char* const* const file_list, [[maybe_unused]] const int filter)
+				[=](const char* const* const file_list, [[maybe_unused]] const int filter)
 				{
 					// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
 					SDL::RunOnMainThread(
-						[callback, file_list]()
+						[=]()
 						{
-							if (file_list == nullptr || *file_list == nullptr)
+							// SDL error; use fallback dialog.
+							if (file_list == nullptr)
+							{
+								CreateFallbackFileDialog();
+								return;
+							}
+
+							// User cancelled.
+							if (*file_list == nullptr)
 								return;
 
+							// Success.
 							callback(U8Path(*file_list));
 						}
 					);
@@ -52,11 +67,7 @@ void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std:
 	}
 
 	if (!done)
-	{
-		active_file_picker_popup = title;
-		popup_callback = callback;
-		is_save_dialog = save;
-	}
+		CreateFallbackFileDialog();
 }
 
 void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback)
