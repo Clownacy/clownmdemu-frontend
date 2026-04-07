@@ -829,14 +829,6 @@ private:
 
 		if (ImGui::BeginTable("Miscellaneous Options", 2))
 		{
-	#ifndef __EMSCRIPTEN__
-			ImGui::TableNextColumn();
-			ImGui::Checkbox("Native Windows", &native_windows);
-			DoToolTip(
-				"Use real windows instead of 'fake' windows\n"
-				"that are stuck inside the main window.");
-	#endif
-
 			ImGui::TableNextColumn();
 			bool rewinding_enabled = Frontend::emulator->GetRewindEnabled();
 			if (ImGui::Checkbox("Rewinding", &rewinding_enabled))
@@ -855,11 +847,19 @@ private:
 
 		if (ImGui::BeginTable("Development Options", 2))
 		{
+	#ifndef __EMSCRIPTEN__
 			ImGui::TableNextColumn();
-			ImGui::Checkbox("Dear ImGui Demo Window", &dear_imgui_demo_window);
+			ImGui::Checkbox("Native Windows", &native_windows);
+			DoToolTip(
+				"Use real windows instead of 'fake' windows\n"
+				"that are stuck inside the main window.");
+	#endif
 
 			ImGui::TableNextColumn();
 			ImGui::Checkbox("Native File Dialogs", &file_utilities.use_native_file_dialogs);
+
+			ImGui::TableNextColumn();
+			ImGui::Checkbox("Dear ImGui Demo Window", &dear_imgui_demo_window);
 
 			ImGui::EndTable();
 		}
