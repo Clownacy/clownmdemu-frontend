@@ -15,7 +15,7 @@
 
 void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
 {
-	const auto CreateFallbackFileDialog = [=]{
+	const auto CreateFallbackFileDialog = [=, this]{
 		active_file_picker_popup = title;
 		popup_callback = callback;
 		is_save_dialog = save;
