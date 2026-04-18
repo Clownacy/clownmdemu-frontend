@@ -14,7 +14,7 @@
 #include <QOpenGLWidget>
 #include <QVector>
 
-#include "../../emulator-extended.h"
+#include "../../source/emulator-extended.h"
 #include "../colour.h"
 #include "../options.h"
 

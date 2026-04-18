@@ -23,13 +23,13 @@ qt_add_executable(clownmdemu-frontend-qt
 	options.cpp options.h
 	paste.h
 	qt-extensions.h
-	../audio-device.cpp ../audio-device.h
-	../audio-output.cpp ../audio-output.h
-	../cd-reader.cpp ../cd-reader.h
-	../debug-log.cpp ../debug-log.h
-	../emulator-extended.h
-	../raii-wrapper.h ../sdl-wrapper.h
-	../text-encoding.cpp ../text-encoding.h
+	../source/audio-device.cpp ../source/audio-device.h
+	../source/audio-output.cpp ../source/audio-output.h
+	../source/cd-reader.cpp ../source/cd-reader.h
+	../source/debug-log.cpp ../source/debug-log.h
+	../source/emulator-extended.h
+	../source/raii-wrapper.h ../source/sdl-wrapper.h
+	../source/text-encoding.cpp ../source/text-encoding.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
@@ -66,7 +66,7 @@ endif()
 # Link fmt (needed for Ubuntu 22.04, which lacks std::format)
 find_package(fmt 8.0.0)
 if(NOT fmt_FOUND)
-	add_subdirectory("../libraries/fmt" EXCLUDE_FROM_ALL)
+	add_subdirectory("../libraries/fmt" EXCLUDE_FROM_ALL "fmt")
 endif()
 target_link_libraries(clownmdemu-frontend-qt PRIVATE fmt::fmt)
 

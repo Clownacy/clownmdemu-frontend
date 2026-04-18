@@ -25,9 +25,9 @@ void* CDReader::FileOpenCallback(const char* const filename, const ClownCD_FileM
 	return SDL_IOFromFile(filename, mode_string);
 }
 
-int CDReader::FileCloseCallback(void* const stream)
+int CDReader::FileCloseCallback([[maybe_unused]] void* const stream)
 {
-	return SDL_CloseIO(static_cast<SDL_IOStream*>(stream));
+	return 0;
 }
 
 std::size_t CDReader::FileReadCallback(void* const buffer, const std::size_t size, const std::size_t count, void* const stream)

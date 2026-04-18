@@ -447,11 +447,11 @@ public:
 	// CD //
 	////////
 
-	[[nodiscard]] bool InsertCD(SDL::IOStream &&stream, const std::filesystem::path &path)
+	[[nodiscard]] bool InsertCD(SDL::IOStream &stream, const std::filesystem::path &path)
 	{
 		state_rewind_buffer.Clear();
 
-		cd_reader.Open(path, std::move(stream));
+		cd_reader.Open(path, stream);
 		if (!cd_reader.IsOpen())
 			return false;
 

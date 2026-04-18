@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QSettings>
 
-#include "../common/core/clownmdemu.h"
+#include "../common/core/source/clownmdemu.h"
 
 #include "paste.h"
 

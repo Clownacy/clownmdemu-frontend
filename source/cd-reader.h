@@ -56,15 +56,10 @@ public:
 	{
 		CDReader_Initialise(this);
 	}
-	CDReader(const std::filesystem::path &path)
+	CDReader(const std::filesystem::path &path, SDL_IOStream* const stream = nullptr)
 		: CDReader()
 	{
-		Open(path, nullptr);
-	}
-	CDReader(const std::filesystem::path &path, SDL::IOStream &&stream)
-		: CDReader()
-	{
-		Open(path, std::move(stream));
+		Open(path, stream);
 	}
 	~CDReader()
 	{
@@ -74,22 +69,12 @@ public:
 	CDReader(CDReader &&other) = delete;
 	CDReader& operator=(const CDReader &other) = delete;
 	CDReader& operator=(CDReader &&other) = delete;
-	void Open(const std::filesystem::path &path)
+	void Open(const std::filesystem::path &path, SDL_IOStream* const stream = nullptr)
 	{
 		FileUtilities::PathToCString(path,
 			[&](const char* const string)
 			{
-				CDReader_Open(this, nullptr, string, &callbacks);
-			}
-		);
-	}
-	void Open(const std::filesystem::path &path, SDL::IOStream &&stream)
-	{
-		// Release ownership of SDL_IOStream object, allowing for manual memory management by ClownCD.
-		FileUtilities::PathToCString(path,
-			[&](const char* const string)
-			{
-				CDReader_Open(this, stream.release(), string, &callbacks);
+				CDReader_Open(this, stream, string, &callbacks);
 			}
 		);
 	}

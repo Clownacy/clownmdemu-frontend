@@ -30,6 +30,7 @@ private:
 	const FramerateCallback framerate_callback;
 
 	std::vector<cc_u16l> rom_file_buffer;
+	SDL::IOStream cd_stream;
 
 	SDL::Pixel *framebuffer_texture_pixels = nullptr;
 	int framebuffer_texture_pitch = 0;

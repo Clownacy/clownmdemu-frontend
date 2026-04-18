@@ -7,7 +7,7 @@
 #include <QMessageBox>
 #include <QSettings>
 
-#include "../sdl-wrapper.h"
+#include "../source/sdl-wrapper.h"
 
 #ifndef __EMSCRIPTEN__
 #define QTEXTENSION_FILE_PATH_SUPPORT

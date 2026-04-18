@@ -7,7 +7,7 @@
 #include <QDataStream>
 #include <QMainWindow>
 
-#include "../sdl-wrapper.h"
+#include "../source/sdl-wrapper.h"
 #include "dialogs/about.h"
 #include "dialogs/debug-cpu.h"
 #include "dialogs/debug-toggles.h"

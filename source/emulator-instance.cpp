@@ -72,12 +72,14 @@ void EmulatorInstance::UnloadCartridgeFile()
 
 bool EmulatorInstance::LoadCDFile(SDL::IOStream &&stream, const std::filesystem::path &path)
 {
-	return InsertCD(std::move(stream), path);
+	cd_stream = std::move(stream);
+	return InsertCD(cd_stream, path);
 }
 
 void EmulatorInstance::UnloadCDFile()
 {
 	EjectCD();
+	cd_stream.reset();
 }
 
 using SaveStateMagic = std::array<char, 8>;

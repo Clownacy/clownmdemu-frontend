@@ -3,7 +3,7 @@
 
 #include "debug-cpu-common.h"
 
-#include "../../common/core/clownz80/interpreter.h"
+#include "../../common/core/libraries/clownz80/source/interpreter.h"
 
 namespace Widgets::Debug::CPU
 {
