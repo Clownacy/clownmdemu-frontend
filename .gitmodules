@@ -23,3 +23,6 @@
 [submodule "libraries/span"]
 	path = libraries/span
 	url = https://github.com/tcbrindle/span
+[submodule "libraries/ImGuiTextSelect"]
+	path = libraries/ImGuiTextSelect
+	url = https://github.com/AidanSun05/ImGuiTextSelect

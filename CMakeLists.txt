@@ -81,6 +81,8 @@ add_executable(clownmdemu WIN32
 	"libraries/imgui/backends/imgui_impl_sdlrenderer3.h"
 	"libraries/imgui/misc/cpp/imgui_stdlib.cpp"
 	"libraries/imgui/misc/cpp/imgui_stdlib.h"
+	"libraries/ImGuiTextSelect/textselect.cpp"
+	"libraries/ImGuiTextSelect/textselect.hpp"
 )
 
 set_property(DIRECTORY . PROPERTY VS_STARTUP_PROJECT clownmdemu)

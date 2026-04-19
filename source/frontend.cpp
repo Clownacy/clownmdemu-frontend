@@ -215,11 +215,27 @@ private:
 
 		if (ImGui::CollapsingHeader("Dear ImGui"))
 		{
-			static constexpr auto text = std::to_array<char>({
+			if (ImGui::TreeNode("General"))
+			{
+				static constexpr auto text = std::to_array<char>({
 				#include "../licences/dear-imgui.h"
-			});
+				});
 
-			DoLicence(text);
+				DoLicence(text);
+
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("ImGuiTextSelect"))
+			{
+				static constexpr auto text = std::to_array<char>({
+					#include "../licences/dear-imgui-text-select.h"
+				});
+
+				DoLicence(text);
+
+				ImGui::TreePop();
+			}
 		}
 
 	#ifdef __EMSCRIPTEN__
