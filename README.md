@@ -62,7 +62,7 @@ The default control scheme is as follows:
 | RT    | Fast-forward |
 | RSB   | Pause        |
 
-[Menus can also be navigated with a controller.](http://www.dearimgui.org/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
+[Menus can also be navigated with a controller.](http://www.dearimgui.com/controls_sheets/imgui%20controls%20v6%20-%20Xbox.png)
 
 #### Hotkeys
 
