@@ -455,6 +455,27 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 					piece_tooltip(piece_position.x, piece_position.y);
 					ImGui::EndTooltip();
 				}
+
+				if (ImGui::BeginPopupContextWindow()) {
+					if (ImGui::MenuItem("Copy"))
+					{
+						SDL::IOStream stream;
+						const auto previous_render_target = SDL_GetRenderTarget(window.GetRenderer());
+						SDL_SetRenderTarget(window.GetRenderer(), textures[0]);
+						SDL_SavePNG_IO(SDL_RenderReadPixels(window.GetRenderer(), nullptr), stream, false);
+						SDL_SetRenderTarget(window.GetRenderer(), previous_render_target);
+						SDL::SetClipboardData(
+							[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
+							{
+								*size = SDL_GetIOSize(stream);
+								return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
+							},
+							{{"image/png"}}
+						);
+					}
+
+					ImGui::EndPopup();
+				}
 			}
 		);
 	}

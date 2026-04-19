@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include <SDL3/SDL.h>
+#include <tcb/span.hpp>
 
 #include "raii-wrapper.h"
 
@@ -108,6 +109,10 @@ namespace SDL
 		IOStream(const void* const mem, const std::size_t size)
 			: IOStreamBase(SDL_IOFromConstMem(mem, size))
 		{}
+
+		IOStream()
+			: IOStreamBase(SDL_IOFromDynamicMem())
+		{}
 	};
 
 	inline bool RunOnMainThread(const SDL_MainThreadCallback main_thread_callback, const void* const user_data = nullptr, const bool wait_complete = true)
@@ -153,6 +158,27 @@ namespace SDL
 			callback_copy_pointer,
 			props
 		);
+	}
+
+	template<typename T>
+	inline bool SetClipboardData(T callback, const tcb::span<const char* const> &mime_types)
+	{
+		const auto callback_copy = new T(std::move(callback));
+
+		const auto &CallbackWrapper = [](void *user_data, const char *mime_type, std::size_t *size) -> const void*
+		{
+			auto &callback = *static_cast<T*>(user_data);
+
+			return callback(mime_type, size);
+		};
+
+		const auto &CleanupWrapper = [](void *user_data)
+		{
+			delete static_cast<T*>(user_data);
+		};
+
+		// TODO: SDL v3.4.4 has dumb constness. Once updated, scrap the nasty const cast.
+		return SDL_SetClipboardData(CallbackWrapper, CleanupWrapper, callback_copy, const_cast<const char**>(std::data(mime_types)), std::size(mime_types));
 	}
 }
 
