@@ -465,7 +465,12 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 							[&]()
 							{
 								SDL::IOStream stream;
-								SDL_SavePNG_IO(SDL_RenderReadPixels(window.GetRenderer(), nullptr), stream, false);
+								SDL_Rect rect;
+								rect.x = 0;
+								rect.y = 0;
+								rect.w = map_size_in_pixels.x;
+								rect.h = map_size_in_pixels.y;
+								SDL_SavePNG_IO(SDL_RenderReadPixels(window.GetRenderer(), &rect), stream, false);
 								SDL::SetClipboardData(
 									[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
 									{
