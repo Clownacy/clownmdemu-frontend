@@ -2,30 +2,21 @@
 
 DebugLog Frontend::debug_log;
 
-void DebugLog::Log(const std::function<std::size_t()> &GetSize, const std::function<void(char*, std::size_t)> &WriteBuffer)
+void DebugLog::Log(std::string message)
 {
 	if (logging_enabled || force_console_output)
 	{
-		const std::size_t message_buffer_size = GetSize();
-
 		try
 		{
-			if (lines.length() != 0)
-				lines += '\n';
-
-			const auto length = lines.length();
-			lines.resize(length + message_buffer_size);
-			char* const message_buffer = &lines[length];
-			WriteBuffer(message_buffer, message_buffer_size + 1);
+			lines.emplace_back(std::move(message));
 
 			if (log_to_console || force_console_output)
-				SDL_LogMessage(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, "%s", message_buffer);
+				SDL_LogMessage(SDL_LOG_CATEGORY_ERROR, SDL_LOG_PRIORITY_ERROR, "%s", message.c_str());
 		}
 		catch (const std::bad_alloc&)
 		{
 			// Wipe the line buffer to reclaim RAM. It's better than nothing.
 			lines.clear();
-			lines.shrink_to_fit();
 		}
 	}
 }
@@ -46,5 +37,9 @@ void DebugLog::Log(const char* const format, std::va_list args)
 		SDL_vsnprintf(message_buffer, message_buffer_size + 1, format, args);
 	};
 
-	Log(GetSize, WriteBuffer);
+	std::string message_string;
+	message_string.resize(GetSize());
+	WriteBuffer(std::data(message_string), std::size(message_string));
+
+	Log(std::move(message_string));
 }

@@ -4,6 +4,7 @@
 #include <cstdarg>
 #include <cstddef>
 #include <functional>
+#include <list>
 #include <string>
 #include <string_view>
 
@@ -15,11 +16,8 @@
 
 class DebugLog
 {
-private:
-	void Log(const std::function<std::size_t()> &GetSize, const std::function<void(char*, std::size_t)> &WriteBuffer);
-
 public:
-	std::string lines;
+	std::list<std::string> lines;
 	bool logging_enabled = false, log_to_console = false, force_console_output = true;
 
 	DebugLog()
@@ -32,24 +30,13 @@ public:
 		force_console_output = forced;
 	}
 
+	void Log(std::string string);
 	void Log(const char *format, std::va_list args);
 
 	template <typename... Ts>
 	void Log(const fmt::format_string<Ts...> &format, Ts &&...args)
 	{
-		const auto &string = fmt::format(format, std::forward<Ts>(args)...);
-
-		const auto GetSize = [&]()
-		{
-			return std::size(string);
-		};
-
-		const auto WriteBuffer = [&](char* const message_buffer, const std::size_t message_buffer_size)
-		{
-			string.copy(message_buffer, message_buffer_size);
-		};
-
-		Log(GetSize, WriteBuffer);
+		Log(fmt::format(format, std::forward<Ts>(args)...));
 	}
 
 	static auto GetSDLErrorMessage(const std::string_view &function_name)
