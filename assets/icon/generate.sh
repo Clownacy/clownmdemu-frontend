@@ -1,6 +1,5 @@
 #!/usr/bin/env sh
 
-magick -background none ../logo.svg -thumbnail 512x512 icon-qt.png
 magick -background none ../logo.svg -thumbnail 512x512 -gravity center -extent 512x512 icon-512.png
 magick -background none ../logo.svg -thumbnail 256x256 -gravity center -extent 256x256 icon-256.png
 magick -background none ../logo.svg -thumbnail 128x128 -gravity center -extent 128x128 icon-128.png

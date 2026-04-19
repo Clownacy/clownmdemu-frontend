@@ -14,8 +14,8 @@
    <string>ClownMDEmu</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="build/MSYS2_Clang64-Debug/.qt/rcc/icons.qrc">
-    <normaloff>:/icon.ico</normaloff>:/icon.ico</iconset>
+   <iconset resource="build/MSYS2_Clang64-Debug/.qt/rcc/logo.qrc">
+    <normaloff>:/icon/icon.ico</normaloff>:/icon/icon.ico</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="minimumSize">
@@ -227,7 +227,7 @@
   </action>
  </widget>
  <resources>
-  <include location="build/MSYS2_Clang64-Debug/.qt/rcc/icons.qrc"/>
+  <include location="build/MSYS2_Clang64-Debug/.qt/rcc/logo.qrc"/>
  </resources>
  <connections/>
 </ui>

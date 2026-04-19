@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(clownmdemu-frontend-qt LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core OpenGL OpenGLWidgets Widgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core OpenGL OpenGLWidgets Svg Widgets)
 
 qt_standard_project_setup()
 
@@ -41,6 +41,7 @@ target_link_libraries(clownmdemu-frontend-qt
 		Qt::Core
 		Qt::OpenGL
 		Qt::OpenGLWidgets
+		Qt::Svg
 		Qt::Widgets
 )
 
@@ -78,13 +79,13 @@ qt_add_resources(clownmdemu-frontend-qt "shaders"
 		"fragment.glsl"
 )
 
-qt_add_resources(clownmdemu-frontend-qt "icons"
+qt_add_resources(clownmdemu-frontend-qt "logo"
 	PREFIX
 		"/"
 	BASE
-		"../assets/icon/"
+		"../assets/"
 	FILES
-		"../assets/icon/icon-qt.png"
+		"../assets/logo.svg"
 		"../assets/icon/icon.ico"
 )
 
