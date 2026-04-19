@@ -208,6 +208,51 @@ static void DrawSprite(VDP_TileMetadata tile_metadata, const cc_u8f tile_width, 
 	}
 }
 
+template<typename... Ts>
+static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, Ts &&...args)
+{
+	const Sprite &sprite = GetSprite(vdp, sprite_index);
+	return DrawSprite(sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height, std::forward<Ts>(args)...);
+}
+
+static void ImageContextMenu(const std::function<SDL::Surface()> &GetSurface)
+{
+	if (ImGui::BeginPopupContextWindow("Context"))
+	{
+		if (ImGui::MenuItem("Copy"))
+		{
+			SDL::IOStream stream;
+			SDL_SavePNG_IO(GetSurface(), stream, false);
+			SDL::SetClipboardData(
+				[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
+				{
+					*size = SDL_GetIOSize(stream);
+					return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
+				},
+				{{"image/png"}}
+			);
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+static void ImageContextMenu(SDL_Renderer* const renderer, SDL_Texture* const texture, const int image_width, const int image_height)
+{
+	ImageContextMenu(
+		[&]()
+		{
+			return SDL::Surface(SDL::SetRenderTarget(renderer, texture,
+				[&]()
+				{
+					const SDL_Rect rect = {0, 0, image_width, image_height};
+					return SDL_RenderReadPixels(renderer, &rect);
+				}
+			));
+		}
+	);
+}
+
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
 {
 	bool options_changed = false;
@@ -458,33 +503,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 					ImGui::EndTooltip();
 				}
 
-				if (ImGui::BeginPopupContextWindow()) {
-					if (ImGui::MenuItem("Copy"))
-					{
-						SDL::SetRenderTarget(window.GetRenderer(), textures[0],
-							[&]()
-							{
-								SDL::IOStream stream;
-								SDL_Rect rect;
-								rect.x = 0;
-								rect.y = 0;
-								rect.w = map_size_in_pixels.x;
-								rect.h = map_size_in_pixels.y;
-								SDL_SavePNG_IO(SDL_RenderReadPixels(window.GetRenderer(), &rect), stream, false);
-								SDL::SetClipboardData(
-									[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
-									{
-										*size = SDL_GetIOSize(stream);
-										return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
-									},
-									{{"image/png"}}
-								);
-							}
-						);
-					}
-
-					ImGui::EndPopup();
-				}
+				ImageContextMenu(window.GetRenderer(), textures[0], map_size_in_pixels.x, map_size_in_pixels.y);
 			}
 		);
 	}
@@ -704,9 +723,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 		{
 			std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
 
-			const Sprite sprite = GetSprite(vdp, texture_index);
-
-			DrawSprite(sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, 0, 0, sprite.cached.width, sprite.cached.height, true, 0);
+			DrawSprite(vdp, texture_index, pixels, pitch, 0, 0, true, 0);
 		}
 	);
 }
@@ -798,6 +815,8 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 				ImGui::EndTooltip();
 			}
+
+			ImageContextMenu(window.GetRenderer(), texture, plane_width_in_pixels, plane_height_in_pixels);
 		}
 	);
 }
@@ -844,9 +863,24 @@ void DebugVDP::SpriteList::DisplayInternal()
 			const auto image_destination_size = image_size * image_scale;
 			const auto image_destination_offset = (image_destination_space - image_destination_size) / 2;
 			const auto cursor_position = ImGui::GetCursorPos();
-			ImGui::Dummy(image_destination_space);
-			ImGui::SetCursorPos(cursor_position + image_destination_offset);
-			ImGui::Image(ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
+			ImGui::PushID(index);
+			if (ImGui::BeginChild("Sprite", image_destination_space))
+			{
+				ImGui::SetCursorPos(image_destination_offset);
+				ImGui::Image(ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
+				ImageContextMenu(
+					[&]()
+					{
+						auto surface = SDL_CreateSurface(image_size.x, image_size.y, SDL::pixel_format);
+
+						if (surface != nullptr)
+							DrawSprite(vdp, index, static_cast<SDL::Pixel*>(surface->pixels), surface->pitch / sizeof(SDL::Pixel), 0, 0, true, 0);
+						return SDL::Surface(surface);
+					}
+				);
+			}
+			ImGui::EndChild();
+			ImGui::PopID();
 		});
 
 		EverySprite("Position", [](const Sprite &sprite, [[maybe_unused]] const cc_u8f index)

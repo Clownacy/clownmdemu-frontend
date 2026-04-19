@@ -181,13 +181,32 @@ namespace SDL
 		return SDL_SetClipboardData(CallbackWrapper, CleanupWrapper, callback_copy, const_cast<const char**>(std::data(mime_types)), std::size(mime_types));
 	}
 
-	template<typename T>
-	inline void SetRenderTarget(SDL_Renderer* const renderer, SDL_Texture* const texture, const T &callback)
+	template<typename Callback>
+	inline auto SetRenderTarget(SDL_Renderer* const renderer, SDL_Texture* const texture, const Callback &callback)
 	{
-		const auto previous_render_target = SDL_GetRenderTarget(renderer);
-		SDL_SetRenderTarget(renderer, texture);
-		callback();
-		SDL_SetRenderTarget(renderer, previous_render_target);
+		class RenderTarget
+		{
+		private:
+			SDL_Renderer* const renderer;
+			SDL_Texture* const previous_render_target;
+
+		public:
+			RenderTarget(SDL_Renderer* const renderer, SDL_Texture* const texture)
+				: renderer(renderer)
+				, previous_render_target(SDL_GetRenderTarget(renderer))
+			{
+				SDL_SetRenderTarget(renderer, texture);
+			}
+
+			~RenderTarget()
+			{
+				SDL_SetRenderTarget(renderer, previous_render_target);
+			}
+		};
+
+		RenderTarget render_target(renderer, texture);
+
+		return callback();
 	}
 }
 

@@ -7,11 +7,12 @@
 namespace SDL
 {
 	using Pixel = Uint32;
+	constexpr SDL_PixelFormat pixel_format = SDL_PIXELFORMAT_ARGB8888;
 
 	inline Texture CreateTexture(Renderer &renderer, const SDL_TextureAccess access, const int width, const int height, const SDL_ScaleMode scale_mode, const bool blending = false)
 	{
 		// We're using ARGB8888 because it's more likely to be supported natively by the GPU, avoiding the need for constant conversions
-		Texture texture(SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, access, width, height));
+		Texture texture(SDL_CreateTexture(renderer, pixel_format, access, width, height));
 
 		if (!texture)
 		{
