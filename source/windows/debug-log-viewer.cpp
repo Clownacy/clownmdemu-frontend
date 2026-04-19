@@ -13,8 +13,11 @@ void DebugLogViewer::DisplayInternal()
 
 	ImGui::PushFont(GetMonospaceFont());
 
-	for (const auto &line : Frontend::debug_log.lines)
-		ImGui::TextUnformatted(line);
+	ImGuiListClipper clipper;
+	clipper.Begin(std::size(Frontend::debug_log.lines));
+	while (clipper.Step())
+		for (auto i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+			ImGui::TextUnformatted(Frontend::debug_log.lines[i]);
 
 	ImGui::PopFont();
 }

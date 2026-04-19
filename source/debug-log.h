@@ -3,8 +3,8 @@
 
 #include <cstdarg>
 #include <cstddef>
+#include <deque>
 #include <functional>
-#include <list>
 #include <string>
 #include <string_view>
 
@@ -17,7 +17,7 @@
 class DebugLog
 {
 public:
-	std::list<std::string> lines;
+	std::deque<std::string> lines;
 	bool logging_enabled = false, log_to_console = false, force_console_output = true;
 
 	DebugLog()
