@@ -277,10 +277,12 @@ void DebugVDP::RegeneratingTexturesHardwareAccelerated::RegenerateTexturesIfNeed
 	RegeneratingTexturesBase::RegenerateTexturesIfNeeded(
 		[&](const unsigned int texture_index, SDL::Texture &texture)
 		{
-			const auto previous_render_target = SDL_GetRenderTarget(renderer);
-			SDL_SetRenderTarget(renderer, texture);
-			callback(renderer, texture_index);
-			SDL_SetRenderTarget(renderer, previous_render_target);
+			SDL::SetRenderTarget(renderer, texture,
+				[&]()
+				{
+					callback(renderer, texture_index);
+				}
+			);
 		},
 		force_regenerate
 	);
@@ -459,18 +461,20 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				if (ImGui::BeginPopupContextWindow()) {
 					if (ImGui::MenuItem("Copy"))
 					{
-						SDL::IOStream stream;
-						const auto previous_render_target = SDL_GetRenderTarget(window.GetRenderer());
-						SDL_SetRenderTarget(window.GetRenderer(), textures[0]);
-						SDL_SavePNG_IO(SDL_RenderReadPixels(window.GetRenderer(), nullptr), stream, false);
-						SDL_SetRenderTarget(window.GetRenderer(), previous_render_target);
-						SDL::SetClipboardData(
-							[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
+						SDL::SetRenderTarget(window.GetRenderer(), textures[0],
+							[&]()
 							{
-								*size = SDL_GetIOSize(stream);
-								return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
-							},
-							{{"image/png"}}
+								SDL::IOStream stream;
+								SDL_SavePNG_IO(SDL_RenderReadPixels(window.GetRenderer(), nullptr), stream, false);
+								SDL::SetClipboardData(
+									[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
+									{
+										*size = SDL_GetIOSize(stream);
+										return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
+									},
+									{{"image/png"}}
+								);
+							}
 						);
 					}
 
@@ -724,48 +728,50 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 	ZoomableChild("Plane View", scale, dpi_scale,
 		[&]()
 		{
-			const auto previous_render_target = SDL_GetRenderTarget(renderer);
-			SDL_SetRenderTarget(renderer, texture);
-			Uint8 previous_red, previous_green, previous_blue, previous_alpha;
-			SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
-			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-			SDL_RenderClear(renderer);
-			SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
-			const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-			const SDL_FRect visible_area_rectangle = {
-				static_cast<float>(0x80 - (Frontend::emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
-				static_cast<float>(0x80 * vertical_scale),
-				static_cast<float>(Frontend::emulator->GetCurrentScreenWidth()),
-				static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
-			};
-			SDL_RenderFillRect(renderer, &visible_area_rectangle);
+			SDL::SetRenderTarget(renderer, texture,
+				[&]()
+				{
+					Uint8 previous_red, previous_green, previous_blue, previous_alpha;
+					SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
+					SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
+					SDL_RenderClear(renderer);
+					SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
+					const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
+					const SDL_FRect visible_area_rectangle = {
+						static_cast<float>(0x80 - (Frontend::emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
+						static_cast<float>(0x80 * vertical_scale),
+						static_cast<float>(Frontend::emulator->GetCurrentScreenWidth()),
+						static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
+					};
+					SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
-			std::vector<cc_u8l> sprite_vector;
+					std::vector<cc_u8l> sprite_vector;
 
-			// Need to display sprites backwards for proper layering.
-			for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
-			{
-				sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+					// Need to display sprites backwards for proper layering.
+					for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+					{
+						sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
 
-				sprite_index = GetSprite(vdp, sprite_index).cached.link;
+						sprite_index = GetSprite(vdp, sprite_index).cached.link;
 
-				if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
-					break;
-			}
+						if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
+							break;
+					}
 
-			// Draw sprites to the plane texture.
-			for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
-			{
-				const cc_u8f sprite_index = *it;
-				const Sprite sprite = GetSprite(vdp, sprite_index);
+					// Draw sprites to the plane texture.
+					for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+					{
+						const cc_u8f sprite_index = *it;
+						const Sprite sprite = GetSprite(vdp, sprite_index);
 
-				const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-				const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-				SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
-			}
+						const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+						const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+						SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
 
-			SDL_SetRenderTarget(renderer, previous_render_target);
-			SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
+						SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
+					}
+				}
+			);
 
 			const float plane_width_in_pixels = static_cast<float>(plane_texture_width);
 			const float plane_height_in_pixels = static_cast<float>(vdp.double_resolution_enabled ? plane_texture_height : plane_texture_height / 2);
