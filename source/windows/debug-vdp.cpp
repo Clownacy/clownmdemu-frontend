@@ -240,13 +240,22 @@ static void ImageContextMenu(const std::function<SDL::Surface()> &GetSurface)
 static void ImageContextMenu(SDL_Renderer* const renderer, SDL_Texture* const texture, const int image_width, const int image_height)
 {
 	ImageContextMenu(
-		[&]()
+		[&]() -> SDL::Surface
 		{
-			return SDL::Surface(SDL::SetRenderTarget(renderer, texture,
-				[&]()
+			auto texture_copy = SDL::Texture(SDL_CreateTexture(renderer, SDL::pixel_format, SDL_TEXTUREACCESS_TARGET, image_width, image_height));
+
+			if (texture_copy == nullptr)
+				return nullptr;
+
+			return SDL::Surface(SDL::SetRenderTarget(renderer, texture_copy,
+				[&]() -> SDL_Surface*
 				{
-					const SDL_Rect rect = {0, 0, image_width, image_height};
-					return SDL_RenderReadPixels(renderer, &rect);
+					const SDL_FRect rect(0, 0, image_width, image_height);
+
+					if (!SDL_RenderTexture(renderer, texture, &rect, nullptr))
+						return nullptr;
+
+					return SDL_RenderReadPixels(renderer, nullptr);
 				}
 			));
 		}
@@ -868,16 +877,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 			{
 				ImGui::SetCursorPos(image_destination_offset);
 				ImGui::Image(ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
-				ImageContextMenu(
-					[&]()
-					{
-						auto surface = SDL_CreateSurface(image_size.x, image_size.y, SDL::pixel_format);
-
-						if (surface != nullptr)
-							DrawSprite(vdp, index, static_cast<SDL::Pixel*>(surface->pixels), surface->pitch / sizeof(SDL::Pixel), 0, 0, true, 0);
-						return SDL::Surface(surface);
-					}
-				);
+				ImageContextMenu(GetWindow().GetRenderer(), textures[index], image_size.x, image_size.y);
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
