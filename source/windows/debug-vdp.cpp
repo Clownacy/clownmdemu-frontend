@@ -927,8 +927,12 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 		{
 			for (std::size_t y = static_cast<std::size_t>(clipper.DisplayStart); y < static_cast<std::size_t>(clipper.DisplayEnd); ++y)
 			{
+				ImGui::PushID(y);
+
 				for (std::size_t x = 0; x < std::min(grid_display_region_width_in_pieces, total_pieces - (y * grid_display_region_width_in_pieces)); ++x)
 				{
+					ImGui::PushID(x);
+
 					const std::size_t piece_index = (y * grid_display_region_width_in_pieces) + x;
 
 					const auto position = ImVec2(x, y);
@@ -950,13 +954,20 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 					const auto piece_position_top_left = piece_boundary_position_top_left + padding;
 					const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
 
-					// Finally, display the tile.
-					draw_list->AddImage(ImTextureRef(regenerating_pieces.textures[0]), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
+					ImGui::SetCursorPos(current_piece_destination);
 
-					if (window_is_hovered && ImGui::IsMouseHoveringRect(piece_boundary_position_top_left, piece_boundary_position_bottom_right))
+					if (ImGui::BeginChild("Magic Mouse Detector", destination_piece_size_and_padding))
 					{
-						ImGui::BeginTooltip();
+						// Finally, display the tile.
+						draw_list->AddImage(ImTextureRef(regenerating_pieces.textures[0]), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
 
+						ImGui::ImageCopyableContextWindow(derived->GetWindow().GetRenderer(), regenerating_pieces.textures[0], current_piece_uv0, current_piece_uv1);
+					}
+
+					ImGui::EndChild();
+
+					if (ImGui::BeginItemTooltip())
+					{
 						// Display the tile's index.
 						const auto bytes_per_piece = PixelsToBytes(piece_width * piece_height);
 						ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, piece_index, piece_index * bytes_per_piece);
@@ -969,7 +980,11 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 
 						ImGui::EndTooltip();
 					}
+
+					ImGui::PopID();
 				}
+
+				ImGui::PopID();
 			}
 		}
 	}

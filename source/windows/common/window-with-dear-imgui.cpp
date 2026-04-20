@@ -54,32 +54,26 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 // ImGui Utilities //
 /////////////////////
 
-bool ImGui::ImageCopyable(SDL_Renderer* const renderer, const ImTextureRef tex_ref, const ImVec2& image_size, const ImVec2& uv0, const ImVec2& uv1)
+void ImGui::ImageCopyableContextWindow(SDL_Renderer* const renderer, SDL_Texture* const texture, const ImVec2 &uv0, const ImVec2 &uv1)
 {
-	ImGui::Image(tex_ref, image_size, uv0, uv1);
-
-	const bool hovered = ImGui::IsItemHovered();
-
-	const auto texture = static_cast<SDL_Texture*>(tex_ref.GetTexID());
-
-	SDL_PropertiesID properties = SDL_GetTextureProperties(texture);
-
-	if (properties == 0)
-		return hovered;
-
-	const auto texture_width = SDL_GetNumberProperty(properties, SDL_PROP_TEXTURE_WIDTH_NUMBER, 0);
-	const auto texture_height = SDL_GetNumberProperty(properties, SDL_PROP_TEXTURE_HEIGHT_NUMBER, 0);
-
-	const auto image_width = texture_width * std::abs(uv1.x - uv0.x);
-	const auto image_height = texture_height * std::abs(uv1.y - uv0.y);
-
 	if (ImGui::BeginPopupContextWindow("Context"))
 	{
 		if (ImGui::MenuItem("Copy"))
 		{
 			const auto &callback = [&]() -> SDL::Surface
 			{
-				auto texture_copy = SDL::Texture(SDL_CreateTexture( renderer, SDL::pixel_format, SDL_TEXTUREACCESS_TARGET, image_width, image_height));
+				SDL_PropertiesID properties = SDL_GetTextureProperties(texture);
+
+				if (properties == 0)
+					return nullptr;
+
+				const auto texture_width = SDL_GetNumberProperty(properties, SDL_PROP_TEXTURE_WIDTH_NUMBER, 0);
+				const auto texture_height = SDL_GetNumberProperty(properties, SDL_PROP_TEXTURE_HEIGHT_NUMBER, 0);
+
+				const auto image_width = std::round(texture_width * std::abs(uv1.x - uv0.x));
+				const auto image_height = std::round(texture_height * std::abs(uv1.y - uv0.y));
+
+				auto texture_copy = SDL::Texture(SDL_CreateTexture(renderer, SDL::pixel_format, SDL_TEXTUREACCESS_TARGET, image_width, image_height));
 
 				if (texture_copy == nullptr)
 					return nullptr;
@@ -87,7 +81,7 @@ bool ImGui::ImageCopyable(SDL_Renderer* const renderer, const ImTextureRef tex_r
 				return SDL::Surface(SDL::SetRenderTarget(renderer, texture_copy,
 					[&]() -> SDL_Surface*
 					{
-						const SDL_FRect rect(texture_width * uv0.x, texture_height * uv0.y, texture_width * uv1.x, texture_height * uv1.y);
+						const SDL_FRect rect(texture_width * uv0.x, texture_height * uv0.y, image_width, image_height);
 
 						if (!SDL_RenderTexture(renderer, texture, &rect, nullptr))
 							return nullptr;
@@ -111,6 +105,15 @@ bool ImGui::ImageCopyable(SDL_Renderer* const renderer, const ImTextureRef tex_r
 
 		ImGui::EndPopup();
 	}
+}
+
+bool ImGui::ImageCopyable(SDL_Renderer* const renderer, const ImTextureRef tex_ref, const ImVec2& image_size, const ImVec2& uv0, const ImVec2& uv1)
+{
+	ImGui::Image(tex_ref, image_size, uv0, uv1);
+
+	const bool hovered = ImGui::IsItemHovered();
+
+	ImageCopyableContextWindow(renderer, static_cast<SDL_Texture*>(tex_ref.GetTexID()), uv0, uv1);
 
 	return hovered;
 }
