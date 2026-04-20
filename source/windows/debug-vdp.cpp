@@ -215,53 +215,6 @@ static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SD
 	return DrawSprite(sprite.tile_metadata, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height, std::forward<Ts>(args)...);
 }
 
-static void ImageContextMenu(const std::function<SDL::Surface()> &GetSurface)
-{
-	if (ImGui::BeginPopupContextWindow("Context"))
-	{
-		if (ImGui::MenuItem("Copy"))
-		{
-			SDL::IOStream stream;
-			SDL_SavePNG_IO(GetSurface(), stream, false);
-			SDL::SetClipboardData(
-				[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
-				{
-					*size = SDL_GetIOSize(stream);
-					return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
-				},
-				{{"image/png"}}
-			);
-		}
-
-		ImGui::EndPopup();
-	}
-}
-
-static void ImageContextMenu(SDL_Renderer* const renderer, SDL_Texture* const texture, const int image_width, const int image_height)
-{
-	ImageContextMenu(
-		[&]() -> SDL::Surface
-		{
-			auto texture_copy = SDL::Texture(SDL_CreateTexture(renderer, SDL::pixel_format, SDL_TEXTUREACCESS_TARGET, image_width, image_height));
-
-			if (texture_copy == nullptr)
-				return nullptr;
-
-			return SDL::Surface(SDL::SetRenderTarget(renderer, texture_copy,
-				[&]() -> SDL_Surface*
-				{
-					const SDL_FRect rect(0, 0, image_width, image_height);
-
-					if (!SDL_RenderTexture(renderer, texture, &rect, nullptr))
-						return nullptr;
-
-					return SDL_RenderReadPixels(renderer, nullptr);
-				}
-			));
-		}
-	);
-}
-
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
 {
 	bool options_changed = false;
@@ -493,9 +446,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-				ImGui::Image(ImTextureRef(textures[0]), map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size);
-
-				if (ImGui::IsItemHovered())
+				if (ImGui::ImageCopyable(window.GetRenderer(), ImTextureRef(textures[0]), map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size))
 				{
 					ImGui::BeginTooltip();
 
@@ -511,8 +462,6 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 					piece_tooltip(piece_position.x, piece_position.y);
 					ImGui::EndTooltip();
 				}
-
-				ImageContextMenu(window.GetRenderer(), textures[0], map_size_in_pixels.x, map_size_in_pixels.y);
 			}
 		);
 	}
@@ -809,9 +758,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			ImGui::Image(ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height));
-
-			if (ImGui::IsItemHovered())
+			if (ImGui::ImageCopyable(renderer, ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height)))
 			{
 				ImGui::BeginTooltip();
 
@@ -824,8 +771,6 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 				ImGui::EndTooltip();
 			}
-
-			ImageContextMenu(window.GetRenderer(), texture, plane_width_in_pixels, plane_height_in_pixels);
 		}
 	);
 }
@@ -876,8 +821,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 			if (ImGui::BeginChild("Sprite", image_destination_space))
 			{
 				ImGui::SetCursorPos(image_destination_offset);
-				ImGui::Image(ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
-				ImageContextMenu(GetWindow().GetRenderer(), textures[index], image_size.x, image_size.y);
+				ImGui::ImageCopyable(GetWindow().GetRenderer(), ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
 			}
 			ImGui::EndChild();
 			ImGui::PopID();

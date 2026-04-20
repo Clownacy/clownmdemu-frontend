@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "../../file-utilities.h"
+#include "../../sdl-wrapper-extra.h"
 #include "../../tar.h"
 
 namespace CompressedFonts
@@ -49,6 +50,70 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 	monospace_font = LoadFont("Inconsolata-Regular.ttf", "Inconsolata Regular");
 }
 
+/////////////////////
+// ImGui Utilities //
+/////////////////////
+
+bool ImGui::ImageCopyable(SDL_Renderer* const renderer, const ImTextureRef tex_ref, const ImVec2& image_size, const ImVec2& uv0, const ImVec2& uv1)
+{
+	ImGui::Image(tex_ref, image_size, uv0, uv1);
+
+	const bool hovered = ImGui::IsItemHovered();
+
+	const auto texture = static_cast<SDL_Texture*>(tex_ref.GetTexID());
+
+	SDL_PropertiesID properties = SDL_GetTextureProperties(texture);
+
+	if (properties == 0)
+		return hovered;
+
+	const auto texture_width = SDL_GetNumberProperty(properties, SDL_PROP_TEXTURE_WIDTH_NUMBER, 0);
+	const auto texture_height = SDL_GetNumberProperty(properties, SDL_PROP_TEXTURE_HEIGHT_NUMBER, 0);
+
+	const auto image_width = texture_width * std::abs(uv1.x - uv0.x);
+	const auto image_height = texture_height * std::abs(uv1.y - uv0.y);
+
+	if (ImGui::BeginPopupContextWindow("Context"))
+	{
+		if (ImGui::MenuItem("Copy"))
+		{
+			const auto &callback = [&]() -> SDL::Surface
+			{
+				auto texture_copy = SDL::Texture(SDL_CreateTexture( renderer, SDL::pixel_format, SDL_TEXTUREACCESS_TARGET, image_width, image_height));
+
+				if (texture_copy == nullptr)
+					return nullptr;
+
+				return SDL::Surface(SDL::SetRenderTarget(renderer, texture_copy,
+					[&]() -> SDL_Surface*
+					{
+						const SDL_FRect rect(texture_width * uv0.x, texture_height * uv0.y, texture_width * uv1.x, texture_height * uv1.y);
+
+						if (!SDL_RenderTexture(renderer, texture, &rect, nullptr))
+							return nullptr;
+
+						return SDL_RenderReadPixels(renderer, nullptr);
+					}
+				));
+			};
+
+			SDL::IOStream stream;
+			SDL_SavePNG_IO(callback(), stream, false);
+			SDL::SetClipboardData(
+				[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
+				{
+					*size = SDL_GetIOSize(stream);
+					return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
+				},
+				{{"image/png"}}
+			);
+		}
+
+		ImGui::EndPopup();
+	}
+
+	return hovered;
+}
 
 ///////////////
 // Not Fonts //

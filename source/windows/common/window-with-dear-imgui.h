@@ -51,6 +51,8 @@ namespace ImGui
 	{
 		return ImGui::InputText(label, const_cast<char*>(buf), buf_size, flags | ImGuiInputTextFlags_ReadOnly, callback, user_data);
 	}
+
+	bool ImageCopyable(SDL_Renderer *renderer, ImTextureRef tex_ref, const ImVec2& image_size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
 }
 
 class WindowWithDearImGui : public Window
