@@ -3157,7 +3157,7 @@ void Frontend::Update()
 
 			// Draw the upscaled framebuffer in the window.
 			const ImVec2 uv_div = {static_cast<float>(FRAMEBUFFER_WIDTH), static_cast<float>(FRAMEBUFFER_HEIGHT)};
-			ImGui::Image(ImTextureRef(window->framebuffer_texture), destination_size, uv0 / uv_div, uv1 / uv_div);
+			ImGui::ImageCopyable(window->GetRenderer(), ImTextureRef(window->framebuffer_texture), destination_size, uv0 / uv_div, uv1 / uv_div);
 
 			DrawStatusIndicator(display_position, size_of_display_region);
 		}
