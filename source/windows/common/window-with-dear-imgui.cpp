@@ -60,7 +60,7 @@ void ImGui::ImageCopyableContextWindow(SDL_Renderer* const renderer, SDL_Texture
 	{
 		if (ImGui::MenuItem("Copy"))
 		{
-			const auto &callback = [&]() -> SDL::Surface
+			const auto &GetSurface = [&]() -> SDL::Surface
 			{
 				SDL_PropertiesID properties = SDL_GetTextureProperties(texture);
 
@@ -91,15 +91,22 @@ void ImGui::ImageCopyableContextWindow(SDL_Renderer* const renderer, SDL_Texture
 				));
 			};
 
-			SDL::IOStream stream;
-			SDL_SavePNG_IO(callback(), stream, false);
 			SDL::SetClipboardData(
-				[stream = std::move(stream)]([[maybe_unused]] const char *mime_type, std::size_t *size) mutable
+				[stream = SDL::IOStream(), surface = GetSurface()](const char* mime_type_raw, std::size_t *size) mutable -> const void*
 				{
+					const std::string_view mime_type(mime_type_raw);
+
+					if (mime_type == "image/bmp")
+						SDL_SaveBMP_IO(surface, stream, false);
+					else if (mime_type == "image/png")
+						SDL_SavePNG_IO(surface, stream, false);
+					else
+						return nullptr;
+
 					*size = SDL_GetIOSize(stream);
 					return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
 				},
-				{{"image/png"}}
+				{{"image/bmp", "image/png"}}
 			);
 		}
 
