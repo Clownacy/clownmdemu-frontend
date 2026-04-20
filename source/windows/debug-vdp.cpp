@@ -972,7 +972,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 						const auto bytes_per_piece = PixelsToBytes(piece_width * piece_height);
 						ImGui::TextFormatted("{}: 0x{:X}\nAddress: 0x{:X}", label_singular, piece_index, piece_index * bytes_per_piece);
 
-						if (destination_piece_size.x < 16 || destination_piece_size.y < 16)
+						if (destination_piece_size.x <= 24 * dpi_scale || destination_piece_size.y <= 24 * dpi_scale)
 						{
 							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
 							ImGui::Image(ImTextureRef(regenerating_pieces.textures[0]), ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
