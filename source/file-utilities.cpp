@@ -13,7 +13,7 @@
 #include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
 #include "../common/core/libraries/clowncommon/clowncommon.h"
 
-void FileUtilities::CreateFileDialog(Window &window, const std::string &title, const Filters &filters, PopupCallback callback, const bool save)
+void FileUtilities::CreateFileDialog(Window &window, const std::string &title, const char* const default_filename, const Filters &filters, PopupCallback callback, const bool save)
 {
 	const auto CreateFallbackFileDialog = [=, this](PopupCallback callback)
 	{
@@ -27,6 +27,7 @@ void FileUtilities::CreateFileDialog(Window &window, const std::string &title, c
 		const auto properties = SDL_CreateProperties();
 		SDL_SetPointerProperty(properties, SDL_PROP_FILE_DIALOG_WINDOW_POINTER, window.GetSDLWindow());
 		SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, title.c_str());
+		SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_LOCATION_STRING, default_filename);
 		SDL_SetPointerProperty(properties, SDL_PROP_FILE_DIALOG_FILTERS_POINTER, const_cast<SDL_DialogFileFilter*>(std::data(filters))); // TODO: Remove this when SDL feels like not being moronic.
 		SDL_SetNumberProperty(properties, SDL_PROP_FILE_DIALOG_NFILTERS_NUMBER, std::size(filters));
 		SDL::ShowFileDialogWithProperties(
@@ -63,14 +64,14 @@ void FileUtilities::CreateFileDialog(Window &window, const std::string &title, c
 	}
 }
 
-void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, const Filters &filters, PopupCallback callback)
+void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, const char* const default_filename, const Filters &filters, PopupCallback callback)
 {
-	CreateFileDialog(window, title, filters, std::move(callback), false);
+	CreateFileDialog(window, title, default_filename, filters, std::move(callback), false);
 }
 
-void FileUtilities::CreateSaveFileDialog(Window &window, const std::string &title, const Filters &filters, PopupCallback callback)
+void FileUtilities::CreateSaveFileDialog(Window &window, const std::string &title, const char* const default_filename, const Filters &filters, PopupCallback callback)
 {
-	CreateFileDialog(window, title, filters, std::move(callback), true);
+	CreateFileDialog(window, title, default_filename, filters, std::move(callback), true);
 }
 
 void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filename)
@@ -207,7 +208,7 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 	return SDL::GetPathInfo(path, nullptr);
 }
 
-void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const Filters &filters, LoadFileCallback callback)
+void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const char* const default_filename, const Filters &filters, LoadFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
 	try
@@ -234,7 +235,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		Frontend::debug_log.Log("FileUtilities::LoadFile: Failed to allocate memory.");
 	}
 #else
-	CreateOpenFileDialog(window, title, filters, [callback = std::move(callback)](const std::filesystem::path &path) mutable
+	CreateOpenFileDialog(window, title, default_filename, filters, [callback = std::move(callback)](const std::filesystem::path &path) mutable
 	{
 		SDL::IOStream file(path, "rb");
 
@@ -246,7 +247,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 #endif
 }
 
-void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const Filters &filters, SaveFileCallback callback)
+void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const char* const default_filename, const Filters &filters, SaveFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
 	callback([](const void* const data, const std::size_t data_size)
@@ -255,7 +256,7 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		return true;
 	});
 #else
-	CreateSaveFileDialog(window, title, filters, [callback = std::move(callback)](const std::filesystem::path &path) mutable
+	CreateSaveFileDialog(window, title, default_filename, filters, [callback = std::move(callback)](const std::filesystem::path &path) mutable
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{

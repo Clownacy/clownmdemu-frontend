@@ -112,7 +112,7 @@ void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const textur
 
 		if (ImGui::MenuItem("Save As..."))
 		{
-			file_utilities.SaveFile(window, "Save Image", {{{"Image", "png"}}},
+			file_utilities.SaveFile(window, "Save Image", "image.png", {{{"Image", "png"}}},
 				[stream = TextureToPNGStream()](const FileUtilities::SaveFileInnerCallback &save_file) mutable
 				{
 					return save_file(SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr), SDL_GetIOSize(stream));
