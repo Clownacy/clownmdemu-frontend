@@ -13,71 +13,62 @@
 #include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
 #include "../common/core/libraries/clowncommon/clowncommon.h"
 
-void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, const PopupCallback &callback, const bool save)
+void FileUtilities::CreateFileDialog([[maybe_unused]] Window &window, const std::string &title, PopupCallback callback, const bool save)
 {
-	const auto CreateFallbackFileDialog = [=, this]{
+	const auto CreateFallbackFileDialog = [=, this](PopupCallback callback)
+	{
 		active_file_picker_popup = title;
-		popup_callback = callback;
+		popup_callback = std::move(callback);
 		is_save_dialog = save;
 	};
 
-	bool done = false;
-
 	if (use_native_file_dialogs)
 	{
-		try
-		{
-			const auto properties = SDL_CreateProperties();
-			SDL_SetPointerProperty(properties, SDL_PROP_FILE_DIALOG_WINDOW_POINTER, window.GetSDLWindow());
-			SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, title.c_str());
-			SDL::ShowFileDialogWithProperties(
-				save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE,
-				[=](const char* const* const file_list, [[maybe_unused]] const int filter)
-				{
-					// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
-					SDL::RunOnMainThread(
-						[=]()
+		const auto properties = SDL_CreateProperties();
+		SDL_SetPointerProperty(properties, SDL_PROP_FILE_DIALOG_WINDOW_POINTER, window.GetSDLWindow());
+		SDL_SetStringProperty(properties, SDL_PROP_FILE_DIALOG_TITLE_STRING, title.c_str());
+		SDL::ShowFileDialogWithProperties(
+			save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE,
+			[=, callback = std::move(callback)](const char* const* const file_list, [[maybe_unused]] const int filter) mutable
+			{
+				// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
+				SDL::RunOnMainThread(
+					[=, callback = std::move(callback)]() mutable
+					{
+						// SDL error; use fallback dialog.
+						if (file_list == nullptr)
 						{
-							// SDL error; use fallback dialog.
-							if (file_list == nullptr)
-							{
-								CreateFallbackFileDialog();
-								return;
-							}
-
-							// User cancelled.
-							if (*file_list == nullptr)
-								return;
-
-							// Success.
-							callback(U8Path(*file_list));
+							CreateFallbackFileDialog(std::move(callback));
+							return;
 						}
-					);
-				},
-				properties
-			);
-			SDL_DestroyProperties(properties);
 
-			done = true;
-		}
-		catch (const std::bad_alloc&)
-		{
-			Frontend::debug_log.Log("FileUtilities::CreateFileDialog: Failed to allocate memory.");
-		}
+						// User cancelled.
+						if (*file_list == nullptr)
+							return;
+
+						// Success.
+						callback(U8Path(*file_list));
+					}
+				);
+			},
+			properties
+		);
+		SDL_DestroyProperties(properties);
 	}
-
-	if (!done)
-		CreateFallbackFileDialog();
+	else
+	{
+		CreateFallbackFileDialog(std::move(callback));
+	}
 }
 
-void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, const PopupCallback &callback)
+void FileUtilities::CreateOpenFileDialog(Window &window, const std::string &title, PopupCallback callback)
 {
-	CreateFileDialog(window, title, callback, false);
+	CreateFileDialog(window, title, std::move(callback), false);
 }
 
-void FileUtilities::CreateSaveFileDialog(Window &window, const std::string &title, const PopupCallback &callback)
+void FileUtilities::CreateSaveFileDialog(Window &window, const std::string &title, PopupCallback callback)
 {
-	CreateFileDialog(window, title, callback, true);
+	CreateFileDialog(window, title, std::move(callback), true);
 }
 
 void FileUtilities::DisplayFileDialog(std::filesystem::path &drag_and_drop_filename)
@@ -214,7 +205,7 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 	return SDL::GetPathInfo(path, nullptr);
 }
 
-void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const LoadFileCallback &callback)
+void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, LoadFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
 	try
@@ -241,7 +232,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		Frontend::debug_log.Log("FileUtilities::LoadFile: Failed to allocate memory.");
 	}
 #else
-	CreateOpenFileDialog(window, title, [callback](const std::filesystem::path &path)
+	CreateOpenFileDialog(window, title, [callback = std::move(callback)](const std::filesystem::path &path) mutable
 	{
 		SDL::IOStream file(path, "rb");
 
@@ -253,7 +244,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 #endif
 }
 
-void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, const SaveFileCallback &callback)
+void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const std::string &title, SaveFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
 	callback([](const void* const data, const std::size_t data_size)
@@ -262,7 +253,7 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 		return true;
 	});
 #else
-	CreateSaveFileDialog(window, title, [callback](const std::filesystem::path &path)
+	CreateSaveFileDialog(window, title, [callback = std::move(callback)](const std::filesystem::path &path) mutable
 	{
 		const auto save_file = [path](const void* const data, const std::size_t data_size)
 		{

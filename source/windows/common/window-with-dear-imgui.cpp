@@ -54,11 +54,13 @@ void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 // ImGui Utilities //
 /////////////////////
 
-void ImGui::ImageCopyableContextWindow(SDL_Renderer* const renderer, SDL_Texture* const texture, const ImVec2 &uv0, const ImVec2 &uv1)
+void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const texture, const ImVec2 &uv0, const ImVec2 &uv1)
 {
 	if (ImGui::BeginPopupContextWindow("Context"))
 	{
-		if (ImGui::MenuItem("Copy"))
+		SDL_Renderer* const renderer = window.GetRenderer();
+
+		const auto &TextureToPNGStream = [&]() -> SDL::IOStream
 		{
 			const auto &GetSurface = [&]() -> SDL::Surface
 			{
@@ -91,10 +93,18 @@ void ImGui::ImageCopyableContextWindow(SDL_Renderer* const renderer, SDL_Texture
 				));
 			};
 
+			SDL::IOStream stream;
+			SDL_SavePNG_IO(GetSurface(), stream, false);
+			return stream;
+		};
+
+		if (ImGui::MenuItem("Copy"))
+		{
+			auto stream = TextureToPNGStream();
+
 			SDL::SetClipboardData(
-				[stream = SDL::IOStream(), surface = GetSurface()]([[maybe_unused]] const char* const mime_type, std::size_t* const size) mutable -> const void*
+				[stream = std::move(stream)]([[maybe_unused]] const char* const mime_type, std::size_t* const size) mutable -> const void*
 				{
-					SDL_SavePNG_IO(surface, stream, false);
 					*size = SDL_GetIOSize(stream);
 					return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
 				},
@@ -102,17 +112,29 @@ void ImGui::ImageCopyableContextWindow(SDL_Renderer* const renderer, SDL_Texture
 			);
 		}
 
+		if (ImGui::MenuItem("Save As..."))
+		{
+			auto stream = TextureToPNGStream();
+
+			file_utilities.SaveFile(window, "Save Image",
+				[stream = std::move(stream)](const FileUtilities::SaveFileInnerCallback &save_file) mutable
+				{
+					return save_file(SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr), SDL_GetIOSize(stream));
+				}
+			);
+		}
+
 		ImGui::EndPopup();
 	}
 }
 
-bool ImGui::ImageCopyable(SDL_Renderer* const renderer, const ImTextureRef tex_ref, const ImVec2 &image_size, const ImVec2 &uv0, const ImVec2 &uv1)
+bool ImGui::ImageCopyable(Window &window, const ImTextureRef tex_ref, const ImVec2 &image_size, const ImVec2 &uv0, const ImVec2 &uv1)
 {
 	ImGui::Image(tex_ref, image_size, uv0, uv1);
 
 	const bool hovered = ImGui::IsItemHovered();
 
-	ImageCopyableContextWindow(renderer, static_cast<SDL_Texture*>(tex_ref.GetTexID()), uv0, uv1);
+	ImageCopyableContextWindow(window, static_cast<SDL_Texture*>(tex_ref.GetTexID()), uv0, uv1);
 
 	return hovered;
 }

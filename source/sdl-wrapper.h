@@ -9,6 +9,8 @@
 #include <SDL3/SDL.h>
 #include <tcb/span.hpp>
 
+#include "../libraries/function2/include/function2/function2.hpp"
+
 #include "raii-wrapper.h"
 
 namespace SDL
@@ -120,13 +122,13 @@ namespace SDL
 		return SDL_RunOnMainThread(main_thread_callback, const_cast<void*>(user_data), wait_complete);
 	}
 
-	using MainThreadCallback = std::function<void()>;
-	inline bool RunOnMainThread(const MainThreadCallback &main_thread_callback)
+	using MainThreadCallback = fu2::unique_function<void()>;
+	inline bool RunOnMainThread(MainThreadCallback main_thread_callback)
 	{
 		return RunOnMainThread(
 			[](void* const user_data)
 			{
-				const auto &callback = *static_cast<MainThreadCallback*>(user_data);
+				auto &callback = *static_cast<MainThreadCallback*>(user_data);
 
 				callback();
 			},
@@ -139,12 +141,12 @@ namespace SDL
 		SDL_ShowFileDialogWithProperties(type, callback, userdata, props);
 	}
 
-	using DialogFileCallback = std::function<void(const char* const *file_list, int filter)>;
-	inline void ShowFileDialogWithProperties(const SDL_FileDialogType type, const DialogFileCallback &callback, const SDL_PropertiesID props)
+	using DialogFileCallback = fu2::unique_function<void(const char* const *file_list, int filter)>;
+	inline void ShowFileDialogWithProperties(const SDL_FileDialogType type, DialogFileCallback callback, const SDL_PropertiesID props)
 	{
 		// Create copy of the callback so that it outlives its caller.
 		// `ShowFileDialogWithProperties` may run the callback on a different thread.
-		const auto callback_copy_pointer = new DialogFileCallback(callback);
+		const auto callback_copy_pointer = new DialogFileCallback(std::move(callback));
 
 		ShowFileDialogWithProperties(
 			type,

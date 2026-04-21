@@ -446,7 +446,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 				const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-				if (ImGui::ImageCopyable(window.GetRenderer(), ImTextureRef(textures[0]), map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size))
+				if (ImGui::ImageCopyable(window, ImTextureRef(textures[0]), map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size))
 				{
 					ImGui::BeginTooltip();
 
@@ -758,7 +758,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			if (ImGui::ImageCopyable(renderer, ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height)))
+			if (ImGui::ImageCopyable(window, ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height)))
 			{
 				ImGui::BeginTooltip();
 
@@ -821,7 +821,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 			if (ImGui::BeginChild("Sprite", image_destination_space))
 			{
 				ImGui::SetCursorPos(image_destination_offset);
-				ImGui::ImageCopyable(GetWindow().GetRenderer(), ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
+				ImGui::ImageCopyable(GetWindow(), ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
@@ -961,7 +961,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 						// Finally, display the tile.
 						draw_list->AddImage(ImTextureRef(regenerating_pieces.textures[0]), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
 
-						ImGui::ImageCopyableContextWindow(derived->GetWindow().GetRenderer(), regenerating_pieces.textures[0], current_piece_uv0, current_piece_uv1);
+						ImGui::ImageCopyableContextWindow(derived->GetWindow(), regenerating_pieces.textures[0], current_piece_uv0, current_piece_uv1);
 					}
 
 					ImGui::EndChild();

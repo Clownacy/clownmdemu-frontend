@@ -35,7 +35,6 @@ namespace Frontend
 {
 	extern std::optional<EmulatorInstance> emulator;
 	extern std::optional<WindowWithFramebuffer> window;
-	extern FileUtilities file_utilities;
 	extern unsigned int frame_counter;
 
 	extern bool tall_double_resolution_mode;

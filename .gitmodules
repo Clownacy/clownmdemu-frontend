@@ -26,3 +26,6 @@
 [submodule "libraries/ImGuiTextSelect"]
 	path = libraries/ImGuiTextSelect
 	url = https://github.com/AidanSun05/ImGuiTextSelect
+[submodule "libraries/function2"]
+	path = libraries/function2
+	url = https://github.com/Naios/function2
