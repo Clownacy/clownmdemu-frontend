@@ -2794,7 +2794,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", [](const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", {{{"Mega Drive Cartridge Software", "bin;md;gen;zip"}}}, [](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -2816,7 +2816,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", [](const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load CD File", {{{"Mega CD Disc Software", "bin;cue;iso;chd"}}}, [](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						if (!LoadCDFile(path, std::move(file)))
 							return false;
@@ -2906,7 +2906,7 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 				#ifdef FILE_PATH_SUPPORT
-					file_utilities.CreateSaveFileDialog(*window, "Create Save State", SaveState);
+					file_utilities.CreateSaveFileDialog(*window, "Create Save State", {}, SaveState);
 				#else
 					file_utilities.SaveFile(*window, "Create Save State", [](const FileUtilities::SaveFileInnerCallback &callback)
 					{
@@ -2936,7 +2936,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", []([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Save State", {}, []([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						LoadSaveState(file);
 						return true;

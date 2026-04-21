@@ -21,6 +21,7 @@ class FileUtilities
 {
 public:
 	using SaveFileInnerCallback = std::function<bool(const void *data, std::size_t data_size)>;
+	using Filters = tcb::span<const SDL_DialogFileFilter>;
 
 private:
 	using PopupCallback = fu2::unique_function<bool(const std::filesystem::path &path)>;
@@ -33,13 +34,13 @@ private:
 	PopupCallback popup_callback;
 	bool is_save_dialog = false;
 
-	void CreateFileDialog(Window &window, const std::string &title, PopupCallback callback, bool save);
+	void CreateFileDialog(Window &window, const std::string &title, const Filters &filters, PopupCallback callback, bool save);
 
 public:
 	bool use_native_file_dialogs = true;
 
-	void CreateOpenFileDialog(Window &window, const std::string &title, PopupCallback callback);
-	void CreateSaveFileDialog(Window &window, const std::string &title, PopupCallback callback);
+	void CreateOpenFileDialog(Window &window, const std::string &title, const Filters &filters, PopupCallback callback);
+	void CreateSaveFileDialog(Window &window, const std::string &title, const Filters &filters, PopupCallback callback);
 	void DisplayFileDialog(std::filesystem::path &drag_and_drop_filename);
 	bool IsDialogOpen() const { return active_file_picker_popup.has_value(); }
 
@@ -122,8 +123,8 @@ public:
 	static std::optional<std::vector<cc_u16l>> LoadZIPFileToBuffer(SDL::IOStream &file, unsigned int file_index);
 	static std::optional<std::vector<unsigned char>> DecompressLZMABuffer(const unsigned char *buffer, std::size_t buffer_size, std::size_t uncompressed_size);
 
-	void LoadFile(Window &window, const std::string &title, LoadFileCallback callback);
-	void SaveFile(Window &window, const std::string &title, SaveFileCallback callback);
+	void LoadFile(Window &window, const std::string &title, const Filters &filters, LoadFileCallback callback);
+	void SaveFile(Window &window, const std::string &title, const Filters &filters, SaveFileCallback callback);
 
 	template<typename... Ts>
 	static auto U8Path(Ts &&...args)

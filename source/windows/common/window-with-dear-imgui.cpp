@@ -100,10 +100,8 @@ void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const textur
 
 		if (ImGui::MenuItem("Copy"))
 		{
-			auto stream = TextureToPNGStream();
-
 			SDL::SetClipboardData(
-				[stream = std::move(stream)]([[maybe_unused]] const char* const mime_type, std::size_t* const size) mutable -> const void*
+				[stream = TextureToPNGStream()]([[maybe_unused]] const char* const mime_type, std::size_t* const size) mutable -> const void*
 				{
 					*size = SDL_GetIOSize(stream);
 					return SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr);
@@ -114,10 +112,8 @@ void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const textur
 
 		if (ImGui::MenuItem("Save As..."))
 		{
-			auto stream = TextureToPNGStream();
-
-			file_utilities.SaveFile(window, "Save Image",
-				[stream = std::move(stream)](const FileUtilities::SaveFileInnerCallback &save_file) mutable
+			file_utilities.SaveFile(window, "Save Image", {{{"Image", "png"}}},
+				[stream = TextureToPNGStream()](const FileUtilities::SaveFileInnerCallback &save_file) mutable
 				{
 					return save_file(SDL_GetPointerProperty(SDL_GetIOProperties(stream), SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER, nullptr), SDL_GetIOSize(stream));
 				}

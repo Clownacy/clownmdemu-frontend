@@ -99,7 +99,7 @@ private:
 				}
 			}
 
-			file_utilities.SaveFile(GetWindow(), "Save RAM Dump",
+			file_utilities.SaveFile(GetWindow(), "Save RAM Dump", {},
 			[save_buffer](const FileUtilities::SaveFileInnerCallback &callback)
 			{
 				return callback(std::data(save_buffer), std::size(save_buffer));
