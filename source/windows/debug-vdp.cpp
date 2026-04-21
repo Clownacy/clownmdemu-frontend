@@ -816,7 +816,6 @@ void DebugVDP::SpriteList::DisplayInternal()
 			const auto image_destination_space = image_internal_size * image_scale;
 			const auto image_destination_size = image_size * image_scale;
 			const auto image_destination_offset = (image_destination_space - image_destination_size) / 2;
-			const auto cursor_position = ImGui::GetCursorPos();
 			ImGui::PushID(index);
 			if (ImGui::BeginChild("Sprite", image_destination_space))
 			{
@@ -915,7 +914,6 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 	if (grid_display_region_width_in_pieces != 0) // Avoid a division by 0.
 	{
 		const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
-		const bool window_is_hovered = ImGui::IsWindowHovered();
 
 		// Draw the list of tiles.
 		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
