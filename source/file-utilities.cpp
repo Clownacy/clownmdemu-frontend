@@ -15,7 +15,7 @@
 
 void FileUtilities::CreateFileDialog(Window &window, const char* const title, const char* const default_filename, const Filters &filters, PopupCallback callback, const bool save)
 {
-	auto CreateFallbackFileDialog = [this, title = std::string(title), default_filename = std::string(default_filename), save](PopupCallback callback) mutable
+	auto CreateFallbackFileDialog = [this, title = title == nullptr ? "" : std::string(title), default_filename = default_filename == nullptr ? "" : std::string(default_filename), save](PopupCallback callback) mutable
 	{
 		active_file_picker_popup = std::move(title);
 		text_buffer = std::move(default_filename);
