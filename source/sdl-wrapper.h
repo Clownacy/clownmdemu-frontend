@@ -146,37 +146,39 @@ namespace SDL
 	{
 		// Create copy of the callback so that it outlives its caller.
 		// `ShowFileDialogWithProperties` may run the callback on a different thread.
-		const auto callback_copy_pointer = new DialogFileCallback(std::move(callback));
+		const auto callback_copy = new DialogFileCallback(std::move(callback));
 
 		ShowFileDialogWithProperties(
 			type,
 			[](void* const user_data, const char* const* const file_list, const int filter)
 			{
 				// Automatically handles freeing the callback copy.
-				const std::unique_ptr<DialogFileCallback> callback_copy(static_cast<DialogFileCallback*>(user_data));
+				const auto callback = static_cast<DialogFileCallback*>(user_data);
 
-				(*callback_copy)(file_list, filter);
+				(*callback)(file_list, filter);
+
+				delete callback;
 			},
-			callback_copy_pointer,
+			callback_copy,
 			props
 		);
 	}
 
-	template<typename T>
-	inline bool SetClipboardData(T callback, const tcb::span<const char* const> &mime_types)
+	using ClipboardDataCallback = fu2::unique_function<const void*(const char *mime_type, size_t *size)>;
+	inline bool SetClipboardData(ClipboardDataCallback callback, const tcb::span<const char* const> &mime_types)
 	{
-		const auto callback_copy = new T(std::move(callback));
+		const auto callback_copy = new ClipboardDataCallback(std::move(callback));
 
 		const auto &CallbackWrapper = [](void *user_data, const char *mime_type, std::size_t *size) -> const void*
 		{
-			auto &callback = *static_cast<T*>(user_data);
+			auto &callback = *static_cast<ClipboardDataCallback*>(user_data);
 
 			return callback(mime_type, size);
 		};
 
 		const auto &CleanupWrapper = [](void *user_data)
 		{
-			delete static_cast<T*>(user_data);
+			delete static_cast<ClipboardDataCallback*>(user_data);
 		};
 
 		// TODO: SDL v3.4.4 has dumb constness. Once updated, scrap the nasty const cast.
