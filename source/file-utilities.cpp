@@ -217,7 +217,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	{
 		const auto callback_copy = new LoadFileCallback(std::move(callback));
 
-		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, emscripten_browser_file::buffer_unique_ptr &&buffer, size_t buffer_size, void* const user_data)
+		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, emscripten_browser_file::buffer_unique_ptr &&buffer, const std::size_t buffer_size, void* const user_data)
 		{
 			auto callback = static_cast<LoadFileCallback*>(user_data);
 			SDL::IOStream file(buffer.release(), buffer_size);
