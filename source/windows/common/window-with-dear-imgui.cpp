@@ -98,7 +98,7 @@ void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const textur
 			return stream;
 		};
 
-		if (ImGui::MenuItem("Copy"))
+		if (ImGui::MenuItem("Copy Image"))
 		{
 			SDL::SetClipboardData(
 				[stream = TextureToPNGStream()]([[maybe_unused]] const char* const mime_type, std::size_t* const size) mutable -> const void*
@@ -110,7 +110,7 @@ void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const textur
 			);
 		}
 
-		if (ImGui::MenuItem("Save As..."))
+		if (ImGui::MenuItem("Save Image As..."))
 		{
 			file_utilities.SaveFile(window, "Save Image", "image.png", {{{"Image", "png"}}},
 				[stream = TextureToPNGStream()](const FileUtilities::SaveFileInnerCallback &save_file) mutable
