@@ -15,9 +15,10 @@
 
 void FileUtilities::CreateFileDialog(Window &window, const char* const title, const char* const default_filename, const Filters &filters, PopupCallback callback, const bool save)
 {
-	const auto CreateFallbackFileDialog = [=, this](PopupCallback callback)
+	auto CreateFallbackFileDialog = [this, title = std::string(title), default_filename = std::string(default_filename), save](PopupCallback callback) mutable
 	{
-		active_file_picker_popup = title;
+		active_file_picker_popup = std::move(title);
+		text_buffer = std::move(default_filename);
 		popup_callback = std::move(callback);
 		is_save_dialog = save;
 	};
@@ -32,7 +33,7 @@ void FileUtilities::CreateFileDialog(Window &window, const char* const title, co
 		SDL_SetNumberProperty(properties, SDL_PROP_FILE_DIALOG_NFILTERS_NUMBER, std::size(filters));
 		SDL::ShowFileDialogWithProperties(
 			save ? SDL_FILEDIALOG_SAVEFILE : SDL_FILEDIALOG_OPENFILE,
-			[=, callback = std::move(callback)](const char* const* const file_list, [[maybe_unused]] const int filter) mutable
+			[callback = std::move(callback), CreateFallbackFileDialog = std::move(CreateFallbackFileDialog)](const char* const* const file_list, [[maybe_unused]] const int filter) mutable
 			{
 				// The callback may be ran on a different thread, so proxy to the main thread to avoid race conditions!
 				SDL::RunOnMainThread(
