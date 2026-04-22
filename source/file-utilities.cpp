@@ -212,6 +212,7 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const char* const title, const char* const default_filename, const Filters &filters, LoadFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
+	// TODO: Make use of the default filename and filters for this.
 	try
 	{
 		LoadFileCallback* const callback_detatched = new LoadFileCallback(callback);
@@ -251,6 +252,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const char* const title, const char* const default_filename, const Filters &filters, SaveFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
+	// TODO: Make use of the default filename and filters for this.
 	callback([](const void* const data, const std::size_t data_size)
 	{
 		emscripten_browser_file::download("", "application/octet-stream", std::string_view(static_cast<const char*>(data), data_size));
