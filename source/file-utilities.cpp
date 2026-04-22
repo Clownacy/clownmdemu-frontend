@@ -222,7 +222,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 			auto callback = static_cast<LoadFileCallback*>(user_data);
 			SDL::IOStream file(buffer.release(), buffer_size);
 
-			if (file)
+			if (buffer_size != 0)
 			{
 				SDL_SetPointerProperty(SDL_GetIOProperties(file), SDL_PROP_IOSTREAM_MEMORY_FREE_FUNC_POINTER, reinterpret_cast<void*>(std::free));
 
