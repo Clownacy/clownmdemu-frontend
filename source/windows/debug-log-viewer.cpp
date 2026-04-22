@@ -9,6 +9,8 @@ void DebugLogViewer::DisplayInternal()
 	if (ImGui::Button("Clear"))
 		Frontend::debug_log.lines.clear();
 
+	ImGui::Separator();
+
 	if (ImGui::BeginChild("Log", {}, 0, ImGuiWindowFlags_NoMove))
 	{
 		ImGui::PushFont(GetMonospaceFont());
