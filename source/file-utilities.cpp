@@ -209,7 +209,7 @@ bool FileUtilities::FileExists(const std::filesystem::path &path)
 	return SDL::GetPathInfo(path, nullptr);
 }
 
-void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const char* const title, const char* const default_filename, const Filters &filters, LoadFileCallback callback)
+void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] const char* const title, [[maybe_unused]] const char* const default_filename, [[maybe_unused]] const Filters &filters, LoadFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
 	// TODO: Make use of the default filename and filters for this.
@@ -251,7 +251,7 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 #endif
 }
 
-void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const char* const title, const char* const default_filename, const Filters &filters, SaveFileCallback callback)
+void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] const char* const title, const char* const default_filename, [[maybe_unused]] const Filters &filters, SaveFileCallback callback)
 {
 #ifdef __EMSCRIPTEN__
 	// TODO: Make use of filters for this.
