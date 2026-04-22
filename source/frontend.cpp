@@ -2908,7 +2908,7 @@ void Frontend::Update()
 				#ifdef FILE_PATH_SUPPORT
 					file_utilities.CreateSaveFileDialog(*window, "Create Save State", "state.bin", {}, SaveState);
 				#else
-					file_utilities.SaveFile(*window, "Create Save State", [](const FileUtilities::SaveFileInnerCallback &callback)
+					file_utilities.SaveFile(*window, "Create Save State", "state.bin", {}, [](const FileUtilities::SaveFileInnerCallback &callback)
 					{
 						// Inefficient, but it's the only way...
 						try

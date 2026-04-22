@@ -215,22 +215,24 @@ void FileUtilities::LoadFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 	// TODO: Make use of the default filename and filters for this.
 	try
 	{
-		LoadFileCallback* const callback_detatched = new LoadFileCallback(callback);
+		const auto callback_copy = new LoadFileCallback(std::move(callback));
 
 		const auto call_callback = [](const std::string &filename, const std::string &/*mime_type*/, emscripten_browser_file::buffer_unique_ptr &&buffer, size_t buffer_size, void* const user_data)
 		{
-			const std::unique_ptr<LoadFileCallback> callback(static_cast<LoadFileCallback*>(user_data));
+			auto callback = static_cast<LoadFileCallback*>(user_data);
 			SDL::IOStream file(buffer.release(), buffer_size);
 
 			if (file)
 			{
 				SDL_SetPointerProperty(SDL_GetIOProperties(file), SDL_PROP_IOSTREAM_MEMORY_FREE_FUNC_POINTER, reinterpret_cast<void*>(std::free));
 
-				(*callback.get())(filename, std::move(file));
+				(*callback)(filename, std::move(file));
 			}
+
+			delete callback;
 		};
 
-		emscripten_browser_file::upload("", call_callback, callback_detatched);
+		emscripten_browser_file::upload("", call_callback, callback_copy);
 	}
 	catch (const std::bad_alloc&)
 	{
