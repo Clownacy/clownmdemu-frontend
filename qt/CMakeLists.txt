@@ -71,6 +71,10 @@ if(NOT fmt_FOUND)
 endif()
 target_link_libraries(clownmdemu-frontend-qt PRIVATE fmt::fmt)
 
+# Link span
+add_subdirectory("../libraries/span" EXCLUDE_FROM_ALL "span")
+target_link_libraries(clownmdemu-frontend-qt PRIVATE span)
+
 qt_add_resources(clownmdemu-frontend-qt "shaders"
 	PREFIX
 		"/"
