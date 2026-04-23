@@ -1294,24 +1294,24 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 }
 #endif
 
-static void UpdateFastForwardStatus()
+void Frontend::UpdateFastForwardStatus()
 {
 	unsigned int speed = keyboard_input.fast_forward;
 
 	for (const auto &controller_input : controller_input_list)
 		speed += controller_input.input.fast_forward;
 
-	frontend->emulator->SetFastForwarding(speed);
+	emulator->SetFastForwarding(speed);
 }
 
-static void UpdateRewindStatus()
+void Frontend::UpdateRewindStatus()
 {
 	bool will_rewind = keyboard_input.rewind;
 
 	for (const auto &controller_input : controller_input_list)
 		will_rewind |= controller_input.input.rewind != 0;
 
-	frontend->emulator->rewinding = will_rewind;
+	emulator->rewinding = will_rewind;
 }
 
 
@@ -1369,17 +1369,17 @@ std::filesystem::path Frontend::GetDearImGuiSettingsFilePath()
 	return GetConfigurationDirectoryPath() / "dear-imgui-settings.ini";
 }
 
-static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_u16l> &&file_buffer)
+void Frontend::LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_u16l> &&file_buffer)
 {
 #ifdef FILE_PATH_SUPPORT
 	AddToRecentSoftware(path, false, false);
 #endif
 
 	quick_save_state = std::nullopt;
-	frontend->emulator->LoadCartridgeFile(std::move(file_buffer), path);
+	emulator->LoadCartridgeFile(std::move(file_buffer), path);
 }
 
-static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
+bool Frontend::LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
 {
 	if (file)
 	{
@@ -1400,37 +1400,37 @@ static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &
 	}
 
 	debug_log.Log("Could not load the cartridge file");
-	frontend->window->ShowErrorMessageBox("Failed to load the cartridge file.");
+	window->ShowErrorMessageBox("Failed to load the cartridge file.");
 	return false;
 }
 
-static bool LoadCartridgeFile(const std::filesystem::path &path)
+bool Frontend::LoadCartridgeFile(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "rb");
 	return LoadCartridgeFile(path, file);
 }
 
-static bool LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
+bool Frontend::LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
 {
 #ifdef FILE_PATH_SUPPORT
 	AddToRecentSoftware(path, true, false);
 #endif
 
 	// Load the CD.
-	if (!frontend->emulator->LoadCDFile(std::move(file), path))
+	if (!emulator->LoadCDFile(std::move(file), path))
 		return false;
 
 	return true;
 }
 
-static bool LoadCDFile(const std::filesystem::path &path)
+bool Frontend::LoadCDFile(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "rb");
 
 	if (!file)
 	{
 		debug_log.Log("Could not load the CD file");
-		frontend->window->ShowErrorMessageBox("Failed to load the CD file.");
+		window->ShowErrorMessageBox("Failed to load the CD file.");
 		return false;
 	}
 
@@ -1438,7 +1438,7 @@ static bool LoadCDFile(const std::filesystem::path &path)
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path &path)
+bool Frontend::LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path &path)
 {
 	if (is_cd_file)
 		return LoadCDFile(path);
@@ -1447,34 +1447,34 @@ static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path 
 }
 #endif
 
-static bool LoadSaveState(SDL::IOStream &file)
+bool Frontend::LoadSaveState(SDL::IOStream &file)
 {
-	if (!file || !frontend->emulator->LoadSaveStateFile(file))
+	if (!file || !emulator->LoadSaveStateFile(file))
 	{
 		debug_log.Log("Could not load save state file");
-		frontend->window->ShowErrorMessageBox("Could not load save state file.");
+		window->ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
-	frontend->emulator->SetPaused(false);
+	emulator->SetPaused(false);
 	return true;
 }
 
-static bool LoadSaveState(const std::filesystem::path &path)
+bool Frontend::LoadSaveState(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "rb");
 	return LoadSaveState(file);
 }
 
 #ifdef FILE_PATH_SUPPORT
-static bool SaveState(const std::filesystem::path &path)
+bool Frontend::SaveState(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "wb");
 
-	if (!file || !frontend->emulator->WriteSaveStateFile(file))
+	if (!file || !emulator->WriteSaveStateFile(file))
 	{
 		debug_log.Log("Could not create save state file");
-		frontend->window->ShowErrorMessageBox("Could not create save state file.");
+		window->ShowErrorMessageBox("Could not create save state file.");
 		return false;
 	}
 
@@ -1482,14 +1482,14 @@ static bool SaveState(const std::filesystem::path &path)
 }
 #endif
 
-static bool ShouldBeInFullscreenMode()
+bool Frontend::ShouldBeInFullscreenMode()
 {
-	return forced_fullscreen || frontend->window->GetFullscreen();
+	return forced_fullscreen || window->GetFullscreen();
 }
 
-static bool NativeWindowsActive()
+bool Frontend::NativeWindowsActive()
 {
-	return frontend->native_windows && !ShouldBeInFullscreenMode();
+	return native_windows && !ShouldBeInFullscreenMode();
 }
 
 
@@ -2063,9 +2063,9 @@ void Frontend::WriteSaveData()
 	emulator->SaveCartridgeSaveData();
 }
 
-static void HandleMainWindowEvent(const SDL_Event &event)
+void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 {
-	frontend->window->MakeDearImGuiContextCurrent();
+	window->MakeDearImGuiContextCurrent();
 
 	ImGuiIO &io = ImGui::GetIO();
 
@@ -2093,14 +2093,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			if (event.key.key == SDLK_RETURN && (SDL_GetModState() & SDL_KMOD_ALT) != 0)
 			{
-				frontend->window->ToggleFullscreen();
+				window->ToggleFullscreen();
 				break;
 			}
 
 			if (event.key.key == SDLK_ESCAPE)
 			{
 				// Exit fullscreen
-				frontend->window->SetFullscreen(false);
+				window->SetFullscreen(false);
 			}
 
 			// Prevent invalid memory accesses due to future API expansions.
@@ -2111,7 +2111,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			switch (keyboard_bindings[event.key.scancode])
 			{
 				case InputBinding::TOGGLE_FULLSCREEN:
-					frontend->window->ToggleFullscreen();
+					window->ToggleFullscreen();
 					break;
 
 				default:
@@ -2124,26 +2124,26 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				switch (keyboard_bindings[event.key.scancode])
 				{
 					case InputBinding::PAUSE:
-						frontend->emulator->SetPaused(!frontend->emulator->IsPaused());
+						emulator->SetPaused(!emulator->IsPaused());
 						break;
 
 					case InputBinding::RESET:
 						// Soft-reset console
-						frontend->emulator->SoftReset();
-						frontend->emulator->SetPaused(false);
+						emulator->SoftReset();
+						emulator->SetPaused(false);
 						break;
 
 					case InputBinding::QUICK_SAVE_STATE:
 						// Save save state
-						quick_save_state.emplace(*frontend->emulator);
+						quick_save_state.emplace(*emulator);
 						break;
 
 					case InputBinding::QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_state)
 						{
-							quick_save_state->Apply(*frontend->emulator);
-							frontend->emulator->SetPaused(false);
+							quick_save_state->Apply(*emulator);
+							emulator->SetPaused(false);
 						}
 
 						break;
@@ -2212,10 +2212,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						// Toggle fast-forward
 						keyboard_input.fast_forward += delta;
 
-						if ((!frontend->emulator->IsPaused() && emulator_has_focus) || !pressed)
+						if ((!emulator->IsPaused() && emulator_has_focus) || !pressed)
 							UpdateFastForwardStatus();
 
-						if (pressed && frontend->emulator->IsPaused())
+						if (pressed && emulator->IsPaused())
 							emulator_frame_advance = true;
 
 						break;
@@ -2293,7 +2293,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle pause.
-				frontend->emulator->SetPaused(!frontend->emulator->IsPaused());
+				emulator->SetPaused(!emulator->IsPaused());
 			}
 
 			// Don't use inputs that are for Dear ImGui.
@@ -2533,9 +2533,9 @@ void Frontend::HandleEvent(const SDL_Event &event)
 	}
 }
 
-static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &display_size)
+void Frontend::DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &display_size)
 {
-	if (frontend->emulator->IsPaused() || frontend->emulator->rewinding || frontend->emulator->IsFastForwarding())
+	if (emulator->IsPaused() || emulator->rewinding || emulator->IsFastForwarding())
 	{
 		// A bunch of utility junk.
 		const auto DrawOutlinedTriangle = [](ImDrawList* const draw_list, const ImVec2 &position, const float radius, const float outline_thickness, const unsigned int degree)
@@ -2599,7 +2599,7 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 		};
 
 		// The actual logic for drawing the symbols.
-		const auto radius = 20.0f * frontend->window->GetDPIScale();
+		const auto radius = 20.0f * window->GetDPIScale();
 		const auto outline_thickness = radius / 6;
 
 		const auto position = display_position + ImVec2(display_size.x - radius * 2, radius * 2);
@@ -2609,14 +2609,14 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 
 		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
 
-		if (frontend->emulator->IsPaused())
+		if (emulator->IsPaused())
 		{
 			// Paused symbol.
 			const ImVec2 size(radius * 2 / 5, radius);
 			DrawOutlinedRectangle(draw_list, left_position, size, outline_thickness);
 			DrawOutlinedRectangle(draw_list, right_position, size, outline_thickness);
 		}
-		else if (frontend->emulator->rewinding)
+		else if (emulator->rewinding)
 		{
 			// Rewinding symbol.
 			const auto angle = 270;
@@ -2624,13 +2624,13 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 			DrawOutlinedTriangle(draw_list, right_position, radius, outline_thickness, angle);
 
 			// Show how much of the rewind buffer remains.
-			DrawBar(draw_list, position, radius, outline_thickness, frontend->emulator->GetRewindAmount());
+			DrawBar(draw_list, position, radius, outline_thickness, emulator->GetRewindAmount());
 
 			// Cross-out the symbol when exhausted.
-			if (frontend->emulator->IsRewindExhausted())
+			if (emulator->IsRewindExhausted())
 				DrawCross(draw_list, position, ImVec2(radius, radius), outline_thickness);
 		}
-		else if (frontend->emulator->IsFastForwarding())
+		else if (emulator->IsFastForwarding())
 		{
 			// Fast-forwarding symbol.
 			const auto angle = 90;
@@ -2864,7 +2864,10 @@ void Frontend::Update()
 				if (ImGui::MenuItem("Save to File...", nullptr, false, emulator_on))
 				{
 				#ifdef FILE_PATH_SUPPORT
-					file_utilities.CreateSaveFileDialog(*window, "Create Save State", "state.bin", {}, SaveState);
+					file_utilities.CreateSaveFileDialog(*window, "Create Save State", "state.bin", {}, [this](const std::filesystem::path &path)
+					{
+							return SaveState(path);
+					});
 				#else
 					file_utilities.SaveFile(*window, "Create Save State", "state.bin", {}, [](const FileUtilities::SaveFileInnerCallback &callback)
 					{
@@ -2894,7 +2897,7 @@ void Frontend::Update()
 				}
 
 				if (ImGui::MenuItem("Load from File...", nullptr, false, emulator_on))
-					file_utilities.LoadFile(*window, "Load Save State", nullptr, {}, []([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Save State", nullptr, {}, [this]([[maybe_unused]] const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						LoadSaveState(file);
 						return true;
