@@ -33,13 +33,16 @@
 #include "windows/about.h"
 #include "windows/cheats.h"
 #include "windows/debug-cdc.h"
+#include "windows/debug-cdda.h"
 #include "windows/debug-fm.h"
 #include "windows/debug-frontend.h"
 #include "windows/debug-log-viewer.h"
 #include "windows/debug-m68k.h"
 #include "windows/debug-memory.h"
+#include "windows/debug-other.h"
 #include "windows/debug-pcm.h"
 #include "windows/debug-psg.h"
+#include "windows/debug-toggles.h"
 #include "windows/debug-vdp.h"
 #include "windows/debug-z80.h"
 #include "windows/disassembler.h"
@@ -172,202 +175,6 @@ void Input::SetButton(const ClownMDEmu_Button button, const unsigned char value)
 		}
 	}
 }
-
-class DebugCDDA : public WindowPopup<DebugCDDA>
-{
-private:
-	using Base = WindowPopup<DebugCDDA>;
-
-	static constexpr Uint32 window_flags = 0;
-
-	void DisplayInternal()
-	{
-		const auto &cdda = frontend->emulator->GetCDDAState();
-
-		DoTable("Volume", [&]()
-			{
-				DoProperty(nullptr, "Volume", "0x{:03X}", cdda.volume);
-				DoProperty(nullptr, "Master Volume", "0x{:03X}", cdda.master_volume);
-			});
-
-		DoTable("Fade", [&]()
-			{
-				DoProperty(nullptr, "Target Volume", "0x{:03X}", cdda.target_volume);
-				DoProperty(nullptr, "Fade Step", "0x{:03X}", cdda.fade_step);
-				DoProperty(nullptr, "Fade Remaining", "0x{:03X}", cdda.fade_remaining);
-				DoProperty(nullptr, "Fade Direction", "{}", cdda.subtract_fade_step ? "Negative" : "Positive");
-			});
-
-		DoTable("Other", [&]()
-			{
-				DoProperty(nullptr, "Playing", "{}", cdda.playing ? "True" : "False");
-				DoProperty(nullptr, "Paused", "{}", cdda.paused ? "True" : "False");
-			});
-	}
-
-public:
-	using Base::WindowPopup;
-
-	friend Base;
-};
-
-class DebugOther : public WindowPopup<DebugOther>
-{
-private:
-	using Base = WindowPopup<DebugOther>;
-
-	static constexpr Uint32 window_flags = 0;
-
-	void DisplayInternal()
-	{
-		const auto monospace_font = GetMonospaceFont();
-		const ClownMDEmu_State &clownmdemu_state = frontend->emulator->GetState();
-
-		DoTable("##Settings", [&]()
-			{
-				DoProperty(monospace_font, "Z80 Bank", "0x{:06X}-0x{:06X}", clownmdemu_state.z80.bank * 0x8000, (clownmdemu_state.z80.bank + 1) * 0x8000);
-				DoProperty(nullptr, "Main 68000 Has Z80 Bus", "{}", clownmdemu_state.z80.bus_requested ? "Yes" : "No");
-				DoProperty(nullptr, "Z80 Reset Held", "{}", clownmdemu_state.z80.reset_held ? "Yes" : "No");
-				DoProperty(nullptr, "Main 68000 Has Sub 68000 Bus", "{}", clownmdemu_state.mega_cd.m68k.bus_requested ? "Yes" : "No");
-				DoProperty(nullptr, "Sub 68000 Reset", "{}", clownmdemu_state.mega_cd.m68k.reset_held ? "Yes" : "No");
-				DoProperty(monospace_font, "PRG-RAM Bank", "0x{:05X}-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.bank * 0x20000, (clownmdemu_state.mega_cd.prg_ram.bank + 1) * 0x20000);
-				DoProperty(monospace_font, "PRG-RAM Write-Protect", "0x00000-0x{:05X}", clownmdemu_state.mega_cd.prg_ram.write_protect * 0x200);
-				DoProperty(nullptr, "WORD-RAM Mode", "{}", clownmdemu_state.mega_cd.word_ram.in_1m_mode ? "1M" : "2M");
-				DoProperty(nullptr, "DMNA Bit", "{}", clownmdemu_state.mega_cd.word_ram.dmna ? "Set" : "Clear");
-				DoProperty(nullptr, "RET Bit", "{}", clownmdemu_state.mega_cd.word_ram.ret ? "Set" : "Clear");
-				DoProperty(nullptr, "Cartridge Inserted", "{}", clownmdemu_state.cartridge_inserted ? "Yes" : "No");
-				DoProperty(nullptr, "CD Inserted", "{}", clownmdemu_state.mega_cd.cd_inserted ? "Yes" : "No");
-				DoProperty(monospace_font, "68000 Communication Flag", "0x{:04X}", clownmdemu_state.mega_cd.communication.flag);
-
-				DoProperty(monospace_font, "68000 Communication Command",
-					[&]()
-					{
-						for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.command); i += 2)
-							ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.command[i + 0], clownmdemu_state.mega_cd.communication.command[i + 1]);
-					}
-				);
-
-				DoProperty(monospace_font, "68000 Communication Status",
-					[&]()
-					{
-						for (std::size_t i = 0; i < std::size(clownmdemu_state.mega_cd.communication.status); i += 2)
-							ImGui::TextFormatted("0x{:04X} 0x{:04X}", clownmdemu_state.mega_cd.communication.status[i + 0], clownmdemu_state.mega_cd.communication.status[i + 1]);
-					}
-				);
-
-				DoProperty(nullptr, "SUB-CPU Graphics Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[0] ? "Enabled" : "Disabled");
-				DoProperty(nullptr, "SUB-CPU Mega Drive Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[1] ? "Enabled" : "Disabled");
-				DoProperty(nullptr, "SUB-CPU Timer Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[2] ? "Enabled" : "Disabled");
-				DoProperty(nullptr, "SUB-CPU CDD Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[3] ? "Enabled" : "Disabled");
-				DoProperty(nullptr, "SUB-CPU CDC Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[4] ? "Enabled" : "Disabled");
-				DoProperty(nullptr, "SUB-CPU Sub-code Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
-			}
-		);
-
-		DoTable("Graphics Transformation",
-			[&]()
-			{
-				const auto &graphics = clownmdemu_state.mega_cd.rotation;
-				DoProperty(nullptr, "Stamp Size", "{} pixels", graphics.large_stamp ? "32x32" : "16x16");
-				DoProperty(nullptr, "Stamp Map Size", "{} pixels", graphics.large_stamp_map ? "4096x4096" : "256x256");
-				DoProperty(nullptr, "Repeating Stamp Map", "{}", graphics.repeating_stamp_map ? "Yes" : "No");
-				DoProperty(nullptr, "Stamp Map Address", "0x{:X}", graphics.stamp_map_address * 4);
-				DoProperty(nullptr, "Image Buffer Height in Tiles", "{}", graphics.image_buffer_height_in_tiles + 1);
-				DoProperty(nullptr, "Image Buffer Address", "0x{:X}", graphics.image_buffer_address * 4);
-				DoProperty(nullptr, "Image Buffer X Offset", "{}", graphics.image_buffer_x_offset);
-				DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
-				DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
-				DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
-			}
-		);
-	}
-
-public:
-	using Base::WindowPopup;
-
-	friend Base;
-};
-
-class DebugToggles : public WindowPopup<DebugToggles>
-{
-private:
-	using Base = WindowPopup<DebugToggles>;
-
-	static constexpr Uint32 window_flags = 0;
-
-	void DisplayInternal()
-	{
-		#define DO_BUTTON(IDENTIFIER, LABEL) \
-		do { \
-			ImGui::TableNextColumn(); \
-			bool temp = frontend->emulator->Get##IDENTIFIER(); \
-			if (ImGui::Checkbox(LABEL, &temp)) \
-				frontend->emulator->Set##IDENTIFIER(temp); \
-		} while (false)
-
-		ImGui::SeparatorText("VDP");
-
-		if (ImGui::BeginTable("VDP Options", 2, ImGuiTableFlags_SizingStretchSame))
-		{
-			DO_BUTTON(SpritePlaneEnabled, "Sprite Plane");
-			DO_BUTTON(WindowPlaneEnabled, "Window Plane");
-			DO_BUTTON(ScrollPlaneAEnabled, "Plane A");
-			DO_BUTTON(ScrollPlaneBEnabled, "Plane B");
-			ImGui::EndTable();
-		}
-
-		ImGui::SeparatorText("FM");
-
-		if (ImGui::BeginTable("FM Options", 2, ImGuiTableFlags_SizingStretchSame))
-		{
-			DO_BUTTON(FM1Enabled, "FM1");
-			DO_BUTTON(FM2Enabled, "FM2");
-			DO_BUTTON(FM3Enabled, "FM3");
-			DO_BUTTON(FM4Enabled, "FM4");
-			DO_BUTTON(FM5Enabled, "FM5");
-			DO_BUTTON(FM6Enabled, "FM6");
-			DO_BUTTON(DACEnabled, "DAC");
-			ImGui::EndTable();
-		}
-
-		ImGui::SeparatorText("PSG");
-
-		if (ImGui::BeginTable("PSG Options", 2, ImGuiTableFlags_SizingStretchSame))
-		{
-			DO_BUTTON(PSG1Enabled, "PSG1");
-			DO_BUTTON(PSG2Enabled, "PSG2");
-			DO_BUTTON(PSG3Enabled, "PSG3");
-			DO_BUTTON(PSGNoiseEnabled, "PSG Noise");
-			ImGui::EndTable();
-		}
-
-		ImGui::SeparatorText("PCM");
-
-		if (ImGui::BeginTable("PCM Options", 2, ImGuiTableFlags_SizingStretchSame))
-		{
-			DO_BUTTON(PCM1Enabled, "PCM1");
-			DO_BUTTON(PCM2Enabled, "PCM2");
-			DO_BUTTON(PCM3Enabled, "PCM3");
-			DO_BUTTON(PCM4Enabled, "PCM4");
-			DO_BUTTON(PCM5Enabled, "PCM5");
-			DO_BUTTON(PCM6Enabled, "PCM6");
-			DO_BUTTON(PCM7Enabled, "PCM7");
-			DO_BUTTON(PCM8Enabled, "PCM8");
-			ImGui::EndTable();
-		}
-
-		ImGui::SeparatorText("CDDA");
-
-		DO_BUTTON(CDDAEnabled, "CDDA");
-
-		#undef DO_BUTTON
-	}
-
-public:
-	using Base::WindowPopup;
-
-	friend Base;
-};
 
 class OptionsWindow : public WindowPopup<OptionsWindow>
 {

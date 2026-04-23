@@ -28,4 +28,3 @@ void DebugCDC::DisplayInternal()
 			DoProperty(nullptr, "Device Destination", "{}", cdc.device_destination);
 		});
 }
-
