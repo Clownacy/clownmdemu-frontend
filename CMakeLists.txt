@@ -33,6 +33,8 @@ add_executable(clownmdemu WIN32
 	"source/tar.h"
 	"source/text-encoding.cpp"
 	"source/text-encoding.h"
+	"source/windows/about.cpp"
+	"source/windows/about.h"
 	"source/windows/cheats.cpp"
 	"source/windows/cheats.h"
 	"source/windows/debug-m68k.cpp"

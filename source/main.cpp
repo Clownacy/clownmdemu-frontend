@@ -15,6 +15,7 @@
 
 #include "file-utilities.h"
 #include "frontend.h"
+#include "version.h"
 
 #ifdef __EMSCRIPTEN__
 static double next_time;
