@@ -6,7 +6,7 @@
 
 void DebugZ80::Registers::DisplayInternal()
 {
-	const auto &z80 = Frontend::emulator->GetZ80State();
+	const auto &z80 = frontend->emulator->GetZ80State();
 
 	ImGui::PushFont(GetMonospaceFont());
 

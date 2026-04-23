@@ -50,9 +50,6 @@ public:
 	}
 };
 
-namespace Frontend
-{
-	extern DebugLog debug_log;
-}
+extern DebugLog debug_log;
 
 #endif /* DEBUG_LOG_H */

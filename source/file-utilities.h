@@ -82,7 +82,7 @@ public:
 
 		if (size_s64 < 0)
 		{
-			Frontend::debug_log.SDLError("SDL_GetIOSize");
+			debug_log.SDLError("SDL_GetIOSize");
 		}
 		else
 		{
@@ -99,7 +99,7 @@ public:
 			}
 			catch (const std::bad_alloc&)
 			{
-				Frontend::debug_log.Log("Could not allocate memory for file");
+				debug_log.Log("Could not allocate memory for file");
 			}
 		}
 
@@ -113,7 +113,7 @@ public:
 
 		if (!file)
 		{
-			Frontend::debug_log.SDLError("SDL_IOFromFile");
+			debug_log.SDLError("SDL_IOFromFile");
 			return std::nullopt;
 		}
 

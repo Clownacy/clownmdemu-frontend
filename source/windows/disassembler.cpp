@@ -16,7 +16,7 @@ static constexpr unsigned int maximum_instructions = 0x1000;
 
 cc_u16f Disassembler::ReadMemory()
 {
-	const auto &clownmdemu = Frontend::emulator->GetState();
+	const auto &clownmdemu = frontend->emulator->GetState();
 
 	cc_u16f value;
 
@@ -26,7 +26,7 @@ cc_u16f Disassembler::ReadMemory()
 		case 0:
 		{
 			// ROM
-			const auto &rom_buffer = Frontend::emulator->GetROMBuffer();
+			const auto &rom_buffer = frontend->emulator->GetROMBuffer();
 
 			if (rom_buffer.empty())
 			{

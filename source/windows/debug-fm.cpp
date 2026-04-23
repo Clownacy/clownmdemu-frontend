@@ -12,7 +12,7 @@ void DebugFM::Registers::DisplayInternal()
 		{"L", "L+R"}
 	}};
 
-	const auto &fm = Frontend::emulator->GetFMState();
+	const auto &fm = frontend->emulator->GetFMState();
 	const auto monospace_font = GetMonospaceFont();
 
 	ImGui::SeparatorText("FM Channels");

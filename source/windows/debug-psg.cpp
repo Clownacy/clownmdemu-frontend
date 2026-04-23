@@ -6,7 +6,7 @@
 
 void DebugPSG::Registers::DisplayInternal()
 {
-	const auto &psg = Frontend::emulator->GetPSGState();
+	const auto &psg = frontend->emulator->GetPSGState();
 	const auto monospace_font = GetMonospaceFont();
 
 	// Latched command.
@@ -32,7 +32,7 @@ void DebugPSG::Registers::DisplayInternal()
 	}
 
 	// Channels.
-	const cc_u32f psg_clock = Frontend::emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
+	const cc_u32f psg_clock = frontend->emulator->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL ? CLOWNMDEMU_PSG_SAMPLE_RATE_PAL : CLOWNMDEMU_PSG_SAMPLE_RATE_NTSC;
 
 	// Tone channels.
 	ImGui::SeparatorText("Tone Channels");

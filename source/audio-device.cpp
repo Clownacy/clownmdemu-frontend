@@ -14,7 +14,7 @@ AudioDevice::AudioDevice(const cc_u8f channels, const cc_u32f sample_rate, const
 	stream = SDL::AudioStream(SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &specification, nullptr, nullptr));
 
 	if (stream == nullptr)
-		Frontend::debug_log.SDLError("SDL_OpenAudioDeviceStream");
+		debug_log.SDLError("SDL_OpenAudioDeviceStream");
 
 	SetPaused(paused);
 }

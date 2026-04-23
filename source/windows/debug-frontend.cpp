@@ -74,25 +74,25 @@ void DebugFrontend::DisplayInternal()
 			ImGui::TextUnformatted("Sample Rate");
 			DoToolTip("The number of audio frames played per second.");
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", Frontend::emulator->GetAudioSampleRate());
+			ImGui::TextFormatted("{}", frontend->emulator->GetAudioSampleRate());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Buffer Frames");
 			DoToolTip("The number of audio frames that are pulled from the\nbuffer in a single batch.");
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", Frontend::emulator->GetAudioTotalBufferFrames());
+			ImGui::TextFormatted("{}", frontend->emulator->GetAudioTotalBufferFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Target Frames");
 			DoToolTip("The number of buffered audio frames that the audio\nsystem tries to maintain.");
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", Frontend::emulator->GetAudioTargetFrames());
+			ImGui::TextFormatted("{}", frontend->emulator->GetAudioTargetFrames());
 
 			ImGui::TableNextColumn();
 			ImGui::TextUnformatted("Average Frames");
 			DoToolTip("The current average number of buffered audio frames.");
 			ImGui::TableNextColumn();
-			ImGui::TextFormatted("{}", Frontend::emulator->GetAudioAverageFrames());
+			ImGui::TextFormatted("{}", frontend->emulator->GetAudioAverageFrames());
 
 			ImGui::EndTable();
 		}

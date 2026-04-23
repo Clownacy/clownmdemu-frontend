@@ -71,7 +71,7 @@ static constexpr std::size_t maximum_stamp_height_in_pixels = maximum_stamp_diam
 
 static std::size_t StampDiameterInTiles()
 {
-	return Frontend::emulator->GetState().mega_cd.rotation.large_stamp ? maximum_stamp_diameter_in_tiles : 2;
+	return frontend->emulator->GetState().mega_cd.rotation.large_stamp ? maximum_stamp_diameter_in_tiles : 2;
 }
 
 static std::size_t StampWidthInPixels()
@@ -99,7 +99,7 @@ static constexpr std::size_t maximum_stamp_map_size_in_pixels = maximum_stamp_ma
 
 static std::size_t StampMapDiameterInPixels()
 {
-	return Frontend::emulator->GetState().mega_cd.rotation.large_stamp_map ? maximum_stamp_map_diameter_in_pixels : 256;
+	return frontend->emulator->GetState().mega_cd.rotation.large_stamp_map ? maximum_stamp_map_diameter_in_pixels : 256;
 }
 
 static std::size_t StampMapWidthInStamps()
@@ -139,9 +139,9 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 	const cc_u16f x_flip_xor = tile_metadata.x_flip ? tile_width - 1 : 0;
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
-	const auto &vdp = Frontend::emulator->GetVDPState();
-	const auto &background_colour = Frontend::emulator->GetColour(vdp.background_colour);
-	const auto &palette_line = Frontend::emulator->GetPaletteLine(brightness, tile_metadata.palette_line);
+	const auto &vdp = frontend->emulator->GetVDPState();
+	const auto &background_colour = frontend->emulator->GetColour(vdp.background_colour);
+	const auto &palette_line = frontend->emulator->GetPaletteLine(brightness, tile_metadata.palette_line);
 
 	cc_u16f word_index = tile_metadata.tile_index * tile_size_in_words;
 
@@ -184,7 +184,7 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 
 static void DrawTileFromVRAM(const VDP_TileMetadata tile_metadata, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool transparency, const cc_u8f brightness)
 {
-	const auto &vdp = Frontend::emulator->GetVDPState();
+	const auto &vdp = frontend->emulator->GetVDPState();
 
 	DrawTile(tile_metadata, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, transparency, brightness);
 }
@@ -251,9 +251,9 @@ void DebugVDP::RegeneratingTexturesBase::RegenerateTexturesIfNeeded(const std::f
 {
 	// Only update the texture if we know that the frame has changed.
 	// This prevents constant texture generation even when the emulator is paused.
-	if (force_regenerate || cache_frame_counter != Frontend::frame_counter)
+	if (force_regenerate || cache_frame_counter != frontend->frame_counter)
 	{
-		cache_frame_counter = Frontend::frame_counter;
+		cache_frame_counter = frontend->frame_counter;
 
 		for (std::size_t i = 0; i < std::size(textures); ++i)
 			callback(i, textures[i]);
@@ -469,7 +469,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 {
-	const auto &vdp = Frontend::emulator->GetVDPState();
+	const auto &vdp = frontend->emulator->GetVDPState();
 
 	const cc_u16l plane_address = plane == Plane::A ? vdp.plane_a_address : plane == Plane::B ? vdp.plane_b_address : vdp.window_address;
 	const std::size_t plane_width = plane == Plane::WINDOW ? vdp.h40_enabled ? 64 : 32 : 1 << vdp.plane_width_shift;
@@ -532,8 +532,8 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			const auto plane_width_in_pixels = plane_width * tile_width;
 			const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
 			const auto pixel_size = ImVec2(1, 1 << vdp.double_resolution_enabled);
-			const int total_widescreen_tiles = Frontend::emulator->GetCurrentWidescreenTiles();
-			const int normal_screen_width_in_tiles = Frontend::emulator->GetCurrentScreenWidth() / VDP_TILE_WIDTH - total_widescreen_tiles * 2;
+			const int total_widescreen_tiles = frontend->emulator->GetCurrentWidescreenTiles();
+			const int normal_screen_width_in_tiles = frontend->emulator->GetCurrentScreenWidth() / VDP_TILE_WIDTH - total_widescreen_tiles * 2;
 			const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_WIDTH, pixel_size.y);
 
 			for (unsigned int scanline_index = 0; scanline_index < total_scanlines; ++scanline_index)
@@ -588,7 +588,7 @@ static StampMetadata DecomposeStampMetadata(const cc_u16f data)
 
 void DebugVDP::StampMapViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->GetState();
+	const auto &state = frontend->emulator->GetState();
 
 	const bool options_changed = DisplayBrightnessAndPaletteLineSettings();
 
@@ -666,7 +666,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 
 void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 {
-	const VDP_State &vdp = Frontend::emulator->GetVDPState();
+	const VDP_State &vdp = frontend->emulator->GetVDPState();
 
 	if (textures.empty())
 	{
@@ -694,7 +694,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 	DisplaySpriteCommon(window);
 
-	const VDP_State &vdp = Frontend::emulator->GetVDPState();
+	const VDP_State &vdp = frontend->emulator->GetVDPState();
 
 	constexpr cc_u16f plane_texture_width = 512;
 	constexpr cc_u16f plane_texture_height = 1024;
@@ -718,9 +718,9 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 					SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
 					const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
 					const SDL_FRect visible_area_rectangle = {
-						static_cast<float>(0x80 - (Frontend::emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
+						static_cast<float>(0x80 - (frontend->emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
 						static_cast<float>(0x80 * vertical_scale),
-						static_cast<float>(Frontend::emulator->GetCurrentScreenWidth()),
+						static_cast<float>(frontend->emulator->GetCurrentScreenWidth()),
 						static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
 					};
 					SDL_RenderFillRect(renderer, &visible_area_rectangle);
@@ -779,7 +779,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 {
 	DisplaySpriteCommon(GetWindow());
 
-	const VDP_State &vdp = Frontend::emulator->GetVDPState();
+	const VDP_State &vdp = frontend->emulator->GetVDPState();
 
 	if (ImGui::BeginTable("Sprite Table", 1 + TOTAL_SPRITES, ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX))
 	{
@@ -992,7 +992,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 
 void DebugVDP::VRAMViewer::DisplayInternal()
 {
-	const VDP_State &vdp = Frontend::emulator->GetVDPState();
+	const VDP_State &vdp = frontend->emulator->GetVDPState();
 
 	constexpr cc_u16f piece_width = TileWidth();
 	const cc_u16f piece_height = TileHeight(vdp);
@@ -1013,7 +1013,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 
 void DebugVDP::StampViewer::DisplayInternal()
 {
-	const auto &state = Frontend::emulator->GetState();
+	const auto &state = frontend->emulator->GetState();
 
 	constexpr auto maximum_piece_diameter_in_tiles = maximum_stamp_diameter_in_tiles;
 	const auto piece_diameter_in_tiles = StampDiameterInTiles();
@@ -1036,7 +1036,7 @@ void DebugVDP::StampViewer::DisplayInternal()
 
 void DebugVDP::CRAMViewer::DisplayInternal()
 {
-	const auto &vdp = Frontend::emulator->GetVDPState();
+	const auto &vdp = frontend->emulator->GetVDPState();
 
 	ImGui::SeparatorText("Brightness");
 	ImGui::RadioButton("Shadow", &brightness, 0);
@@ -1113,7 +1113,7 @@ void DebugVDP::CRAMViewer::DisplayInternal()
 void DebugVDP::Registers::DisplayInternal()
 {
 	const auto monospace_font = GetMonospaceFont();
-	const auto &vdp= Frontend::emulator->GetVDPState();
+	const auto &vdp= frontend->emulator->GetVDPState();
 
 	static const auto tab_names = std::to_array<std::string>({
 		"Miscellaneous",

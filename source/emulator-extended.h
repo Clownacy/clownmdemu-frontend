@@ -283,7 +283,7 @@ private:
 				const auto save_data_size = std::filesystem::file_size(cartridge_save_file_path);
 
 				if (save_data_size > std::size(external_ram_buffer))
-					Frontend::debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", save_data_size, std::size(external_ram_buffer));
+					debug_log.Log("Save data file size (0x{:X} bytes) is larger than the internal save data buffer size (0x{:X} bytes)", save_data_size, std::size(external_ram_buffer));
 				else
 					std::ifstream(cartridge_save_file_path, std::ios::binary).read(reinterpret_cast<char*>(std::data(external_ram_buffer)), save_data_size);
 			}
@@ -304,7 +304,7 @@ public:
 			std::ofstream save_data_stream(cartridge_save_file_path, std::ios::binary);
 
 			if (!save_data_stream.is_open())
-				Frontend::debug_log.Log("Could not open save data for writing");
+				debug_log.Log("Could not open save data for writing");
 			else
 				save_data_stream.write(reinterpret_cast<const char*>(external_ram.buffer), external_ram.size);
 		}
@@ -405,8 +405,8 @@ public:
 		std::filesystem::create_directories(save_file_directory);
 
 		// This should be called before any other ClownMDEmu functions are called!
-		this->SetLogCallback([](const char* const format, std::va_list args) { Frontend::debug_log.Log(format, args); });
-		cd_reader.SetErrorCallback([](const std::string_view &message) { Frontend::debug_log.Log("ClownCD: {}", message); });
+		this->SetLogCallback([](const char* const format, std::va_list args) { debug_log.Log(format, args); });
+		cd_reader.SetErrorCallback([](const std::string_view &message) { debug_log.Log("ClownCD: {}", message); });
 	}
 
 	~EmulatorExtended()

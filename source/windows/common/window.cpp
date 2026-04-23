@@ -54,7 +54,7 @@ float Window::GetDisplayDPIScale()
 
 	if (display_index == 0)
 	{
-		Frontend::debug_log.SDLError("SDL_GetPrimaryDisplay");
+		debug_log.SDLError("SDL_GetPrimaryDisplay");
 		return 1.0f;
 	}
 
@@ -67,7 +67,7 @@ float Window::GetSizeScale()
 
 	if (display_index == 0)
 	{
-		Frontend::debug_log.SDLError("SDL_GetDisplayForWindow");
+		debug_log.SDLError("SDL_GetDisplayForWindow");
 		return 1.0f;
 	}
 
@@ -82,7 +82,7 @@ float Window::GetDPIScale()
 void Window::SetFullscreen(const bool enabled)
 {
 	if (!SDL_SetWindowFullscreen(GetSDLWindow(), enabled))
-		Frontend::debug_log.SDLError("SDL_SetWindowFullscreen");
+		debug_log.SDLError("SDL_SetWindowFullscreen");
 
 	if (!enabled)
 		DisableRounding();

@@ -1,6 +1,6 @@
 #include "debug-log.h"
 
-DebugLog Frontend::debug_log;
+DebugLog debug_log;
 
 void DebugLog::Log(std::string message)
 {

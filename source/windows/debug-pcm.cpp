@@ -18,7 +18,7 @@ void DebugPCM::Registers::DisplayInternal()
 		ImGui::TableSetupColumn("Loop Address");
 		ImGui::TableHeadersRow();
 
-		const auto &pcm = Frontend::emulator->GetPCMState();
+		const auto &pcm = frontend->emulator->GetPCMState();
 
 		for (std::size_t i = 0; i != std::size(pcm.channels); ++i)
 		{

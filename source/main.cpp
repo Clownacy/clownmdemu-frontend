@@ -99,7 +99,6 @@ int main(const int argc_p, char** const argv_p)
 }
 
 #else
-static bool frontend_initialised = false;
 static Uint64 time_delta;
 
 static void FrameRateCallback(const bool pal_mode)
@@ -167,9 +166,25 @@ SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc
 			cartridge_path = cartridge_or_cd_path;
 	}
 
-	frontend_initialised = Frontend::Initialise(FrameRateCallback, fullscreen, user_data_path, cartridge_path, cd_path);
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "ClownMDEmu");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, VERSION);
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "com.clownacy.clownmdemu");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_CREATOR_STRING, "Clownacy");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_COPYRIGHT_STRING, "Copyright (c) 2026 Clownacy");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/Clownacy/clownmdemu-frontend");
+	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
 
-	return frontend_initialised ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
+	// Initialise SDL
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
+	{
+		debug_log.SDLError("SDL_Init");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
+		return SDL_APP_FAILURE;
+	}
+
+	frontend.emplace(FrameRateCallback, fullscreen, user_data_path, cartridge_path, cd_path);
+
+	return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
@@ -187,19 +202,20 @@ SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
 
 	next_time += time_delta;
 
-	Frontend::Update();
-	return Frontend::WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
+	frontend->Update();
+	return frontend->WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent([[maybe_unused]] void* const appstate, SDL_Event* const event)
 {
-	Frontend::HandleEvent(*event);
-	return Frontend::WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
+	frontend->HandleEvent(*event);
+	return frontend->WantsToQuit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit([[maybe_unused]] void* const appstate, [[maybe_unused]] const SDL_AppResult result)
 {
-	if (frontend_initialised)
-		Frontend::Deinitialise();
+	frontend = std::nullopt;
+
+	SDL_Quit();
 }
 #endif

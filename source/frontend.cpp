@@ -47,8 +47,6 @@
 #define FILE_PATH_SUPPORT
 #endif
 
-using namespace Frontend;
-
 static constexpr unsigned int INITIAL_WINDOW_SCALE = 2;
 static constexpr float INITIAL_WINDOW_WIDTH = VDP_H40_SCREEN_WIDTH_IN_TILE_PAIRS * VDP_TILE_PAIR_WIDTH * INITIAL_WINDOW_SCALE;
 static constexpr float INITIAL_WINDOW_HEIGHT = VDP_V28_SCANLINES_IN_TILES * VDP_STANDARD_TILE_HEIGHT * INITIAL_WINDOW_SCALE;
@@ -397,7 +395,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdc = Frontend::emulator->GetCDCState();
+		const auto &cdc = frontend->emulator->GetCDCState();
 
 		DoTable("Sector Buffer", [&]()
 			{
@@ -437,7 +435,7 @@ private:
 
 	void DisplayInternal()
 	{
-		const auto &cdda = Frontend::emulator->GetCDDAState();
+		const auto &cdda = frontend->emulator->GetCDDAState();
 
 		DoTable("Volume", [&]()
 			{
@@ -476,7 +474,7 @@ private:
 	void DisplayInternal()
 	{
 		const auto monospace_font = GetMonospaceFont();
-		const ClownMDEmu_State &clownmdemu_state = Frontend::emulator->GetState();
+		const ClownMDEmu_State &clownmdemu_state = frontend->emulator->GetState();
 
 		DoTable("##Settings", [&]()
 			{
@@ -555,9 +553,9 @@ private:
 		#define DO_BUTTON(IDENTIFIER, LABEL) \
 		do { \
 			ImGui::TableNextColumn(); \
-			bool temp = Frontend::emulator->Get##IDENTIFIER(); \
+			bool temp = frontend->emulator->Get##IDENTIFIER(); \
 			if (ImGui::Checkbox(LABEL, &temp)) \
-				Frontend::emulator->Set##IDENTIFIER(temp); \
+				frontend->emulator->Set##IDENTIFIER(temp); \
 		} while (false)
 
 		ImGui::SeparatorText("VDP");
@@ -690,10 +688,10 @@ private:
 	#define DO_FORM_OPTION(LABEL, LABEL_TOOLTIP, OPTION_NAMES_AND_TOOLTIPS, OPTION) \
 		do { \
 			DO_FORM_LAYOUT(LABEL, LABEL_TOOLTIP); \
-			const auto option = Frontend::emulator->Get##OPTION(); \
+			const auto option = frontend->emulator->Get##OPTION(); \
 			auto option_int = static_cast<int>(option); \
 			if (ComboWithToolTips("##" LABEL, option_int, std::data(OPTION_NAMES_AND_TOOLTIPS), std::size(OPTION_NAMES_AND_TOOLTIPS))) \
-				Frontend::emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(option_int)); \
+				frontend->emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(option_int)); \
 		} while (0)
 
 		if (ImGui::BeginTable("Console Options", 3))
@@ -703,13 +701,13 @@ private:
 				ImGui::TableNextColumn(); \
 				ImGui::TextUnformatted(LABEL ":"); \
 				DoToolTip(LABEL_TOOLTIP); \
-				const auto option = Frontend::emulator->Get##OPTION(); \
+				const auto option = frontend->emulator->Get##OPTION(); \
 				const auto option_int = static_cast<unsigned int>(option); \
 				for (unsigned int i = 0; i < std::size(OPTION_NAMES); ++i) \
 				{ \
 					ImGui::TableNextColumn(); \
 					if (ImGui::RadioButton(OPTION_NAMES[i], i == option_int)) \
-						Frontend::emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(i)); \
+						frontend->emulator->Set##OPTION(static_cast<std::remove_cv_t<decltype(option)>>(i)); \
 					DoToolTip(OPTION_TOOLTIPS[i]); \
 				} \
 			} while (0)
@@ -790,21 +788,21 @@ private:
 			"with some games, badly with others."
 		);
 
-		int current_widescreen_setting = Frontend::emulator->GetWidescreenTiles();
+		int current_widescreen_setting = frontend->emulator->GetWidescreenTiles();
 		const std::string widescreen_slider_text = current_widescreen_setting == 0 ? "Disabled" : fmt::format("{} Extra Columns", current_widescreen_setting * 2);
 		if (ImGui::SliderInt("##Widescreen Hack Slider", &current_widescreen_setting, 0, VDP_MAX_WIDESCREEN_TILES, widescreen_slider_text.c_str(), ImGuiSliderFlags_AlwaysClamp))
-			Frontend::emulator->SetWidescreenTiles(current_widescreen_setting);
+			frontend->emulator->SetWidescreenTiles(current_widescreen_setting);
 
 		if (ImGui::BeginTable("Video Options", 2))
 		{
 			ImGui::TableNextColumn();
-			auto vsync = Frontend::window->GetVSync();
+			auto vsync = frontend->window->GetVSync();
 			if (ImGui::Checkbox("V-Sync", &vsync))
-				Frontend::window->SetVSync(vsync);
+				frontend->window->SetVSync(vsync);
 			DoToolTip("Prevents screen tearing.");
 
 			ImGui::TableNextColumn();
-			ImGui::Checkbox("Tall Interlace Mode 2", &Frontend::tall_double_resolution_mode);
+			ImGui::Checkbox("Tall Interlace Mode 2", &frontend->tall_double_resolution_mode);
 			DoToolTip(
 				"Makes games that use Interlace Mode 2\n"
 				"for split-screen not appear squashed.");
@@ -817,9 +815,9 @@ private:
 		if (ImGui::BeginTable("Audio Options", 2))
 		{
 			ImGui::TableNextColumn();
-			bool low_pass_filter = Frontend::emulator->GetLowPassFilterEnabled();
+			bool low_pass_filter = frontend->emulator->GetLowPassFilterEnabled();
 			if (ImGui::Checkbox("Low-Pass Filter", &low_pass_filter))
-				Frontend::emulator->SetLowPassFilterEnabled(low_pass_filter);
+				frontend->emulator->SetLowPassFilterEnabled(low_pass_filter);
 			DoToolTip(
 				"Lowers the volume of high frequencies to make\n"
 				"the audio 'softer', like a real Mega Drive does.\n"
@@ -828,9 +826,9 @@ private:
 				"differences in volume balancing.");
 
 			ImGui::TableNextColumn();
-			bool ladder_effect = Frontend::emulator->GetLadderEffectEnabled();
+			bool ladder_effect = frontend->emulator->GetLadderEffectEnabled();
 			if (ImGui::Checkbox("Low-Volume Distortion", &ladder_effect))
-				Frontend::emulator->SetLadderEffectEnabled(ladder_effect);
+				frontend->emulator->SetLadderEffectEnabled(ladder_effect);
 			DoToolTip(
 				"Enables the so-called 'ladder effect' that\n"
 				"is present in early Mega Drives.\n"
@@ -846,9 +844,9 @@ private:
 		if (ImGui::BeginTable("Miscellaneous Options", 2))
 		{
 			ImGui::TableNextColumn();
-			bool rewinding_enabled = Frontend::emulator->GetRewindEnabled();
+			bool rewinding_enabled = frontend->emulator->GetRewindEnabled();
 			if (ImGui::Checkbox("Rewinding", &rewinding_enabled))
-				Frontend::emulator->SetRewindEnabled(rewinding_enabled);
+				frontend->emulator->SetRewindEnabled(rewinding_enabled);
 			DoToolTip(
 				"Allows the emulated console to be played in\n"
 				"reverse for up to 10 seconds. This uses a lot\n"
@@ -865,7 +863,7 @@ private:
 		{
 	#ifndef __EMSCRIPTEN__
 			ImGui::TableNextColumn();
-			ImGui::Checkbox("Native Windows", &native_windows);
+			ImGui::Checkbox("Native Windows", &frontend->native_windows);
 			DoToolTip(
 				"Use real windows instead of 'fake' windows\n"
 				"that are stuck inside the main window.");
@@ -923,7 +921,7 @@ private:
 				return 0;
 			};
 
-			const auto maximum_control_pads = GetMaximumControlPads(Frontend::emulator->GetControllerProtocol());
+			const auto maximum_control_pads = GetMaximumControlPads(frontend->emulator->GetControllerProtocol());
 
 			for (unsigned int i = 0; i < maximum_control_pads; ++i)
 			{
@@ -1140,13 +1138,6 @@ public:
 	friend Base;
 };
 
-std::optional<EmulatorInstance> Frontend::emulator;
-std::optional<WindowWithFramebuffer> Frontend::window;
-unsigned int Frontend::frame_counter;
-
-bool Frontend::tall_double_resolution_mode;
-bool Frontend::native_windows;
-
 static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 static std::array<bool, SDL_SCANCODE_COUNT> key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
@@ -1310,7 +1301,7 @@ static void UpdateFastForwardStatus()
 	for (const auto &controller_input : controller_input_list)
 		speed += controller_input.input.fast_forward;
 
-	emulator->SetFastForwarding(speed);
+	frontend->emulator->SetFastForwarding(speed);
 }
 
 static void UpdateRewindStatus()
@@ -1320,7 +1311,7 @@ static void UpdateRewindStatus()
 	for (const auto &controller_input : controller_input_list)
 		will_rewind |= controller_input.input.rewind != 0;
 
-	emulator->rewinding = will_rewind;
+	frontend->emulator->rewinding = will_rewind;
 }
 
 
@@ -1368,12 +1359,12 @@ std::filesystem::path Frontend::GetSaveDataDirectoryPath()
 	return GetConfigurationDirectoryPath() / "Save Data";
 }
 
-static std::filesystem::path GetConfigurationFilePath()
+std::filesystem::path Frontend::GetConfigurationFilePath()
 {
 	return GetConfigurationDirectoryPath() / "configuration.ini";
 }
 
-static std::filesystem::path GetDearImGuiSettingsFilePath()
+std::filesystem::path Frontend::GetDearImGuiSettingsFilePath()
 {
 	return GetConfigurationDirectoryPath() / "dear-imgui-settings.ini";
 }
@@ -1385,7 +1376,7 @@ static void LoadCartridgeFile(const std::filesystem::path &path, std::vector<cc_
 #endif
 
 	quick_save_state = std::nullopt;
-	emulator->LoadCartridgeFile(std::move(file_buffer), path);
+	frontend->emulator->LoadCartridgeFile(std::move(file_buffer), path);
 }
 
 static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &file)
@@ -1409,7 +1400,7 @@ static bool LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStream &
 	}
 
 	debug_log.Log("Could not load the cartridge file");
-	window->ShowErrorMessageBox("Failed to load the cartridge file.");
+	frontend->window->ShowErrorMessageBox("Failed to load the cartridge file.");
 	return false;
 }
 
@@ -1426,7 +1417,7 @@ static bool LoadCDFile(const std::filesystem::path &path, SDL::IOStream &&file)
 #endif
 
 	// Load the CD.
-	if (!emulator->LoadCDFile(std::move(file), path))
+	if (!frontend->emulator->LoadCDFile(std::move(file), path))
 		return false;
 
 	return true;
@@ -1439,7 +1430,7 @@ static bool LoadCDFile(const std::filesystem::path &path)
 	if (!file)
 	{
 		debug_log.Log("Could not load the CD file");
-		window->ShowErrorMessageBox("Failed to load the CD file.");
+		frontend->window->ShowErrorMessageBox("Failed to load the CD file.");
 		return false;
 	}
 
@@ -1458,14 +1449,14 @@ static bool LoadSoftwareFile(const bool is_cd_file, const std::filesystem::path 
 
 static bool LoadSaveState(SDL::IOStream &file)
 {
-	if (!file || !emulator->LoadSaveStateFile(file))
+	if (!file || !frontend->emulator->LoadSaveStateFile(file))
 	{
 		debug_log.Log("Could not load save state file");
-		window->ShowErrorMessageBox("Could not load save state file.");
+		frontend->window->ShowErrorMessageBox("Could not load save state file.");
 		return false;
 	}
 
-	emulator->SetPaused(false);
+	frontend->emulator->SetPaused(false);
 	return true;
 }
 
@@ -1480,10 +1471,10 @@ static bool SaveState(const std::filesystem::path &path)
 {
 	SDL::IOStream file(path, "wb");
 
-	if (!file || !emulator->WriteSaveStateFile(file))
+	if (!file || !frontend->emulator->WriteSaveStateFile(file))
 	{
 		debug_log.Log("Could not create save state file");
-		window->ShowErrorMessageBox("Could not create save state file.");
+		frontend->window->ShowErrorMessageBox("Could not create save state file.");
 		return false;
 	}
 
@@ -1493,12 +1484,12 @@ static bool SaveState(const std::filesystem::path &path)
 
 static bool ShouldBeInFullscreenMode()
 {
-	return forced_fullscreen || window->GetFullscreen();
+	return forced_fullscreen || frontend->window->GetFullscreen();
 }
 
 static bool NativeWindowsActive()
 {
-	return native_windows && !ShouldBeInFullscreenMode();
+	return frontend->native_windows && !ShouldBeInFullscreenMode();
 }
 
 
@@ -1563,7 +1554,7 @@ namespace INI
 // Configuration //
 ///////////////////
 
-static void LoadConfiguration()
+void Frontend::LoadConfiguration()
 {
 	// Set default settings.
 #ifndef __EMSCRIPTEN__
@@ -1799,7 +1790,7 @@ static void LoadConfiguration()
 	emulator->SetRegion(domestic ? CLOWNMDEMU_REGION_DOMESTIC : CLOWNMDEMU_REGION_OVERSEAS);
 }
 
-static void SaveConfiguration()
+void Frontend::SaveConfiguration()
 {
 #ifdef SDL_PLATFORM_WIN32
 #define ENDL "\r\n"
@@ -1976,95 +1967,74 @@ static void SaveConfiguration()
 // Main function //
 ///////////////////
 
-static void PreEventStuff()
+void Frontend::PreEventStuff()
 {
 	emulator_on = emulator->IsCartridgeInserted() || emulator->IsCDInserted();
 
 	emulator_frame_advance = false;
 }
 
-bool Frontend::Initialise(const EmulatorInstance::FramerateCallback &framerate_callback, const bool fullscreen, const std::filesystem::path &user_data_path, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
+Frontend::Frontend(const EmulatorInstance::FramerateCallback &framerate_callback, const bool fullscreen, const std::filesystem::path &user_data_path, const std::filesystem::path &cartridge_path, const std::filesystem::path &cd_path)
 {
 	forced_fullscreen = fullscreen;
 
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "ClownMDEmu");
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, VERSION);
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "com.clownacy.clownmdemu");
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_CREATOR_STRING, "Clownacy");
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_COPYRIGHT_STRING, "Copyright (c) 2026 Clownacy");
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/Clownacy/clownmdemu-frontend");
-	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
+	IMGUI_CHECKVERSION();
 
-	// Initialise SDL
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
-	{
-		debug_log.SDLError("SDL_Init");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
-	}
-	else
-	{
-		IMGUI_CHECKVERSION();
+	InitialiseConfigurationDirectoryPath(user_data_path);
 
-		InitialiseConfigurationDirectoryPath(user_data_path);
-
-		window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, std::nullopt, SDL_WINDOW_FILL_DOCUMENT);
-		emulator.emplace(window->framebuffer_texture, ReadInputCallback,
-			[](const std::string &title)
-			{
-				// Use the default title if the ROM does not provide a name.
-				// Micro Machines is one game that lacks a name.
-				SDL_SetWindowTitle(window->GetSDLWindow(), title.empty() ? DEFAULT_TITLE : title.c_str());
-			},
-			framerate_callback
-		);
-
-		LoadConfiguration();
-
-		FileUtilities::PathToCString(GetDearImGuiSettingsFilePath(),
-			[&](const char* const string)
-			{
-				ImGui::LoadIniSettingsFromDisk(string);
-			}
-		);
-
-		if (fullscreen)
-			window->SetFullscreen(true);
-
-		// We shouldn't resize the window if something is overriding its size.
-		// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
-		int window_width, window_height;
-		SDL_GetWindowSize(window->GetSDLWindow(), &window_width, &window_height);
-		const float scale = window->GetSizeScale();
-
-		if (window_width == static_cast<int>(INITIAL_WINDOW_WIDTH * scale) && window_height == static_cast<int>(INITIAL_WINDOW_HEIGHT * scale))
+	window.emplace(DEFAULT_TITLE, INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, true, std::nullopt, SDL_WINDOW_FILL_DOCUMENT);
+	emulator.emplace(window->framebuffer_texture, ReadInputCallback,
+		[this](const std::string &title)
 		{
-			// Resize the window so that there's room for the menu bar.
-			// Also adjust for widescreen if the user has the option enabled.
-			const auto desired_width = ((VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetWidescreenTiles() * 2) * VDP_TILE_WIDTH) * INITIAL_WINDOW_SCALE;
+			// Use the default title if the ROM does not provide a name.
+			// Micro Machines is one game that lacks a name.
+			SDL_SetWindowTitle(window->GetSDLWindow(), title.empty() ? DEFAULT_TITLE : title.c_str());
+		},
+		framerate_callback
+	);
 
-			SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
+	LoadConfiguration();
+
+	FileUtilities::PathToCString(GetDearImGuiSettingsFilePath(),
+		[&](const char* const string)
+		{
+			ImGui::LoadIniSettingsFromDisk(string);
 		}
+	);
 
-		// If the user passed the path to the software on the command line, then load it here, automatically.
-		if (!cartridge_path.empty())
-			LoadCartridgeFile(cartridge_path);
-		if (!cd_path.empty())
-			LoadCDFile(cd_path);
+	if (fullscreen)
+		window->SetFullscreen(true);
 
-		// We are now ready to show the window
-		SDL_ShowWindow(window->GetSDLWindow());
+	// We shouldn't resize the window if something is overriding its size.
+	// This is needed for the Emscripen build to work correctly in a full-window HTML canvas.
+	int window_width, window_height;
+	SDL_GetWindowSize(window->GetSDLWindow(), &window_width, &window_height);
+	const float scale = window->GetSizeScale();
 
-		debug_log.ForceConsoleOutput(false);
+	if (window_width == static_cast<int>(INITIAL_WINDOW_WIDTH * scale) && window_height == static_cast<int>(INITIAL_WINDOW_HEIGHT * scale))
+	{
+		// Resize the window so that there's room for the menu bar.
+		// Also adjust for widescreen if the user has the option enabled.
+		const auto desired_width = ((VDP_H40_SCREEN_WIDTH_IN_TILES + emulator->GetWidescreenTiles() * 2) * VDP_TILE_WIDTH) * INITIAL_WINDOW_SCALE;
 
-		PreEventStuff();
-
-		return true;
+		SDL_SetWindowSize(window->GetSDLWindow(), static_cast<int>(desired_width * scale), static_cast<int>((INITIAL_WINDOW_HEIGHT + window->GetMenuBarSize()) * scale));
 	}
 
-	return false;
+	// If the user passed the path to the software on the command line, then load it here, automatically.
+	if (!cartridge_path.empty())
+		LoadCartridgeFile(cartridge_path);
+	if (!cd_path.empty())
+		LoadCDFile(cd_path);
+
+	// We are now ready to show the window
+	SDL_ShowWindow(window->GetSDLWindow());
+
+	debug_log.ForceConsoleOutput(false);
+
+	PreEventStuff();
 }
 
-void Frontend::Deinitialise()
+Frontend::~Frontend()
 {
 	debug_log.ForceConsoleOutput(true);
 
@@ -2077,18 +2047,6 @@ void Frontend::Deinitialise()
 	);
 
 	WriteSaveData();
-
-#ifdef FILE_PATH_SUPPORT
-	// Free recent software list.
-	// TODO: Once the frontend is a class, this won't be necessary.
-	recent_software_list.clear();
-#endif
-
-	// TODO: Once the frontend is a class, this won't be necessary.
-	emulator.reset();
-	window.reset();
-
-	SDL_Quit();
 }
 
 void Frontend::WriteSaveData()
@@ -2107,7 +2065,7 @@ void Frontend::WriteSaveData()
 
 static void HandleMainWindowEvent(const SDL_Event &event)
 {
-	window->MakeDearImGuiContextCurrent();
+	frontend->window->MakeDearImGuiContextCurrent();
 
 	ImGuiIO &io = ImGui::GetIO();
 
@@ -2135,14 +2093,14 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 
 			if (event.key.key == SDLK_RETURN && (SDL_GetModState() & SDL_KMOD_ALT) != 0)
 			{
-				window->ToggleFullscreen();
+				frontend->window->ToggleFullscreen();
 				break;
 			}
 
 			if (event.key.key == SDLK_ESCAPE)
 			{
 				// Exit fullscreen
-				window->SetFullscreen(false);
+				frontend->window->SetFullscreen(false);
 			}
 
 			// Prevent invalid memory accesses due to future API expansions.
@@ -2153,7 +2111,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			switch (keyboard_bindings[event.key.scancode])
 			{
 				case InputBinding::TOGGLE_FULLSCREEN:
-					window->ToggleFullscreen();
+					frontend->window->ToggleFullscreen();
 					break;
 
 				default:
@@ -2166,26 +2124,26 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 				switch (keyboard_bindings[event.key.scancode])
 				{
 					case InputBinding::PAUSE:
-						emulator->SetPaused(!emulator->IsPaused());
+						frontend->emulator->SetPaused(!frontend->emulator->IsPaused());
 						break;
 
 					case InputBinding::RESET:
 						// Soft-reset console
-						emulator->SoftReset();
-						emulator->SetPaused(false);
+						frontend->emulator->SoftReset();
+						frontend->emulator->SetPaused(false);
 						break;
 
 					case InputBinding::QUICK_SAVE_STATE:
 						// Save save state
-						quick_save_state.emplace(*emulator);
+						quick_save_state.emplace(*frontend->emulator);
 						break;
 
 					case InputBinding::QUICK_LOAD_STATE:
 						// Load save state
 						if (quick_save_state)
 						{
-							quick_save_state->Apply(*emulator);
-							emulator->SetPaused(false);
+							quick_save_state->Apply(*frontend->emulator);
+							frontend->emulator->SetPaused(false);
 						}
 
 						break;
@@ -2254,10 +2212,10 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 						// Toggle fast-forward
 						keyboard_input.fast_forward += delta;
 
-						if ((!emulator->IsPaused() && emulator_has_focus) || !pressed)
+						if ((!frontend->emulator->IsPaused() && emulator_has_focus) || !pressed)
 							UpdateFastForwardStatus();
 
-						if (pressed && emulator->IsPaused())
+						if (pressed && frontend->emulator->IsPaused())
 							emulator_frame_advance = true;
 
 						break;
@@ -2335,7 +2293,7 @@ static void HandleMainWindowEvent(const SDL_Event &event)
 			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle pause.
-				emulator->SetPaused(!emulator->IsPaused());
+				frontend->emulator->SetPaused(!frontend->emulator->IsPaused());
 			}
 
 			// Don't use inputs that are for Dear ImGui.
@@ -2577,7 +2535,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &display_size)
 {
-	if (emulator->IsPaused() || emulator->rewinding || emulator->IsFastForwarding())
+	if (frontend->emulator->IsPaused() || frontend->emulator->rewinding || frontend->emulator->IsFastForwarding())
 	{
 		// A bunch of utility junk.
 		const auto DrawOutlinedTriangle = [](ImDrawList* const draw_list, const ImVec2 &position, const float radius, const float outline_thickness, const unsigned int degree)
@@ -2641,7 +2599,7 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 		};
 
 		// The actual logic for drawing the symbols.
-		const auto radius = 20.0f * window->GetDPIScale();
+		const auto radius = 20.0f * frontend->window->GetDPIScale();
 		const auto outline_thickness = radius / 6;
 
 		const auto position = display_position + ImVec2(display_size.x - radius * 2, radius * 2);
@@ -2651,14 +2609,14 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 
 		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
 
-		if (emulator->IsPaused())
+		if (frontend->emulator->IsPaused())
 		{
 			// Paused symbol.
 			const ImVec2 size(radius * 2 / 5, radius);
 			DrawOutlinedRectangle(draw_list, left_position, size, outline_thickness);
 			DrawOutlinedRectangle(draw_list, right_position, size, outline_thickness);
 		}
-		else if (emulator->rewinding)
+		else if (frontend->emulator->rewinding)
 		{
 			// Rewinding symbol.
 			const auto angle = 270;
@@ -2666,13 +2624,13 @@ static void DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 &di
 			DrawOutlinedTriangle(draw_list, right_position, radius, outline_thickness, angle);
 
 			// Show how much of the rewind buffer remains.
-			DrawBar(draw_list, position, radius, outline_thickness, emulator->GetRewindAmount());
+			DrawBar(draw_list, position, radius, outline_thickness, frontend->emulator->GetRewindAmount());
 
 			// Cross-out the symbol when exhausted.
-			if (emulator->IsRewindExhausted())
+			if (frontend->emulator->IsRewindExhausted())
 				DrawCross(draw_list, position, ImVec2(radius, radius), outline_thickness);
 		}
-		else if (emulator->IsFastForwarding())
+		else if (frontend->emulator->IsFastForwarding())
 		{
 			// Fast-forwarding symbol.
 			const auto angle = 90;
@@ -2779,14 +2737,14 @@ void Frontend::Update()
 	{
 		if (show_menu_bar && ImGui::BeginMenuBar())
 		{
-			const auto PopupButton = []<typename T, typename... Ts>(const char* const label, std::optional<T> &window, const char* const title = nullptr, Ts &&...args)
+			const auto PopupButton = [this]<typename T, typename... Ts>(const char* const label, std::optional<T> &window, const char* const title = nullptr, Ts &&...args)
 			{
 				if (ImGui::MenuItem(label, nullptr, window.has_value()))
 				{
 					if (window.has_value())
 						window.reset();
 					else
-						window.emplace(title == nullptr ? label : title, *::window, NativeWindowsActive() ? nullptr : &*::window, std::forward<Ts>(args)...);
+						window.emplace(title == nullptr ? label : title, *this->window, NativeWindowsActive() ? nullptr : &*this->window, std::forward<Ts>(args)...);
 				}
 			};
 
@@ -2794,7 +2752,7 @@ void Frontend::Update()
 			{
 				if (ImGui::MenuItem("Load Cartridge File..."))
 				{
-					file_utilities.LoadFile(*window, "Load Cartridge File", nullptr, {{{"Mega Drive Cartridge Software", "bin;md;gen;zip"}}}, [](const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load Cartridge File", nullptr, {{{"Mega Drive Cartridge Software", "bin;md;gen;zip"}}}, [this](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						const bool success = LoadCartridgeFile(path, file);
 
@@ -2816,7 +2774,7 @@ void Frontend::Update()
 
 				if (ImGui::MenuItem("Load CD File..."))
 				{
-					file_utilities.LoadFile(*window, "Load CD File", nullptr, {{{"Mega CD Disc Software", "bin;cue;iso;chd"}}}, [](const std::filesystem::path &path, SDL::IOStream &&file)
+					file_utilities.LoadFile(*window, "Load CD File", nullptr, {{{"Mega CD Disc Software", "bin;cue;iso;chd"}}}, [this](const std::filesystem::path &path, SDL::IOStream &&file)
 					{
 						if (!LoadCDFile(path, std::move(file)))
 							return false;

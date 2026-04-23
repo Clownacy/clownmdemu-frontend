@@ -15,11 +15,11 @@ private:
 	TextSelect text_select = {
 		[](const std::size_t index) -> std::string_view
 		{
-			return Frontend::debug_log.lines[index];
+			return debug_log.lines[index];
 		},
 		[]() -> std::size_t
 		{
-			return std::size(Frontend::debug_log.lines);
+			return std::size(debug_log.lines);
 		}
 	};
 
