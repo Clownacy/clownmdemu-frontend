@@ -2084,6 +2084,9 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				(DoWindow(*windows), ...);
 			}, popup_windows
 		);
+
+		if (event.type == SDL_EVENT_WINDOW_MOVED)
+			Window::positions[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
 	}
 }
 

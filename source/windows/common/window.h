@@ -1,8 +1,10 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include <map>
 #include <memory>
 #include <optional>
+#include <utility>
 
 #include "../../sdl-wrapper.h"
 
@@ -13,6 +15,8 @@ private:
 	SDL::Renderer renderer;
 
 public:
+	static inline std::map<std::string, std::pair<int, int>> positions;
+
 	static float GetDPIScale(Window* const window)
 	{
 		return window == nullptr ? GetDisplayDPIScale() : window->GetDPIScale();

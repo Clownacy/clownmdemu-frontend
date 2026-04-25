@@ -105,6 +105,11 @@ Window::Window(const char* const window_title, const float window_width, const f
 	if (!SDL_CreateWindowAndRenderer(window_title, static_cast<int>(window_width * scale), static_cast<int>(window_height * scale), window_flags, &window, &renderer))
 		throw std::runtime_error(DebugLog::GetSDLErrorMessage("SDL_CreateWindowAndRenderer"));
 
+	const auto &position = positions.find(window_title);
+
+	if (position != positions.end())
+		SDL_SetWindowPosition(window, position->second.first, position->second.second);
+
 	sdl_window = SDL::Window(window);
 	this->renderer = SDL::Renderer(renderer);
 
