@@ -2154,7 +2154,7 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 	if (event_window == nullptr || event_window == window->GetSDLWindow())
 	{
-		FilterWindowStateEvents("ClownMDEmu");
+		FilterWindowStateEvents(DEFAULT_TITLE);
 		HandleMainWindowEvent(event);
 	}
 	else
