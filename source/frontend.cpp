@@ -1693,23 +1693,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			quit = true;
 			break;
 
-		case SDL_EVENT_WINDOW_MOVED:
-			Window::positions["ClownMDEmu"] = {event.window.data1, event.window.data2};
-			break;
-
-		case SDL_EVENT_WINDOW_RESIZED:
-			Window::sizes["ClownMDEmu"] = {event.window.data1, event.window.data2};
-			break;
-
-		case SDL_EVENT_WINDOW_MAXIMIZED:
-			Window::maximisations.emplace("ClownMDEmu");
-			break;
-			
-		case SDL_EVENT_WINDOW_MINIMIZED:
-		case SDL_EVENT_WINDOW_RESTORED:
-			Window::maximisations.erase("ClownMDEmu");
-			break;
-
 		case SDL_EVENT_KEY_DOWN:
 			// Ignore repeated key inputs caused by holding the key down
 			if (event.key.repeat)
@@ -2131,14 +2114,34 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 void Frontend::HandleEvent(const SDL_Event &event)
 {
+	const auto &FilterWindowStateEvents = [&](const char* const window_title)
+	{
+		switch (event.type)
+		{
+			case SDL_EVENT_WINDOW_MOVED:
+				Window::positions[window_title] = {event.window.data1, event.window.data2};
+				break;
+
+			case SDL_EVENT_WINDOW_RESIZED:
+				Window::sizes[window_title] = {event.window.data1, event.window.data2};
+				break;
+
+			case SDL_EVENT_WINDOW_MAXIMIZED:
+				Window::maximisations.emplace(window_title);
+				break;
+
+			case SDL_EVENT_WINDOW_MINIMIZED:
+			case SDL_EVENT_WINDOW_RESTORED:
+				Window::maximisations.erase(window_title);
+				break;
+		}
+	};
+
 	SDL_Window* const event_window = SDL_GetWindowFromEvent(&event);
 
-	if (event_window == nullptr)
+	if (event_window == nullptr || event_window == window->GetSDLWindow())
 	{
-		HandleMainWindowEvent(event);
-	}
-	else if (event_window == window->GetSDLWindow())
-	{
+		FilterWindowStateEvents("ClownMDEmu");
 		HandleMainWindowEvent(event);
 	}
 	else
@@ -2154,32 +2157,13 @@ void Frontend::HandleEvent(const SDL_Event &event)
 			}
 		};
 
+		FilterWindowStateEvents(SDL_GetWindowTitle(event_window));
 		std::apply(
 			[&]<typename... Ts>(Ts const&... windows)
 			{
 				(DoWindow(*windows), ...);
 			}, popup_windows
 		);
-
-		switch (event.type)
-		{
-			case SDL_EVENT_WINDOW_MOVED:
-				Window::positions[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
-				break;
-
-			case SDL_EVENT_WINDOW_RESIZED:
-				Window::sizes[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
-				break;
-
-			case SDL_EVENT_WINDOW_MAXIMIZED:
-				Window::maximisations.emplace(SDL_GetWindowTitle(event_window));
-				break;
-			
-			case SDL_EVENT_WINDOW_MINIMIZED:
-			case SDL_EVENT_WINDOW_RESTORED:
-				Window::maximisations.erase(SDL_GetWindowTitle(event_window));
-				break;
-		}
 	}
 }
 
