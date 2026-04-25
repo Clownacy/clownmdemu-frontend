@@ -141,6 +141,9 @@ void Window::LoadPosition()
 
 	if (size != sizes.end())
 		SDL_SetWindowSize(window, size->second.first, size->second.second);
+
+	if (maximisations.contains(title))
+		SDL_MaximizeWindow(window);
 }
 
 void Window::ShowWarningMessageBox(const char* const message)

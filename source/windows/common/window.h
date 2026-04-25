@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <utility>
 
 #include "../../sdl-wrapper.h"
@@ -17,6 +18,7 @@ private:
 public:
 	static inline std::map<std::string, std::pair<int, int>> positions;
 	static inline std::map<std::string, std::pair<int, int>> sizes;
+	static inline std::set<std::string> maximisations;
 
 	static float GetDPIScale(Window* const window)
 	{

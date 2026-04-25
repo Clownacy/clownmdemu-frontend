@@ -1343,6 +1343,11 @@ void Frontend::LoadConfiguration()
 
 				Window::sizes[std::string(name)] = {x, y};
 			}
+			else if (section == "Maximised Windows")
+			{
+				if (value_boolean)
+					Window::maximisations.emplace(std::string(name));
+			}
 		};
 
 		INI::ProcessFile(file, Callback);
@@ -1555,6 +1560,17 @@ void Frontend::SaveConfiguration()
 			const std::string buffer = fmt::format("{} = {} {}" ENDL, size.first, size.second.first, size.second.second);
 			SDL_WriteIO(file, buffer.data(), buffer.size());
 		}
+
+		PRINT_NEWLINE(file);
+
+		// Save maximised windows.
+		PRINT_HEADER(file, "Maximised Windows");
+
+		for (const auto &maximised : Window::maximisations)
+		{
+			const std::string buffer = fmt::format("{} = true" ENDL, maximised);
+			SDL_WriteIO(file, buffer.data(), buffer.size());
+		}
 	}
 #undef ENDL
 }
@@ -1683,6 +1699,15 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 		case SDL_EVENT_WINDOW_RESIZED:
 			Window::sizes["ClownMDEmu"] = {event.window.data1, event.window.data2};
+			break;
+
+		case SDL_EVENT_WINDOW_MAXIMIZED:
+			Window::maximisations.emplace("ClownMDEmu");
+			break;
+			
+		case SDL_EVENT_WINDOW_MINIMIZED:
+		case SDL_EVENT_WINDOW_RESTORED:
+			Window::maximisations.erase("ClownMDEmu");
 			break;
 
 		case SDL_EVENT_KEY_DOWN:
@@ -2144,6 +2169,15 @@ void Frontend::HandleEvent(const SDL_Event &event)
 
 			case SDL_EVENT_WINDOW_RESIZED:
 				Window::sizes[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
+				break;
+
+			case SDL_EVENT_WINDOW_MAXIMIZED:
+				Window::maximisations.emplace(SDL_GetWindowTitle(event_window));
+				break;
+			
+			case SDL_EVENT_WINDOW_MINIMIZED:
+			case SDL_EVENT_WINDOW_RESTORED:
+				Window::maximisations.erase(SDL_GetWindowTitle(event_window));
 				break;
 		}
 	}
