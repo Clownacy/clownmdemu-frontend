@@ -109,7 +109,7 @@ Window::Window(const char* const window_title, const float window_width, const f
 	this->renderer = SDL::Renderer(renderer);
 
 	DisableRounding();
-	LoadPosition();
+	ApplyState();
 
 #ifndef SDL_PLATFORM_WIN32
 	static SDL::Surface window_icon = LoadWindowIcon();
@@ -127,22 +127,25 @@ void Window::DisableRounding()
 	DisableWindowRounding(sdl_window);
 }
 
-void Window::LoadPosition()
+void Window::ApplyState()
 {
 	auto &window = GetSDLWindow();
 	const auto title = SDL_GetWindowTitle(window);
 
-	const auto &position = positions.find(title);
+	const auto &it = states.find(title);
 
-	if (position != positions.end())
-		SDL_SetWindowPosition(window, position->second.first, position->second.second);
+	if (it == states.end())
+		return;
 
-	const auto &size = sizes.find(title);
+	const auto &state = it->second;
 
-	if (size != sizes.end())
-		SDL_SetWindowSize(window, size->second.first, size->second.second);
+	if (state.position)
+		SDL_SetWindowPosition(window, state.position->first, state.position->second);
 
-	if (maximisations.contains(title))
+	if (state.size)
+		SDL_SetWindowSize(window, state.size->first, state.size->second);
+
+	if (state.maximised)
 		SDL_MaximizeWindow(window);
 }
 

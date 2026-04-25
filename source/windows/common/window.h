@@ -4,7 +4,6 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <utility>
 
 #include "../../sdl-wrapper.h"
@@ -16,9 +15,12 @@ private:
 	SDL::Renderer renderer;
 
 public:
-	static inline std::map<std::string, std::pair<int, int>> positions;
-	static inline std::map<std::string, std::pair<int, int>> sizes;
-	static inline std::set<std::string> maximisations;
+	struct State
+	{
+		std::optional<std::pair<int, int>> position, size;
+		bool maximised = false;
+	};
+	static inline std::map<std::string, State> states;
 
 	static float GetDPIScale(Window* const window)
 	{
@@ -61,7 +63,7 @@ public:
 	}
 	void SetTitleBarColour(unsigned char red, unsigned char green, unsigned char blue);
 	void DisableRounding();
-	void LoadPosition();
+	void ApplyState();
 	void ShowWarningMessageBox(const char *message);
 	void ShowErrorMessageBox(const char *message);
 	void ShowFatalMessageBox(const char *message);

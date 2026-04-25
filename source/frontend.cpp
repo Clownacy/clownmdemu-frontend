@@ -1331,7 +1331,7 @@ void Frontend::LoadConfiguration()
 				value_stream >> x;
 				value_stream >> y;
 
-				Window::positions[std::string(name)] = {x, y};
+				Window::states[std::string(name)].position = {x, y};
 			}
 			else if (section == "Window Sizes")
 			{
@@ -1341,12 +1341,12 @@ void Frontend::LoadConfiguration()
 				value_stream >> x;
 				value_stream >> y;
 
-				Window::sizes[std::string(name)] = {x, y};
+				Window::states[std::string(name)].size = {x, y};
 			}
 			else if (section == "Maximised Windows")
 			{
 				if (value_boolean)
-					Window::maximisations.emplace(std::string(name));
+					Window::states[std::string(name)].maximised = true;
 			}
 		};
 
@@ -1354,7 +1354,7 @@ void Frontend::LoadConfiguration()
 	}
 
 	// Apply settings now that they have been decided.
-	window->LoadPosition();
+	window->ApplyState();
 #ifndef __EMSCRIPTEN__
 	window->SetFullscreen(fullscreen);
 #endif
@@ -1544,10 +1544,13 @@ void Frontend::SaveConfiguration()
 		// Save window positions.
 		PRINT_HEADER(file, "Window Positions");
 
-		for (const auto &position : Window::positions)
+		for (const auto &state : Window::states)
 		{
-			const std::string buffer = fmt::format("{} = {} {}" ENDL, position.first, position.second.first, position.second.second);
-			SDL_WriteIO(file, buffer.data(), buffer.size());
+			if (state.second.position)
+			{
+				const std::string buffer = fmt::format("{} = {} {}" ENDL, state.first, state.second.position->first, state.second.position->second);
+				SDL_WriteIO(file, buffer.data(), buffer.size());
+			}
 		}
 
 		PRINT_NEWLINE(file);
@@ -1555,10 +1558,13 @@ void Frontend::SaveConfiguration()
 		// Save window sizes.
 		PRINT_HEADER(file, "Window Sizes");
 
-		for (const auto &size : Window::sizes)
+		for (const auto &state : Window::states)
 		{
-			const std::string buffer = fmt::format("{} = {} {}" ENDL, size.first, size.second.first, size.second.second);
-			SDL_WriteIO(file, buffer.data(), buffer.size());
+			if (state.second.size)
+			{
+				const std::string buffer = fmt::format("{} = {} {}" ENDL, state.first, state.second.size->first, state.second.size->second);
+				SDL_WriteIO(file, buffer.data(), buffer.size());
+			}
 		}
 
 		PRINT_NEWLINE(file);
@@ -1566,10 +1572,13 @@ void Frontend::SaveConfiguration()
 		// Save maximised windows.
 		PRINT_HEADER(file, "Maximised Windows");
 
-		for (const auto &maximised : Window::maximisations)
+		for (const auto &state : Window::states)
 		{
-			const std::string buffer = fmt::format("{} = true" ENDL, maximised);
-			SDL_WriteIO(file, buffer.data(), buffer.size());
+			if (state.second.maximised)
+			{
+				const std::string buffer = fmt::format("{} = true" ENDL, state.first);
+				SDL_WriteIO(file, buffer.data(), buffer.size());
+			}
 		}
 	}
 #undef ENDL
@@ -2116,25 +2125,27 @@ void Frontend::HandleEvent(const SDL_Event &event)
 {
 	const auto &FilterWindowStateEvents = [&](const char* const window_title)
 	{
+		auto &state = Window::states[window_title];
+
 		switch (event.type)
 		{
 			case SDL_EVENT_WINDOW_MOVED:
-				if (!Window::maximisations.contains(window_title))
-					Window::positions[window_title] = {event.window.data1, event.window.data2};
+				if (!state.maximised)
+					state.position = {event.window.data1, event.window.data2};
 				break;
 
 			case SDL_EVENT_WINDOW_RESIZED:
-				if (!Window::maximisations.contains(window_title))
-					Window::sizes[window_title] = {event.window.data1, event.window.data2};
+				if (!state.maximised)
+					state.size = {event.window.data1, event.window.data2};
 				break;
 
 			case SDL_EVENT_WINDOW_MAXIMIZED:
-				Window::maximisations.emplace(window_title);
+				state.maximised = true;
 				break;
 
 			case SDL_EVENT_WINDOW_MINIMIZED:
 			case SDL_EVENT_WINDOW_RESTORED:
-				Window::maximisations.erase(window_title);
+				state.maximised = false;
 				break;
 		}
 	};
