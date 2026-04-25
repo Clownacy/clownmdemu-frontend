@@ -2119,11 +2119,13 @@ void Frontend::HandleEvent(const SDL_Event &event)
 		switch (event.type)
 		{
 			case SDL_EVENT_WINDOW_MOVED:
-				Window::positions[window_title] = {event.window.data1, event.window.data2};
+				if (!Window::maximisations.contains(window_title))
+					Window::positions[window_title] = {event.window.data1, event.window.data2};
 				break;
 
 			case SDL_EVENT_WINDOW_RESIZED:
-				Window::sizes[window_title] = {event.window.data1, event.window.data2};
+				if (!Window::maximisations.contains(window_title))
+					Window::sizes[window_title] = {event.window.data1, event.window.data2};
 				break;
 
 			case SDL_EVENT_WINDOW_MAXIMIZED:
