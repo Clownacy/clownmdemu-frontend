@@ -16,6 +16,7 @@ private:
 
 public:
 	static inline std::map<std::string, std::pair<int, int>> positions;
+	static inline std::map<std::string, std::pair<int, int>> sizes;
 
 	static float GetDPIScale(Window* const window)
 	{

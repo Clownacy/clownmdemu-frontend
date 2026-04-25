@@ -1333,6 +1333,16 @@ void Frontend::LoadConfiguration()
 
 				Window::positions[std::string(name)] = {x, y};
 			}
+			else if (section == "Window Sizes")
+			{
+				auto value_stream = std::stringstream(std::string(value));
+
+				int x, y;
+				value_stream >> x;
+				value_stream >> y;
+
+				Window::sizes[std::string(name)] = {x, y};
+			}
 		};
 
 		INI::ProcessFile(file, Callback);
@@ -1534,6 +1544,17 @@ void Frontend::SaveConfiguration()
 			const std::string buffer = fmt::format("{} = {} {}" ENDL, position.first, position.second.first, position.second.second);
 			SDL_WriteIO(file, buffer.data(), buffer.size());
 		}
+
+		PRINT_NEWLINE(file);
+
+		// Save window sizes.
+		PRINT_HEADER(file, "Window Sizes");
+
+		for (const auto &size : Window::sizes)
+		{
+			const std::string buffer = fmt::format("{} = {} {}" ENDL, size.first, size.second.first, size.second.second);
+			SDL_WriteIO(file, buffer.data(), buffer.size());
+		}
 	}
 #undef ENDL
 }
@@ -1658,6 +1679,10 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 		case SDL_EVENT_WINDOW_MOVED:
 			Window::positions["ClownMDEmu"] = {event.window.data1, event.window.data2};
+			break;
+
+		case SDL_EVENT_WINDOW_RESIZED:
+			Window::sizes["ClownMDEmu"] = {event.window.data1, event.window.data2};
 			break;
 
 		case SDL_EVENT_KEY_DOWN:
@@ -2111,8 +2136,16 @@ void Frontend::HandleEvent(const SDL_Event &event)
 			}, popup_windows
 		);
 
-		if (event.type == SDL_EVENT_WINDOW_MOVED)
-			Window::positions[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
+		switch (event.type)
+		{
+			case SDL_EVENT_WINDOW_MOVED:
+				Window::positions[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
+				break;
+
+			case SDL_EVENT_WINDOW_RESIZED:
+				Window::sizes[SDL_GetWindowTitle(event_window)] = {event.window.data1, event.window.data2};
+				break;
+		}
 	}
 }
 

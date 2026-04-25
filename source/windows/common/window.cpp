@@ -130,10 +130,17 @@ void Window::DisableRounding()
 void Window::LoadPosition()
 {
 	auto &window = GetSDLWindow();
-	const auto &position = positions.find(SDL_GetWindowTitle(window));
+	const auto title = SDL_GetWindowTitle(window);
+
+	const auto &position = positions.find(title);
 
 	if (position != positions.end())
 		SDL_SetWindowPosition(window, position->second.first, position->second.second);
+
+	const auto &size = sizes.find(title);
+
+	if (size != sizes.end())
+		SDL_SetWindowSize(window, size->second.first, size->second.second);
 }
 
 void Window::ShowWarningMessageBox(const char* const message)
