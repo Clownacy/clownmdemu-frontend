@@ -1323,12 +1323,23 @@ void Frontend::LoadConfiguration()
 				}
 			}
 		#endif
+			else if (section == "Window Positions")
+			{
+				auto value_stream = std::stringstream(std::string(value));
+
+				int x, y;
+				value_stream >> x;
+				value_stream >> y;
+
+				Window::positions[std::string(name)] = {x, y};
+			}
 		};
 
 		INI::ProcessFile(file, Callback);
 	}
 
 	// Apply settings now that they have been decided.
+	window->LoadPosition();
 #ifndef __EMSCRIPTEN__
 	window->SetFullscreen(fullscreen);
 #endif
@@ -1512,6 +1523,17 @@ void Frontend::SaveConfiguration()
 			PRINT_NEWLINE(file);
 		}
 	#endif
+
+		PRINT_NEWLINE(file);
+
+		// Save window positions.
+		PRINT_HEADER(file, "Window Positions");
+
+		for (const auto &position : Window::positions)
+		{
+			const std::string buffer = fmt::format("{} = {} {}" ENDL, position.first, position.second.first, position.second.second);
+			SDL_WriteIO(file, buffer.data(), buffer.size());
+		}
 	}
 #undef ENDL
 }
@@ -1632,6 +1654,10 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 		case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		case SDL_EVENT_QUIT:
 			quit = true;
+			break;
+
+		case SDL_EVENT_WINDOW_MOVED:
+			Window::positions["ClownMDEmu"] = {event.window.data1, event.window.data2};
 			break;
 
 		case SDL_EVENT_KEY_DOWN:

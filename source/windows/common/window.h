@@ -58,6 +58,7 @@ public:
 	}
 	void SetTitleBarColour(unsigned char red, unsigned char green, unsigned char blue);
 	void DisableRounding();
+	void LoadPosition();
 	void ShowWarningMessageBox(const char *message);
 	void ShowErrorMessageBox(const char *message);
 	void ShowFatalMessageBox(const char *message);

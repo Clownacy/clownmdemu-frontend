@@ -105,15 +105,11 @@ Window::Window(const char* const window_title, const float window_width, const f
 	if (!SDL_CreateWindowAndRenderer(window_title, static_cast<int>(window_width * scale), static_cast<int>(window_height * scale), window_flags, &window, &renderer))
 		throw std::runtime_error(DebugLog::GetSDLErrorMessage("SDL_CreateWindowAndRenderer"));
 
-	const auto &position = positions.find(window_title);
-
-	if (position != positions.end())
-		SDL_SetWindowPosition(window, position->second.first, position->second.second);
-
 	sdl_window = SDL::Window(window);
 	this->renderer = SDL::Renderer(renderer);
 
 	DisableRounding();
+	LoadPosition();
 
 #ifndef SDL_PLATFORM_WIN32
 	static SDL::Surface window_icon = LoadWindowIcon();
@@ -129,6 +125,15 @@ void Window::SetTitleBarColour(const unsigned char red, const unsigned char gree
 void Window::DisableRounding()
 {
 	DisableWindowRounding(sdl_window);
+}
+
+void Window::LoadPosition()
+{
+	auto &window = GetSDLWindow();
+	const auto &position = positions.find(SDL_GetWindowTitle(window));
+
+	if (position != positions.end())
+		SDL_SetWindowPosition(window, position->second.first, position->second.second);
 }
 
 void Window::ShowWarningMessageBox(const char* const message)
