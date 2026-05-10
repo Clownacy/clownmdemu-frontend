@@ -5,6 +5,6 @@
 #define GIT_VERSION ""
 #endif
 
-#define VERSION "v1.6.10" GIT_VERSION
+#define VERSION "v1.6.11" GIT_VERSION
 
 #endif
