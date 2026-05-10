@@ -11,6 +11,7 @@
 #include <iterator>
 #include <list>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -1325,7 +1326,7 @@ void Frontend::LoadConfiguration()
 		#endif
 			else if (section == "Window Positions")
 			{
-				auto value_stream = std::stringstream(std::string(value));
+				auto value_stream = std::istringstream(std::string(value));
 
 				int x, y;
 				value_stream >> x;
@@ -1335,7 +1336,7 @@ void Frontend::LoadConfiguration()
 			}
 			else if (section == "Window Sizes")
 			{
-				auto value_stream = std::stringstream(std::string(value));
+				auto value_stream = std::istringstream(std::string(value));
 
 				int x, y;
 				value_stream >> x;
