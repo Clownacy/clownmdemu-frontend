@@ -2517,7 +2517,7 @@ void Frontend::Update()
 							return SaveState(path);
 					});
 				#else
-					file_utilities.SaveFile(*window, "Create Save State", "state.bin", {}, [](const FileUtilities::SaveFileInnerCallback &callback)
+					file_utilities.SaveFile(*window, "Create Save State", "state.bin", {}, [this](const FileUtilities::SaveFileInnerCallback &callback)
 					{
 						// Inefficient, but it's the only way...
 						try

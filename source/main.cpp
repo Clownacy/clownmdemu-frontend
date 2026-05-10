@@ -17,6 +17,28 @@
 #include "frontend.h"
 #include "version.h"
 
+template<typename... Args>
+static bool InitialiseSDLAndFrontend(Args &&...args)
+{
+	// Initialise SDL
+	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
+	{
+		debug_log.SDLError("SDL_Init");
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
+		return false;
+	}
+
+	frontend.emplace(std::forward<Args>(args)...);
+	return true;
+}
+
+static void DeinitialiseSDLAndFrontend()
+{
+	frontend = std::nullopt;
+
+	SDL_Quit();
+}
+
 #ifdef __EMSCRIPTEN__
 static double next_time;
 static double time_delta;
@@ -33,7 +55,7 @@ static bool EventFilter([[maybe_unused]] void* const userdata, SDL_Event* const 
 	// The event loop will never have time to catch this, so we
 	// must use this callback to intercept it as soon as possible.
 	if (event->type == SDL_EVENT_TERMINATING)
-		Frontend::WriteSaveData();
+		frontend->WriteSaveData();
 
 	return true;
 }
@@ -65,13 +87,13 @@ int main(const int argc_p, char** const argv_p)
 
 					SDL_Event event;
 					while (SDL_PollEvent(&event))
-						Frontend::HandleEvent(event);
+						frontend->HandleEvent(event);
 
-					Frontend::Update();
+					frontend->Update();
 
-					if (Frontend::WantsToQuit())
+					if (frontend->WantsToQuit())
 					{
-						Frontend::Deinitialise();
+						DeinitialiseSDLAndFrontend();
 						emscripten_cancel_main_loop();
 					}
 				}
@@ -81,7 +103,7 @@ int main(const int argc_p, char** const argv_p)
 
 			emscripten_set_main_loop(callback, 0, 0);
 
-			if (Frontend::Initialise(FrameRateCallback, false, SDL_EMSCRIPTEN_PERSISTENT_PATH, cartridge_file_path, disc_file_path))
+			if (InitialiseSDLAndFrontend(FrameRateCallback, false, SDL_EMSCRIPTEN_PERSISTENT_PATH, cartridge_file_path, disc_file_path))
 				SDL_AddEventWatch(EventFilter, nullptr);
 		};
 
@@ -175,17 +197,7 @@ SDL_AppResult SDL_AppInit([[maybe_unused]] void** const appstate, const int argc
 	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_URL_STRING, "https://github.com/Clownacy/clownmdemu-frontend");
 	SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_TYPE_STRING, "game");
 
-	// Initialise SDL
-	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
-	{
-		debug_log.SDLError("SDL_Init");
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
-		return SDL_APP_FAILURE;
-	}
-
-	frontend.emplace(FrameRateCallback, fullscreen, user_data_path, cartridge_path, cd_path);
-
-	return SDL_APP_CONTINUE;
+	return InitialiseSDLAndFrontend(FrameRateCallback, fullscreen, user_data_path, cartridge_path, cd_path) ? SDL_APP_CONTINUE : SDL_APP_FAILURE;
 }
 
 SDL_AppResult SDL_AppIterate([[maybe_unused]] void* const appstate)
@@ -215,8 +227,6 @@ SDL_AppResult SDL_AppEvent([[maybe_unused]] void* const appstate, SDL_Event* con
 
 void SDL_AppQuit([[maybe_unused]] void* const appstate, [[maybe_unused]] const SDL_AppResult result)
 {
-	frontend = std::nullopt;
-
-	SDL_Quit();
+	DeinitialiseSDLAndFrontend();
 }
 #endif
