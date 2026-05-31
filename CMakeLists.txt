@@ -242,6 +242,12 @@ target_link_libraries(clownmdemu span)
 add_subdirectory("libraries/Lyra" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu lyra)
 
+# Link OpenMP
+find_package(OpenMP COMPONENTS CXX)
+if(OpenMP_CXX_FOUND)
+	target_link_libraries(clownmdemu OpenMP::OpenMP_CXX)
+endif()
+
 ################
 # Installation #
 ################

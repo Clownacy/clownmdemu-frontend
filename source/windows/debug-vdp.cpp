@@ -326,21 +326,24 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	if (!textures.empty())
 	{
 		// Set up some variables that we're going to need soon.
-		const std::size_t vram_texture_width_in_tiles = texture_width / piece_width;
-		const std::size_t vram_texture_height_in_tiles = texture_height / piece_height;
+		const cc_s32f vram_texture_width_in_tiles = texture_width / piece_width;
+		const cc_s32f vram_texture_height_in_tiles = texture_height / piece_height;
 
 		RegenerateTexturesIfNeeded([&]([[maybe_unused]] const unsigned int texture_index, SDL::Pixel* const pixels, const int pitch)
 		{
 			// Generate VRAM bitmap.
 			const auto total_pieces = piece_buffer_size_in_pixels / piece_width / piece_height;
 
-			cc_u16f piece_index = 0;
-
-			for (std::size_t y = 0; y < vram_texture_height_in_tiles; ++y)
+			// Use OpenMP to speed this up.
+			// TODO: For tiles, this is exponentially faster, but for stamps
+			// it is only double; is there a cache issue holding this back?
+			#pragma omp parallel for schedule(dynamic)
+			for (cc_s32f y = 0; y < vram_texture_height_in_tiles; ++y)
 			{
+				cc_u16f piece_index = y * vram_texture_width_in_tiles;
 				auto *pixels_pointer = pixels + y * piece_height * pitch;
 
-				for (std::size_t x = 0; x < vram_texture_width_in_tiles; ++x)
+				for (cc_s32f x = 0; x < vram_texture_width_in_tiles; ++x)
 				{
 					render_piece_callback(piece_index % total_pieces, 0, piece_index / total_pieces, pixels_pointer, pitch);
 					++piece_index;
