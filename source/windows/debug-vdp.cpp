@@ -181,25 +181,23 @@ static void DrawTileFromVRAM(const cc_u16f tile_index, const PaletteLine &palett
 	DrawTile(tile_index, palette_line, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y);
 }
 
-static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height)
+static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u8f width, const cc_u8f height)
 {
+	// TODO: Try swapping these loops as an optimisation.
 	for (cc_u8f ix = 0; ix < width; ++ix)
 	{
 		for (cc_u8f iy = 0; iy < height; ++iy)
 		{
-			const cc_u8f tile_x = x * width + ix;
-			const cc_u8f tile_y = y * height + iy;
-
-			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels, pitch, tile_x, tile_y);
+			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels, pitch, ix, iy);
 			tile_index = (tile_index + 1) % maximum_tile_index;
 		}
 	}
 }
 
-static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SDL::Pixel* const pixels, const int pitch)
 {
 	const Sprite &sprite = GetSprite(vdp, sprite_index);
-	return DrawSprite(sprite.tile_metadata.tile_index, GetPaletteLine(0, sprite.tile_metadata.palette_line, true), TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height);
+	return DrawSprite(sprite.tile_metadata.tile_index, GetPaletteLine(0, sprite.tile_metadata.palette_line, true), TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, sprite.cached.width, sprite.cached.height);
 }
 
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
@@ -601,7 +599,7 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 			if (stamp_index >= total_stamps)
 				return;
 
-			DrawSprite(stamp_index * tiles_per_stamp, shared_palette_line, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, stamp_diameter_in_tiles, stamp_diameter_in_tiles);
+			DrawSprite(stamp_index * tiles_per_stamp, shared_palette_line, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, stamp_diameter_in_tiles, stamp_diameter_in_tiles);
 		}, options_changed
 	);
 
@@ -673,7 +671,7 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 	RegenerateTexturesIfNeeded(
 		[&](const unsigned int texture_index, SDL::Pixel* const pixels, const int pitch)
 		{
-			DrawSprite(vdp, texture_index, pixels, pitch, 0, 0);
+			DrawSprite(vdp, texture_index, pixels, pitch);
 		}
 	);
 }
@@ -1030,7 +1028,7 @@ void DebugVDP::StampViewer::DisplayInternal()
 			if (piece_index >= total_pieces)
 				return;
 
-			DrawSprite(piece_index * tiles_per_stamp, shared_palette_line, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, 0, 0, piece_diameter_in_tiles, piece_diameter_in_tiles);
+			DrawSprite(piece_index * tiles_per_stamp, shared_palette_line, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, piece_diameter_in_tiles, piece_diameter_in_tiles);
 		}
 	, "Stamp", "Stamps");
 }
