@@ -141,7 +141,7 @@ static PaletteLine GetPaletteLine(const cc_u8f brightness_index, const cc_u8f pa
 	return colours;
 }
 
-static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const bool x_flip, const bool y_flip, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const bool swap_coordinates = false)
+static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const bool x_flip, const bool y_flip, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
 	{
@@ -168,8 +168,8 @@ static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, 
 			{
 				const cc_u16f pixel_x_in_tile_1 = (i * pixels_per_word + j) ^ x_flip_xor;
 
-				const cc_u16f final_pixel_x_in_tile = swap_coordinates ? pixel_y_in_tile_1 : pixel_x_in_tile_1;
-				const cc_u16f final_pixel_y_in_tile = swap_coordinates ? pixel_x_in_tile_1 : pixel_y_in_tile_1;
+				const cc_u16f final_pixel_x_in_tile = pixel_x_in_tile_1;
+				const cc_u16f final_pixel_y_in_tile = pixel_y_in_tile_1;
 
 				const cc_u16f destination_x = x * tile_width + final_pixel_x_in_tile;
 				const cc_u16f destination_y = y * tile_height + final_pixel_y_in_tile;
@@ -189,7 +189,7 @@ static void DrawTileFromVRAM(const cc_u16f tile_index, const PaletteLine &palett
 	DrawTile(tile_index, palette_line, x_flip, y_flip, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y);
 }
 
-static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const bool x_flip, const bool y_flip, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height, const bool swap_coordinates = false)
+static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const bool x_flip, const bool y_flip, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, const cc_u8f width, const cc_u8f height)
 {
 	for (cc_u8f ix = 0; ix < width; ++ix)
 	{
@@ -199,20 +199,19 @@ static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, cons
 		{
 			const cc_u8f y_unswapped = y_flip ? height - 1 - iy : iy;
 
-			const cc_u8f tile_x = x * width + (swap_coordinates ? y_unswapped : x_unswapped);
-			const cc_u8f tile_y = y * height + (swap_coordinates ? x_unswapped : y_unswapped);
+			const cc_u8f tile_x = x * width + x_unswapped;
+			const cc_u8f tile_y = y * height + y_unswapped;
 
-			DrawTile(tile_index, palette_line, x_flip, y_flip, tile_width, tile_height, read_tile_word, pixels, pitch, tile_x, tile_y, swap_coordinates);
+			DrawTile(tile_index, palette_line, x_flip, y_flip, tile_width, tile_height, read_tile_word, pixels, pitch, tile_x, tile_y);
 			tile_index = (tile_index + 1) % maximum_tile_index;
 		}
 	}
 }
 
-template<typename... Ts>
-static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y, Ts &&...args)
+static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
 {
 	const Sprite &sprite = GetSprite(vdp, sprite_index);
-	return DrawSprite(sprite.tile_metadata.tile_index, GetPaletteLine(0, sprite.tile_metadata.palette_line, true), sprite.tile_metadata.x_flip, sprite.tile_metadata.y_flip, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height, std::forward<Ts>(args)...);
+	return DrawSprite(sprite.tile_metadata.tile_index, GetPaletteLine(0, sprite.tile_metadata.palette_line, true), sprite.tile_metadata.x_flip, sprite.tile_metadata.y_flip, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height);
 }
 
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
