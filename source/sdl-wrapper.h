@@ -185,32 +185,102 @@ namespace SDL
 		return SDL_SetClipboardData(CallbackWrapper, CleanupWrapper, callback_copy, const_cast<const char**>(std::data(mime_types)), std::size(mime_types));
 	}
 
-	template<typename Callback>
-	inline auto SetRenderTarget(SDL_Renderer* const renderer, SDL_Texture* const texture, const Callback &callback)
+	template<typename PushCallback, typename PopCallback>
+	inline auto PushPopWrapper(const PushCallback &push_callback, const PopCallback &pop_callback, const auto &callback)
 	{
-		class RenderTarget
+		class Holder
 		{
 		private:
-			SDL_Renderer* const renderer;
-			SDL_Texture* const previous_render_target;
+			const PopCallback &pop_callback;
 
 		public:
-			RenderTarget(SDL_Renderer* const renderer, SDL_Texture* const texture)
-				: renderer(renderer)
-				, previous_render_target(SDL_GetRenderTarget(renderer))
+			Holder(const PushCallback &push_callback, const PopCallback &pop_callback)
+				: pop_callback(pop_callback)
 			{
-				SDL_SetRenderTarget(renderer, texture);
+				push_callback();
 			}
 
-			~RenderTarget()
+			~Holder()
 			{
-				SDL_SetRenderTarget(renderer, previous_render_target);
+				pop_callback();
 			}
 		};
 
-		RenderTarget render_target(renderer, texture);
+		Holder holder(push_callback, pop_callback);
 
 		return callback();
+	};
+
+	inline auto SetRenderTarget(SDL_Renderer* const renderer, SDL_Texture* const texture, const auto &callback)
+	{
+		SDL_Texture *previous_render_target;
+
+		return PushPopWrapper(
+			[&]()
+			{
+				previous_render_target = SDL_GetRenderTarget(renderer);
+				SDL_SetRenderTarget(renderer, texture);
+			},
+			[&]()
+			{
+				SDL_SetRenderTarget(renderer, previous_render_target);
+			},
+			callback
+		);
+	}
+
+	inline auto SetRenderDrawColor(SDL_Renderer* const renderer, const Uint8 red, const Uint8 green, const Uint8 blue, const Uint8 alpha, const auto &callback)
+	{
+		Uint8 previous_red, previous_green, previous_blue, previous_alpha;
+
+		return PushPopWrapper(
+			[&]()
+			{
+				SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
+				SDL_SetRenderDrawColor(renderer, red, green, blue, alpha);
+			},
+			[&]()
+			{
+				SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
+			},
+			callback
+		);
+	}
+
+	inline auto SetRenderDrawColorFloat(SDL_Renderer* const renderer, const float red, const float green, const float blue, const float alpha, const auto &callback)
+	{
+		float previous_red, previous_green, previous_blue, previous_alpha;
+
+		return PushPopWrapper(
+			[&]()
+			{
+				SDL_GetRenderDrawColorFloat(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
+				SDL_SetRenderDrawColorFloat(renderer, red, green, blue, alpha);
+			},
+			[&]()
+			{
+				SDL_SetRenderDrawColorFloat(renderer, previous_red, previous_green, previous_blue, previous_alpha);
+			},
+			callback
+		);
+	}
+
+	inline auto SetRenderDrawBlendMode(SDL_Renderer* const renderer, const SDL_BlendMode blend_mode, const auto &callback)
+	{
+		SDL_BlendMode previous_blend_mode;
+
+		return PushPopWrapper(
+			[&]()
+			{
+				SDL_GetRenderDrawBlendMode(renderer, &previous_blend_mode);
+				SDL_SetRenderDrawBlendMode(renderer, blend_mode);
+			},
+			[&]()
+			{
+				SDL_SetRenderDrawBlendMode(renderer, previous_blend_mode);
+			},
+			callback
+		);
 	}
 }
 

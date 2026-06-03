@@ -510,54 +510,53 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			if (plane == Plane::WINDOW || !scroll_overlay_enabled)
 				return;
 
-			Uint8 previous_red, previous_green, previous_blue, previous_alpha;
-			SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
-			SDL_BlendMode previous_blend_mode;
-			SDL_GetRenderDrawBlendMode(renderer, &previous_blend_mode);
-
-			SDL_SetRenderDrawColorFloat(renderer, scroll_overlay_colour[0], scroll_overlay_colour[1], scroll_overlay_colour[2], scroll_overlay_colour[3]);
-			SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-			const auto plane_width_in_pixels = plane_width * tile_width;
-			const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
-			const auto pixel_size = ImVec2(1, 1 << vdp.double_resolution_enabled);
-			const int total_widescreen_tiles = frontend->emulator->GetCurrentWidescreenTiles();
-			const int normal_screen_width_in_tiles = frontend->emulator->GetCurrentScreenWidth() / VDP_TILE_WIDTH - total_widescreen_tiles * 2;
-			const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_WIDTH, pixel_size.y);
-
-			for (unsigned int scanline_index = 0; scanline_index < total_scanlines; ++scanline_index)
-			{
-				const int hscroll = VDP_ReadVRAMWord(&vdp, vdp.hscroll_address + (scanline_index & vdp.hscroll_mask) * 4 + (plane == Plane::A ? 0 : 2)) & (plane_width_in_pixels - 1);
-
-				const auto &DoLine = [&](const int offset)
+			SDL::SetRenderDrawColorFloat(renderer, scroll_overlay_colour[0], scroll_overlay_colour[1], scroll_overlay_colour[2], scroll_overlay_colour[3],
+				[&]()
 				{
-					for (int tile_pair_line_index = -total_widescreen_tiles; tile_pair_line_index < normal_screen_width_in_tiles + total_widescreen_tiles; ++tile_pair_line_index)
-					{
-						const auto tile_pair_line_y = (scanline_index + vdp.vsram[((vdp.vscroll_mode == VDP_VSCROLL_MODE_FULL ? 0 : tile_pair_line_index / 2 * 2) + (plane == Plane::A ? 0 : 1)) % std::size(vdp.vsram)]) & (plane_height * VDP_STANDARD_TILE_HEIGHT - 1);
-						auto min = ImVec2((offset - hscroll + tile_pair_line_index * VDP_TILE_WIDTH) * pixel_size.x, tile_pair_line_y * tile_pair_line_size.y);
-						auto max = min + tile_pair_line_size;
-
-						min.x = std::max(min.x, 0.0f);
-						max.x = std::min(max.x, plane_width_in_pixels * pixel_size.x);
-
-						if (min.x < max.x && min.y < max.y)
+					SDL::SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND,
+						[&]()
 						{
-							SDL_FRect rect;
-							rect.x = min.x;
-							rect.y = min.y;
-							rect.w = max.x - min.x;
-							rect.h = max.y - min.y;
-							SDL_RenderFillRect(renderer, &rect);
+							const auto plane_width_in_pixels = plane_width * tile_width;
+							const unsigned int total_scanlines = (vdp.v30_enabled ? VDP_V30_SCANLINES_IN_TILES : VDP_V28_SCANLINES_IN_TILES) * VDP_STANDARD_TILE_HEIGHT;
+							const auto pixel_size = ImVec2(1, 1 << vdp.double_resolution_enabled);
+							const int total_widescreen_tiles = frontend->emulator->GetCurrentWidescreenTiles();
+							const int normal_screen_width_in_tiles = frontend->emulator->GetCurrentScreenWidth() / VDP_TILE_WIDTH - total_widescreen_tiles * 2;
+							const auto tile_pair_line_size = ImVec2(pixel_size.x * VDP_TILE_WIDTH, pixel_size.y);
+
+							for (unsigned int scanline_index = 0; scanline_index < total_scanlines; ++scanline_index)
+							{
+								const int hscroll = VDP_ReadVRAMWord(&vdp, vdp.hscroll_address + (scanline_index & vdp.hscroll_mask) * 4 + (plane == Plane::A ? 0 : 2)) & (plane_width_in_pixels - 1);
+
+								const auto &DoLine = [&](const int offset)
+								{
+									for (int tile_pair_line_index = -total_widescreen_tiles; tile_pair_line_index < normal_screen_width_in_tiles + total_widescreen_tiles; ++tile_pair_line_index)
+									{
+										const auto tile_pair_line_y = (scanline_index + vdp.vsram[((vdp.vscroll_mode == VDP_VSCROLL_MODE_FULL ? 0 : tile_pair_line_index / 2 * 2) + (plane == Plane::A ? 0 : 1)) % std::size(vdp.vsram)]) & (plane_height * VDP_STANDARD_TILE_HEIGHT - 1);
+										auto min = ImVec2((offset - hscroll + tile_pair_line_index * VDP_TILE_WIDTH) * pixel_size.x, tile_pair_line_y * tile_pair_line_size.y);
+										auto max = min + tile_pair_line_size;
+
+										min.x = std::max(min.x, 0.0f);
+										max.x = std::min(max.x, plane_width_in_pixels * pixel_size.x);
+
+										if (min.x < max.x && min.y < max.y)
+										{
+											SDL_FRect rect;
+											rect.x = min.x;
+											rect.y = min.y;
+											rect.w = max.x - min.x;
+											rect.h = max.y - min.y;
+											SDL_RenderFillRect(renderer, &rect);
+										}
+									}
+								};
+
+								DoLine(0);
+								DoLine(plane_width_in_pixels);
+							}
 						}
-					}
-				};
-
-				DoLine(0);
-				DoLine(plane_width_in_pixels);
-			}
-
-			SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
-			SDL_SetRenderDrawBlendMode(renderer, previous_blend_mode);
+					);
+				}
+			);
 		},
 		force_regenerate
 	);
@@ -699,45 +698,45 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 			SDL::SetRenderTarget(renderer, texture,
 				[&]()
 				{
-					Uint8 previous_red, previous_green, previous_blue, previous_alpha;
-					SDL_GetRenderDrawColor(renderer, &previous_red, &previous_green, &previous_blue, &previous_alpha);
-					SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0xFF);
-					SDL_RenderClear(renderer);
-					SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
-					const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
-					const SDL_FRect visible_area_rectangle = {
-						static_cast<float>(0x80 - (frontend->emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
-						static_cast<float>(0x80 * vertical_scale),
-						static_cast<float>(frontend->emulator->GetCurrentScreenWidth()),
-						static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
-					};
-					SDL_RenderFillRect(renderer, &visible_area_rectangle);
+					SDL::SetRenderDrawColor(renderer, 0, 0, 0, 0xFF,
+						[&]()
+						{
+							SDL_RenderClear(renderer);
+							SDL_SetRenderDrawColor(renderer, 0x10, 0x10, 0x10, 0xFF);
+							const int vertical_scale = vdp.double_resolution_enabled ? 2 : 1;
+							const SDL_FRect visible_area_rectangle = {
+								static_cast<float>(0x80 - (frontend->emulator->GetCurrentScreenWidth() - VDP_GetScreenWidthInPixels(&vdp)) / 2),
+								static_cast<float>(0x80 * vertical_scale),
+								static_cast<float>(frontend->emulator->GetCurrentScreenWidth()),
+								static_cast<float>(VDP_GetScreenHeightInTiles(&vdp) * VDP_STANDARD_TILE_HEIGHT * vertical_scale)
+							};
+							SDL_RenderFillRect(renderer, &visible_area_rectangle);
 
-					std::vector<cc_u8l> sprite_vector;
+							std::vector<cc_u8l> sprite_vector;
 
-					// Need to display sprites backwards for proper layering.
-					for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
-					{
-						sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
+							// Need to display sprites backwards for proper layering.
+							for (cc_u8f i = 0, sprite_index = 0; i < TOTAL_SPRITES; ++i)
+							{
+								sprite_vector.push_back(static_cast<cc_u8l>(sprite_index));
 
-						sprite_index = GetSprite(vdp, sprite_index).cached.link;
+								sprite_index = GetSprite(vdp, sprite_index).cached.link;
 
-						if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
-							break;
-					}
+								if (sprite_index == 0 || sprite_index >= TOTAL_SPRITES)
+									break;
+							}
 
-					// Draw sprites to the plane texture.
-					for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
-					{
-						const cc_u8f sprite_index = *it;
-						const Sprite sprite = GetSprite(vdp, sprite_index);
+							// Draw sprites to the plane texture.
+							for (auto it = sprite_vector.crbegin(); it != sprite_vector.crend(); ++it)
+							{
+								const cc_u8f sprite_index = *it;
+								const Sprite sprite = GetSprite(vdp, sprite_index);
 
-						const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-						const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-						SDL_RenderTextureRotated(renderer, textures[sprite_index], &src_rect, &dst_rect, 0.0, nullptr, static_cast<SDL_FlipMode>((sprite.tile_metadata.x_flip ? SDL_FLIP_HORIZONTAL : 0) | (sprite.tile_metadata.y_flip ? SDL_FLIP_VERTICAL : 0)));
-					}
-
-					SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
+								const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+								const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
+								SDL_RenderTextureRotated(renderer, textures[sprite_index], &src_rect, &dst_rect, 0.0, nullptr, static_cast<SDL_FlipMode>((sprite.tile_metadata.x_flip ? SDL_FLIP_HORIZONTAL : 0) | (sprite.tile_metadata.y_flip ? SDL_FLIP_VERTICAL : 0)));
+							}
+						}
+					);
 				}
 			);
 
