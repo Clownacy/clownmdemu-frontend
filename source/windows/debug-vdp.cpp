@@ -211,7 +211,7 @@ static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, cons
 static auto DrawSprite(const VDP_State &vdp, const unsigned int sprite_index, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
 {
 	const Sprite &sprite = GetSprite(vdp, sprite_index);
-	return DrawSprite(sprite.tile_metadata.tile_index, GetPaletteLine(0, sprite.tile_metadata.palette_line, true), sprite.tile_metadata.x_flip, sprite.tile_metadata.y_flip, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height);
+	return DrawSprite(sprite.tile_metadata.tile_index, GetPaletteLine(0, sprite.tile_metadata.palette_line, true), false, false, TileWidth(), TileHeight(vdp), VRAMSizeInTiles(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y, sprite.cached.width, sprite.cached.height);
 }
 
 bool DebugVDP::BrightnessAndPaletteLineSettings::DisplayBrightnessAndPaletteLineSettings()
@@ -824,7 +824,13 @@ void DebugVDP::SpriteList::DisplayInternal()
 			if (ImGui::BeginChild("Sprite", image_destination_space))
 			{
 				ImGui::SetCursorPos(image_destination_offset);
-				ImGui::ImageCopyable(GetWindow(), ImTextureRef(textures[index]), image_destination_size, ImVec2(0, 0), image_size / image_internal_size);
+				ImVec2 uv0 = {0, 0};
+				ImVec2 uv1 = image_size / image_internal_size;
+				if (sprite.tile_metadata.x_flip)
+					std::swap(uv0.x, uv1.x);
+				if (sprite.tile_metadata.y_flip)
+					std::swap(uv0.y, uv1.y);
+				ImGui::ImageCopyable(GetWindow(), ImTextureRef(textures[index]), image_destination_size, uv0, uv1);
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
