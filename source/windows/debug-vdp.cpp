@@ -140,7 +140,7 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 	const cc_u16f y_flip_xor = tile_metadata.y_flip ? tile_height - 1 : 0;
 
 	const auto &vdp = frontend->emulator->GetVDPState();
-	const auto &background_colour = frontend->emulator->GetColour(vdp.background_colour);
+	const auto &background_colour = transparency ? SDL::Pixel(0) : SDL::Pixel(frontend->emulator->GetColour(vdp.background_colour));
 	const auto &palette_line = frontend->emulator->GetPaletteLine(brightness, tile_metadata.palette_line);
 
 	cc_u16f word_index = tile_metadata.tile_index * tile_size_in_words;
@@ -166,17 +166,7 @@ static void DrawTile(const VDP_TileMetadata tile_metadata, const cc_u8f tile_wid
 
 				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
 
-				const auto &GetPixel = [&]() -> SDL::Pixel
-				{
-					if (colour_index != 0)
-						return palette_line[colour_index];
-					else if (transparency)
-						return 0;
-					else
-						return background_colour;
-				};
-
-				pixels[destination_x + destination_y * pitch] = GetPixel();
+				pixels[destination_x + destination_y * pitch] = colour_index == 0 ? background_colour : SDL::Pixel(palette_line[colour_index]);
 			}
 		}
 	}
