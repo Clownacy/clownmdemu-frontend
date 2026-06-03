@@ -41,6 +41,10 @@ void DebugLogViewer::DisplayInternal()
 
 			ImGui::EndPopup();
 		}
+
+		// If we're at the bottom, stay there.
+		if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+			ImGui::SetScrollHereY(1.0f);
 	}
 
 	ImGui::EndChild();
