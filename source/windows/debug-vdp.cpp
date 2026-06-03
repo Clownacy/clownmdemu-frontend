@@ -174,19 +174,21 @@ static void DrawTileFromVRAM(const cc_u16f tile_index, const PaletteLine &palett
 	DrawTile(tile_index, palette_line, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch);
 }
 
-static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel *pixels, const int pitch, const cc_u8f width, const cc_u8f height)
+static void DrawSprite(const cc_u16f initial_tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel *pixels, const int pitch, const cc_u8f width, const cc_u8f height)
 {
-	// TODO: Try swapping these loops as an optimisation.
-	for (cc_u8f ix = 0; ix < width; ++ix)
+	// The loops are this way around as an optimisation.
+	for (cc_u8f iy = 0; iy < height; ++iy)
 	{
-		for (cc_u8f iy = 0; iy < height; ++iy)
+		cc_u16f tile_index = (initial_tile_index + iy) % maximum_tile_index;
+
+		for (cc_u8f ix = 0; ix < width; ++ix)
 		{
 			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels, pitch);
-			pixels += tile_height * pitch;
-			tile_index = (tile_index + 1) % maximum_tile_index;
+			pixels += tile_width;
+			tile_index = (tile_index + height) % maximum_tile_index;
 		}
 
-		pixels -= height * tile_height * pitch - tile_width;
+		pixels += tile_height * pitch - width * tile_width;
 	}
 }
 
