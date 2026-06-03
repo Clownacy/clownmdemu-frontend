@@ -734,7 +734,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 						const SDL_FRect src_rect = {0, 0, static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
 						const SDL_FRect dst_rect = {static_cast<float>(sprite.x), static_cast<float>(sprite.cached.y), static_cast<float>(sprite.cached.width * tile_width), static_cast<float>(sprite.cached.height * tile_height)};
-						SDL_RenderTexture(renderer, textures[sprite_index], &src_rect, &dst_rect);
+						SDL_RenderTextureRotated(renderer, textures[sprite_index], &src_rect, &dst_rect, 0.0, nullptr, static_cast<SDL_FlipMode>((sprite.tile_metadata.x_flip ? SDL_FLIP_HORIZONTAL : 0) | (sprite.tile_metadata.y_flip ? SDL_FLIP_VERTICAL : 0)));
 
 						SDL_SetRenderDrawColor(renderer, previous_red, previous_green, previous_blue, previous_alpha);
 					}
