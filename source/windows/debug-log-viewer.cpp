@@ -11,7 +11,7 @@ void DebugLogViewer::DisplayInternal()
 
 	ImGui::Separator();
 
-	if (ImGui::BeginChild("Log", {}, 0, ImGuiWindowFlags_NoMove))
+	if (ImGui::BeginChild("Log", {}, ImGuiChildFlags_None, ImGuiWindowFlags_NoMove))
 	{
 		ImGui::PushFont(GetMonospaceFont());
 
