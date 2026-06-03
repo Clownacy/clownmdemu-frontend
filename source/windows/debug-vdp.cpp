@@ -141,7 +141,7 @@ static PaletteLine GetPaletteLine(const cc_u8f brightness_index, const cc_u8f pa
 	return colours;
 }
 
-static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch)
+static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel *pixels, const int pitch)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
 	{
@@ -160,14 +160,10 @@ static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, 
 			++word_index;
 
 			for (cc_u16f j = 0; j < pixels_per_word; ++j)
-			{
-				const cc_u16f pixel_x_in_tile = i * pixels_per_word + j;
-
-				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
-
-				pixels[pixel_x_in_tile + pixel_y_in_tile * pitch] = palette_line[colour_index];
-			}
+				*pixels++ = palette_line[((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel)];
 		}
+
+		pixels += pitch - tile_width;
 	}
 }
 
@@ -178,16 +174,19 @@ static void DrawTileFromVRAM(const cc_u16f tile_index, const PaletteLine &palett
 	DrawTile(tile_index, palette_line, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch);
 }
 
-static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u8f width, const cc_u8f height)
+static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel *pixels, const int pitch, const cc_u8f width, const cc_u8f height)
 {
 	// TODO: Try swapping these loops as an optimisation.
 	for (cc_u8f ix = 0; ix < width; ++ix)
 	{
 		for (cc_u8f iy = 0; iy < height; ++iy)
 		{
-			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels + ix * tile_width + iy * tile_height * pitch, pitch);
+			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels, pitch);
+			pixels += tile_height * pitch;
 			tile_index = (tile_index + 1) % maximum_tile_index;
 		}
+
+		pixels -= height * tile_height * pitch - tile_width;
 	}
 }
 
