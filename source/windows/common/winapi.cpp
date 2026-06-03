@@ -10,54 +10,44 @@
 #ifdef SDL_PLATFORM_WIN32
 using DwmSetWindowAttribute_Type = HRESULT(WINAPI*)(HWND hwnd, DWORD dwAttribute, LPCVOID pvAttribute, DWORD cbAttribute);
 
-static DwmSetWindowAttribute_Type GetDwmSetWindowAttribute()
+static const auto DwmSetWindowAttribute_Function = []() -> DwmSetWindowAttribute_Type
 {
-	static DwmSetWindowAttribute_Type DwmSetWindowAttribute_Function;
+	// TODO: Free this?
+	const HINSTANCE instance = LoadLibrary("dwmapi.dll");
 
-	if (DwmSetWindowAttribute_Function == nullptr)
-	{
-		static SDL::SharedObject dwmapi_dll;
+	if (instance == nullptr)
+		return nullptr;
 
-		dwmapi_dll = SDL::SharedObject(SDL_LoadObject("dwmapi.dll"));
-
-		if (dwmapi_dll != nullptr)
-			DwmSetWindowAttribute_Function = reinterpret_cast<DwmSetWindowAttribute_Type>(SDL_LoadFunction(dwmapi_dll, "DwmSetWindowAttribute"));
-	}
-
-	return DwmSetWindowAttribute_Function;
-}
+	return reinterpret_cast<DwmSetWindowAttribute_Type>(GetProcAddress(instance, "DwmSetWindowAttribute"));
+}();
 #endif
 
 void SetWindowTitleBarColour([[maybe_unused]] SDL_Window* const window, [[maybe_unused]] const unsigned char red, [[maybe_unused]] const unsigned char green, [[maybe_unused]] const unsigned char blue)
 {
 #ifdef SDL_PLATFORM_WIN32
-	const HWND hwnd = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
-
-	if (hwnd == 0)
+	if (DwmSetWindowAttribute_Function == nullptr)
 		return;
 
-	const auto DwmSetWindowAttribute_Function = GetDwmSetWindowAttribute();
+	const HWND hwnd = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
 
-	if (DwmSetWindowAttribute_Function != nullptr)
-	{
-		// Colour the title bar.
-		const COLORREF winapi_colour = RGB(red, green, blue);
-		DwmSetWindowAttribute_Function(hwnd, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
-	}
+	if (hwnd == nullptr)
+		return;
+
+	// Colour the title bar.
+	const COLORREF winapi_colour = RGB(red, green, blue);
+	DwmSetWindowAttribute_Function(hwnd, 35/*DWMWA_CAPTION_COLOR*/, &winapi_colour, sizeof(winapi_colour));
 #endif
 }
 
 void DisableWindowRounding([[maybe_unused]] SDL_Window* const window)
 {
 #ifdef SDL_PLATFORM_WIN32
-	const HWND hwnd = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
-
-	if (hwnd == 0)
+	if (DwmSetWindowAttribute_Function == nullptr)
 		return;
 
-	const auto DwmSetWindowAttribute_Function = GetDwmSetWindowAttribute();
+	const HWND hwnd = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
 
-	if (DwmSetWindowAttribute_Function == nullptr)
+	if (hwnd == nullptr)
 		return;
 
 	// Disable the dumbass window rounding.
