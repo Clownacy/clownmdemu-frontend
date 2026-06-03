@@ -141,7 +141,7 @@ static PaletteLine GetPaletteLine(const cc_u8f brightness_index, const cc_u8f pa
 	return colours;
 }
 
-static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
 	{
@@ -163,22 +163,19 @@ static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, 
 			{
 				const cc_u16f pixel_x_in_tile = i * pixels_per_word + j;
 
-				const cc_u16f destination_x = x * tile_width + pixel_x_in_tile;
-				const cc_u16f destination_y = y * tile_height + pixel_y_in_tile;
-
 				const cc_u16f colour_index = ((tile_pixels << (bits_per_pixel * j)) & 0xF000) >> (bits_per_word - bits_per_pixel);
 
-				pixels[destination_x + destination_y * pitch] = palette_line[colour_index];
+				pixels[pixel_x_in_tile + pixel_y_in_tile * pitch] = palette_line[colour_index];
 			}
 		}
 	}
 }
 
-static void DrawTileFromVRAM(const cc_u16f tile_index, const PaletteLine &palette_line, SDL::Pixel* const pixels, const int pitch, const cc_u16f x, const cc_u16f y)
+static void DrawTileFromVRAM(const cc_u16f tile_index, const PaletteLine &palette_line, SDL::Pixel* const pixels, const int pitch)
 {
 	const auto &vdp = frontend->emulator->GetVDPState();
 
-	DrawTile(tile_index, palette_line, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch, x, y);
+	DrawTile(tile_index, palette_line, TileWidth(), TileHeight(vdp), [&](const cc_u16f word_index){return VDP_ReadVRAMWord(&vdp, word_index * 2);}, pixels, pitch);
 }
 
 static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const cc_u16f maximum_tile_index, const ReadTileWord &read_tile_word, SDL::Pixel* const pixels, const int pitch, const cc_u8f width, const cc_u8f height)
@@ -188,7 +185,7 @@ static void DrawSprite(cc_u16f tile_index, const PaletteLine &palette_line, cons
 	{
 		for (cc_u8f iy = 0; iy < height; ++iy)
 		{
-			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels, pitch, ix, iy);
+			DrawTile(tile_index, palette_line, tile_width, tile_height, read_tile_word, pixels + ix * tile_width + iy * tile_height * pitch, pitch);
 			tile_index = (tile_index + 1) % maximum_tile_index;
 		}
 	}
@@ -480,7 +477,7 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 			if (tile_index >= VRAMSizeInTiles(vdp))
 				return;
 
-			DrawTileFromVRAM(tile_index, palette_line, pixels, pitch, 0, 0);
+			DrawTileFromVRAM(tile_index, palette_line, pixels, pitch);
 		}
 	);
 
@@ -1004,7 +1001,7 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 			if (piece_index >= VRAMSizeInTiles(vdp))
 				return;
 
-			DrawTileFromVRAM(piece_index, shared_palette_line, pixels, pitch, 0, 0);
+			DrawTileFromVRAM(piece_index, shared_palette_line, pixels, pitch);
 		}
 	, "Tile", "Tiles");
 }
