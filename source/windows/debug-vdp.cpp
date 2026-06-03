@@ -685,8 +685,6 @@ void DebugVDP::SpriteCommon::DisplaySpriteCommon(Window &window)
 	RegenerateTexturesIfNeeded(
 		[&](const unsigned int texture_index, SDL::Pixel* const pixels, const int pitch)
 		{
-			std::fill(&pixels[0], &pixels[pitch * sprite_texture_height], 0);
-
 			DrawSprite(vdp, texture_index, pixels, pitch, 0, 0);
 		}
 	);
