@@ -28,12 +28,14 @@ public:
 private:
 	static void* FileOpenCallback(const char *filename, ClownCD_FileMode mode);
 	static int FileCloseCallback(void *stream);
+	static int FileCloseCallback_NoClose(void *stream);
 	static std::size_t FileReadCallback(void *buffer, std::size_t size, std::size_t count, void *stream);
 	static std::size_t FileWriteCallback(const void *buffer, std::size_t size, std::size_t count, void *stream);
 	static long FileTellCallback(void *stream);
 	static int FileSeekCallback(void *stream, long position, ClownCD_FileOrigin origin);
 
 	static constexpr ClownCD_FileCallbacks callbacks = {FileOpenCallback, FileCloseCallback, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
+	static constexpr ClownCD_FileCallbacks callbacks_no_close = {FileOpenCallback, FileCloseCallback_NoClose, FileReadCallback, FileWriteCallback, FileTellCallback, FileSeekCallback};
 
 public:
 	class StateBackup : private CDReader_StateBackup
@@ -74,7 +76,7 @@ public:
 		FileUtilities::PathToCString(path,
 			[&](const char* const string)
 			{
-				CDReader_Open(this, stream, string, &callbacks);
+				CDReader_Open(this, stream, string, stream != NULL ? &callbacks_no_close : &callbacks);
 			}
 		);
 	}
