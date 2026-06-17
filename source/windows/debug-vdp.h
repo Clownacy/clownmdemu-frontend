@@ -14,6 +14,25 @@
 
 namespace DebugVDP
 {
+	static constexpr std::size_t tile_width = 8;
+	static constexpr std::size_t tile_height_normal = 8;
+	static constexpr std::size_t tile_height_double_resolution = 16;
+
+	static constexpr std::size_t bits_per_word = 16;
+	static constexpr std::size_t bits_per_byte = 8;
+	static constexpr std::size_t bits_per_pixel = 4;
+	static constexpr std::size_t pixels_per_word = bits_per_word / bits_per_pixel;
+	static constexpr std::size_t pixels_per_byte = bits_per_byte / bits_per_pixel;
+
+	static constexpr std::size_t total_palette_lines = 4;
+
+	static constexpr std::size_t maximum_stamp_diameter_in_tiles = 4;
+	static constexpr std::size_t maximum_stamp_width_in_pixels = maximum_stamp_diameter_in_tiles * tile_width;
+	static constexpr std::size_t maximum_stamp_height_in_pixels = maximum_stamp_diameter_in_tiles * tile_height_normal;
+
+	static constexpr std::size_t maximum_stamp_map_diameter_in_pixels = 4096;
+	static constexpr std::size_t maximum_stamp_map_size_in_pixels = maximum_stamp_map_diameter_in_pixels * maximum_stamp_map_diameter_in_pixels;
+
 	constexpr cc_u8f TOTAL_SPRITES = 80;
 
 	using ReadTileWord = std::function<cc_u16f(cc_u16f word_index)>;
@@ -67,18 +86,24 @@ namespace DebugVDP
 	struct RegeneratingPieces : public RegeneratingTextures
 	{
 	protected:
+		const std::size_t piece_buffer_size_in_pixels;
+		const bool multiple_palette_lines;
+
 		std::size_t texture_width = 0;
 		std::size_t texture_height = 0;
 
 	public:
+		RegeneratingPieces(
+			SDL::Renderer &renderer,
+			std::size_t maximum_piece_width,
+			std::size_t maximum_piece_height,
+			std::size_t piece_buffer_size_in_pixels,
+			bool multiple_palette_lines);
+
 		void RegenerateIfNeeded(
 			SDL::Renderer &renderer,
 			std::size_t piece_width,
 			std::size_t piece_height,
-			std::size_t maximum_piece_width,
-			std::size_t maximum_piece_height,
-			std::size_t piece_buffer_size_in_pixels,
-			bool multiple_palette_lines,
 			const RenderPiece &render_piece_callback,
 			bool force_regenerate = false);
 
@@ -92,9 +117,9 @@ namespace DebugVDP
 			return texture_height;
 		}
 
-		SDL_FRect GetPieceRect(const std::size_t piece_index, std::size_t piece_width, std::size_t piece_height, std::size_t piece_buffer_size_in_pixels, cc_u8f palette_line_index) const;
+		SDL_FRect GetPieceRect(const std::size_t piece_index, std::size_t piece_width, std::size_t piece_height, cc_u8f palette_line_index) const;
 
-		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, std::size_t piece_width, std::size_t piece_height, std::size_t piece_buffer_size_in_pixels, cc_u16f x, cc_u16f y, cc_u8f brightness_index, bool transparency, bool swap_coordinates = false);
+		void Draw(SDL::Renderer &renderer, VDP_TileMetadata piece_metadata, std::size_t piece_width, std::size_t piece_height, cc_u16f x, cc_u16f y, cc_u8f brightness_index, bool transparency, bool swap_coordinates = false);
 	};
 
 	struct SpriteCommon : protected RegeneratingTextures
@@ -170,7 +195,7 @@ namespace DebugVDP
 		float scale = 2.0f;
 		bool scroll_overlay_enabled = false;
 		std::array<float, 4> scroll_overlay_colour = {1.0f, 0.0f, 0.0f, 0.5f};
-		RegeneratingPieces regenerating_pieces;
+		RegeneratingPieces regenerating_pieces = {Base::GetWindow().GetRenderer(), tile_width, tile_height_double_resolution, sizeof(VDP_State::vram) * pixels_per_byte, true};
 
 		void DisplayInternal(Plane plane);
 
@@ -187,7 +212,7 @@ namespace DebugVDP
 		using Base = MapViewer<StampMapViewer>;
 
 		float scale = 1.0f;
-		RegeneratingPieces regenerating_pieces;
+		RegeneratingPieces regenerating_pieces = {Base::GetWindow().GetRenderer(), maximum_stamp_width_in_pixels, maximum_stamp_height_in_pixels, maximum_stamp_map_size_in_pixels, false};
 
 		void DisplayInternal();
 
@@ -211,9 +236,6 @@ namespace DebugVDP
 			std::size_t piece_width,
 			std::size_t piece_height,
 			std::size_t total_pieces,
-			std::size_t maximum_piece_width,
-			std::size_t maximum_piece_height,
-			std::size_t piece_buffer_size_in_pixels,
 			const RenderPiece &render_piece_callback,
 			const char *label_singular,
 			const char *label_plural);
@@ -237,8 +259,16 @@ namespace DebugVDP
 	public:
 		using Base = WindowPopup<Derived>;
 
-		GridViewer(const char* const window_title, Window &parent_window, WindowWithDearImGui* const host_window, const std::size_t piece_size)
+		GridViewer(
+			const char* const window_title,
+			Window &parent_window,
+			WindowWithDearImGui* const host_window,
+			const std::size_t piece_size,
+			const std::size_t maximum_piece_width,
+			const std::size_t maximum_piece_height,
+			const std::size_t piece_buffer_size_in_pixels)
 			: Base(window_title, parent_window, host_window, GetDefaultWindowSize(piece_size, host_window == nullptr ? parent_window.GetDPIScale() : host_window->GetDPIScale()), 1.0f)
+			, regenerating_pieces(Base::GetWindow().GetRenderer(), maximum_piece_width, maximum_piece_height, piece_buffer_size_in_pixels, false)
 		{}
 
 		friend Base;
@@ -252,7 +282,10 @@ namespace DebugVDP
 		void DisplayInternal();
 
 	public:
-		using Base::GridViewer;
+		template<typename... Args>
+		VRAMViewer(Args &&...args)
+			: Base(std::forward<Args>(args)..., 8, tile_width, tile_height_double_resolution, sizeof(VDP_State::vram) * pixels_per_byte)
+		{}
 
 		friend Base;
 		friend Base::Base;
@@ -266,7 +299,10 @@ namespace DebugVDP
 		void DisplayInternal();
 
 	public:
-		using Base::GridViewer;
+		template<typename... Args>
+		StampViewer(Args &&...args)
+			: Base(std::forward<Args>(args)..., 16, maximum_stamp_diameter_in_tiles * tile_width, maximum_stamp_diameter_in_tiles * tile_height_normal, maximum_stamp_map_size_in_pixels)
+		{}
 
 		friend Base;
 		friend Base::Base;
