@@ -125,7 +125,10 @@ namespace DebugVDP
 	struct SpriteCommon : protected RegeneratingTextures
 	{
 	protected:
-		void DisplaySpriteCommon(Window &window);
+		// TODO: Make this some kind of internal layer over DisplayInternal?
+		void DisplaySpriteCommon();
+
+		SpriteCommon(SDL::Renderer &renderer);
 	};
 
 	class SpriteViewer: public WindowPopup<SpriteViewer>, public SpriteCommon
@@ -135,13 +138,20 @@ namespace DebugVDP
 
 		static constexpr Uint32 window_flags = 0;
 
+		static constexpr cc_u16f plane_texture_width = 512;
+		static constexpr cc_u16f plane_texture_height = 1024;
+
 		float scale = 2.0f;
-		SDL::Texture texture = nullptr;
+		SDL::Texture texture = SDL::CreateTexture(Base::GetWindow().GetRenderer(), SDL_TEXTUREACCESS_TARGET, plane_texture_width, plane_texture_height, SDL_SCALEMODE_PIXELART);
 
 		void DisplayInternal();
 
 	public:
-		using Base::WindowPopup;
+		template<typename... Args>
+		SpriteViewer(Args &&...args)
+			: Base(std::forward<Args>(args)...)
+			, SpriteCommon(Base::GetWindow().GetRenderer())
+		{}
 
 		friend Base;
 	};
@@ -156,7 +166,11 @@ namespace DebugVDP
 		void DisplayInternal();
 
 	public:
-		using Base::WindowPopup;
+		template<typename... Args>
+		SpriteList(Args &&...args)
+			: Base(std::forward<Args>(args)...)
+			, SpriteCommon(Base::GetWindow().GetRenderer())
+		{}
 
 		friend Base;
 	};
@@ -167,12 +181,13 @@ namespace DebugVDP
 	private:
 		static constexpr Uint32 window_flags = 0;
 
+		const std::size_t maximum_map_width_in_pixels;
+		const std::size_t maximum_map_height_in_pixels;
+
 	protected:
 		void DisplayMap(
 			std::size_t map_width_in_pieces,
 			std::size_t map_height_in_pieces,
-			std::size_t maximum_map_width_in_pixels,
-			std::size_t maximum_map_height_in_pixels,
 			std::size_t piece_width,
 			std::size_t piece_height,
 			const DrawMapPiece &draw_piece,
@@ -182,7 +197,15 @@ namespace DebugVDP
 
 	public:
 		using Base = WindowPopup<Derived>;
-		using Base::WindowPopup;
+
+		template<typename... Args>
+		MapViewer(const std::size_t maximum_map_width_in_pixels, const std::size_t maximum_map_height_in_pixels, Args &&...args)
+			: Base(std::forward<Args>(args)...)
+			, maximum_map_width_in_pixels(maximum_map_width_in_pixels)
+			, maximum_map_height_in_pixels(maximum_map_height_in_pixels)
+		{
+			textures.emplace_back(SDL::CreateTexture(Base::GetWindow().GetRenderer(), SDL_TEXTUREACCESS_TARGET, maximum_map_width_in_pixels, maximum_map_height_in_pixels, SDL_SCALEMODE_PIXELART));
+		}
 
 		friend Base;
 	};
@@ -200,7 +223,10 @@ namespace DebugVDP
 		void DisplayInternal(Plane plane);
 
 	public:
-		using Base::MapViewer;
+		template<typename... Args>
+		PlaneViewer(Args &&...args)
+			: Base(128 * tile_width, 64 * tile_height_double_resolution, std::forward<Args>(args)...)
+		{}
 
 		friend Base;
 		friend Base::Base;
@@ -217,7 +243,10 @@ namespace DebugVDP
 		void DisplayInternal();
 
 	public:
-		using Base::MapViewer;
+		template<typename... Args>
+		StampMapViewer(Args &&...args)
+			: Base(maximum_stamp_map_diameter_in_pixels, maximum_stamp_map_diameter_in_pixels, std::forward<Args>(args)...)
+		{}
 
 		friend Base;
 		friend Base::Base;
