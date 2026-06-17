@@ -39,7 +39,8 @@ namespace DebugVDP
 	using DrawMapPiece = std::function<void(SDL::Renderer &renderer, cc_u16f x, cc_u16f y)>;
 	using MapPieceTooltip = std::function<void(cc_u16f x, cc_u16f y)>;
 	using PaletteLine = std::array<SDL::Pixel, VDP_PALETTE_LINE_LENGTH>;
-	using RenderPiece = std::function<void(cc_u16f piece_index, const PaletteLine &palette_line, SDL::Pixel *pixels, int pitch)>;
+	using PaletteLines = std::array<PaletteLine, VDP_TOTAL_PALETTE_LINES>;
+	using RenderPiece = std::function<void(cc_u16f piece_index, cc_u8f palette_line_index, const PaletteLines &palette_lines, SDL::Pixel *pixels, int pitch)>;
 	using DrawOverlay = std::function<void(SDL::Renderer &renderer)>;
 
 	enum class Plane
@@ -104,6 +105,7 @@ namespace DebugVDP
 			SDL::Renderer &renderer,
 			std::size_t piece_width,
 			std::size_t piece_height,
+			cc_u8f brightness_index,
 			const RenderPiece &render_piece_callback,
 			bool force_regenerate = false);
 

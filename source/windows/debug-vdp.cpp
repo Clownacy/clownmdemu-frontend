@@ -122,6 +122,14 @@ static PaletteLine GetPaletteLine(const cc_u8f brightness_index, const cc_u8f pa
 	return colours;
 }
 
+static PaletteLines GetPaletteLines(const cc_u8f brightness_index, const bool transparency)
+{
+	PaletteLines palette_lines;
+	for (std::size_t i = 0; i < std::size(palette_lines); ++i)
+		palette_lines[i] = GetPaletteLine(brightness_index, i, transparency);
+	return palette_lines;
+}
+
 static void DrawTile(const cc_u16f tile_index, const PaletteLine &palette_line, const cc_u8f tile_width, const cc_u8f tile_height, const ReadTileWord &read_tile_word, SDL::Pixel *pixels, const int pitch)
 {
 	constexpr auto PixelsToWords = [](const cc_u16f pixels) constexpr
@@ -285,6 +293,7 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 	SDL::Renderer &renderer,
 	const std::size_t piece_width,
 	const std::size_t piece_height,
+	const cc_u8f brightness_index,
 	const RenderPiece &render_piece_callback,
 	const bool force_regenerate)
 {
@@ -297,9 +306,7 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 		// Generate VRAM bitmap.
 		const auto total_pieces = piece_buffer_size_in_pixels / piece_width / piece_height;
 
-		std::array<PaletteLine, VDP_TOTAL_PALETTE_LINES> palette_lines;
-		for (std::size_t i = 0; i < std::size(palette_lines); ++i)
-			palette_lines[i] = GetPaletteLine(0, i, false);
+		const auto palette_lines = GetPaletteLines(brightness_index, false);
 
 		// Use OpenMP to speed this up.
 		// TODO: For tiles, this is exponentially faster, but for stamps
@@ -312,10 +319,11 @@ void DebugVDP::RegeneratingPieces::RegenerateIfNeeded(
 
 			for (cc_s32f x = 0; x < vram_texture_width_in_tiles; ++x)
 			{
+				// TODO: Something faster than this.
 				if (piece_index >= total_pieces * VDP_TOTAL_PALETTE_LINES)
 					break;
 
-				render_piece_callback(piece_index % total_pieces, palette_lines[piece_index / total_pieces], pixels_pointer, pitch);
+				render_piece_callback(piece_index % total_pieces, piece_index / total_pieces, palette_lines, pixels_pointer, pitch);
 				++piece_index;
 				pixels_pointer += piece_width;
 			}
@@ -442,10 +450,10 @@ void DebugVDP::PlaneViewer::DisplayInternal(const Plane plane)
 	const auto tile_width = TileWidth();
 	const auto tile_height = TileHeight(vdp);
 
-	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), tile_width, tile_height, /*tile_width, tile_height_double_resolution, tile_buffer_size_in_pixels, true,*/
-		[&](const cc_u16f tile_index, const PaletteLine &palette_line, SDL::Pixel* const pixels, const int pitch)
+	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), tile_width, tile_height, 0, /*tile_width, tile_height_double_resolution, tile_buffer_size_in_pixels, true,*/
+		[&](const cc_u16f tile_index, const cc_u8f palette_line_index, const PaletteLines &palette_lines, SDL::Pixel* const pixels, const int pitch)
 		{
-			DrawTileFromVRAM(tile_index, palette_line, pixels, pitch);
+			DrawTileFromVRAM(tile_index, palette_lines[palette_line_index], pixels, pitch);
 		}
 	);
 
@@ -555,12 +563,10 @@ void DebugVDP::StampMapViewer::DisplayInternal()
 	const auto tiles_per_stamp = TilesPerStamp();
 	const auto stamp_diameter_in_tiles = StampDiameterInTiles();
 
-	const auto shared_palette_line = GetPaletteLine(brightness_option_index, palette_line_option_index, false);
-
-	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), StampWidthInPixels(), StampHeightInPixels(), /*maximum_stamp_width_in_pixels, maximum_stamp_height_in_pixels, maximum_stamp_map_size_in_pixels, false,*/
-		[&](const cc_u16f stamp_index, [[maybe_unused]] const PaletteLine &palette_line, SDL::Pixel* const pixels, const int pitch)
+	regenerating_pieces.RegenerateIfNeeded(GetWindow().GetRenderer(), StampWidthInPixels(), StampHeightInPixels(), brightness_option_index, /*maximum_stamp_width_in_pixels, maximum_stamp_height_in_pixels, maximum_stamp_map_size_in_pixels, false,*/
+		[&](const cc_u16f stamp_index, [[maybe_unused]] const cc_u8f palette_line_index, const PaletteLines &palette_lines, SDL::Pixel* const pixels, const int pitch)
 		{
-			DrawSprite(stamp_index * tiles_per_stamp, shared_palette_line, tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, stamp_diameter_in_tiles, stamp_diameter_in_tiles);
+			DrawSprite(stamp_index * tiles_per_stamp, palette_lines[palette_line_option_index], tile_width, tile_height_normal, total_stamps * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, stamp_diameter_in_tiles, stamp_diameter_in_tiles);
 		}, options_changed
 	);
 
@@ -826,7 +832,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 	const std::size_t piece_width,
 	const std::size_t piece_height,
 	const std::size_t total_pieces,
-	const std::function<void(cc_u16f piece_index, const PaletteLine &palette_line, SDL::Pixel *pixels, int pitch)> &render_piece_callback,
+	const RenderPiece &render_piece_callback,
 	const char* const label_singular,
 	const char* const label_plural)
 {
@@ -847,7 +853,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 
 	ImGui::SeparatorText(label_plural);
 
-	regenerating_pieces.RegenerateIfNeeded(derived->GetWindow().GetRenderer(), piece_width, piece_height, /*maximum_piece_width, maximum_piece_height, piece_buffer_size_in_pixels, false,*/ render_piece_callback, options_changed);
+	regenerating_pieces.RegenerateIfNeeded(derived->GetWindow().GetRenderer(), piece_width, piece_height, brightness_option_index, /*maximum_piece_width, maximum_piece_height, piece_buffer_size_in_pixels, false,*/ render_piece_callback, options_changed);
 
 	// Actually display the VRAM now.
 	ImGui::BeginChild("VRAM contents");
@@ -946,12 +952,10 @@ void DebugVDP::VRAMViewer::DisplayInternal()
 	const cc_u16f piece_height = TileHeight(vdp);
 	const std::size_t total_pieces = VRAMSizeInTiles(vdp);
 
-	const auto shared_palette_line = GetPaletteLine(brightness_option_index, palette_line_option_index, false);
-
 	DisplayGrid(piece_width, piece_height, total_pieces, /*tile_width, tile_height_double_resolution, piece_buffer_size_in_pixels,*/
-		[&](const cc_u16f piece_index, [[maybe_unused]] const PaletteLine &palette_line, SDL::Pixel* const pixels, const int pitch)
+		[&](const cc_u16f piece_index, [[maybe_unused]] const cc_u8f palette_line_index, const PaletteLines &palette_lines, SDL::Pixel* const pixels, const int pitch)
 		{
-			DrawTileFromVRAM(piece_index, shared_palette_line, pixels, pitch);
+			DrawTileFromVRAM(piece_index, palette_lines[palette_line_option_index], pixels, pitch);
 		}
 	, "Tile", "Tiles");
 }
@@ -966,12 +970,10 @@ void DebugVDP::StampViewer::DisplayInternal()
 	const auto tiles_per_stamp = TilesPerStamp();
 	const auto total_pieces = TotalStamps();
 
-	const auto shared_palette_line = GetPaletteLine(brightness_option_index, palette_line_option_index, false);
-
 	DisplayGrid(piece_width_in_pixels, piece_height_in_pixels, total_pieces, /*maximum_piece_diameter_in_tiles * tile_width, maximum_piece_diameter_in_tiles * tile_height_normal, maximum_stamp_map_size_in_pixels,*/
-		[&](const cc_u16f piece_index, [[maybe_unused]] const PaletteLine palette_line, SDL::Pixel* const pixels, const int pitch)
+		[&](const cc_u16f piece_index, [[maybe_unused]] const cc_u8f palette_line_index, const PaletteLines palette_lines, SDL::Pixel* const pixels, const int pitch)
 		{
-			DrawSprite(piece_index * tiles_per_stamp, shared_palette_line, tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, piece_diameter_in_tiles, piece_diameter_in_tiles);
+			DrawSprite(piece_index * tiles_per_stamp, palette_lines[palette_line_option_index], tile_width, tile_height_normal, total_pieces * tiles_per_stamp, [&](const cc_u16f word_index){return state.mega_cd.word_ram.buffer[word_index];}, pixels, pitch, piece_diameter_in_tiles, piece_diameter_in_tiles);
 		}
 	, "Stamp", "Stamps");
 }
