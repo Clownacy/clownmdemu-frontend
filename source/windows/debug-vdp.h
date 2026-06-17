@@ -102,7 +102,6 @@ namespace DebugVDP
 			bool multiple_palette_lines);
 
 		void RegenerateIfNeeded(
-			SDL::Renderer &renderer,
 			std::size_t piece_width,
 			std::size_t piece_height,
 			cc_u8f brightness_index,
