@@ -27,7 +27,7 @@ public:
 
 	TarBall(const DataSpan &input_buffer, std::size_t uncompressed_size = 0, Compression compression = Compression::None);
 
-	std::optional<DataSpan> OpenFile(const std::filesystem::path &path);
+	std::optional<DataSpan> OpenFile(const std::filesystem::path &path) const;
 };
 
 #endif // TAR_H

@@ -24,7 +24,7 @@ TarBall::TarBall(const DataSpan &input_buffer, const std::size_t uncompressed_si
 	}
 }
 
-std::optional<TarBall::DataSpan> TarBall::OpenFile(const std::filesystem::path &path)
+std::optional<TarBall::DataSpan> TarBall::OpenFile(const std::filesystem::path &path) const
 {
 	const auto &ReadOctal = [&](const std::size_t offset, const std::size_t length)
 	{
