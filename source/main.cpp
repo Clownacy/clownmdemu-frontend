@@ -15,18 +15,29 @@
 
 #include "file-utilities.h"
 #include "frontend.h"
+#include "tar.h"
 #include "version.h"
+
+namespace CompressedGameControllerDB
+{
+	#include "../../assets/gamecontrollerdb/archive.tar.lzma.h"
+}
 
 template<typename... Args>
 static bool InitialiseSDLAndFrontend(Args &&...args)
 {
-	// Initialise SDL
+	// Initialise SDL.
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD))
 	{
 		debug_log.SDLError("SDL_Init");
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fatal Error", "Unable to initialise SDL. The program will now close.", nullptr);
 		return false;
 	}
+
+	// Load additional controller mappings.
+	const auto archive = TarBall(CompressedGameControllerDB::buffer, CompressedGameControllerDB::uncompressed_size, TarBall::Compression::LZMA);
+	const auto mappings = archive.OpenFile("SDL_GameControllerDB/gamecontrollerdb.txt").value();
+	SDL_AddGamepadMappingsFromIO(SDL::IOStream(std::data(mappings), std::size(mappings)), false);
 
 	frontend.emplace(std::forward<Args>(args)...);
 	return true;

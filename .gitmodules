@@ -29,3 +29,6 @@
 [submodule "libraries/function2"]
 	path = libraries/function2
 	url = https://github.com/Naios/function2
+[submodule "assets/SDL_GameControllerDB"]
+	path = assets/gamecontrollerdb/SDL_GameControllerDB
+	url = https://github.com/mdqinc/SDL_GameControllerDB/
