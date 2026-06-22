@@ -134,6 +134,12 @@ enum class ScreenScaling
 	PIXEL_PERFECT,
 };
 
+enum class ControllerLayout
+{
+	FOUR_BUTTON,
+	SIX_BUTTON,
+};
+
 #ifdef FILE_PATH_SUPPORT
 struct RecentSoftware
 {
@@ -150,6 +156,7 @@ static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: 
 static std::array<Input*, 8> bound_inputs;
 
 static ScreenScaling screen_scaling;
+static ControllerLayout controller_layout;
 
 #ifndef NDEBUG
 static bool dear_imgui_demo_window;
@@ -452,6 +459,31 @@ private:
 		}};
 
 		DO_FORM_OPTION("Protocol", "Which method to read control pad inputs.", input_protocols, ControllerProtocol);
+
+		static const std::array<ComboItemAndToolTip, 2> input_layouts = {{
+			{
+				"4-button",
+				"Intended for Xbox, PlayStation, and\n"
+				"Nintendo controllers.\n"
+				"\n"
+				"Binds X and Z to the shoulder buttons,\n"
+				"so that A, B, C, and Y can be bound to\n"
+				"the four face-buttons."
+			},
+			{
+				"6-button",
+				"Intended for Sega Saturn-style controllers.\n"
+				"\n"
+				"Binds all six face-buttons directly to their\n"
+				"Mega Drive counterparts."
+			}
+		}};
+
+		DO_FORM_LAYOUT("Button Layout", "How controller inputs are mapped to the emulated Control Pad.");
+
+		auto controller_layout_int = static_cast<int>(controller_layout);
+		if (ComboWithToolTips("##Button Layout", controller_layout_int, std::data(input_layouts), std::size(input_layouts)))
+			controller_layout = static_cast<ControllerLayout>(controller_layout_int);
 
 		if (ImGui::BeginTable("Control Pad Devices", 2, ImGuiTableFlags_Borders))
 		{
@@ -1117,6 +1149,7 @@ void Frontend::LoadConfiguration()
 #endif
 	bool vsync = false;
 	screen_scaling = ScreenScaling::FIT;
+	controller_layout = ControllerLayout::FOUR_BUTTON;
 	tall_double_resolution_mode = false;
 	unsigned int widescreen_tiles = 0;
 #ifdef __EMSCRIPTEN__
@@ -1202,6 +1235,8 @@ void Frontend::LoadConfiguration()
 					vsync = value_boolean;
 				else if (name == "screen-scaling")
 					screen_scaling = value_integer.has_value() ? static_cast<ScreenScaling>(*value_integer) : ScreenScaling::FIT;
+				else if (name == "controller-layout")
+					controller_layout = value_integer.has_value() ? static_cast<ControllerLayout>(*value_integer) : ControllerLayout::FOUR_BUTTON;
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
 				else if (name == "widescreen-tiles")
@@ -1415,6 +1450,7 @@ void Frontend::SaveConfiguration()
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_INTEGER_OPTION(file, "screen-scaling", static_cast<int>(screen_scaling));
+		PRINT_INTEGER_OPTION(file, "controller-layout", static_cast<int>(controller_layout));
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_INTEGER_OPTION(file, "widescreen-tiles", emulator->GetWidescreenTiles());
 	#ifndef __EMSCRIPTEN__
@@ -1934,23 +1970,54 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 				// Check if the current controller is the one that matches this event.
 				if (controller_input.joystick_instance_id == event.gbutton.which)
 				{
+					#define DO_BUTTON(state, code) case code: controller_input.input.SetButton(state, pressed); break
+
+					switch (controller_layout)
+					{
+						case ControllerLayout::FOUR_BUTTON:
+							switch (event.gbutton.button)
+							{
+								// This matches Genesis Plus GX's controller layout in RetroArch.
+								DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_WEST          );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_SOUTH         );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_GAMEPAD_BUTTON_EAST          );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+								DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START         );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK          );
+							}
+
+							break;
+
+						case ControllerLayout::SIX_BUTTON:
+							switch (event.gbutton.button)
+							{
+								// This matches SDL3's own 6-button-to-XInput mapping.
+								DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_SOUTH         );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_EAST          );
+								// C is handled in the axis code...
+								DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_WEST          );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+								DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START         );
+								DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK          );
+
+								// TODO: Merge this with the axis code version.
+								case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
+									controller_input.input.fast_forward = pressed;
+									UpdateFastForwardStatus();
+									break;
+							}
+
+							break;
+					}
+
+
+					#undef DO_BUTTON
+
 					switch (event.gbutton.button)
 					{
-						#define DO_BUTTON(state, code) case code: controller_input.input.SetButton(state, pressed); break
-
-						// TODO: This is currently just Genesis Plus GX's libretro button layout,
-						// but I would like something closer to a real 6-button controller's layout.
-						DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_WEST          );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_SOUTH         );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_GAMEPAD_BUTTON_EAST          );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
-						DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START         );
-						DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK          );
-
-						#undef DO_BUTTON
-
 						case SDL_GAMEPAD_BUTTON_DPAD_UP:
 						case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
 						case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
@@ -2089,8 +2156,17 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 								{
 									if (controller_input.right_trigger != held)
 									{
-										controller_input.input.fast_forward = held;
-										UpdateFastForwardStatus();
+										switch (controller_layout)
+										{
+											case ControllerLayout::FOUR_BUTTON:
+												controller_input.input.fast_forward = held;
+												UpdateFastForwardStatus();
+												break;
+
+											case ControllerLayout::SIX_BUTTON:
+												controller_input.input.SetButton(CLOWNMDEMU_BUTTON_C, held);
+												break;
+										}
 									}
 
 									controller_input.right_trigger = held;
