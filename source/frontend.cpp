@@ -883,20 +883,30 @@ static void AddToRecentSoftware(const std::filesystem::path &path, const bool is
 
 void Frontend::UpdateFastForwardStatus()
 {
-	unsigned int speed = keyboard_input.fast_forward;
+	unsigned int speed = 0;
 
-	for (const auto &controller_input : controller_input_list)
-		speed += controller_input.input.fast_forward;
+	if (!emulator->IsPaused() && emulator_has_focus)
+	{
+		speed += keyboard_input.fast_forward;
+
+		for (const auto &controller_input : controller_input_list)
+			speed += controller_input.input.fast_forward;
+	}
 
 	emulator->SetFastForwarding(speed);
 }
 
 void Frontend::UpdateRewindStatus()
 {
-	bool will_rewind = keyboard_input.rewind;
+	bool will_rewind = false;
 
-	for (const auto &controller_input : controller_input_list)
-		will_rewind |= controller_input.input.rewind != 0;
+	if (emulator_has_focus)
+	{
+		will_rewind |= keyboard_input.rewind != 0;
+
+		for (const auto &controller_input : controller_input_list)
+			will_rewind |= controller_input.input.rewind != 0;
+	}
 
 	emulator->rewinding = will_rewind;
 }
@@ -1871,9 +1881,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 						// Toggle fast-forward
 						keyboard_input.fast_forward += delta;
 
-						if ((!emulator->IsPaused() && emulator_has_focus) || !pressed)
-							UpdateFastForwardStatus();
-
 						if (pressed && emulator->IsPaused())
 							emulator_frame_advance = true;
 
@@ -1881,10 +1888,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 					case InputBinding::REWIND:
 						keyboard_input.rewind += delta;
-
-						if (emulator_has_focus || !pressed)
-							UpdateRewindStatus();
-
 						break;
 
 					default:
@@ -2006,7 +2009,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 								// TODO: Merge this with the axis code version.
 								case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
 									controller_input.input.fast_forward = pressed;
-									UpdateFastForwardStatus();
 									break;
 							}
 
@@ -2145,10 +2147,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 								if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
 								{
 									if (controller_input.left_trigger != held)
-									{
 										controller_input.input.rewind = held;
-										UpdateRewindStatus();
-									}
 
 									controller_input.left_trigger = held;
 								}
@@ -2160,7 +2159,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 										{
 											case ControllerLayout::FOUR_BUTTON:
 												controller_input.input.fast_forward = held;
-												UpdateFastForwardStatus();
 												break;
 
 											case ControllerLayout::SIX_BUTTON:
@@ -2366,6 +2364,9 @@ void Frontend::DrawStatusIndicator(const ImVec2 &display_position, const ImVec2 
 
 void Frontend::Update()
 {
+	UpdateFastForwardStatus();
+	UpdateRewindStatus();
+
 	if (emulator_on && (!emulator->IsPaused() || emulator_frame_advance) && !file_utilities.IsDialogOpen() && (!emulator->rewinding || !emulator->IsRewindExhausted()))
 	{
 		emulator->Update();
