@@ -1130,7 +1130,7 @@ void Frontend::LoadConfiguration()
 
 	if (!file)
 	{
-		// Failed to read configuration file: set defaults key bindings.
+		// Failed to read configuration file: set default key bindings.
 		keyboard_bindings.fill(InputBinding::NONE);
 
 		keyboard_bindings[SDL_SCANCODE_UP] = InputBinding::CONTROLLER_UP;
@@ -1145,11 +1145,11 @@ void Frontend::LoadConfiguration()
 		keyboard_bindings[SDL_SCANCODE_E] = InputBinding::CONTROLLER_Z;
 		keyboard_bindings[SDL_SCANCODE_RETURN] = InputBinding::CONTROLLER_START;
 		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = InputBinding::CONTROLLER_MODE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_PAUSE, nullptr)] = InputBinding::PAUSE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F11, nullptr)] = InputBinding::TOGGLE_FULLSCREEN;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_TAB, nullptr)] = InputBinding::RESET;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F5, nullptr)] = InputBinding::QUICK_SAVE_STATE;
-		keyboard_bindings[SDL_GetScancodeFromKey(SDLK_F9, nullptr)] = InputBinding::QUICK_LOAD_STATE;
+		keyboard_bindings[SDL_SCANCODE_PAUSE] = InputBinding::PAUSE;
+		keyboard_bindings[SDL_SCANCODE_F11] = InputBinding::TOGGLE_FULLSCREEN;
+		keyboard_bindings[SDL_SCANCODE_TAB] = InputBinding::RESET;
+		keyboard_bindings[SDL_SCANCODE_F5] = InputBinding::QUICK_SAVE_STATE;
+		keyboard_bindings[SDL_SCANCODE_F9] = InputBinding::QUICK_LOAD_STATE;
 		keyboard_bindings[SDL_SCANCODE_SPACE] = InputBinding::FAST_FORWARD;
 		keyboard_bindings[SDL_SCANCODE_F] = InputBinding::FAST_FORWARD;
 		keyboard_bindings[SDL_SCANCODE_R] = InputBinding::REWIND;
