@@ -32,6 +32,7 @@ unsigned int Input::GetButton(const InputBinding button) const
 
 	return total_presses;
 }
+
 unsigned int KeyboardInput::GetButtonInternal(const InputBinding button) const
 {
 	int total_keys;

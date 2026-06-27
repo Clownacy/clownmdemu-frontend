@@ -738,7 +738,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 
 	switch (button_id)
 	{
-		#define DO_KEY(state, code) case state: return keyboard_input.GetButton(code) != 0
+		#define DO_KEY(state, code) case state: return input->GetButton(code) != 0
 
 		DO_KEY(CLOWNMDEMU_BUTTON_UP, InputBinding::CONTROLLER_UP);
 		DO_KEY(CLOWNMDEMU_BUTTON_DOWN, InputBinding::CONTROLLER_DOWN);
