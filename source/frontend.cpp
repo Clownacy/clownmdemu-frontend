@@ -1738,9 +1738,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 	ImGuiIO &io = ImGui::GetIO();
 
-	bool give_event_to_imgui = true;
-	static bool anything_pressed_during_alt;
-
 	// Process the event
 	switch (event.type)
 	{
@@ -1753,8 +1750,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			// Ignore repeated key inputs caused by holding the key down
 			if (event.key.repeat)
 				break;
-
-			anything_pressed_during_alt = true;
 
 			// Ignore CTRL+TAB (used by Dear ImGui for cycling between windows).
 			if (event.key.key == SDLK_TAB && (SDL_GetModState() & SDL_KMOD_CTRL) != 0)
@@ -1840,21 +1835,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			if (key_pressed[event.key.scancode] != pressed)
 			{
 				key_pressed[event.key.scancode] = pressed;
-
-				// This chunk of code prevents ALT-ENTER from causing ImGui to enter the menu bar.
-				// TODO: Remove this when Dear ImGui stops being dumb.
-				if (event.key.scancode == SDL_SCANCODE_LALT)
-				{
-					if (pressed)
-					{
-						anything_pressed_during_alt = false;
-					}
-					else
-					{
-						if (anything_pressed_during_alt)
-							give_event_to_imgui = false;
-					}
-				}
 
 				const int delta = pressed ? 1 : -1;
 
@@ -2014,7 +1994,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 							break;
 					}
-
 
 					#undef DO_BUTTON
 
@@ -2203,8 +2182,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			break;
 	}
 
-	if (give_event_to_imgui)
-		ImGui_ImplSDL3_ProcessEvent(&event);
+	ImGui_ImplSDL3_ProcessEvent(&event);
 }
 
 void Frontend::HandleEvent(const SDL_Event &event)
