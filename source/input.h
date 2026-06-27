@@ -37,12 +37,6 @@ namespace Input
 		TOTAL,
 	};
 
-	enum class ControllerLayout
-	{
-		FOUR_BUTTON,
-		SIX_BUTTON,
-	};
-
 	class Device
 	{
 	public:
@@ -93,6 +87,14 @@ namespace Input
 		virtual unsigned int GetButtonInternal(Binding button) const override;
 
 	public:
+		enum class Layout
+		{
+			FOUR_BUTTON,
+			SIX_BUTTON,
+		};
+
+		static inline Layout layout;
+
 		const SDL_JoystickID joystick_instance_id;
 
 		Controller(SDL_JoystickID joystick_instance_id);
@@ -102,8 +104,6 @@ namespace Input
 	extern std::list<Controller> controllers;
 
 	extern std::array<const Device*, 8> bound_devices;
-
-	extern ControllerLayout controller_layout;
 }
 
 #endif // INPUT_H

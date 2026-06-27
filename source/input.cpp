@@ -7,9 +7,7 @@ std::list<Input::Controller> Input::controllers;
 
 std::array<const Input::Device*, 8> Input::bound_devices;
 
-Input::ControllerLayout Input::controller_layout;
-
-unsigned int Input::Device::GetButton(const Input::Binding button) const
+unsigned int Input::Device::GetButton(const Binding button) const
 {
 	const unsigned int total_presses = GetButtonInternal(button);
 
@@ -33,7 +31,7 @@ unsigned int Input::Device::GetButton(const Input::Binding button) const
 	return total_presses;
 }
 
-unsigned int Input::Keyboard::GetButtonInternal(const Input::Binding button) const
+unsigned int Input::Keyboard::GetButtonInternal(const Binding button) const
 {
 	int total_keys;
 	const bool* const keyboard_state = SDL_GetKeyboardState(&total_keys);
@@ -55,7 +53,7 @@ Input::Controller::Controller(const SDL_JoystickID joystick_instance_id)
 	, Device(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
 {}
 
-unsigned int Input::Controller::GetButtonInternal(const Input::Binding button) const
+unsigned int Input::Controller::GetButtonInternal(const Binding button) const
 {
 	const auto gamepad = SDL_GetGamepadFromID(joystick_instance_id);
 
@@ -108,86 +106,86 @@ unsigned int Input::Controller::GetButtonInternal(const Input::Binding button) c
 
 	switch (button)
 	{
-		case Input::Binding::CONTROLLER_UP:
+		case Binding::CONTROLLER_UP:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_UP) + StickHeld(0);
 
-		case Input::Binding::CONTROLLER_DOWN:
+		case Binding::CONTROLLER_DOWN:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_DOWN) + StickHeld(1);
 
-		case Input::Binding::CONTROLLER_LEFT:
+		case Binding::CONTROLLER_LEFT:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_LEFT) + StickHeld(2);
 
-		case Input::Binding::CONTROLLER_RIGHT:
+		case Binding::CONTROLLER_RIGHT:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_RIGHT) + StickHeld(3);
 
-		case Input::Binding::CONTROLLER_A:
-			switch (controller_layout)
+		case Binding::CONTROLLER_A:
+			switch (layout)
 			{
-				case ControllerLayout::FOUR_BUTTON:
+				case Layout::FOUR_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_WEST);
-				case ControllerLayout::SIX_BUTTON:
+				case Layout::SIX_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_SOUTH);
 			}
 			break;
 
-		case Input::Binding::CONTROLLER_B:
-			switch (controller_layout)
+		case Binding::CONTROLLER_B:
+			switch (layout)
 			{
-				case ControllerLayout::FOUR_BUTTON:
+				case Layout::FOUR_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_SOUTH);
-				case ControllerLayout::SIX_BUTTON:
+				case Layout::SIX_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_EAST);
 			}
 			break;
 
-		case Input::Binding::CONTROLLER_C:
-			switch (controller_layout)
+		case Binding::CONTROLLER_C:
+			switch (layout)
 			{
-				case ControllerLayout::FOUR_BUTTON:
+				case Layout::FOUR_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_EAST);
-				case ControllerLayout::SIX_BUTTON:
+				case Layout::SIX_BUTTON:
 					return TriggerHeld(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
 			}
 			break;
 
-		case Input::Binding::CONTROLLER_X:
-			switch (controller_layout)
+		case Binding::CONTROLLER_X:
+			switch (layout)
 			{
-				case ControllerLayout::FOUR_BUTTON:
+				case Layout::FOUR_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
-				case ControllerLayout::SIX_BUTTON:
+				case Layout::SIX_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_WEST);
 			}
 			break;
 
-		case Input::Binding::CONTROLLER_Y:
+		case Binding::CONTROLLER_Y:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_NORTH);
 
-		case Input::Binding::CONTROLLER_Z:
+		case Binding::CONTROLLER_Z:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
 
-		case Input::Binding::CONTROLLER_START:
+		case Binding::CONTROLLER_START:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_START);
 
-		case Input::Binding::CONTROLLER_MODE:
+		case Binding::CONTROLLER_MODE:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_BACK);
 
-		case Input::Binding::REWIND:
-			switch (controller_layout)
+		case Binding::REWIND:
+			switch (layout)
 			{
-				case ControllerLayout::FOUR_BUTTON:
+				case Layout::FOUR_BUTTON:
 					return TriggerHeld(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
-				case ControllerLayout::SIX_BUTTON:
+				case Layout::SIX_BUTTON:
 					return ButtonHeld(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
 			}
 			break;
 
-		case Input::Binding::FAST_FORWARD:
-			switch (controller_layout)
+		case Binding::FAST_FORWARD:
+			switch (layout)
 			{
-				case ControllerLayout::FOUR_BUTTON:
+				case Layout::FOUR_BUTTON:
 					return TriggerHeld(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
-				case ControllerLayout::SIX_BUTTON:
+				case Layout::SIX_BUTTON:
 					return TriggerHeld(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
 			}
 			break;

@@ -378,9 +378,9 @@ private:
 
 		DO_FORM_LAYOUT("Button Layout", "How controller inputs are mapped to the emulated Control Pad.");
 
-		auto controller_layout_int = static_cast<int>(Input::controller_layout);
+		auto controller_layout_int = static_cast<int>(Input::Controller::layout);
 		if (ComboWithToolTips("##Button Layout", controller_layout_int, std::data(input_layouts), std::size(input_layouts)))
-			Input::controller_layout = static_cast<Input::ControllerLayout>(controller_layout_int);
+			Input::Controller::layout = static_cast<Input::Controller::Layout>(controller_layout_int);
 
 		if (ImGui::BeginTable("Control Pad Devices", 2, ImGuiTableFlags_Borders))
 		{
@@ -1068,7 +1068,7 @@ void Frontend::LoadConfiguration()
 #endif
 	bool vsync = false;
 	screen_scaling = ScreenScaling::FIT;
-	Input::controller_layout = Input::ControllerLayout::FOUR_BUTTON;
+	Input::Controller::layout = Input::Controller::Layout::FOUR_BUTTON;
 	tall_double_resolution_mode = false;
 	unsigned int widescreen_tiles = 0;
 #ifdef __EMSCRIPTEN__
@@ -1152,7 +1152,7 @@ void Frontend::LoadConfiguration()
 				else if (name == "screen-scaling")
 					screen_scaling = value_integer.has_value() ? static_cast<ScreenScaling>(*value_integer) : ScreenScaling::FIT;
 				else if (name == "controller-layout")
-					Input::controller_layout = value_integer.has_value() ? static_cast<Input::ControllerLayout>(*value_integer) : Input::ControllerLayout::FOUR_BUTTON;
+					Input::Controller::layout = value_integer.has_value() ? static_cast<Input::Controller::Layout>(*value_integer) : Input::Controller::Layout::FOUR_BUTTON;
 				else if (name == "tall-interlace-mode-2")
 					tall_double_resolution_mode = value_boolean;
 				else if (name == "widescreen-tiles")
@@ -1368,7 +1368,7 @@ void Frontend::SaveConfiguration()
 	#endif
 		PRINT_BOOLEAN_OPTION(file, "vsync", window->GetVSync());
 		PRINT_INTEGER_OPTION(file, "screen-scaling", static_cast<int>(screen_scaling));
-		PRINT_INTEGER_OPTION(file, "controller-layout", static_cast<int>(Input::controller_layout));
+		PRINT_INTEGER_OPTION(file, "controller-layout", static_cast<int>(Input::Controller::layout));
 		PRINT_BOOLEAN_OPTION(file, "tall-interlace-mode-2", tall_double_resolution_mode);
 		PRINT_INTEGER_OPTION(file, "widescreen-tiles", emulator->GetWidescreenTiles());
 	#ifndef __EMSCRIPTEN__
