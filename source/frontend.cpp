@@ -2008,7 +2008,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 								// TODO: Merge this with the axis code version.
 								case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
-									controller_input.input.fast_forward = pressed;
+									controller_input.input.rewind = pressed;
 									break;
 							}
 
@@ -2147,7 +2147,18 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 								if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
 								{
 									if (controller_input.left_trigger != held)
-										controller_input.input.rewind = held;
+									{
+										switch (controller_layout)
+										{
+											case ControllerLayout::FOUR_BUTTON:
+												controller_input.input.rewind = held;
+												break;
+
+											case ControllerLayout::SIX_BUTTON:
+												controller_input.input.fast_forward = held;
+												break;
+										}
+									}
 
 									controller_input.left_trigger = held;
 								}
