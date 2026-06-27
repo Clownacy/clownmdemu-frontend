@@ -63,31 +63,6 @@ static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
 
-enum class InputBinding
-{
-	NONE,
-	CONTROLLER_UP,
-	CONTROLLER_DOWN,
-	CONTROLLER_LEFT,
-	CONTROLLER_RIGHT,
-	CONTROLLER_A,
-	CONTROLLER_B,
-	CONTROLLER_C,
-	CONTROLLER_X,
-	CONTROLLER_Y,
-	CONTROLLER_Z,
-	CONTROLLER_START,
-	CONTROLLER_MODE,
-	PAUSE,
-	RESET,
-	FAST_FORWARD,
-	REWIND,
-	QUICK_SAVE_STATE,
-	QUICK_LOAD_STATE,
-	TOGGLE_FULLSCREEN,
-	TOTAL,
-};
-
 enum class ScreenScaling
 {
 	FIT,
@@ -103,8 +78,6 @@ struct RecentSoftware
 };
 #endif
 
-static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
-
 static ScreenScaling screen_scaling;
 
 #ifndef NDEBUG
@@ -117,9 +90,6 @@ private:
 	using Base = WindowPopup<OptionsWindow>;
 
 	static constexpr Uint32 window_flags = 0;
-
-	bool sorted_scancodes_done;
-	std::array<SDL_Scancode, SDL_SCANCODE_COUNT> sorted_scancodes; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 	SDL_Scancode selected_scancode;
 	bool scroll_to_add_bindings_button;
@@ -519,51 +489,43 @@ private:
 			"Toggle Fullscreen"
 		};
 
-		if (!sorted_scancodes_done)
-		{
-			sorted_scancodes_done = true;
-
-			for (std::size_t i = 0; i != std::size(sorted_scancodes); ++i)
-				sorted_scancodes[i] = static_cast<SDL_Scancode>(i);
-
-			std::sort(sorted_scancodes.begin(), sorted_scancodes.end(),
-				[](const auto &binding_1, const auto &binding_2)
-				{
-					return keyboard_bindings[binding_1] < keyboard_bindings[binding_2];
-				}
-			);
-		}
-
 		if (ImGui::BeginTable("Keyboard Bindings", 3, ImGuiTableFlags_Borders))
 		{
 			ImGui::TableSetupColumn("Key");
 			ImGui::TableSetupColumn("Action");
 			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableHeadersRow();
-			for (const auto &scancode : sorted_scancodes)
+			for (std::size_t keyboard_bindings_index = 0; keyboard_bindings_index < std::size(keyboard_bindings); ++keyboard_bindings_index)
 			{
-				if (keyboard_bindings[scancode] != InputBinding::NONE)
-				{
-					ImGui::PushID(&scancode);
+				auto &input_bindings = keyboard_bindings[keyboard_bindings_index];
 
-					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(SDL_GetScancodeName(static_cast<SDL_Scancode>(scancode)));
+				if (&input_bindings == &keyboard_bindings[InputBinding::NONE])
+					continue;
 
-					ImGui::TableNextColumn();
-					ImGui::SetNextItemWidth(-FLT_MIN);
-					int index = static_cast<int>(keyboard_bindings[scancode]) - 1;
-					if (ImGui::Combo("##action", &index, std::data(binding_names) + 1, std::size(binding_names) - 1))
+				ImGui::PushID(&input_bindings);
+
+				std::erase_if(input_bindings,
+					[&](const auto &scancode)
 					{
-						keyboard_bindings[scancode] = static_cast<InputBinding>(index + 1);
-						sorted_scancodes_done = false;
+						ImGui::PushID(scancode);
+
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted(SDL_GetScancodeName(scancode));
+
+						ImGui::TableNextColumn();
+						ImGui::SetNextItemWidth(-FLT_MIN);
+						ImGui::TextUnformatted(binding_names[keyboard_bindings_index]);
+
+						ImGui::TableNextColumn();
+						const bool remove = ImGui::Button("X");
+
+						ImGui::PopID();
+
+						return remove;
 					}
+				);
 
-					ImGui::TableNextColumn();
-					if (ImGui::Button("X"))
-						keyboard_bindings[scancode] = InputBinding::NONE;
-
-					ImGui::PopID();
-				}
+				ImGui::PopID();
 			}
 			ImGui::EndTable();
 		}
@@ -625,8 +587,7 @@ private:
 						{
 							ImGui::CloseCurrentPopup();
 							exit = true;
-							keyboard_bindings[selected_scancode] = static_cast<InputBinding>(i);
-							sorted_scancodes_done = false;
+							keyboard_bindings[i].emplace(selected_scancode);
 							scroll_to_add_bindings_button = true;
 						}
 					}
@@ -651,9 +612,6 @@ public:
 
 	friend Base;
 };
-
-static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings_cached; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
-static std::array<bool, SDL_SCANCODE_COUNT> key_pressed; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
 #ifdef FILE_PATH_SUPPORT
 static std::list<RecentSoftware> recent_software_list;
@@ -1131,28 +1089,25 @@ void Frontend::LoadConfiguration()
 	if (!file)
 	{
 		// Failed to read configuration file: set default key bindings.
-		keyboard_bindings.fill(InputBinding::NONE);
-
-		keyboard_bindings[SDL_SCANCODE_UP] = InputBinding::CONTROLLER_UP;
-		keyboard_bindings[SDL_SCANCODE_DOWN] = InputBinding::CONTROLLER_DOWN;
-		keyboard_bindings[SDL_SCANCODE_LEFT] = InputBinding::CONTROLLER_LEFT;
-		keyboard_bindings[SDL_SCANCODE_RIGHT] = InputBinding::CONTROLLER_RIGHT;
-		keyboard_bindings[SDL_SCANCODE_A] = InputBinding::CONTROLLER_A;
-		keyboard_bindings[SDL_SCANCODE_S] = InputBinding::CONTROLLER_B;
-		keyboard_bindings[SDL_SCANCODE_D] = InputBinding::CONTROLLER_C;
-		keyboard_bindings[SDL_SCANCODE_Q] = InputBinding::CONTROLLER_X;
-		keyboard_bindings[SDL_SCANCODE_W] = InputBinding::CONTROLLER_Y;
-		keyboard_bindings[SDL_SCANCODE_E] = InputBinding::CONTROLLER_Z;
-		keyboard_bindings[SDL_SCANCODE_RETURN] = InputBinding::CONTROLLER_START;
-		keyboard_bindings[SDL_SCANCODE_BACKSPACE] = InputBinding::CONTROLLER_MODE;
-		keyboard_bindings[SDL_SCANCODE_PAUSE] = InputBinding::PAUSE;
-		keyboard_bindings[SDL_SCANCODE_F11] = InputBinding::TOGGLE_FULLSCREEN;
-		keyboard_bindings[SDL_SCANCODE_TAB] = InputBinding::RESET;
-		keyboard_bindings[SDL_SCANCODE_F5] = InputBinding::QUICK_SAVE_STATE;
-		keyboard_bindings[SDL_SCANCODE_F9] = InputBinding::QUICK_LOAD_STATE;
-		keyboard_bindings[SDL_SCANCODE_SPACE] = InputBinding::FAST_FORWARD;
-		keyboard_bindings[SDL_SCANCODE_F] = InputBinding::FAST_FORWARD;
-		keyboard_bindings[SDL_SCANCODE_R] = InputBinding::REWIND;
+		keyboard_bindings[InputBinding::CONTROLLER_UP] = {SDL_SCANCODE_UP};
+		keyboard_bindings[InputBinding::CONTROLLER_DOWN] = {SDL_SCANCODE_DOWN};
+		keyboard_bindings[InputBinding::CONTROLLER_LEFT] = {SDL_SCANCODE_LEFT};
+		keyboard_bindings[InputBinding::CONTROLLER_RIGHT] = {SDL_SCANCODE_RIGHT};
+		keyboard_bindings[InputBinding::CONTROLLER_A] = {SDL_SCANCODE_A};
+		keyboard_bindings[InputBinding::CONTROLLER_B] = {SDL_SCANCODE_S};
+		keyboard_bindings[InputBinding::CONTROLLER_C] = {SDL_SCANCODE_D};
+		keyboard_bindings[InputBinding::CONTROLLER_X] = {SDL_SCANCODE_Q};
+		keyboard_bindings[InputBinding::CONTROLLER_Y] = {SDL_SCANCODE_W};
+		keyboard_bindings[InputBinding::CONTROLLER_Z] = {SDL_SCANCODE_E};
+		keyboard_bindings[InputBinding::CONTROLLER_START] = {SDL_SCANCODE_RETURN};
+		keyboard_bindings[InputBinding::CONTROLLER_MODE] = {SDL_SCANCODE_BACKSPACE};
+		keyboard_bindings[InputBinding::PAUSE] = {SDL_SCANCODE_PAUSE};
+		keyboard_bindings[InputBinding::TOGGLE_FULLSCREEN] = {SDL_SCANCODE_F11};
+		keyboard_bindings[InputBinding::RESET] = {SDL_SCANCODE_TAB};
+		keyboard_bindings[InputBinding::QUICK_SAVE_STATE] = {SDL_SCANCODE_F5};
+		keyboard_bindings[InputBinding::QUICK_LOAD_STATE] = {SDL_SCANCODE_F9};
+		keyboard_bindings[InputBinding::FAST_FORWARD] = {SDL_SCANCODE_SPACE, SDL_SCANCODE_F};
+		keyboard_bindings[InputBinding::REWIND] = {SDL_SCANCODE_R};
 	}
 	else
 	{
@@ -1207,7 +1162,7 @@ void Frontend::LoadConfiguration()
 
 					const auto binding_index = FileUtilities::StringToInteger<unsigned int>(value);
 
-					keyboard_bindings[scancode] = [&]()
+					const auto input_binding = [&]()
 					{
 						if (binding_index.has_value())
 						{
@@ -1278,6 +1233,8 @@ void Frontend::LoadConfiguration()
 
 						return InputBinding::NONE;
 					}();
+
+					keyboard_bindings[input_binding].emplace(scancode);
 				}
 			}
 		#ifdef FILE_PATH_SUPPORT
@@ -1407,13 +1364,16 @@ void Frontend::SaveConfiguration()
 
 		for (std::size_t i = 0; i != std::size(keyboard_bindings); ++i)
 		{
-			const auto &keyboard_binding = keyboard_bindings[i];
+			const auto &input_bindings = keyboard_bindings[i];
 
-			if (keyboard_binding != InputBinding::NONE)
+			if (&input_bindings == &keyboard_bindings[InputBinding::NONE])
+				continue;
+
+			for (const auto &scancode : input_bindings)
 			{
 				const auto &binding_string = [&]()
 				{
-					switch (keyboard_binding)
+					switch (static_cast<InputBinding>(i))
 					{
 						case InputBinding::NONE:
 							return "INPUT_BINDING_NONE";
@@ -1483,7 +1443,7 @@ void Frontend::SaveConfiguration()
 					return "INPUT_BINDING_NONE";
 				}();
 
-				const std::string buffer = fmt::format("{} = {}" ENDL, i, binding_string);
+				const std::string buffer = fmt::format("{} = {}" ENDL, static_cast<int>(scancode), binding_string);
 				SDL_WriteIO(file, buffer.data(), buffer.size());
 			}
 		}
@@ -1694,78 +1654,44 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 				window->SetFullscreen(false);
 			}
 
-			// Prevent invalid memory accesses due to future API expansions.
-			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
-			if (event.key.scancode >= keyboard_bindings.size())
-				break;
-
-			switch (keyboard_bindings[event.key.scancode])
-			{
-				case InputBinding::TOGGLE_FULLSCREEN:
-					window->ToggleFullscreen();
-					break;
-
-				default:
-					break;
-			}
+			if (keyboard_bindings[InputBinding::TOGGLE_FULLSCREEN].contains(event.key.scancode))
+				window->ToggleFullscreen();
 
 			// Many inputs should not be acted upon while the emulator is not running.
 			if (emulator_on && emulator_has_focus)
 			{
-				switch (keyboard_bindings[event.key.scancode])
+				if (keyboard_bindings[InputBinding::PAUSE].contains(event.key.scancode))
+					emulator->SetPaused(!emulator->IsPaused());
+
+				if (keyboard_bindings[InputBinding::RESET].contains(event.key.scancode))
 				{
-					case InputBinding::PAUSE:
-						emulator->SetPaused(!emulator->IsPaused());
-						break;
+					emulator->SoftReset();
+					emulator->SetPaused(false);
+				}
 
-					case InputBinding::RESET:
-						// Soft-reset console
-						emulator->SoftReset();
+				if (keyboard_bindings[InputBinding::QUICK_SAVE_STATE].contains(event.key.scancode))
+					quick_save_state.emplace(*emulator);
+
+				if (keyboard_bindings[InputBinding::QUICK_LOAD_STATE].contains(event.key.scancode))
+				{
+					if (quick_save_state)
+					{
+						quick_save_state->Apply(*emulator);
 						emulator->SetPaused(false);
-						break;
-
-					case InputBinding::QUICK_SAVE_STATE:
-						// Save save state
-						quick_save_state.emplace(*emulator);
-						break;
-
-					case InputBinding::QUICK_LOAD_STATE:
-						// Load save state
-						if (quick_save_state)
-						{
-							quick_save_state->Apply(*emulator);
-							emulator->SetPaused(false);
-						}
-
-						break;
-
-					default:
-						break;
+					}
 				}
 			}
 			[[fallthrough]];
 		case SDL_EVENT_KEY_UP:
-		{
-			// Prevent invalid memory accesses due to future API expansions.
-			// TODO: Yet another reason to not use `SDL_SCANCODE_COUNT`.
-			if (event.key.scancode >= keyboard_bindings.size())
-				break;
-
-			// When a key-down is processed, cache the binding so that the corresponding key-up
-			// affects the same input. This is to prevent phantom inputs when a key is unbinded
-			// whilst it is being held.
-			const InputBinding binding = (event.type == SDL_EVENT_KEY_UP ? keyboard_bindings_cached : keyboard_bindings)[event.key.scancode];
-			keyboard_bindings_cached[event.key.scancode] = keyboard_bindings[event.key.scancode];
-
-			const bool pressed = event.key.down;
-
-			if (key_pressed[event.key.scancode] != pressed)
+			for (std::size_t i = 0; i < std::size(keyboard_bindings); ++i)
 			{
-				key_pressed[event.key.scancode] = pressed;
+				if (!keyboard_bindings[i].contains(event.key.scancode))
+					continue;
 
+				const bool pressed = event.key.down;
 				const int delta = pressed ? 1 : -1;
 
-				switch (binding)
+				switch (static_cast<InputBinding>(i))
 				{
 					#define DO_KEY(state, code) case code: keyboard_input.SetButton(state, keyboard_input.GetButton(state) + delta); break
 
@@ -1803,7 +1729,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			}
 
 			break;
-		}
 
 		case SDL_EVENT_GAMEPAD_ADDED:
 		{
