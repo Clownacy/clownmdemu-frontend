@@ -26,6 +26,8 @@ add_executable(clownmdemu WIN32
 	"source/file-utilities.h"
 	"source/frontend.cpp"
 	"source/frontend.h"
+	"source/input.cpp"
+	"source/input.h"
 	"source/raii-wrapper.h"
 	"source/sdl-wrapper.h"
 	"source/sdl-wrapper-extra.h"

@@ -31,6 +31,7 @@
 #include "debug-log.h"
 #include "emulator-instance.h"
 #include "file-utilities.h"
+#include "input.h"
 #include "windows/about.h"
 #include "windows/cheats.h"
 #include "windows/debug-cdc.h"
@@ -61,46 +62,6 @@ static constexpr unsigned int FRAMEBUFFER_WIDTH = VDP_MAX_SCANLINE_WIDTH;
 static constexpr unsigned int FRAMEBUFFER_HEIGHT = VDP_MAX_SCANLINES;
 
 static constexpr char DEFAULT_TITLE[] = "ClownMDEmu";
-
-class Input
-{
-private:
-	std::array<unsigned char, CLOWNMDEMU_BUTTON_MAX> buttons = {0};
-
-public:
-	const std::string name;
-	unsigned char fast_forward = 0;
-	unsigned char rewind = 0;
-
-	Input(std::string name)
-		: name(std::move(name))
-	{}
-
-	unsigned char GetButton(ClownMDEmu_Button button)
-	{
-		return buttons[button];
-	}
-	void SetButton(ClownMDEmu_Button button, unsigned char value);
-};
-
-struct ControllerInput
-{
-	static inline unsigned int controller_number;
-
-	const SDL_JoystickID joystick_instance_id;
-	Sint16 left_stick_x = 0;
-	Sint16 left_stick_y = 0;
-	std::array<bool, 4> left_stick = {false};
-	std::array<bool, 4> dpad = {false};
-	bool left_trigger = false;
-	bool right_trigger = false;
-	Input input;
-
-	ControllerInput(const SDL_JoystickID joystick_instance_id)
-		: joystick_instance_id(joystick_instance_id)
-		, input(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
-	{}
-};
 
 enum class InputBinding
 {
@@ -134,12 +95,6 @@ enum class ScreenScaling
 	PIXEL_PERFECT,
 };
 
-enum class ControllerLayout
-{
-	FOUR_BUTTON,
-	SIX_BUTTON,
-};
-
 #ifdef FILE_PATH_SUPPORT
 struct RecentSoftware
 {
@@ -148,41 +103,13 @@ struct RecentSoftware
 };
 #endif
 
-static std::list<ControllerInput> controller_input_list;
-
-static Input keyboard_input = {"Keyboard"};
 static std::array<InputBinding, SDL_SCANCODE_COUNT> keyboard_bindings; // TODO: `SDL_SCANCODE_COUNT` is an internal macro, so use something standard!
 
-static std::array<Input*, 8> bound_inputs;
-
 static ScreenScaling screen_scaling;
-static ControllerLayout controller_layout;
 
 #ifndef NDEBUG
 static bool dear_imgui_demo_window;
 #endif
-
-void Input::SetButton(const ClownMDEmu_Button button, const unsigned char value)
-{
-	buttons[button] = value;
-
-	if (!value)
-		return;
-
-	// Automatically bind this controller to the first unbound input.
-	for (auto &bound_input : bound_inputs)
-		if (bound_input == this)
-			return;
-
-	for (auto &bound_input : bound_inputs)
-	{
-		if (bound_input == nullptr)
-		{
-			bound_input = this;
-			break;
-		}
-	}
-}
 
 class OptionsWindow : public WindowPopup<OptionsWindow>
 {
