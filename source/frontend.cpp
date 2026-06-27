@@ -1651,7 +1651,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 				break;
 			}
 
-			if (event.key.key == SDLK_ESCAPE)
+			if (event.key.key == SDLK_ESCAPE && emulator_has_focus)
 			{
 				// Exit fullscreen
 				window->SetFullscreen(false);
