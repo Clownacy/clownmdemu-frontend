@@ -1,7 +1,5 @@
 #include "input.h"
 
-#include "../libraries/imgui/imgui.h"
-
 KeyboardInput keyboard_input = {"Keyboard"};
 std::list<ControllerInput> controller_input_list;
 
@@ -52,10 +50,6 @@ unsigned int KeyboardInput::GetButtonInternal(const InputBinding button) const
 
 unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 {
-	// Don't use inputs that are for Dear ImGui.
-	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
-		return 0;
-
 	const auto gamepad = SDL_GetGamepadFromID(joystick_instance_id);
 
 	const auto ButtonHeld = [&](const SDL_GamepadButton button)

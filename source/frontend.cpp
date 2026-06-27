@@ -799,8 +799,9 @@ void Frontend::UpdateFastForwardStatus()
 	if (!emulator->IsPaused() && emulator_has_focus)
 		speed += keyboard_input.GetButton(InputBinding::FAST_FORWARD);
 
-	for (const auto &controller_input : controller_input_list)
-		speed += controller_input.GetButton(InputBinding::FAST_FORWARD);
+	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+		for (const auto &controller_input : controller_input_list)
+			speed += controller_input.GetButton(InputBinding::FAST_FORWARD);
 
 	emulator->SetFastForwarding(speed);
 }
@@ -812,8 +813,9 @@ void Frontend::UpdateRewindStatus()
 	if (emulator_has_focus)
 		will_rewind |= keyboard_input.GetButton(InputBinding::REWIND) != 0;
 
-	for (const auto &controller_input : controller_input_list)
-		will_rewind |= controller_input.GetButton(InputBinding::REWIND) != 0;
+	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
+		for (const auto &controller_input : controller_input_list)
+			will_rewind |= controller_input.GetButton(InputBinding::REWIND) != 0;
 
 	emulator->rewinding = will_rewind;
 }
