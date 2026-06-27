@@ -1788,6 +1788,8 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 void Frontend::HandleEvent(const SDL_Event &event)
 {
+	SDL_Window* const event_window = SDL_GetWindowFromEvent(&event);
+
 	const auto &FilterWindowStateEvents = [&](const char* const window_title)
 	{
 		auto &state = Window::states[window_title];
@@ -1795,12 +1797,12 @@ void Frontend::HandleEvent(const SDL_Event &event)
 		switch (event.type)
 		{
 			case SDL_EVENT_WINDOW_MOVED:
-				if ((SDL_GetWindowFlags(SDL_GetWindowFromID(event.window.windowID)) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED)) == 0)
+				if ((SDL_GetWindowFlags(event_window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED | SDL_WINDOW_MINIMIZED)) == 0)
 					state.position = {event.window.data1, event.window.data2};
 				break;
 
 			case SDL_EVENT_WINDOW_RESIZED:
-				if ((SDL_GetWindowFlags(SDL_GetWindowFromID(event.window.windowID)) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED)) == 0)
+				if ((SDL_GetWindowFlags(event_window) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED | SDL_WINDOW_MINIMIZED)) == 0)
 					state.size = {event.window.data1, event.window.data2};
 				break;
 
@@ -1814,8 +1816,6 @@ void Frontend::HandleEvent(const SDL_Event &event)
 				break;
 		}
 	};
-
-	SDL_Window* const event_window = SDL_GetWindowFromEvent(&event);
 
 	if (event_window == nullptr || event_window == window->GetSDLWindow())
 	{
