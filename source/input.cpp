@@ -1,24 +1,24 @@
 #include "input.h"
 
-KeyboardInput keyboard_input = {"Keyboard"};
-std::list<ControllerInput> controller_input_list;
+Input::Keyboard Input::keyboard = {"Keyboard"};
+std::list<Input::Controller> Input::controllers;
 
-std::array<const Input*, 8> bound_inputs;
+std::array<const Input::Device*, 8> Input::bound_devices;
 
-ControllerLayout controller_layout;
+Input::ControllerLayout Input::controller_layout;
 
-unsigned int Input::GetButton(const InputBinding button) const
+unsigned int Input::Device::GetButton(const Input::Binding button) const
 {
 	const unsigned int total_presses = GetButtonInternal(button);
 
 	if (total_presses != 0)
 	{
 		// Automatically bind this controller to the first unbound input.
-		for (auto &bound_input : bound_inputs)
+		for (auto &bound_input : bound_devices)
 			if (bound_input == this)
 				return total_presses;
 
-		for (auto &bound_input : bound_inputs)
+		for (auto &bound_input : bound_devices)
 		{
 			if (bound_input == nullptr)
 			{
@@ -31,7 +31,7 @@ unsigned int Input::GetButton(const InputBinding button) const
 	return total_presses;
 }
 
-unsigned int KeyboardInput::GetButtonInternal(const InputBinding button) const
+unsigned int Input::Keyboard::GetButtonInternal(const Input::Binding button) const
 {
 	int total_keys;
 	const bool* const keyboard_state = SDL_GetKeyboardState(&total_keys);
@@ -48,7 +48,7 @@ unsigned int KeyboardInput::GetButtonInternal(const InputBinding button) const
 	return total_presses;
 }
 
-unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
+unsigned int Input::Controller::GetButtonInternal(const Input::Binding button) const
 {
 	const auto gamepad = SDL_GetGamepadFromID(joystick_instance_id);
 
@@ -101,19 +101,19 @@ unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 
 	switch (button)
 	{
-		case InputBinding::CONTROLLER_UP:
+		case Input::Binding::CONTROLLER_UP:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_UP) + StickHeld(0);
 
-		case InputBinding::CONTROLLER_DOWN:
+		case Input::Binding::CONTROLLER_DOWN:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_DOWN) + StickHeld(1);
 
-		case InputBinding::CONTROLLER_LEFT:
+		case Input::Binding::CONTROLLER_LEFT:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_LEFT) + StickHeld(2);
 
-		case InputBinding::CONTROLLER_RIGHT:
+		case Input::Binding::CONTROLLER_RIGHT:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_DPAD_RIGHT) + StickHeld(3);
 
-		case InputBinding::CONTROLLER_A:
+		case Input::Binding::CONTROLLER_A:
 			switch (controller_layout)
 			{
 				case ControllerLayout::FOUR_BUTTON:
@@ -123,7 +123,7 @@ unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 			}
 			break;
 
-		case InputBinding::CONTROLLER_B:
+		case Input::Binding::CONTROLLER_B:
 			switch (controller_layout)
 			{
 				case ControllerLayout::FOUR_BUTTON:
@@ -133,7 +133,7 @@ unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 			}
 			break;
 
-		case InputBinding::CONTROLLER_C:
+		case Input::Binding::CONTROLLER_C:
 			switch (controller_layout)
 			{
 				case ControllerLayout::FOUR_BUTTON:
@@ -143,7 +143,7 @@ unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 			}
 			break;
 
-		case InputBinding::CONTROLLER_X:
+		case Input::Binding::CONTROLLER_X:
 			switch (controller_layout)
 			{
 				case ControllerLayout::FOUR_BUTTON:
@@ -153,19 +153,19 @@ unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 			}
 			break;
 
-		case InputBinding::CONTROLLER_Y:
+		case Input::Binding::CONTROLLER_Y:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_NORTH);
 
-		case InputBinding::CONTROLLER_Z:
+		case Input::Binding::CONTROLLER_Z:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
 
-		case InputBinding::CONTROLLER_START:
+		case Input::Binding::CONTROLLER_START:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_START);
 
-		case InputBinding::CONTROLLER_MODE:
+		case Input::Binding::CONTROLLER_MODE:
 			return ButtonHeld(SDL_GAMEPAD_BUTTON_BACK);
 
-		case InputBinding::REWIND:
+		case Input::Binding::REWIND:
 			switch (controller_layout)
 			{
 				case ControllerLayout::FOUR_BUTTON:
@@ -175,7 +175,7 @@ unsigned int ControllerInput::GetButtonInternal(const InputBinding button) const
 			}
 			break;
 
-		case InputBinding::FAST_FORWARD:
+		case Input::Binding::FAST_FORWARD:
 			switch (controller_layout)
 			{
 				case ControllerLayout::FOUR_BUTTON:
