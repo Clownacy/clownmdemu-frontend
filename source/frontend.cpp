@@ -495,11 +495,11 @@ private:
 			ImGui::TableSetupColumn("Action");
 			ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
 			ImGui::TableHeadersRow();
-			for (std::size_t keyboard_bindings_index = 0; keyboard_bindings_index < std::size(keyboard_bindings); ++keyboard_bindings_index)
+			for (std::size_t keyboard_bindings_index = 0; keyboard_bindings_index < std::size(keyboard_input.bindings); ++keyboard_bindings_index)
 			{
-				auto &input_bindings = keyboard_bindings[keyboard_bindings_index];
+				auto &input_bindings = keyboard_input.bindings[keyboard_bindings_index];
 
-				if (&input_bindings == &keyboard_bindings[InputBinding::NONE])
+				if (&input_bindings == &keyboard_input.bindings[InputBinding::NONE])
 					continue;
 
 				ImGui::PushID(&input_bindings);
@@ -590,7 +590,7 @@ private:
 						{
 							ImGui::CloseCurrentPopup();
 							exit = true;
-							keyboard_bindings[i].emplace(selected_scancode);
+							keyboard_input.bindings[i].emplace(selected_scancode);
 							scroll_to_add_bindings_button = true;
 						}
 					}
@@ -736,7 +736,30 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 			return cc_false;
 	}
 
-	return input->GetButton(button_id) != 0;
+	switch (button_id)
+	{
+		#define DO_KEY(state, code) case state: return keyboard_input.GetButton(code) != 0
+
+		DO_KEY(CLOWNMDEMU_BUTTON_UP, InputBinding::CONTROLLER_UP);
+		DO_KEY(CLOWNMDEMU_BUTTON_DOWN, InputBinding::CONTROLLER_DOWN);
+		DO_KEY(CLOWNMDEMU_BUTTON_LEFT, InputBinding::CONTROLLER_LEFT);
+		DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, InputBinding::CONTROLLER_RIGHT);
+		DO_KEY(CLOWNMDEMU_BUTTON_A, InputBinding::CONTROLLER_A);
+		DO_KEY(CLOWNMDEMU_BUTTON_B, InputBinding::CONTROLLER_B);
+		DO_KEY(CLOWNMDEMU_BUTTON_C, InputBinding::CONTROLLER_C);
+		DO_KEY(CLOWNMDEMU_BUTTON_X, InputBinding::CONTROLLER_X);
+		DO_KEY(CLOWNMDEMU_BUTTON_Y, InputBinding::CONTROLLER_Y);
+		DO_KEY(CLOWNMDEMU_BUTTON_Z, InputBinding::CONTROLLER_Z);
+		DO_KEY(CLOWNMDEMU_BUTTON_START, InputBinding::CONTROLLER_START);
+		DO_KEY(CLOWNMDEMU_BUTTON_MODE, InputBinding::CONTROLLER_MODE);
+
+		#undef DO_KEY
+
+		default:
+			break;
+	}
+
+	return cc_false;
 }
 
 #ifdef FILE_PATH_SUPPORT
@@ -775,10 +798,10 @@ void Frontend::UpdateFastForwardStatus()
 
 	if (!emulator->IsPaused() && emulator_has_focus)
 	{
-		speed += keyboard_input.fast_forward;
+		speed += keyboard_input.GetButton(InputBinding::FAST_FORWARD);
 
 		for (const auto &controller_input : controller_input_list)
-			speed += controller_input.input.fast_forward;
+			speed += controller_input.input.GetButton(InputBinding::FAST_FORWARD);
 	}
 
 	emulator->SetFastForwarding(speed);
@@ -790,10 +813,10 @@ void Frontend::UpdateRewindStatus()
 
 	if (emulator_has_focus)
 	{
-		will_rewind |= keyboard_input.rewind != 0;
+		will_rewind |= keyboard_input.GetButton(InputBinding::REWIND) != 0;
 
 		for (const auto &controller_input : controller_input_list)
-			will_rewind |= controller_input.input.rewind != 0;
+			will_rewind |= controller_input.input.GetButton(InputBinding::REWIND) != 0;
 	}
 
 	emulator->rewinding = will_rewind;
@@ -1092,25 +1115,25 @@ void Frontend::LoadConfiguration()
 	if (!file)
 	{
 		// Failed to read configuration file: set default key bindings.
-		keyboard_bindings[InputBinding::CONTROLLER_UP] = {SDL_SCANCODE_UP};
-		keyboard_bindings[InputBinding::CONTROLLER_DOWN] = {SDL_SCANCODE_DOWN};
-		keyboard_bindings[InputBinding::CONTROLLER_LEFT] = {SDL_SCANCODE_LEFT};
-		keyboard_bindings[InputBinding::CONTROLLER_RIGHT] = {SDL_SCANCODE_RIGHT};
-		keyboard_bindings[InputBinding::CONTROLLER_A] = {SDL_SCANCODE_A};
-		keyboard_bindings[InputBinding::CONTROLLER_B] = {SDL_SCANCODE_S};
-		keyboard_bindings[InputBinding::CONTROLLER_C] = {SDL_SCANCODE_D};
-		keyboard_bindings[InputBinding::CONTROLLER_X] = {SDL_SCANCODE_Q};
-		keyboard_bindings[InputBinding::CONTROLLER_Y] = {SDL_SCANCODE_W};
-		keyboard_bindings[InputBinding::CONTROLLER_Z] = {SDL_SCANCODE_E};
-		keyboard_bindings[InputBinding::CONTROLLER_START] = {SDL_SCANCODE_RETURN};
-		keyboard_bindings[InputBinding::CONTROLLER_MODE] = {SDL_SCANCODE_BACKSPACE};
-		keyboard_bindings[InputBinding::PAUSE] = {SDL_SCANCODE_PAUSE};
-		keyboard_bindings[InputBinding::TOGGLE_FULLSCREEN] = {SDL_SCANCODE_F11};
-		keyboard_bindings[InputBinding::RESET] = {SDL_SCANCODE_TAB};
-		keyboard_bindings[InputBinding::QUICK_SAVE_STATE] = {SDL_SCANCODE_F5};
-		keyboard_bindings[InputBinding::QUICK_LOAD_STATE] = {SDL_SCANCODE_F9};
-		keyboard_bindings[InputBinding::FAST_FORWARD] = {SDL_SCANCODE_SPACE, SDL_SCANCODE_F};
-		keyboard_bindings[InputBinding::REWIND] = {SDL_SCANCODE_R};
+		keyboard_input.bindings[InputBinding::CONTROLLER_UP] = {SDL_SCANCODE_UP};
+		keyboard_input.bindings[InputBinding::CONTROLLER_DOWN] = {SDL_SCANCODE_DOWN};
+		keyboard_input.bindings[InputBinding::CONTROLLER_LEFT] = {SDL_SCANCODE_LEFT};
+		keyboard_input.bindings[InputBinding::CONTROLLER_RIGHT] = {SDL_SCANCODE_RIGHT};
+		keyboard_input.bindings[InputBinding::CONTROLLER_A] = {SDL_SCANCODE_A};
+		keyboard_input.bindings[InputBinding::CONTROLLER_B] = {SDL_SCANCODE_S};
+		keyboard_input.bindings[InputBinding::CONTROLLER_C] = {SDL_SCANCODE_D};
+		keyboard_input.bindings[InputBinding::CONTROLLER_X] = {SDL_SCANCODE_Q};
+		keyboard_input.bindings[InputBinding::CONTROLLER_Y] = {SDL_SCANCODE_W};
+		keyboard_input.bindings[InputBinding::CONTROLLER_Z] = {SDL_SCANCODE_E};
+		keyboard_input.bindings[InputBinding::CONTROLLER_START] = {SDL_SCANCODE_RETURN};
+		keyboard_input.bindings[InputBinding::CONTROLLER_MODE] = {SDL_SCANCODE_BACKSPACE};
+		keyboard_input.bindings[InputBinding::PAUSE] = {SDL_SCANCODE_PAUSE};
+		keyboard_input.bindings[InputBinding::TOGGLE_FULLSCREEN] = {SDL_SCANCODE_F11};
+		keyboard_input.bindings[InputBinding::RESET] = {SDL_SCANCODE_TAB};
+		keyboard_input.bindings[InputBinding::QUICK_SAVE_STATE] = {SDL_SCANCODE_F5};
+		keyboard_input.bindings[InputBinding::QUICK_LOAD_STATE] = {SDL_SCANCODE_F9};
+		keyboard_input.bindings[InputBinding::FAST_FORWARD] = {SDL_SCANCODE_SPACE, SDL_SCANCODE_F};
+		keyboard_input.bindings[InputBinding::REWIND] = {SDL_SCANCODE_R};
 	}
 	else
 	{
@@ -1237,7 +1260,7 @@ void Frontend::LoadConfiguration()
 						return InputBinding::NONE;
 					}();
 
-					keyboard_bindings[input_binding].emplace(scancode);
+					keyboard_input.bindings[input_binding].emplace(scancode);
 				}
 			}
 		#ifdef FILE_PATH_SUPPORT
@@ -1365,11 +1388,11 @@ void Frontend::SaveConfiguration()
 		// Save keyboard bindings.
 		PRINT_HEADER(file, "Keyboard Bindings");
 
-		for (std::size_t i = 0; i != std::size(keyboard_bindings); ++i)
+		for (std::size_t i = 0; i != std::size(keyboard_input.bindings); ++i)
 		{
-			const auto &input_bindings = keyboard_bindings[i];
+			const auto &input_bindings = keyboard_input.bindings[i];
 
-			if (&input_bindings == &keyboard_bindings[InputBinding::NONE])
+			if (&input_bindings == &keyboard_input.bindings[InputBinding::NONE])
 				continue;
 
 			for (const auto &scancode : input_bindings)
@@ -1657,25 +1680,25 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 				window->SetFullscreen(false);
 			}
 
-			if (keyboard_bindings[InputBinding::TOGGLE_FULLSCREEN].contains(event.key.scancode))
+			if (keyboard_input.bindings[InputBinding::TOGGLE_FULLSCREEN].contains(event.key.scancode))
 				window->ToggleFullscreen();
 
 			// Many inputs should not be acted upon while the emulator is not running.
 			if (emulator_on && emulator_has_focus)
 			{
-				if (keyboard_bindings[InputBinding::PAUSE].contains(event.key.scancode))
+				if (keyboard_input.bindings[InputBinding::PAUSE].contains(event.key.scancode))
 					emulator->SetPaused(!emulator->IsPaused());
 
-				if (keyboard_bindings[InputBinding::RESET].contains(event.key.scancode))
+				if (keyboard_input.bindings[InputBinding::RESET].contains(event.key.scancode))
 				{
 					emulator->SoftReset();
 					emulator->SetPaused(false);
 				}
 
-				if (keyboard_bindings[InputBinding::QUICK_SAVE_STATE].contains(event.key.scancode))
+				if (keyboard_input.bindings[InputBinding::QUICK_SAVE_STATE].contains(event.key.scancode))
 					quick_save_state.emplace(*emulator);
 
-				if (keyboard_bindings[InputBinding::QUICK_LOAD_STATE].contains(event.key.scancode))
+				if (keyboard_input.bindings[InputBinding::QUICK_LOAD_STATE].contains(event.key.scancode))
 				{
 					if (quick_save_state)
 					{
@@ -1683,51 +1706,21 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 						emulator->SetPaused(false);
 					}
 				}
+
+				if (keyboard_input.bindings[InputBinding::FAST_FORWARD].contains(event.key.scancode))
+					if (emulator->IsPaused())
+						emulator_frame_advance = true;
 			}
 			[[fallthrough]];
 		case SDL_EVENT_KEY_UP:
-			for (std::size_t i = 0; i < std::size(keyboard_bindings); ++i)
+			for (std::size_t i = 0; i < std::size(keyboard_input.bindings); ++i)
 			{
-				if (!keyboard_bindings[i].contains(event.key.scancode))
-					continue;
-
-				const bool pressed = event.key.down;
-				const int delta = pressed ? 1 : -1;
-
-				switch (static_cast<InputBinding>(i))
+				if (keyboard_input.bindings[i].contains(event.key.scancode))
 				{
-					#define DO_KEY(state, code) case code: keyboard_input.SetButton(state, keyboard_input.GetButton(state) + delta); break
+					const auto input_binding = static_cast<InputBinding>(i);
+					const int delta = event.key.down ? 1 : -1;
 
-					DO_KEY(CLOWNMDEMU_BUTTON_UP, InputBinding::CONTROLLER_UP);
-					DO_KEY(CLOWNMDEMU_BUTTON_DOWN, InputBinding::CONTROLLER_DOWN);
-					DO_KEY(CLOWNMDEMU_BUTTON_LEFT, InputBinding::CONTROLLER_LEFT);
-					DO_KEY(CLOWNMDEMU_BUTTON_RIGHT, InputBinding::CONTROLLER_RIGHT);
-					DO_KEY(CLOWNMDEMU_BUTTON_A, InputBinding::CONTROLLER_A);
-					DO_KEY(CLOWNMDEMU_BUTTON_B, InputBinding::CONTROLLER_B);
-					DO_KEY(CLOWNMDEMU_BUTTON_C, InputBinding::CONTROLLER_C);
-					DO_KEY(CLOWNMDEMU_BUTTON_X, InputBinding::CONTROLLER_X);
-					DO_KEY(CLOWNMDEMU_BUTTON_Y, InputBinding::CONTROLLER_Y);
-					DO_KEY(CLOWNMDEMU_BUTTON_Z, InputBinding::CONTROLLER_Z);
-					DO_KEY(CLOWNMDEMU_BUTTON_START, InputBinding::CONTROLLER_START);
-					DO_KEY(CLOWNMDEMU_BUTTON_MODE, InputBinding::CONTROLLER_MODE);
-
-					#undef DO_KEY
-
-					case InputBinding::FAST_FORWARD:
-						// Toggle fast-forward
-						keyboard_input.fast_forward += delta;
-
-						if (pressed && emulator->IsPaused())
-							emulator_frame_advance = true;
-
-						break;
-
-					case InputBinding::REWIND:
-						keyboard_input.rewind += delta;
-						break;
-
-					default:
-						break;
+					keyboard_input.SetButton(input_binding, keyboard_input.GetButton(input_binding) + delta);
 				}
 			}
 
@@ -1816,14 +1809,14 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 							switch (event.gbutton.button)
 							{
 								// This matches Genesis Plus GX's controller layout in RetroArch.
-								DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_WEST          );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_SOUTH         );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_C    , SDL_GAMEPAD_BUTTON_EAST          );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
-								DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START         );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK          );
+								DO_BUTTON(InputBinding::CONTROLLER_A    , SDL_GAMEPAD_BUTTON_WEST          );
+								DO_BUTTON(InputBinding::CONTROLLER_B    , SDL_GAMEPAD_BUTTON_SOUTH         );
+								DO_BUTTON(InputBinding::CONTROLLER_C    , SDL_GAMEPAD_BUTTON_EAST          );
+								DO_BUTTON(InputBinding::CONTROLLER_X    , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
+								DO_BUTTON(InputBinding::CONTROLLER_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
+								DO_BUTTON(InputBinding::CONTROLLER_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+								DO_BUTTON(InputBinding::CONTROLLER_START, SDL_GAMEPAD_BUTTON_START         );
+								DO_BUTTON(InputBinding::CONTROLLER_MODE , SDL_GAMEPAD_BUTTON_BACK          );
 							}
 
 							break;
@@ -1832,19 +1825,15 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 							switch (event.gbutton.button)
 							{
 								// This matches SDL3's own 6-button-to-XInput mapping.
-								DO_BUTTON(CLOWNMDEMU_BUTTON_A    , SDL_GAMEPAD_BUTTON_SOUTH         );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_B    , SDL_GAMEPAD_BUTTON_EAST          );
+								DO_BUTTON(InputBinding::CONTROLLER_A    , SDL_GAMEPAD_BUTTON_SOUTH         );
+								DO_BUTTON(InputBinding::CONTROLLER_B    , SDL_GAMEPAD_BUTTON_EAST          );
 								// C is handled in the axis code...
-								DO_BUTTON(CLOWNMDEMU_BUTTON_X    , SDL_GAMEPAD_BUTTON_WEST          );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
-								DO_BUTTON(CLOWNMDEMU_BUTTON_START, SDL_GAMEPAD_BUTTON_START         );
-								DO_BUTTON(CLOWNMDEMU_BUTTON_MODE , SDL_GAMEPAD_BUTTON_BACK          );
-
-								// TODO: Merge this with the axis code version.
-								case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
-									controller_input.input.rewind = pressed;
-									break;
+								DO_BUTTON(InputBinding::CONTROLLER_X    , SDL_GAMEPAD_BUTTON_WEST          );
+								DO_BUTTON(InputBinding::CONTROLLER_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
+								DO_BUTTON(InputBinding::CONTROLLER_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+								DO_BUTTON(InputBinding::CONTROLLER_START, SDL_GAMEPAD_BUTTON_START         );
+								DO_BUTTON(InputBinding::CONTROLLER_MODE , SDL_GAMEPAD_BUTTON_BACK          );
+								DO_BUTTON(InputBinding::REWIND          , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
 							}
 
 							break;
@@ -1860,29 +1849,29 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 						case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 						{
 							unsigned int direction;
-							ClownMDEmu_Button button;
+							InputBinding button;
 
 							switch (event.gbutton.button)
 							{
 								default:
 								case SDL_GAMEPAD_BUTTON_DPAD_UP:
 									direction = 0;
-									button = CLOWNMDEMU_BUTTON_UP;
+									button = InputBinding::CONTROLLER_UP;
 									break;
 
 								case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
 									direction = 1;
-									button = CLOWNMDEMU_BUTTON_DOWN;
+									button = InputBinding::CONTROLLER_DOWN;
 									break;
 
 								case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
 									direction = 2;
-									button = CLOWNMDEMU_BUTTON_LEFT;
+									button = InputBinding::CONTROLLER_LEFT;
 									break;
 
 								case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
 									direction = 3;
-									button = CLOWNMDEMU_BUTTON_RIGHT;
+									button = InputBinding::CONTROLLER_RIGHT;
 									break;
 							}
 
@@ -1957,11 +1946,11 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 									controller_input.left_stick[i] = (delta_angle < CC_DEGREE_TO_RADIAN(360.0f * 3.0f / 8.0f / 2.0f)); // Half of 3/8 of 360 degrees (in radians)
 								}
 
-								static const std::array<ClownMDEmu_Button, 4> buttons = {
-									CLOWNMDEMU_BUTTON_UP,
-									CLOWNMDEMU_BUTTON_DOWN,
-									CLOWNMDEMU_BUTTON_LEFT,
-									CLOWNMDEMU_BUTTON_RIGHT
+								static const std::array<InputBinding, 4> buttons = {
+									InputBinding::CONTROLLER_UP,
+									InputBinding::CONTROLLER_DOWN,
+									InputBinding::CONTROLLER_LEFT,
+									InputBinding::CONTROLLER_RIGHT
 								};
 
 								// Combine D-pad and left stick values into final joypad D-pad inputs.
@@ -1987,11 +1976,11 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 										switch (controller_layout)
 										{
 											case ControllerLayout::FOUR_BUTTON:
-												controller_input.input.rewind = held;
+												controller_input.input.SetButton(InputBinding::REWIND, held);
 												break;
 
 											case ControllerLayout::SIX_BUTTON:
-												controller_input.input.fast_forward = held;
+												controller_input.input.SetButton(InputBinding::FAST_FORWARD, held);
 												break;
 										}
 									}
@@ -2005,11 +1994,11 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 										switch (controller_layout)
 										{
 											case ControllerLayout::FOUR_BUTTON:
-												controller_input.input.fast_forward = held;
+												controller_input.input.SetButton(InputBinding::FAST_FORWARD, held);
 												break;
 
 											case ControllerLayout::SIX_BUTTON:
-												controller_input.input.SetButton(CLOWNMDEMU_BUTTON_C, held);
+												controller_input.input.SetButton(InputBinding::CONTROLLER_C, held);
 												break;
 										}
 									}
