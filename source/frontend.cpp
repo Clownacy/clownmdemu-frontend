@@ -2148,6 +2148,8 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 								{
 									if (controller_input.left_trigger != held)
 									{
+										controller_input.left_trigger = held;
+
 										switch (controller_layout)
 										{
 											case ControllerLayout::FOUR_BUTTON:
@@ -2159,13 +2161,13 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 												break;
 										}
 									}
-
-									controller_input.left_trigger = held;
 								}
 								else
 								{
 									if (controller_input.right_trigger != held)
 									{
+										controller_input.right_trigger = held;
+
 										switch (controller_layout)
 										{
 											case ControllerLayout::FOUR_BUTTON:
@@ -2177,8 +2179,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 												break;
 										}
 									}
-
-									controller_input.right_trigger = held;
 								}
 							}
 
