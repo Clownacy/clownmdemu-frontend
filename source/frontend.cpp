@@ -553,10 +553,10 @@ private:
 
 			for (int i = 0; i < total_keys; ++i)
 			{
-				if (keys_pressed[i] && i != SDL_GetScancodeFromKey(SDLK_LALT, nullptr))
+				if (keys_pressed[i] && i != SDL_SCANCODE_LALT)
 				{
 					// The 'escape' key will exit the menu without binding.
-					if (i != SDL_GetScancodeFromKey(SDLK_ESCAPE, nullptr))
+					if (i != SDL_SCANCODE_ESCAPE)
 					{
 						next_menu = true;
 						selected_scancode = static_cast<SDL_Scancode>(i);
@@ -581,8 +581,11 @@ private:
 
 				if (ImGui::BeginListBox("##Actions"))
 				{
-					for (unsigned int i = static_cast<unsigned int>(InputBinding::NONE) + 1; i < static_cast<unsigned int>(InputBinding::TOTAL); i = i + 1)
+					for (std::size_t i = 0; i < static_cast<std::size_t>(InputBinding::TOTAL); ++i)
 					{
+						if (i == static_cast<std::size_t>(InputBinding::NONE))
+							continue;
+
 						if (ImGui::Selectable(binding_names[i]))
 						{
 							ImGui::CloseCurrentPopup();
