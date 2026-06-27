@@ -1678,6 +1678,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			{
 				// Exit fullscreen
 				window->SetFullscreen(false);
+				break;
 			}
 
 			if (keyboard_input.bindings[InputBinding::TOGGLE_FULLSCREEN].contains(event.key.scancode))
