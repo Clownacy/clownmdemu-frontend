@@ -428,7 +428,7 @@ private:
 						if (ImGui::Selectable(name, selected))
 						{
 							// If the selected device is already bound to an input, swap them.
-							const auto &FindOtherBoundInput = [](const Input* const address) -> Input**
+							const auto &FindOtherBoundInput = [](const Input* const address) -> const Input**
 							{
 								if (address != nullptr)
 									for (auto &other_bound_input : bound_inputs)
@@ -438,7 +438,7 @@ private:
 								return nullptr;
 							};
 
-							Input** const other_bound_input = FindOtherBoundInput(address);
+							const Input** const other_bound_input = FindOtherBoundInput(address);
 
 							if (other_bound_input != nullptr)
 								std::swap(*other_bound_input, bound_input);
@@ -453,7 +453,7 @@ private:
 					DoSelectable(keyboard_input.name.c_str(), &keyboard_input);
 
 					for (auto &controller_input : controller_input_list)
-						DoSelectable(controller_input.input.name.c_str(), &controller_input.input);
+						DoSelectable(controller_input.name.c_str(), &controller_input);
 
 					ImGui::EndCombo();
 				}
@@ -719,7 +719,7 @@ static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button
 {
 	SDL_assert(player_id < std::size(bound_inputs));
 
-	Input* const input = bound_inputs[player_id];
+	const Input* const input = bound_inputs[player_id];
 
 	if (input == nullptr)
 		return cc_false;
@@ -801,7 +801,7 @@ void Frontend::UpdateFastForwardStatus()
 		speed += keyboard_input.GetButton(InputBinding::FAST_FORWARD);
 
 		for (const auto &controller_input : controller_input_list)
-			speed += controller_input.input.GetButton(InputBinding::FAST_FORWARD);
+			speed += controller_input.GetButton(InputBinding::FAST_FORWARD);
 	}
 
 	emulator->SetFastForwarding(speed);
@@ -816,7 +816,7 @@ void Frontend::UpdateRewindStatus()
 		will_rewind |= keyboard_input.GetButton(InputBinding::REWIND) != 0;
 
 		for (const auto &controller_input : controller_input_list)
-			will_rewind |= controller_input.input.GetButton(InputBinding::REWIND) != 0;
+			will_rewind |= controller_input.GetButton(InputBinding::REWIND) != 0;
 	}
 
 	emulator->rewinding = will_rewind;
@@ -1711,18 +1711,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 					if (emulator->IsPaused())
 						emulator_frame_advance = true;
 			}
-			[[fallthrough]];
-		case SDL_EVENT_KEY_UP:
-			for (std::size_t i = 0; i < std::size(keyboard_input.bindings); ++i)
-			{
-				if (keyboard_input.bindings[i].contains(event.key.scancode))
-				{
-					const auto input_binding = static_cast<InputBinding>(i);
-					const int delta = event.key.down ? 1 : -1;
-
-					keyboard_input.SetButton(input_binding, keyboard_input.GetButton(input_binding) + delta);
-				}
-			}
 
 			break;
 
@@ -1769,7 +1757,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 
 					// Remove controller from input bindings.
 					for (auto &bound_input : bound_inputs)
-						if (bound_input == &controller_input.input)
+						if (bound_input == &controller_input)
 							bound_input = nullptr;
 
 					return true;
@@ -1784,236 +1772,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 			{
 				// Toggle pause.
 				emulator->SetPaused(!emulator->IsPaused());
-			}
-
-			// Don't use inputs that are for Dear ImGui.
-			if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
-				break;
-
-			[[fallthrough]];
-		case SDL_EVENT_GAMEPAD_BUTTON_UP:
-		{
-			const bool pressed = event.gbutton.down;
-
-			// Look for the controller that this event belongs to.
-			for (auto &controller_input : controller_input_list)
-			{
-				// Check if the current controller is the one that matches this event.
-				if (controller_input.joystick_instance_id == event.gbutton.which)
-				{
-					#define DO_BUTTON(state, code) case code: controller_input.input.SetButton(state, pressed); break
-
-					switch (controller_layout)
-					{
-						case ControllerLayout::FOUR_BUTTON:
-							switch (event.gbutton.button)
-							{
-								// This matches Genesis Plus GX's controller layout in RetroArch.
-								DO_BUTTON(InputBinding::CONTROLLER_A    , SDL_GAMEPAD_BUTTON_WEST          );
-								DO_BUTTON(InputBinding::CONTROLLER_B    , SDL_GAMEPAD_BUTTON_SOUTH         );
-								DO_BUTTON(InputBinding::CONTROLLER_C    , SDL_GAMEPAD_BUTTON_EAST          );
-								DO_BUTTON(InputBinding::CONTROLLER_X    , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
-								DO_BUTTON(InputBinding::CONTROLLER_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
-								DO_BUTTON(InputBinding::CONTROLLER_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
-								DO_BUTTON(InputBinding::CONTROLLER_START, SDL_GAMEPAD_BUTTON_START         );
-								DO_BUTTON(InputBinding::CONTROLLER_MODE , SDL_GAMEPAD_BUTTON_BACK          );
-							}
-
-							break;
-
-						case ControllerLayout::SIX_BUTTON:
-							switch (event.gbutton.button)
-							{
-								// This matches SDL3's own 6-button-to-XInput mapping.
-								DO_BUTTON(InputBinding::CONTROLLER_A    , SDL_GAMEPAD_BUTTON_SOUTH         );
-								DO_BUTTON(InputBinding::CONTROLLER_B    , SDL_GAMEPAD_BUTTON_EAST          );
-								// C is handled in the axis code...
-								DO_BUTTON(InputBinding::CONTROLLER_X    , SDL_GAMEPAD_BUTTON_WEST          );
-								DO_BUTTON(InputBinding::CONTROLLER_Y    , SDL_GAMEPAD_BUTTON_NORTH         );
-								DO_BUTTON(InputBinding::CONTROLLER_Z    , SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
-								DO_BUTTON(InputBinding::CONTROLLER_START, SDL_GAMEPAD_BUTTON_START         );
-								DO_BUTTON(InputBinding::CONTROLLER_MODE , SDL_GAMEPAD_BUTTON_BACK          );
-								DO_BUTTON(InputBinding::REWIND          , SDL_GAMEPAD_BUTTON_LEFT_SHOULDER );
-							}
-
-							break;
-					}
-
-					#undef DO_BUTTON
-
-					switch (event.gbutton.button)
-					{
-						case SDL_GAMEPAD_BUTTON_DPAD_UP:
-						case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-						case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-						case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-						{
-							unsigned int direction;
-							InputBinding button;
-
-							switch (event.gbutton.button)
-							{
-								default:
-								case SDL_GAMEPAD_BUTTON_DPAD_UP:
-									direction = 0;
-									button = InputBinding::CONTROLLER_UP;
-									break;
-
-								case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-									direction = 1;
-									button = InputBinding::CONTROLLER_DOWN;
-									break;
-
-								case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
-									direction = 2;
-									button = InputBinding::CONTROLLER_LEFT;
-									break;
-
-								case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-									direction = 3;
-									button = InputBinding::CONTROLLER_RIGHT;
-									break;
-							}
-
-							controller_input.dpad[direction] = pressed;
-
-							// Combine D-pad and left stick values into final joypad D-pad inputs.
-							controller_input.input.SetButton(button, controller_input.left_stick[direction] || controller_input.dpad[direction]);
-
-							break;
-						}
-
-						default:
-							break;
-					}
-
-					break;
-				}
-			}
-
-			break;
-		}
-
-		case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-			// Look for the controller that this event belongs to.
-			for (auto &controller_input : controller_input_list)
-			{
-				// Check if the current controller is the one that matches this event.
-				if (controller_input.joystick_instance_id == event.gaxis.which)
-				{
-					switch (event.gaxis.axis)
-					{
-						case SDL_GAMEPAD_AXIS_LEFTX:
-						case SDL_GAMEPAD_AXIS_LEFTY:
-						{
-							if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTX)
-								controller_input.left_stick_x = event.gaxis.value;
-							else //if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFTY)
-								controller_input.left_stick_y = event.gaxis.value;
-
-							// Now that we have the left stick's X and Y values, let's do some trigonometry to figure out which direction(s) it's pointing in.
-
-							// To start with, let's treat the X and Y values as a vector, and turn it into a unit vector.
-							const float magnitude = std::sqrt(static_cast<float>(controller_input.left_stick_x * controller_input.left_stick_x + controller_input.left_stick_y * controller_input.left_stick_y));
-
-							const float left_stick_x_unit = controller_input.left_stick_x / magnitude;
-							const float left_stick_y_unit = controller_input.left_stick_y / magnitude;
-
-							// Now that we have the stick's direction in the form of a unit vector,
-							// we can create a dot product of it with another directional unit vector
-							// to determine the angle between them.
-							for (unsigned int i = 0; i < 4; ++i)
-							{
-								// Apply a deadzone.
-								if (magnitude < 32768.0f / 4.0f)
-								{
-									controller_input.left_stick[i] = false;
-								}
-								else
-								{
-									// This is a list of directions expressed as unit vectors.
-									static const std::array<std::array<float, 2>, 4> directions = {{
-										{ 0.0f, -1.0f}, // Up
-										{ 0.0f,  1.0f}, // Down
-										{-1.0f,  0.0f}, // Left
-										{ 1.0f,  0.0f}  // Right
-									}};
-
-									// Perform dot product of stick's direction vector with other direction vector.
-									const float delta_angle = std::acos(left_stick_x_unit * directions[i][0] + left_stick_y_unit * directions[i][1]);
-
-									// If the stick is within 67.5 degrees of the specified direction, then this will be true.
-									controller_input.left_stick[i] = (delta_angle < CC_DEGREE_TO_RADIAN(360.0f * 3.0f / 8.0f / 2.0f)); // Half of 3/8 of 360 degrees (in radians)
-								}
-
-								static const std::array<InputBinding, 4> buttons = {
-									InputBinding::CONTROLLER_UP,
-									InputBinding::CONTROLLER_DOWN,
-									InputBinding::CONTROLLER_LEFT,
-									InputBinding::CONTROLLER_RIGHT
-								};
-
-								// Combine D-pad and left stick values into final joypad D-pad inputs.
-								controller_input.input.SetButton(buttons[i], controller_input.left_stick[i] || controller_input.dpad[i]);
-							}
-
-							break;
-						}
-
-						case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-						case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-						{
-							if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-							{
-								const bool held = event.gaxis.value > 0x7FFF / 8;
-
-								if (event.gaxis.axis == SDL_GAMEPAD_AXIS_LEFT_TRIGGER)
-								{
-									if (controller_input.left_trigger != held)
-									{
-										controller_input.left_trigger = held;
-
-										switch (controller_layout)
-										{
-											case ControllerLayout::FOUR_BUTTON:
-												controller_input.input.SetButton(InputBinding::REWIND, held);
-												break;
-
-											case ControllerLayout::SIX_BUTTON:
-												controller_input.input.SetButton(InputBinding::FAST_FORWARD, held);
-												break;
-										}
-									}
-								}
-								else
-								{
-									if (controller_input.right_trigger != held)
-									{
-										controller_input.right_trigger = held;
-
-										switch (controller_layout)
-										{
-											case ControllerLayout::FOUR_BUTTON:
-												controller_input.input.SetButton(InputBinding::FAST_FORWARD, held);
-												break;
-
-											case ControllerLayout::SIX_BUTTON:
-												controller_input.input.SetButton(InputBinding::CONTROLLER_C, held);
-												break;
-										}
-									}
-								}
-							}
-
-							break;
-						}
-
-						default:
-							break;
-					}
-
-					break;
-				}
 			}
 
 			break;
