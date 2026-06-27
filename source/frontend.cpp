@@ -1795,12 +1795,12 @@ void Frontend::HandleEvent(const SDL_Event &event)
 		switch (event.type)
 		{
 			case SDL_EVENT_WINDOW_MOVED:
-				if (!state.maximised)
+				if ((SDL_GetWindowFlags(SDL_GetWindowFromID(event.window.windowID)) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED)) == 0)
 					state.position = {event.window.data1, event.window.data2};
 				break;
 
 			case SDL_EVENT_WINDOW_RESIZED:
-				if (!state.maximised)
+				if ((SDL_GetWindowFlags(SDL_GetWindowFromID(event.window.windowID)) & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED)) == 0)
 					state.size = {event.window.data1, event.window.data2};
 				break;
 
