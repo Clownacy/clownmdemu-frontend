@@ -7,7 +7,6 @@
 #include <string>
 
 #include <SDL3/SDL.h>
-#include <fmt/core.h>
 
 #include "../common/core/source/clownmdemu.h"
 
@@ -78,33 +77,25 @@ namespace Input
 			}
 		};
 
+		virtual unsigned int GetButtonInternal(Binding button) const override;
+
 	public:
 		Bindings bindings;
 
 		using Device::Device;
-
-		virtual unsigned int GetButtonInternal(Binding button) const override;
 	};
 
 	class Controller : public Device
 	{
-	public:
+	private:
 		static inline unsigned int controller_number;
 
-		const SDL_JoystickID joystick_instance_id;
-		Sint16 left_stick_x = 0;
-		Sint16 left_stick_y = 0;
-		std::array<bool, 4> left_stick = {false};
-		std::array<bool, 4> dpad = {false};
-		bool left_trigger = false;
-		bool right_trigger = false;
-
-		Controller(const SDL_JoystickID joystick_instance_id)
-			: joystick_instance_id(joystick_instance_id)
-			, Device(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
-		{}
-
 		virtual unsigned int GetButtonInternal(Binding button) const override;
+
+	public:
+		const SDL_JoystickID joystick_instance_id;
+
+		Controller(SDL_JoystickID joystick_instance_id);
 	};
 
 	extern Keyboard keyboard;

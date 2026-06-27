@@ -1,5 +1,7 @@
 #include "input.h"
 
+#include <fmt/core.h>
+
 Input::Keyboard Input::keyboard = {"Keyboard"};
 std::list<Input::Controller> Input::controllers;
 
@@ -47,6 +49,11 @@ unsigned int Input::Keyboard::GetButtonInternal(const Input::Binding button) con
 
 	return total_presses;
 }
+
+Input::Controller::Controller(const SDL_JoystickID joystick_instance_id)
+	: joystick_instance_id(joystick_instance_id)
+	, Device(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
+{}
 
 unsigned int Input::Controller::GetButtonInternal(const Input::Binding button) const
 {
