@@ -7,12 +7,6 @@ std::list<Input::Controller> Input::controllers;
 
 std::array<const Input::Device*, 8> Input::bound_devices;
 
-unsigned int Input::Device::GetButton(const Binding button) const
-{
-	// TODO: Eliminate this shim.
-	return GetButtonInternal(button);
-}
-
 void Input::Device::AutoBind() const
 {
 	// bind this controller to the first unbound input.
@@ -30,7 +24,7 @@ void Input::Device::AutoBind() const
 	}
 }
 
-unsigned int Input::Keyboard::GetButtonInternal(const Binding button) const
+unsigned int Input::Keyboard::GetButton(const Binding button) const
 {
 	int total_keys;
 	const bool* const keyboard_state = SDL_GetKeyboardState(&total_keys);
@@ -52,7 +46,7 @@ Input::Controller::Controller(const SDL_JoystickID joystick_instance_id)
 	, joystick_instance_id(joystick_instance_id)
 {}
 
-unsigned int Input::Controller::GetButtonInternal(const Binding button) const
+unsigned int Input::Controller::GetButton(const Binding button) const
 {
 	const auto gamepad = SDL_GetGamepadFromID(joystick_instance_id);
 

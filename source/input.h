@@ -46,8 +46,7 @@ namespace Input
 			: name(std::move(name))
 		{}
 
-		unsigned int GetButton(Binding button) const;
-		virtual unsigned int GetButtonInternal(Binding button) const = 0;
+		virtual unsigned int GetButton(Binding button) const = 0;
 
 		void AutoBind() const;
 	};
@@ -73,20 +72,18 @@ namespace Input
 			}
 		};
 
-		virtual unsigned int GetButtonInternal(Binding button) const override;
-
 	public:
 		Bindings bindings;
 
 		using Device::Device;
+
+		virtual unsigned int GetButton(Binding button) const override;
 	};
 
 	class Controller final : public Device
 	{
 	private:
 		static inline unsigned int controller_number;
-
-		virtual unsigned int GetButtonInternal(Binding button) const override;
 
 	public:
 		enum class Layout
@@ -100,6 +97,8 @@ namespace Input
 		const SDL_JoystickID joystick_instance_id;
 
 		Controller(SDL_JoystickID joystick_instance_id);
+
+		virtual unsigned int GetButton(Binding button) const override;
 	};
 
 	extern Keyboard keyboard;
