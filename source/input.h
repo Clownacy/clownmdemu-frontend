@@ -50,7 +50,7 @@ namespace Input
 		virtual unsigned int GetButtonInternal(Binding button) const = 0;
 	};
 
-	class Keyboard : public Device
+	class Keyboard final : public Device
 	{
 	private:
 		using BindingsBase = std::array<std::set<SDL_Scancode>, static_cast<std::size_t>(Binding::TOTAL)>;
@@ -79,7 +79,7 @@ namespace Input
 		using Device::Device;
 	};
 
-	class Controller : public Device
+	class Controller final : public Device
 	{
 	private:
 		static inline unsigned int controller_number;

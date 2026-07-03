@@ -49,8 +49,8 @@ unsigned int Input::Keyboard::GetButtonInternal(const Binding button) const
 }
 
 Input::Controller::Controller(const SDL_JoystickID joystick_instance_id)
-	: joystick_instance_id(joystick_instance_id)
-	, Device(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
+	: Device(fmt::format("Controller {}: {}", ++controller_number, SDL_GetJoystickNameForID(joystick_instance_id)))
+	, joystick_instance_id(joystick_instance_id)
 {}
 
 unsigned int Input::Controller::GetButtonInternal(const Binding button) const
@@ -188,6 +188,10 @@ unsigned int Input::Controller::GetButtonInternal(const Binding button) const
 				case Layout::SIX_BUTTON:
 					return TriggerHeld(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
 			}
+			break;
+
+		default:
+			// Not bound.
 			break;
 	}
 

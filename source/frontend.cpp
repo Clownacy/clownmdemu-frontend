@@ -1647,8 +1647,6 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 {
 	window->MakeDearImGuiContextCurrent();
 
-	ImGuiIO &io = ImGui::GetIO();
-
 	// Process the event
 	switch (event.type)
 	{
