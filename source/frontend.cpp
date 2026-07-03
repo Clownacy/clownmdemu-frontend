@@ -17,7 +17,7 @@
 #include <tuple>
 #include <vector>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <SDL3/SDL.h>
 
 #include "../common/core/libraries/clowncommon/clowncommon.h"

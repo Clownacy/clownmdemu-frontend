@@ -1,6 +1,6 @@
 #include "input.h"
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 Input::Keyboard Input::keyboard = {"Keyboard"};
 std::list<Input::Controller> Input::controllers;

@@ -3,7 +3,7 @@
 
 #include <utility>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "../../sdl-wrapper.h"
 

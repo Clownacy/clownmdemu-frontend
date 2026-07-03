@@ -1,6 +1,6 @@
 #include "cheats.h"
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "../../libraries/imgui/misc/cpp/imgui_stdlib.h"
 
