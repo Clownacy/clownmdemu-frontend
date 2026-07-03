@@ -139,7 +139,7 @@ bool ImGui::ImageCopyable(Window &window, const ImTextureRef tex_ref, const ImVe
 // Not Fonts //
 ///////////////
 
-WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const float window_width, const float window_height, const bool resizeable, const std::optional<float> &forced_scale, const Uint32 window_flags)
+WindowWithDearImGui::WindowWithDearImGui(const char* const window_title, const float window_width, const float window_height, const bool resizeable, const std::optional<float> &forced_scale, const SDL_WindowFlags window_flags)
 	: Window(window_title, window_width, window_height, resizeable, forced_scale, window_flags)
 	, dear_imgui_context(ImGui::CreateContext())
 	, dpi_scale(GetDPIScale())

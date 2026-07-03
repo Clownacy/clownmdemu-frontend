@@ -27,7 +27,7 @@ public:
 		return window == nullptr ? GetDisplayDPIScale() : window->GetDPIScale();
 	}
 
-	Window(const char *window_title, float window_width, float window_height, bool resizeable, const std::optional<float> &forced_scale = std::nullopt, Uint32 window_flags = 0);
+	Window(const char *window_title, float window_width, float window_height, bool resizeable, const std::optional<float> &forced_scale = std::nullopt, SDL_WindowFlags window_flags = 0);
 
 	static float GetDisplayDPIScale();
 	float GetSizeScale();

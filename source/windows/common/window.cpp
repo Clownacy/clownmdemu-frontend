@@ -88,7 +88,7 @@ void Window::SetFullscreen(const bool enabled)
 		DisableRounding();
 }
 
-Window::Window(const char* const window_title, const float window_width, const float window_height, const bool resizeable, const std::optional<float> &forced_scale, Uint32 window_flags)
+Window::Window(const char* const window_title, const float window_width, const float window_height, const bool resizeable, const std::optional<float> &forced_scale, SDL_WindowFlags window_flags)
 {
 	const float scale = forced_scale.value_or(GetDisplayDPIScale());
 
