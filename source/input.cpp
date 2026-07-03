@@ -9,26 +9,25 @@ std::array<const Input::Device*, 8> Input::bound_devices;
 
 unsigned int Input::Device::GetButton(const Binding button) const
 {
-	const unsigned int total_presses = GetButtonInternal(button);
+	// TODO: Eliminate this shim.
+	return GetButtonInternal(button);
+}
 
-	if (total_presses != 0)
+void Input::Device::AutoBind() const
+{
+	// bind this controller to the first unbound input.
+	for (auto &bound_input : bound_devices)
+		if (bound_input == this)
+			return;
+
+	for (auto &bound_input : bound_devices)
 	{
-		// Automatically bind this controller to the first unbound input.
-		for (auto &bound_input : bound_devices)
-			if (bound_input == this)
-				return total_presses;
-
-		for (auto &bound_input : bound_devices)
+		if (bound_input == nullptr)
 		{
-			if (bound_input == nullptr)
-			{
-				bound_input = this;
-				break;
-			}
+			bound_input = this;
+			break;
 		}
 	}
-
-	return total_presses;
 }
 
 unsigned int Input::Keyboard::GetButtonInternal(const Binding button) const

@@ -1707,6 +1707,8 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 				if (Input::keyboard.bindings[Input::Binding::FAST_FORWARD].contains(event.key.scancode))
 					if (emulator->IsPaused())
 						emulator_frame_advance = true;
+
+				Input::keyboard.AutoBind();
 			}
 
 			break;
@@ -1765,13 +1767,25 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 		}
 
 		case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+		{
 			if (event.gbutton.button == SDL_GAMEPAD_BUTTON_RIGHT_STICK)
 			{
 				// Toggle pause.
 				emulator->SetPaused(!emulator->IsPaused());
 			}
 
+			const auto &it = std::find_if(std::begin(Input::controllers), std::end(Input::controllers),
+				[&](const Input::Controller &controller)
+				{
+					return controller.joystick_instance_id == event.gbutton.which;
+				}
+			);
+
+			if (it != std::end(Input::controllers))
+				it->AutoBind();
+
 			break;
+		}
 
 		case SDL_EVENT_DROP_FILE:
 			drag_and_drop_filename = FileUtilities::U8Path(event.drop.data);

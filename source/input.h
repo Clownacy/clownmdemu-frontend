@@ -48,6 +48,8 @@ namespace Input
 
 		unsigned int GetButton(Binding button) const;
 		virtual unsigned int GetButtonInternal(Binding button) const = 0;
+
+		void AutoBind() const;
 	};
 
 	class Keyboard final : public Device
