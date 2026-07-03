@@ -416,7 +416,7 @@ private:
 				ImGui::TableNextColumn();
 				ImGui::TextUnformatted(label);
 
-				auto &bound_input = Input::bound_devices[i];
+				auto &bound_input = Input::Device::bound_devices[i];
 
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
@@ -431,7 +431,7 @@ private:
 							const auto &FindOtherBoundInput = [](const Input::Device* const address) -> const Input::Device**
 							{
 								if (address != nullptr)
-									for (auto &other_bound_input : Input::bound_devices)
+									for (auto &other_bound_input : Input::Device::bound_devices)
 										if (other_bound_input == address)
 											return &other_bound_input;
 
@@ -717,9 +717,9 @@ static bool forced_fullscreen;
 
 static cc_bool ReadInputCallback(const cc_u8f player_id, const ClownMDEmu_Button button_id)
 {
-	SDL_assert(player_id < std::size(Input::bound_devices));
+	SDL_assert(player_id < std::size(Input::Device::bound_devices));
 
-	const Input::Device* const input = Input::bound_devices[player_id];
+	const Input::Device* const input = Input::Device::bound_devices[player_id];
 
 	if (input == nullptr)
 		return cc_false;
@@ -1755,7 +1755,7 @@ void Frontend::HandleMainWindowEvent(const SDL_Event &event)
 						return false;
 
 					// Remove controller from input bindings.
-					for (auto &bound_input : Input::bound_devices)
+					for (auto &bound_input : Input::Device::bound_devices)
 						if (bound_input == &controller_input)
 							bound_input = nullptr;
 

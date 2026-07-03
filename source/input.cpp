@@ -5,7 +5,7 @@
 Input::Keyboard Input::keyboard = {"Keyboard"};
 std::list<Input::Controller> Input::controllers;
 
-std::array<const Input::Device*, 8> Input::bound_devices;
+std::array<const Input::Device*, 8> Input::Device::bound_devices;
 
 void Input::Device::AutoBind() const
 {

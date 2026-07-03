@@ -40,6 +40,8 @@ namespace Input
 	class Device
 	{
 	public:
+		static std::array<const Device*, 8> bound_devices;
+
 		const std::string name;
 
 		Device(std::string name)
@@ -103,8 +105,6 @@ namespace Input
 
 	extern Keyboard keyboard;
 	extern std::list<Controller> controllers;
-
-	extern std::array<const Device*, 8> bound_devices;
 }
 
 #endif // INPUT_H
