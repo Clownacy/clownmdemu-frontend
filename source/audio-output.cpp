@@ -1,5 +1,6 @@
 #include "audio-output.h"
 
+#include <bit>
 #include <numeric>
 
 #include <SDL3/SDL.h>
