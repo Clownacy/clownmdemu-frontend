@@ -15,13 +15,8 @@
 
 namespace SDL
 {
-	struct FreeFunctor
-	{
-		void operator()(void* const pointer) { return SDL_free(pointer); }
-	};
-
 	template<typename T>
-	using Pointer = std::unique_ptr<T, FreeFunctor>;
+	using Pointer = std::unique_ptr<T, decltype([](void* const pointer){ return SDL_free(pointer); })>;
 
 	MAKE_RAII_POINTER(Window,       SDL_Window,       SDL_DestroyWindow     );
 	MAKE_RAII_POINTER(Renderer,     SDL_Renderer,     SDL_DestroyRenderer   );

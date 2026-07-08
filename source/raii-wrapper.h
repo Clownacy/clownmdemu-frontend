@@ -3,19 +3,13 @@
 
 #include <memory>
 
-#define MAKE_RAII_DELETER(NAME, TYPE, DELETER) \
-struct NAME##Deleter \
-{ \
-	void operator()(TYPE* const pointer) { DELETER(pointer); } \
-}
-
 #define MAKE_RAII_POINTER(NAME, TYPE, DELETER) \
-MAKE_RAII_DELETER(NAME, TYPE, DELETER); \
+using NAME##Base = std::unique_ptr<TYPE, decltype([](TYPE* const pointer){ DELETER(pointer); })>; \
  \
-class NAME : public std::unique_ptr<TYPE, NAME##Deleter> \
+class NAME : public NAME##Base \
 { \
 public: \
-	using std::unique_ptr<TYPE, NAME##Deleter>::unique_ptr; \
+	using NAME##Base::NAME##Base; \
  \
 	operator TYPE*() { return get(); } \
 	operator const TYPE*() const { return get(); } \
