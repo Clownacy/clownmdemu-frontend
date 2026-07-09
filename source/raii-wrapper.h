@@ -2,6 +2,7 @@
 #define RAII_WRAPPER_H
 
 #include <memory>
+#include <utility>
 
 namespace RAII
 {
