@@ -59,7 +59,7 @@ namespace ImGui
 class WindowWithDearImGui : public Window
 {
 private:
-	MAKE_RAII_POINTER(DearImGuiContext, ImGuiContext, ImGui::DestroyContext);
+	using DearImGuiContext = RAII::Pointer<ImGuiContext, ImGui::DestroyContext>;
 
 	DearImGuiContext dear_imgui_context;
 	ImGuiContext *previous_dear_imgui_context;

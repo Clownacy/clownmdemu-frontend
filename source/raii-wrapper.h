@@ -3,16 +3,27 @@
 
 #include <memory>
 
-#define MAKE_RAII_POINTER(NAME, TYPE, DELETER) \
-using NAME##Base = std::unique_ptr<TYPE, decltype([](TYPE* const pointer){ DELETER(pointer); })>; \
- \
-class NAME : public NAME##Base \
-{ \
-public: \
-	using NAME##Base::NAME##Base; \
- \
-	operator TYPE*() { return get(); } \
-	operator const TYPE*() const { return get(); } \
+namespace RAII
+{
+	template<auto Delete>
+	struct Deleter
+	{
+		template<typename T>
+		auto operator()(T &&pointer)
+		{
+			return Delete(std::forward<T>(pointer));
+		}
+	};
+
+	template<typename Type, auto Delete>
+	class Pointer : public std::unique_ptr<Type, Deleter<Delete>>
+	{
+	public:
+		using std::unique_ptr<Type, Deleter<Delete>>::unique_ptr;
+
+		operator Type*() { return this->get(); }
+		operator const Type*() const { return this->get(); }
+	};
 }
 
 #endif // RAII_WRAPPER_H
