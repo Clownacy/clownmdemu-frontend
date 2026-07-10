@@ -2,6 +2,7 @@
 #define RAII_WRAPPER_H
 
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 namespace RAII
@@ -16,14 +17,27 @@ namespace RAII
 		}
 	};
 
-	template<typename Type, auto Delete>
-	class Pointer : public std::unique_ptr<Type, Deleter<Delete>>
+	template<typename T>
+	struct FunctionMetadata;
+
+	template<typename ReturnType, typename ParameterType>
+	struct FunctionMetadata<ReturnType(*)(ParameterType)>
+	{
+		using return_type = ReturnType;
+		using parameter_type = ParameterType;
+	};
+
+	template<auto Delete>
+	using PointerBase = std::unique_ptr<std::remove_pointer_t<typename FunctionMetadata<decltype(Delete)>::parameter_type>, Deleter<Delete>>;
+
+	template<auto Delete>
+	class Pointer : public PointerBase<Delete>
 	{
 	public:
-		using std::unique_ptr<Type, Deleter<Delete>>::unique_ptr;
+		using PointerBase<Delete>::PointerBase;
 
-		operator Type*() { return this->get(); }
-		operator const Type*() const { return this->get(); }
+		operator auto() { return this->get(); }
+		operator auto() const { return this->get(); }
 	};
 }
 

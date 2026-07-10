@@ -18,13 +18,13 @@ namespace SDL
 	template<typename T>
 	using Pointer = std::unique_ptr<T, RAII::Deleter<SDL_free>>;
 
-	using Window       = RAII::Pointer<SDL_Window,       SDL_DestroyWindow     >;
-	using Renderer     = RAII::Pointer<SDL_Renderer,     SDL_DestroyRenderer   >;
-	using Texture      = RAII::Pointer<SDL_Texture,      SDL_DestroyTexture    >;
-	using Surface      = RAII::Pointer<SDL_Surface,      SDL_DestroySurface    >;
-	using IOStreamBase = RAII::Pointer<SDL_IOStream,     SDL_CloseIO           >;
-	using AudioStream  = RAII::Pointer<SDL_AudioStream,  SDL_DestroyAudioStream>;
-	using SharedObject = RAII::Pointer<SDL_SharedObject, SDL_UnloadObject      >;
+	using Window       = RAII::Pointer<SDL_DestroyWindow     >;
+	using Renderer     = RAII::Pointer<SDL_DestroyRenderer   >;
+	using Texture      = RAII::Pointer<SDL_DestroyTexture    >;
+	using Surface      = RAII::Pointer<SDL_DestroySurface    >;
+	using IOStreamBase = RAII::Pointer<SDL_CloseIO           >;
+	using AudioStream  = RAII::Pointer<SDL_DestroyAudioStream>;
+	using SharedObject = RAII::Pointer<SDL_UnloadObject      >;
 
 	inline std::filesystem::path U8Path(const std::string_view &string)
 	{
