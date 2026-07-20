@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <type_traits>
+#include <vector>
 
 #include "../common/core/source/clownmdemu.h"
 #include "../common/cheat.h"
@@ -15,6 +16,7 @@
 #include "debug-log.h"
 #include "sdl-wrapper.h"
 #include "text-encoding.h"
+#include "vgm-logger.h"
 
 template<typename Derived, typename Colour>
 class EmulatorExtended : public ClownMDEmuCXX::Emulator<Derived>
@@ -155,6 +157,7 @@ private:
 	std::filesystem::path save_file_directory;
 	std::filesystem::path cartridge_save_file_path;
 	unsigned int speed = 1;
+	VGMLogger vgm_logger;
 
 	////////////////////////
 	// Emulator Callbacks //
@@ -256,6 +259,11 @@ private:
 		std::error_code ec;
 		*size = std::filesystem::file_size(save_file_directory / filename, ec);
 		return !ec;
+	}
+
+	void SoundChipWritten(const ClownMDEmu_SoundChip chip, const cc_u8f address, const cc_u8f data, const cc_u32f cycle)
+	{
+		vgm_logger.LogWrite(chip, address, data, cycle);
 	}
 
 	/////////////////////////
@@ -525,6 +533,7 @@ public:
 
 			cheat_manager.ApplyRAMPatches(this);
 			Emulator::Iterate();
+			vgm_logger.AdvanceFrame();
 
 			// Resample, mix, and output the audio for this frame.
 			audio_output.MixerEnd();
@@ -561,6 +570,25 @@ public:
 	[[nodiscard]] cc_u32f GetAudioTargetFrames() const { return audio_output.GetTargetFrames(); }
 	[[nodiscard]] cc_u32f GetAudioTotalBufferFrames() const { return audio_output.GetTotalBufferFrames(); }
 	[[nodiscard]] cc_u32f GetAudioSampleRate() const { return audio_output.GetSampleRate(); }
+
+	/////////////////
+	// VGM Logging //
+	/////////////////
+
+	void StartVGMLogging()
+	{
+		vgm_logger.Start(this->GetTVStandard() == CLOWNMDEMU_TV_STANDARD_PAL, GetSoftwareName());
+	}
+
+	[[nodiscard]] std::vector<unsigned char> StopVGMLogging()
+	{
+		return vgm_logger.Finish();
+	}
+
+	[[nodiscard]] bool IsVGMLogging() const
+	{
+		return vgm_logger.IsRecording();
+	}
 
 	////////////////////
 	// Colour Palette //
