@@ -854,3 +854,65 @@ std::optional<std::string> UTF32ToUTF8(const cc_u32f utf32_codepoint)
 
 	return utf8;
 }
+
+cc_u32f UTF8ToUTF32(const unsigned char* const in_buffer, cc_u8f* const bytes_read)
+{
+	cc_u32f codepoint, minimum_codepoint;
+	cc_u8f total_bytes;
+
+	if (in_buffer[0] < 0x80)
+	{
+		codepoint = in_buffer[0];
+		minimum_codepoint = 0;
+		total_bytes = 1;
+	}
+	else if ((in_buffer[0] & 0xE0) == 0xC0)
+	{
+		codepoint = in_buffer[0] & 0x1F;
+		minimum_codepoint = 0x80;
+		total_bytes = 2;
+	}
+	else if ((in_buffer[0] & 0xF0) == 0xE0)
+	{
+		codepoint = in_buffer[0] & 0x0F;
+		minimum_codepoint = 0x800;
+		total_bytes = 3;
+	}
+	else if ((in_buffer[0] & 0xF8) == 0xF0)
+	{
+		codepoint = in_buffer[0] & 0x07;
+		minimum_codepoint = 0x10000;
+		total_bytes = 4;
+	}
+	else
+	{
+		/* Invalid leading byte. */
+		if (bytes_read != nullptr)
+			*bytes_read = 1;
+
+		return ' ';
+	}
+
+	for (cc_u8f i = 1; i < total_bytes; ++i)
+	{
+		/* Bail out if the sequence is truncated. */
+		if ((in_buffer[i] & 0xC0) != 0x80)
+		{
+			if (bytes_read != nullptr)
+				*bytes_read = i;
+
+			return ' ';
+		}
+
+		codepoint = codepoint << 6 | (in_buffer[i] & 0x3F);
+	}
+
+	if (bytes_read != nullptr)
+		*bytes_read = total_bytes;
+
+	/* Reject overlong sequences, UTF-16 surrogates, and codepoints beyond Unicode. */
+	if (codepoint < minimum_codepoint || (codepoint >= 0xD800 && codepoint < 0xE000) || codepoint >= 0x110000)
+		return ' ';
+
+	return codepoint;
+}
