@@ -2244,6 +2244,22 @@ void Frontend::Update()
 
 				PopupButton("Disassembler", disassembler_window, nullptr, std::make_pair(380, 410));
 
+				if (!emulator->IsVGMLogging())
+				{
+					if (ImGui::MenuItem("Start VGM Recording", nullptr, false, emulator_on))
+						emulator->StartVGMLogging();
+				}
+				else
+				{
+					if (ImGui::MenuItem("Stop VGM Recording..."))
+					{
+						file_utilities.SaveFile(*window, "Create VGM Recording", "recording.vgm", {}, [vgm_data = emulator->StopVGMLogging()](const FileUtilities::SaveFileInnerCallback &callback)
+						{
+							return callback(std::data(vgm_data), std::size(vgm_data));
+						});
+					}
+				}
+
 				ImGui::Separator();
 
 				PopupButton("Frontend", debug_frontend_window, nullptr, std::make_pair(400, 210));

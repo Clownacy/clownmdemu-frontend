@@ -36,6 +36,8 @@ add_executable(clownmdemu WIN32
 	"source/text-encoding.cpp"
 	"source/text-encoding.h"
 	"source/version.h"
+	"source/vgm-logger.cpp"
+	"source/vgm-logger.h"
 	"source/windows/about.cpp"
 	"source/windows/about.h"
 	"source/windows/cheats.cpp"

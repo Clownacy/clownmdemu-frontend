@@ -13,4 +13,8 @@ cc_u16l ShiftJISToUTF32(const unsigned char* const in_buffer, cc_u8f* const byte
 /* Returns number of bytes written (maximum 4). */
 std::optional<std::string> UTF32ToUTF8(const cc_u32f utf32_codepoint);
 
+/* Returns UTF-32 codepoint. */
+/* Reads a maximum of four bytes. */
+cc_u32f UTF8ToUTF32(const unsigned char* const in_buffer, cc_u8f* const bytes_read);
+
 #endif /* TEXT_ENCODING_H */
