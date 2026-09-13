@@ -418,7 +418,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			if (ImGui::ImageCopyable(window, ImTextureRef(textures[0]), map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size))
+			if (ImGui::ImageCopyable(window, ImTextureRef(textures[0]), SDL_SCALEMODE_PIXELART, map_size_in_pixels * derived->scale * dpi_scale, {}, map_size_in_pixels / map_texture_size))
 			{
 				ImGui::BeginTooltip();
 
@@ -429,7 +429,7 @@ void DebugVDP::MapViewer<Derived>::DisplayMap(
 				piece_position.y = std::floor(piece_position.y);
 
 				const auto destination_width = TileWidth() * 9.0f * dpi_scale;
-				ImGui::Image(ImTextureRef(textures[0]), ImVec2(destination_width, destination_width * piece_height / piece_width), piece_position * piece_size / map_texture_size, (piece_position + ImVec2(1, 1)) * piece_size / map_texture_size);
+				ImGui::Image(ImTextureRef(textures[0]), SDL_SCALEMODE_PIXELART, ImVec2(destination_width, destination_width * piece_height / piece_width), piece_position * piece_size / map_texture_size, (piece_position + ImVec2(1, 1)) * piece_size / map_texture_size);
 				ImGui::SameLine();
 				piece_tooltip(piece_position.x, piece_position.y);
 				ImGui::EndTooltip();
@@ -707,7 +707,7 @@ void DebugVDP::SpriteViewer::DisplayInternal()
 
 			const ImVec2 image_position = ImGui::GetCursorScreenPos();
 
-			if (ImGui::ImageCopyable(window, ImTextureRef(texture), ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height)))
+			if (ImGui::ImageCopyable(window, ImTextureRef(texture), SDL_SCALEMODE_PIXELART, ImVec2(plane_width_in_pixels * scale, plane_height_in_pixels * scale), ImVec2(0.0f, 0.0f), ImVec2(plane_width_in_pixels / plane_texture_width, plane_height_in_pixels / plane_texture_height)))
 			{
 				ImGui::BeginTooltip();
 
@@ -776,7 +776,7 @@ void DebugVDP::SpriteList::DisplayInternal()
 					std::swap(uv0.y, uv1.y);
 
 				ImGui::SetCursorPos(image_destination_offset);
-				ImGui::ImageCopyable(GetWindow(), ImTextureRef(textures[index]), image_destination_size, uv0, uv1);
+				ImGui::ImageCopyable(GetWindow(), ImTextureRef(textures[index]), SDL_SCALEMODE_PIXELART, image_destination_size, uv0, uv1);
 			}
 			ImGui::EndChild();
 			ImGui::PopID();
@@ -926,7 +926,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 						if (destination_piece_size.x <= 24 * dpi_scale || destination_piece_size.y <= 24 * dpi_scale)
 						{
 							// Display a zoomed-in version of the tile, so that the user can get a good look at it.
-							ImGui::Image(ImTextureRef(regenerating_pieces.textures[0]), ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
+							ImGui::Image(ImTextureRef(regenerating_pieces.textures[0]), SDL_SCALEMODE_PIXELART, ImVec2(destination_piece_size.x * 3.0f, destination_piece_size.y * 3.0f), current_piece_uv0, current_piece_uv1);
 						}
 
 						ImGui::EndTooltip();

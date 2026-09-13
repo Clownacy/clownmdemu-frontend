@@ -124,15 +124,32 @@ void ImGui::ImageCopyableContextWindow(Window &window, SDL_Texture* const textur
 	}
 }
 
-bool ImGui::ImageCopyable(Window &window, const ImTextureRef tex_ref, const ImVec2 &image_size, const ImVec2 &uv0, const ImVec2 &uv1)
+bool ImGui::ImageCopyable(Window &window, const ImTextureRef tex_ref, const SDL_ScaleMode scale_mode, const ImVec2 &image_size, const ImVec2 &uv0, const ImVec2 &uv1)
 {
-	ImGui::Image(tex_ref, image_size, uv0, uv1);
+	ImGui::Image(tex_ref, scale_mode, image_size, uv0, uv1);
 
 	const bool hovered = ImGui::IsItemHovered();
 
 	ImageCopyableContextWindow(window, static_cast<SDL_Texture*>(tex_ref.GetTexID()), uv0, uv1);
 
 	return hovered;
+}
+
+void ImGui::Image(const ImTextureRef tex_ref, const SDL_ScaleMode scale_mode, const ImVec2 &image_size, const ImVec2 &uv0, const ImVec2 &uv1)
+{
+	// Set scale mode.
+	ImGui::GetWindowDrawList()->AddCallback(
+		[](const ImDrawList* parent_list, const ImDrawCmd* cmd)
+		{
+			((ImGui_ImplSDLRenderer3_RenderState*)ImGui::GetPlatformIO().Renderer_RenderState)->CurrentScaleMode = static_cast<SDL_ScaleMode>(reinterpret_cast<uintptr_t>(cmd->UserCallbackData));
+		},
+		reinterpret_cast<void*>(scale_mode)
+	);
+
+	ImGui::Image(tex_ref, image_size, uv0, uv1);
+
+	// Restore back to the default.
+	ImGui::GetWindowDrawList()->AddCallback(ImGui::GetPlatformIO().DrawCallback_SetSamplerLinear);
 }
 
 ///////////////

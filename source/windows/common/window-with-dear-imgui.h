@@ -53,7 +53,8 @@ namespace ImGui
 	}
 
 	void ImageCopyableContextWindow(Window &window, SDL_Texture *texture, const ImVec2 &uv0, const ImVec2 &uv1);
-	bool ImageCopyable(Window &window, ImTextureRef tex_ref, const ImVec2 &image_size, const ImVec2 &uv0 = ImVec2(0, 0), const ImVec2 &uv1 = ImVec2(1, 1));
+	bool ImageCopyable(Window &window, ImTextureRef tex_ref, SDL_ScaleMode scale_mode, const ImVec2 &image_size, const ImVec2 &uv0 = ImVec2(0, 0), const ImVec2 &uv1 = ImVec2(1, 1));
+	void Image(ImTextureRef tex_ref, SDL_ScaleMode scale_mode, const ImVec2 &image_size, const ImVec2 &uv0 = ImVec2(0, 0), const ImVec2 &uv1 = ImVec2(1, 1));
 }
 
 class WindowWithDearImGui : public Window
