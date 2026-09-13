@@ -30,6 +30,7 @@ qt_add_executable(clownmdemu-frontend-qt
 	../source/emulator-extended.h
 	../source/raii-wrapper.h ../source/sdl-wrapper.h
 	../source/text-encoding.cpp ../source/text-encoding.h
+	../source/vgm-logger.cpp ../source/vgm-logger.h
 )
 
 set_target_properties(clownmdemu-frontend-qt PROPERTIES
