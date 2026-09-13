@@ -139,7 +139,7 @@ void ImGui::Image(const ImTextureRef tex_ref, const SDL_ScaleMode scale_mode, co
 {
 	// Set scale mode.
 	ImGui::GetWindowDrawList()->AddCallback(
-		[](const ImDrawList* parent_list, const ImDrawCmd* cmd)
+		[]([[maybe_unused]] const ImDrawList* parent_list, const ImDrawCmd* cmd)
 		{
 			((ImGui_ImplSDLRenderer3_RenderState*)ImGui::GetPlatformIO().Renderer_RenderState)->CurrentScaleMode = static_cast<SDL_ScaleMode>(reinterpret_cast<uintptr_t>(cmd->UserCallbackData));
 		},
