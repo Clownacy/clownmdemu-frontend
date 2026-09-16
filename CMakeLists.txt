@@ -247,9 +247,12 @@ add_subdirectory("libraries/Lyra" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu lyra)
 
 # Link OpenMP
-find_package(OpenMP COMPONENTS CXX)
-if(OpenMP_CXX_FOUND)
-	target_link_libraries(clownmdemu OpenMP::OpenMP_CXX)
+# Emscripten currently suffers from build errors with this.
+if(NOT EMSCRIPTEN)
+	find_package(OpenMP COMPONENTS CXX)
+	if(OpenMP_CXX_FOUND)
+		target_link_libraries(clownmdemu OpenMP::OpenMP_CXX)
+	endif()
 endif()
 
 ################
