@@ -200,6 +200,13 @@ target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui
 # Link libraries #
 ##################
 
+# A small hack needed for Arch Linux's `aur/mingw-w64-cmake-static` package,
+# which clashes with a dumbass CMake limitation that prevents
+# `CMAKE_FIND_LIBRARY_SUFFIXES` from being overriden by toolchain files.
+if(DEFINED CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE})
+endif()
+
 # Link clownmdemu-frontend-common, miniz, and chdr-lzma
 set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
 add_subdirectory("common" EXCLUDE_FROM_ALL)
