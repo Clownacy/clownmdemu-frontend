@@ -12,8 +12,8 @@ TarBall::TarBall(const DataSpan &input_buffer, const std::size_t uncompressed_si
 			buffer = input_buffer;
 			break;
 
-		case Compression::LZMA:
-			auto decompressed_input_buffer = FileUtilities::DecompressLZMABuffer(std::data(input_buffer), std::size(input_buffer), uncompressed_size);
+		case Compression::Zstd:
+			auto decompressed_input_buffer = FileUtilities::DecompressZstdBuffer(std::data(input_buffer), std::size(input_buffer), uncompressed_size);
 
 			if (!decompressed_input_buffer.has_value())
 				return;

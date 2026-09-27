@@ -22,7 +22,7 @@ public:
 	enum class Compression
 	{
 		None,
-		LZMA,
+		Zstd,
 	};
 
 	TarBall(const DataSpan &input_buffer, std::size_t uncompressed_size = 0, Compression compression = Compression::None);

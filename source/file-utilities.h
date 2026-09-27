@@ -121,7 +121,7 @@ public:
 	}
 
 	static std::optional<std::vector<cc_u16l>> LoadZIPFileToBuffer(SDL::IOStream &file, unsigned int file_index);
-	static std::optional<std::vector<unsigned char>> DecompressLZMABuffer(const unsigned char *buffer, std::size_t buffer_size, std::size_t uncompressed_size);
+	static std::optional<std::vector<unsigned char>> DecompressZstdBuffer(const unsigned char *buffer, std::size_t buffer_size, std::size_t uncompressed_size);
 
 	void LoadFile(Window &window, const char *title, const char *default_filename, const Filters &filters, LoadFileCallback callback);
 	void SaveFile(Window &window, const char *title, const char *default_filename, const Filters &filters, SaveFileCallback callback);

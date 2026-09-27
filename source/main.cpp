@@ -20,7 +20,7 @@
 
 namespace CompressedGameControllerDB
 {
-	#include "../../assets/gamecontrollerdb/archive.tar.lzma.h"
+	#include "../../assets/gamecontrollerdb/archive.tar.zst.h"
 }
 
 template<typename... Args>
@@ -35,7 +35,7 @@ static bool InitialiseSDLAndFrontend(Args &&...args)
 	}
 
 	// Load additional controller mappings.
-	const auto archive = TarBall(CompressedGameControllerDB::buffer, CompressedGameControllerDB::uncompressed_size, TarBall::Compression::LZMA);
+	const auto archive = TarBall(CompressedGameControllerDB::buffer, CompressedGameControllerDB::uncompressed_size, TarBall::Compression::Zstd);
 	const auto mappings = archive.OpenFile("SDL_GameControllerDB/gamecontrollerdb.txt").value();
 	SDL_AddGamepadMappingsFromIO(SDL::IOStream(std::data(mappings), std::size(mappings)), false);
 

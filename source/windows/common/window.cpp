@@ -12,12 +12,12 @@
 #ifndef SDL_PLATFORM_WIN32
 namespace WindowIcon
 {
-	#include "../../assets/icon/archive.tar.lzma.h"
+	#include "../../assets/icon/archive.tar.zst.h"
 }
 
 static SDL::Surface LoadWindowIcon()
 {
-	TarBall archive(WindowIcon::buffer, WindowIcon::uncompressed_size, TarBall::Compression::LZMA);
+	TarBall archive(WindowIcon::buffer, WindowIcon::uncompressed_size, TarBall::Compression::Zstd);
 
 	const auto &LoadPNG = [&](const std::filesystem::path &path) -> SDL::Surface
 	{

@@ -8,7 +8,7 @@
 
 namespace CompressedFonts
 {
-	#include "../../assets/font/archive.tar.lzma.h"
+	#include "../../assets/font/archive.tar.zst.h"
 }
 
 ///////////
@@ -30,7 +30,7 @@ unsigned int WindowWithDearImGui::CalculateFontSize()
 
 void WindowWithDearImGui::ReloadFonts(const unsigned int font_size)
 {
-	static auto fonts = TarBall(CompressedFonts::buffer, CompressedFonts::uncompressed_size, TarBall::Compression::LZMA);
+	static auto fonts = TarBall(CompressedFonts::buffer, CompressedFonts::uncompressed_size, TarBall::Compression::Zstd);
 
 	ImGuiIO &io = ImGui::GetIO();
 
