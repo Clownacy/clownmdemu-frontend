@@ -210,6 +210,12 @@ endif()
 # Link clownmdemu-frontend-common, miniz, and chdr-lzma
 set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
 add_subdirectory("common" EXCLUDE_FROM_ALL)
+if(NOT TARGET miniz)
+	add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1" EXCLUDE_FROM_ALL)
+endif()
+if(NOT TARGET chdr-lzma)
+	add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/lzma-25.01" EXCLUDE_FROM_ALL)
+endif()
 target_link_libraries(clownmdemu clownmdemu-frontend-common miniz chdr-lzma)
 
 # Link SDL
