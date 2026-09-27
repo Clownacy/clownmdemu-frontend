@@ -207,16 +207,29 @@ if(DEFINED CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE})
 endif()
 
-# Link clownmdemu-frontend-common, miniz, and zstd
+# Link clownmdemu-frontend-common and miniz
 set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
 add_subdirectory("common" EXCLUDE_FROM_ALL)
 if(NOT TARGET miniz)
 	add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1" EXCLUDE_FROM_ALL)
 endif()
-if(NOT TARGET zstd)
-	add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/zstd-1.5.7" EXCLUDE_FROM_ALL)
+target_link_libraries(clownmdemu clownmdemu-frontend-common miniz)
+
+# Link zstd
+find_package(zstd)
+if(zstd_FOUND)
+	target_compile_definitions(clownmdemu PRIVATE USE_SYSTEM_ZSTD)
+	if(TARGET zstd::libzstd_shared)
+		target_link_libraries(clownmdemu zstd::libzstd_shared)
+	else()
+		target_link_libraries(clownmdemu zstd::libzstd_static)
+	endif()
+else()
+	if(NOT TARGET zstd)
+		add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/zstd-1.5.7" EXCLUDE_FROM_ALL)
+	endif()
+	target_link_libraries(zstd)
 endif()
-target_link_libraries(clownmdemu clownmdemu-frontend-common miniz zstd)
 
 # Link SDL
 find_package(SDL3 3.4.2 CONFIG COMPONENTS SDL3)

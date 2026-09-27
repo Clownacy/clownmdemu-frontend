@@ -4,13 +4,20 @@
 #include <cstdlib>
 #include <vector>
 
-#ifdef __EMSCRIPTEN__
-#include "../libraries/emscripten-browser-file/emscripten_browser_file.h"
+#include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
+
+#ifdef USE_SYSTEM_ZSTD
+	#include <zstd.h>
+#else
+	#include "../common/clowncd/libraries/chd/libchdr/deps/zstd-1.5.7/zstd.h"
 #endif
+
+#ifdef __EMSCRIPTEN__
+	#include "../libraries/emscripten-browser-file/emscripten_browser_file.h"
+#endif
+
 #include "../libraries/imgui/misc/cpp/imgui_stdlib.h"
 
-#include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
-#include "../common/clowncd/libraries/chd/libchdr/deps/zstd-1.5.7/zstd.h"
 #include "../common/core/libraries/clowncommon/clowncommon.h"
 
 void FileUtilities::CreateFileDialog(Window &window, const char* const title, const char* const default_filename, const Filters &filters, PopupCallback callback, const bool save)
