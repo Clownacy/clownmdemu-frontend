@@ -290,7 +290,7 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 #endif
 }
 
-std::optional<std::vector<cc_u16l>> FileUtilities::LoadZIPFileToBuffer(SDL::IOStream &file, const unsigned int file_index)
+std::optional<std::vector<cc_u16l>> FileUtilities::LoadZIPFileToBuffer(SDL::IOStream &file)
 {
 	const auto &Load = [&]() -> std::optional<std::vector<cc_u16l>>
 	{
@@ -411,12 +411,12 @@ std::optional<std::vector<cc_u16l>> FileUtilities::LoadZIPFileToBuffer(SDL::IOSt
 
 		if (mz_zip_reader_init(&miniz, SDL_GetIOSize(file), 0))
 		{
-			if (mz_zip_validate_file(&miniz, file_index, MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY))
+			if (mz_zip_validate_file(&miniz, 0, MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY))
 			{
 				file_buffer.emplace();
 
 				if (!mz_zip_reader_extract_to_callback(
-					&miniz, file_index,
+					&miniz, 0,
 					[](void* const pOpaque, const mz_uint64 file_ofs, const void* const pBuf, const std::size_t n) -> std::size_t
 					{
 						auto &file_buffer = *static_cast<std::vector<cc_u16l>*>(pOpaque);

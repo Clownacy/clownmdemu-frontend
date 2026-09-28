@@ -892,7 +892,7 @@ bool Frontend::LoadCartridgeFile(const std::filesystem::path &path, SDL::IOStrea
 		std::optional<std::vector<cc_u16l>> file_buffer;
 
 		// First try loading the file as a ZIP file.
-		file_buffer = FileUtilities::LoadZIPFileToBuffer(file, 0); // Assume that it's the first file in the archive.
+		file_buffer = FileUtilities::LoadZIPFileToBuffer(file);
 
 		// Failing that, just load it as a raw binary.
 		if (!file_buffer.has_value())
