@@ -217,7 +217,7 @@ else()
 	if(NOT TARGET zstd)
 		add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/zstd-1.5.7" EXCLUDE_FROM_ALL)
 	endif()
-	target_link_libraries(zstd)
+	target_link_libraries(clownmdemu zstd)
 endif()
 
 # Link clownmdemu-frontend-common.
