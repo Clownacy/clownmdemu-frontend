@@ -207,13 +207,22 @@ if(DEFINED CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE})
 endif()
 
-# Link clownmdemu-frontend-common and miniz
-set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
-add_subdirectory("common" EXCLUDE_FROM_ALL)
-if(NOT TARGET miniz)
-	add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1" EXCLUDE_FROM_ALL)
+# Link minizip (or miniz)
+find_package(PkgConfig)
+if(PkgConfig_FOUND)
+	pkg_check_modules(minizip IMPORTED_TARGET minizip)
 endif()
-target_link_libraries(clownmdemu clownmdemu-frontend-common miniz)
+
+if(TARGET PkgConfig::minizip)
+	target_compile_definitions(clownmdemu PRIVATE USE_SYSTEM_MINIZIP)
+	target_link_libraries(clownmdemu PkgConfig::minizip)
+else()
+	if(NOT TARGET miniz)
+		set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
+		add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1" EXCLUDE_FROM_ALL)
+	endif()
+	target_link_libraries(clownmdemu miniz)
+endif()
 
 # Link zstd
 find_package(zstd)
@@ -230,6 +239,11 @@ else()
 	endif()
 	target_link_libraries(zstd)
 endif()
+
+# Link clownmdemu-frontend-common
+# This must come after linking miniz, because otherwise miniz will configured by libchdr instead of us.
+add_subdirectory("common" EXCLUDE_FROM_ALL)
+target_link_libraries(clownmdemu clownmdemu-frontend-common)
 
 # Link SDL
 find_package(SDL3 3.4.2 CONFIG COMPONENTS SDL3)

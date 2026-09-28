@@ -1,10 +1,15 @@
 #include "file-utilities.h"
 
+#include <array>
 #include <climits>
 #include <cstdlib>
 #include <vector>
 
-#include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
+#ifdef USE_SYSTEM_MINIZIP
+	#include <minizip/unzip.h>
+#else
+	#include "../common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1/miniz.h"
+#endif
 
 #ifdef USE_SYSTEM_ZSTD
 	#include <zstd.h>
@@ -287,58 +292,168 @@ void FileUtilities::SaveFile([[maybe_unused]] Window &window, [[maybe_unused]] c
 
 std::optional<std::vector<cc_u16l>> FileUtilities::LoadZIPFileToBuffer(SDL::IOStream &file, const unsigned int file_index)
 {
-	const auto starting_position = SDL_TellIO(file);
-
-	std::optional<std::vector<cc_u16l>> file_buffer;
-
-	mz_zip_archive miniz;
-	mz_zip_zero_struct(&miniz);
-	miniz.m_pRead = [](void* const pOpaque, const mz_uint64 file_ofs, void* const pBuf, const std::size_t n) -> std::size_t
+	const auto &Load = [&]() -> std::optional<std::vector<cc_u16l>>
 	{
-		SDL::IOStream &file = *static_cast<SDL::IOStream*>(pOpaque);
+		std::optional<std::vector<cc_u16l>> file_buffer;
 
-		SDL_SeekIO(file, file_ofs, SDL_IO_SEEK_SET);
-		return SDL_ReadIO(file, pBuf, n);
-	};
-	miniz.m_pIO_opaque = &file;
-
-	if (mz_zip_reader_init(&miniz, SDL_GetIOSize(file), 0))
-	{
-		if (mz_zip_validate_file(&miniz, file_index, MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY))
-		{
-			file_buffer.emplace();
-
-			if (!mz_zip_reader_extract_to_callback(
-				&miniz, file_index,
-				[](void* const pOpaque, const mz_uint64 file_ofs, const void* const pBuf, const std::size_t n) -> std::size_t
+	#ifdef USE_SYSTEM_MINIZIP
+		zlib_filefunc64_def callbacks = {
+			// zopen64_file
+			[]([[maybe_unused]] const voidpf opaque, [[maybe_unused]] const void* const filename, [[maybe_unused]] const int mode) -> voidpf
+			{
+				// Nothing to do here...
+				// ...but we need to return something to prevent an error, so this will do.
+				return opaque;
+			},
+			// zread_file
+			[](const voidpf opaque, [[maybe_unused]] const voidpf stream, void* const buf, const uLong size) -> uLong
+			{
+				auto &file = *static_cast<SDL::IOStream*>(opaque);
+				return SDL_ReadIO(file, buf, size);
+			},
+			// zwrite_file
+			[](const voidpf opaque, [[maybe_unused]] const voidpf stream, const void* const buf, const uLong size) -> uLong
+			{
+				auto &file = *static_cast<SDL::IOStream*>(opaque);
+				return SDL_WriteIO(file, buf, size);
+			},
+			// ztell64_file
+			[](const voidpf opaque, [[maybe_unused]] const voidpf stream) -> ZPOS64_T
+			{
+				auto &file = *static_cast<SDL::IOStream*>(opaque);
+				return SDL_TellIO(file);
+			},
+			// zseek64_file
+			[](const voidpf opaque, [[maybe_unused]] const voidpf stream, const ZPOS64_T offset, const int origin) -> long
+			{
+				const auto &Seek = [&]() -> Sint64
 				{
-					auto &file_buffer = *static_cast<std::vector<cc_u16l>*>(pOpaque);
-					auto bytes = static_cast<const unsigned char*>(pBuf);
+					auto &file = *static_cast<SDL::IOStream*>(opaque);
 
-					const auto end = (file_ofs + n + 1) / 2;
-					if (file_buffer.size() < end)
-						file_buffer.resize(end);
-
-					for (std::size_t i = 0; i < n; ++i)
+					switch (origin)
 					{
-						const auto byte_position = file_ofs + i;
-						const bool upper_byte = byte_position % 2 == 0;
-						const unsigned int shift = upper_byte ? 8 : 0;
-						auto &value = file_buffer[byte_position / 2];
+						case ZLIB_FILEFUNC_SEEK_SET:
+							return SDL_SeekIO(file, offset, SDL_IO_SEEK_SET);
 
-						value &= ~(0xFFu << shift);
-						value |= bytes[i] << shift;
+						case ZLIB_FILEFUNC_SEEK_CUR:
+							return SDL_SeekIO(file, offset, SDL_IO_SEEK_CUR);
+
+						case ZLIB_FILEFUNC_SEEK_END:
+							return SDL_SeekIO(file, offset, SDL_IO_SEEK_END);
+
+						default:
+							return -1;
+					}
+				};
+
+				// SDL returns a position, but we want to return a status.
+				return Seek() == -1 ? -1 : 0;
+			},
+			// zclose_file
+			[]([[maybe_unused]] const voidpf opaque, [[maybe_unused]] const voidpf stream) -> int
+			{
+				return 0;
+			},
+			// zerror_file
+			[]([[maybe_unused]] const voidpf opaque, [[maybe_unused]] const voidpf stream) -> int
+			{
+				return 0;
+			},
+			// opaque
+			&file
+		};
+
+		const unzFile zip_file = unzOpen2_64(nullptr, &callbacks);
+
+		if (zip_file != nullptr)
+		{
+			if (unzGoToFirstFile(zip_file) == UNZ_OK && unzOpenCurrentFile(zip_file) == UNZ_OK)
+			{
+				file_buffer.emplace();
+
+				unz_file_info64 info;
+				if (unzGetCurrentFileInfo64(zip_file, &info, nullptr, 0, nullptr, 0, nullptr, 0) == UNZ_OK)
+					file_buffer->reserve(CC_DIVIDE_CEILING(info.uncompressed_size, 2));
+
+				std::array<unsigned char, 2> bytes = {0, 0};
+
+				for (;;)
+				{
+					const auto bytes_read = unzReadCurrentFile(zip_file, std::data(bytes), std::size(bytes));
+
+					if (bytes_read <= 0)
+					{
+						if (bytes_read < 0)
+							file_buffer = std::nullopt;
+
+						break;
 					}
 
-					return n;
-				},
-				&*file_buffer, 0
-			))
-				file_buffer = std::nullopt;
-		}
+					file_buffer->push_back(static_cast<unsigned int>(bytes[0]) << 8 | bytes[1]);
+				}
 
-		mz_zip_reader_end(&miniz);
-	}
+				unzCloseCurrentFile(zip_file);
+			}
+
+			unzClose(zip_file);
+		}
+	#else
+		mz_zip_archive miniz;
+		mz_zip_zero_struct(&miniz);
+		miniz.m_pRead = [](void* const pOpaque, const mz_uint64 file_ofs, void* const pBuf, const std::size_t n) -> std::size_t
+		{
+			SDL::IOStream &file = *static_cast<SDL::IOStream*>(pOpaque);
+
+			SDL_SeekIO(file, file_ofs, SDL_IO_SEEK_SET);
+			return SDL_ReadIO(file, pBuf, n);
+		};
+		miniz.m_pIO_opaque = &file;
+
+		if (mz_zip_reader_init(&miniz, SDL_GetIOSize(file), 0))
+		{
+			if (mz_zip_validate_file(&miniz, file_index, MZ_ZIP_FLAG_VALIDATE_HEADERS_ONLY))
+			{
+				file_buffer.emplace();
+
+				if (!mz_zip_reader_extract_to_callback(
+					&miniz, file_index,
+					[](void* const pOpaque, const mz_uint64 file_ofs, const void* const pBuf, const std::size_t n) -> std::size_t
+					{
+						auto &file_buffer = *static_cast<std::vector<cc_u16l>*>(pOpaque);
+						auto bytes = static_cast<const unsigned char*>(pBuf);
+
+						const auto end = (file_ofs + n + 1) / 2;
+						if (file_buffer.size() < end)
+							file_buffer.resize(end);
+
+						for (std::size_t i = 0; i < n; ++i)
+						{
+							const auto byte_position = file_ofs + i;
+							const bool upper_byte = byte_position % 2 == 0;
+							const unsigned int shift = upper_byte ? 8 : 0;
+							auto &value = file_buffer[byte_position / 2];
+
+							value &= ~(0xFFu << shift);
+							value |= bytes[i] << shift;
+						}
+
+						return n;
+					},
+					&*file_buffer, 0
+				))
+					file_buffer = std::nullopt;
+			}
+
+			mz_zip_reader_end(&miniz);
+		}
+	#endif
+
+		return file_buffer;
+	};
+
+	const auto starting_position = SDL_TellIO(file);
+
+	std::optional<std::vector<cc_u16l>> file_buffer = Load();
 
 	SDL_SeekIO(file, starting_position, SDL_IO_SEEK_SET);
 
