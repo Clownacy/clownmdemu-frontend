@@ -40,7 +40,7 @@ void AboutWindow::DisplayInternal()
 		if (ImGui::TreeNode("General"))
 		{
 			static constexpr auto text = std::to_array<char>({
-			#include "../../licences/dear-imgui.h"
+				#include "../../licences/dear-imgui.h"
 			});
 
 			DoLicence(text);
