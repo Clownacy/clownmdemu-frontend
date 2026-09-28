@@ -140,13 +140,13 @@ set_target_properties(clownmdemu PROPERTIES
 ####################
 
 if(EMSCRIPTEN)
-	# Add the file dialog library
+	# Add the file dialog library.
 	target_sources(clownmdemu PRIVATE "libraries/emscripten-browser-file/emscripten_browser_file.h")
 
-	# Dependencies of the 'emscripten-browser-file' library
+	# Dependencies of the 'emscripten-browser-file' library.
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXPORTED_FUNCTIONS=[_main,_malloc,_free] -sEXPORTED_RUNTIME_METHODS=[ccall,HEAPU8] -sALLOW_MEMORY_GROWTH=1")
 
-	# Link the persistent file storage library
+	# Link the persistent file storage library.
 	target_link_libraries(clownmdemu "idbfs.js")
 
 	# Hardcoded to specifically this for backwards-compatibility.
@@ -158,22 +158,22 @@ endif()
 # Dear ImGui stuff #
 ####################
 
-# Disable development stuff in non-development builds
+# Disable development stuff in non-development builds.
 target_compile_definitions(clownmdemu PRIVATE $<$<AND:$<NOT:$<CONFIG:Debug>>,$<NOT:$<CONFIG:RelWithDebInfo>>>:IMGUI_DISABLE_DEMO_WINDOWS IMGUI_DISABLE_DEBUG_TOOLS>)
 
-# Disable some deprecated junk in Dear ImGui
+# Disable some deprecated junk in Dear ImGui.
 target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_OBSOLETE_FUNCTIONS IMGUI_DISABLE_OBSOLETE_KEYIO)
 
-# Allow performing mathematical operations on vectors
+# Allow performing mathematical operations on vectors.
 target_compile_definitions(clownmdemu PRIVATE IMGUI_DEFINE_MATH_OPERATORS)
 
-# Remove the useless (and ugly) default font
+# Remove the useless (and ugly) default font.
 target_compile_definitions(clownmdemu PRIVATE IMGUI_DISABLE_DEFAULT_FONT)
 
-# 'ImTextureID' needs to be a pointer, not an integer
+# 'ImTextureID' needs to be a pointer, not an integer.
 target_compile_definitions(clownmdemu PRIVATE ImTextureID=void*)
 
-# Dear ImGui needs these directories in the include path
+# Dear ImGui needs these directories in the include path.
 target_include_directories(clownmdemu PRIVATE "libraries/imgui" "libraries/imgui/backends")
 
 ##################
@@ -187,7 +187,7 @@ if(DEFINED CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES_OVERRIDE})
 endif()
 
-# Link minizip (or miniz)
+# Link minizip (or miniz).
 find_package(PkgConfig)
 if(PkgConfig_FOUND)
 	pkg_check_modules(minizip IMPORTED_TARGET minizip)
@@ -198,13 +198,13 @@ if(TARGET PkgConfig::minizip)
 	target_link_libraries(clownmdemu PkgConfig::minizip)
 else()
 	if(NOT TARGET miniz)
-		set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support
+		set(MINIZ_ARCHIVE_APIS ON CACHE BOOL "" FORCE) # We need miniz's ZIP file support.
 		add_subdirectory("common/clowncd/libraries/chd/libchdr/deps/miniz-3.1.1" EXCLUDE_FROM_ALL)
 	endif()
 	target_link_libraries(clownmdemu miniz)
 endif()
 
-# Link zstd
+# Link zstd.
 find_package(zstd)
 if(zstd_FOUND)
 	target_compile_definitions(clownmdemu PRIVATE USE_SYSTEM_ZSTD)
@@ -220,12 +220,12 @@ else()
 	target_link_libraries(zstd)
 endif()
 
-# Link clownmdemu-frontend-common
+# Link clownmdemu-frontend-common.
 # This must come after linking miniz, because otherwise miniz will configured by libchdr instead of us.
 add_subdirectory("common" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu clownmdemu-frontend-common)
 
-# Link SDL
+# Link SDL.
 find_package(SDL3 3.4.2 CONFIG COMPONENTS SDL3)
 if(SDL3_FOUND)
 	target_link_libraries(clownmdemu SDL3::SDL3)
@@ -236,7 +236,7 @@ else()
 	target_link_libraries(clownmdemu SDL3::SDL3-static)
 endif()
 
-# Link FreeType
+# Link FreeType.
 find_package(Freetype)
 if(FREETYPE_FOUND)
 	target_link_libraries(clownmdemu Freetype::Freetype)
@@ -251,26 +251,26 @@ else()
 	)
 endif()
 
-# Link disassemblers
+# Link disassemblers.
 target_link_libraries(clownmdemu clown68000-disassembler)
 target_link_libraries(clownmdemu clownz80-disassembler)
 
-# Link fmt
+# Link fmt.
 find_package(fmt 8.0.0)
 if(NOT fmt_FOUND)
 	add_subdirectory("libraries/fmt" EXCLUDE_FROM_ALL)
 endif()
 target_link_libraries(clownmdemu fmt::fmt)
 
-# Link span
+# Link span.
 add_subdirectory("libraries/span" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu span)
 
-# Link Lyra
+# Link Lyra.
 add_subdirectory("libraries/Lyra" EXCLUDE_FROM_ALL)
 target_link_libraries(clownmdemu lyra)
 
-# Link OpenMP
+# Link OpenMP.
 # Emscripten currently suffers from build errors with this.
 if(NOT EMSCRIPTEN)
 	find_package(OpenMP COMPONENTS CXX)
