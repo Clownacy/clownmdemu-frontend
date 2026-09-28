@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-option(CLOWNMDEMU_FRONTEND_FREETYPE "Use FreeType font rasteriser instead of stb_truetype for Dear ImGui" OFF)
-
 project(clownmdemu-frontend LANGUAGES C CXX)
 
 ###########
@@ -156,24 +154,6 @@ if(EMSCRIPTEN)
 	target_compile_definitions(clownmdemu PRIVATE SDL_EMSCRIPTEN_PERSISTENT_PATH="${SDL_EMSCRIPTEN_PERSISTENT_PATH}")
 endif()
 
-##################
-# Handle options #
-##################
-
-# Handle selecting either FreeType or stb_truetype font rendering
-if(CLOWNMDEMU_FRONTEND_FREETYPE)
-	target_sources(clownmdemu PRIVATE
-		"libraries/imgui/misc/freetype/imgui_freetype.cpp"
-		"libraries/imgui/misc/freetype/imgui_freetype.h"
-	)
-
-	target_compile_definitions(clownmdemu PRIVATE IMGUI_ENABLE_FREETYPE)
-else()
-	target_sources(clownmdemu PRIVATE
-		"libraries/imgui/imstb_truetype.h"
-	)
-endif()
-
 ####################
 # Dear ImGui stuff #
 ####################
@@ -256,15 +236,19 @@ else()
 	target_link_libraries(clownmdemu SDL3::SDL3-static)
 endif()
 
-if(CLOWNMDEMU_FRONTEND_FREETYPE)
-	# Link FreeType
-	find_package(Freetype)
-	if(FREETYPE_FOUND)
-		target_link_libraries(clownmdemu Freetype::Freetype)
-	else()
-		add_subdirectory("libraries/freetype" EXCLUDE_FROM_ALL)
-		target_link_libraries(clownmdemu freetype)
-	endif()
+# Link FreeType
+find_package(Freetype)
+if(FREETYPE_FOUND)
+	target_link_libraries(clownmdemu Freetype::Freetype)
+	target_sources(clownmdemu PRIVATE
+		"libraries/imgui/misc/freetype/imgui_freetype.cpp"
+		"libraries/imgui/misc/freetype/imgui_freetype.h"
+	)
+	target_compile_definitions(clownmdemu PRIVATE IMGUI_ENABLE_FREETYPE)
+else()
+	target_sources(clownmdemu PRIVATE
+		"libraries/imgui/imstb_truetype.h"
+	)
 endif()
 
 # Link disassemblers
