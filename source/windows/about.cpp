@@ -71,66 +71,6 @@ void AboutWindow::DisplayInternal()
 	}
 #endif
 
-#ifdef IMGUI_ENABLE_FREETYPE
-	if (ImGui::CollapsingHeader("FreeType"))
-	{
-		if (ImGui::TreeNode("General"))
-		{
-			static constexpr auto text = std::to_array<char>({
-				#include "../../licences/freetype.h"
-			});
-
-			DoLicence(text);
-
-			ImGui::TreePop();
-		}
-
-		if (ImGui::TreeNode("BDF Driver"))
-		{
-			static constexpr auto text = std::to_array<char>({
-				#include "../../licences/freetype-bdf.h"
-			});
-
-			DoLicence(text);
-
-			ImGui::TreePop();
-		}
-
-		if (ImGui::TreeNode("PCF Driver"))
-		{
-			static constexpr auto text = std::to_array<char>({
-				#include "../../licences/freetype-pcf.h"
-			});
-
-			DoLicence(text);
-
-			ImGui::TreePop();
-		}
-
-		if (ImGui::TreeNode("fthash.c & fthash.h"))
-		{
-			static constexpr auto text = std::to_array<char>({
-				#include "../../licences/freetype-fthash.h"
-			});
-
-			DoLicence(text);
-
-			ImGui::TreePop();
-		}
-
-		if (ImGui::TreeNode("ft-hb.c & ft-hb.h"))
-		{
-			static constexpr auto text = std::to_array<char>({
-				#include "../../licences/freetype-ft-hb.h"
-			});
-
-			DoLicence(text);
-
-			ImGui::TreePop();
-		}
-	}
-#endif
-
 	if (ImGui::CollapsingHeader("Fonts"))
 	{
 		if (ImGui::TreeNode("Noto Sans"))
