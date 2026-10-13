@@ -36,8 +36,8 @@ namespace RAII
 	public:
 		using PointerBase<Delete>::PointerBase;
 
-		operator auto() { return this->get(); }
-		operator auto() const { return this->get(); }
+		operator PointerBase<Delete>::pointer() { return this->get(); }
+		operator PointerBase<Delete>::pointer() const { return this->get(); }
 	};
 }
 
