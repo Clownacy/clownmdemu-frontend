@@ -910,7 +910,9 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 					if (ImGui::BeginChild("Magic Mouse Detector", destination_piece_size_and_padding))
 					{
 						// Finally, display the tile.
+						draw_list->AddCallback(ImGui::GetPlatformIO().DrawCallback_SetSamplerFromTex);
 						draw_list->AddImage(ImTextureRef(regenerating_pieces.textures[0]), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
+						draw_list->AddCallback(ImGui::GetPlatformIO().DrawCallback_SetSamplerLinear);
 
 						ImGui::ImageCopyableContextWindow(derived->GetWindow(), regenerating_pieces.textures[0], current_piece_uv0, current_piece_uv1);
 					}
