@@ -900,24 +900,11 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 
 					// Figure out where the tile goes in the viewer.
 					const auto current_piece_destination = position * destination_piece_size_and_padding;
-					const auto piece_boundary_position_top_left = canvas_position + current_piece_destination;
-					const auto piece_boundary_position_bottom_right = piece_boundary_position_top_left + destination_piece_size_and_padding;
-					const auto piece_position_top_left = piece_boundary_position_top_left + padding;
-					const auto piece_position_bottom_right = piece_boundary_position_bottom_right - padding;
 
-					ImGui::SetCursorPos(current_piece_destination);
+					ImGui::SetCursorPos(current_piece_destination + padding);
 
-					if (ImGui::BeginChild("Magic Mouse Detector", destination_piece_size_and_padding))
-					{
-						// Finally, display the tile.
-						draw_list->AddCallback(ImGui::GetPlatformIO().DrawCallback_SetSamplerFromTex);
-						draw_list->AddImage(ImTextureRef(regenerating_pieces.textures[0]), piece_position_top_left, piece_position_bottom_right, current_piece_uv0, current_piece_uv1);
-						draw_list->AddCallback(ImGui::GetPlatformIO().DrawCallback_SetSamplerLinear);
-
-						ImGui::ImageCopyableContextWindow(derived->GetWindow(), regenerating_pieces.textures[0], current_piece_uv0, current_piece_uv1);
-					}
-
-					ImGui::EndChild();
+					// Finally, display the tile.
+					ImGui::ImageCopyable(derived->GetWindow(), ImTextureRef(regenerating_pieces.textures[0]), destination_piece_size, current_piece_uv0, current_piece_uv1);
 
 					if (ImGui::BeginItemTooltip())
 					{
