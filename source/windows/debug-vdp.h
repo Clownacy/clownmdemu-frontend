@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>
 #include <functional>
+#include <vector>
 
 #include "../sdl-wrapper-extra.h"
 
