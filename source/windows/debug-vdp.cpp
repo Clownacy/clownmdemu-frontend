@@ -866,10 +866,7 @@ void DebugVDP::GridViewer<Derived, default_line_length>::DisplayGrid(
 
 	if (grid_display_region_width_in_pieces != 0) // Avoid a division by 0.
 	{
-		const ImVec2 canvas_position = ImGui::GetCursorScreenPos();
-
 		// Draw the list of tiles.
-		ImDrawList* const draw_list = ImGui::GetWindowDrawList();
 
 		// Here we use a clipper so that we only render the tiles that we can actually see.
 		ImGuiListClipper clipper;
