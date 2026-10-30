@@ -6,7 +6,7 @@
 #include <optional>
 #include <vector>
 
-#include <tcb/span.hpp>
+#include "span.h"
 
 class TarBall
 {

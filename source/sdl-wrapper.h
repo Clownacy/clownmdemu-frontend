@@ -7,11 +7,11 @@
 #include <string_view>
 
 #include <SDL3/SDL.h>
-#include <tcb/span.hpp>
 
 #include "../libraries/function2/include/function2/function2.hpp"
 
 #include "raii-wrapper.h"
+#include "span.h"
 
 namespace SDL
 {

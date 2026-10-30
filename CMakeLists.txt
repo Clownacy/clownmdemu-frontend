@@ -29,6 +29,7 @@ add_executable(clownmdemu WIN32
 	"source/raii-wrapper.h"
 	"source/sdl-wrapper.h"
 	"source/sdl-wrapper-extra.h"
+	"source/span.h"
 	"source/tar.cpp"
 	"source/tar.h"
 	"source/text-encoding.cpp"
