@@ -1050,7 +1050,8 @@ void DebugVDP::Registers::DisplayInternal()
 		"Window Plane",
 		"DMA",
 		"Access",
-		"Debug"
+		"Debug",
+		"Stamps"
 	});
 
 	const auto greatest_tab_name_width = std::accumulate(std::begin(tab_names), std::end(tab_names), 0.0f,
@@ -1228,6 +1229,25 @@ void DebugVDP::Registers::DisplayInternal()
 							ImGui::TextUnformatted(layers[vdp.debug.forced_layer]);
 						}
 					);
+				}
+			);
+			break;
+
+		case 6:
+			DoTable("##Stamps",
+				[&]()
+				{
+					const auto &graphics = frontend->emulator->GetState().mega_cd.rotation;
+					DoProperty(nullptr, "Stamp Size", "{} pixels", graphics.large_stamp ? "32x32" : "16x16");
+					DoProperty(nullptr, "Stamp Map Size", "{} pixels", graphics.large_stamp_map ? "4096x4096" : "256x256");
+					DoProperty(nullptr, "Repeating Stamp Map", "{}", graphics.repeating_stamp_map ? "Yes" : "No");
+					DoProperty(nullptr, "Stamp Map Address", "0x{:X}", graphics.stamp_map_address * 4);
+					DoProperty(nullptr, "Image Buffer Height in Tiles", "{}", graphics.image_buffer_height_in_tiles + 1);
+					DoProperty(nullptr, "Image Buffer Address", "0x{:X}", graphics.image_buffer_address * 4);
+					DoProperty(nullptr, "Image Buffer X Offset", "{}", graphics.image_buffer_x_offset);
+					DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
+					DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
+					DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
 				}
 			);
 			break;

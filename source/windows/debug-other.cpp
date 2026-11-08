@@ -47,21 +47,4 @@ void DebugOther::DisplayInternal()
 			DoProperty(nullptr, "SUB-CPU Sub-code Interrupt", "{}", clownmdemu_state.mega_cd.irq.enabled[5] ? "Enabled" : "Disabled");
 		}
 	);
-
-	DoTable("Graphics Transformation",
-		[&]()
-		{
-			const auto &graphics = clownmdemu_state.mega_cd.rotation;
-			DoProperty(nullptr, "Stamp Size", "{} pixels", graphics.large_stamp ? "32x32" : "16x16");
-			DoProperty(nullptr, "Stamp Map Size", "{} pixels", graphics.large_stamp_map ? "4096x4096" : "256x256");
-			DoProperty(nullptr, "Repeating Stamp Map", "{}", graphics.repeating_stamp_map ? "Yes" : "No");
-			DoProperty(nullptr, "Stamp Map Address", "0x{:X}", graphics.stamp_map_address * 4);
-			DoProperty(nullptr, "Image Buffer Height in Tiles", "{}", graphics.image_buffer_height_in_tiles + 1);
-			DoProperty(nullptr, "Image Buffer Address", "0x{:X}", graphics.image_buffer_address * 4);
-			DoProperty(nullptr, "Image Buffer X Offset", "{}", graphics.image_buffer_x_offset);
-			DoProperty(nullptr, "Image Buffer Y Offset", "{}", graphics.image_buffer_y_offset);
-			DoProperty(nullptr, "Image Buffer Width", "{}", graphics.image_buffer_width);
-			DoProperty(nullptr, "Image Buffer Height", "{}", graphics.image_buffer_height);
-		}
-	);
 }
